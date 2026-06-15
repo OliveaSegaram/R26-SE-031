@@ -1,9 +1,8 @@
+
 import 'package:flutter/material.dart';
 import 'screens/dashboard_screen.dart';
 
-void main() {
-  runApp(const StudentApp());
-}
+void main() => runApp(const StudentApp());
 
 class StudentApp extends StatelessWidget {
   const StudentApp({super.key});
@@ -11,7 +10,7 @@ class StudentApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Adaptive Dyslexia Platform - Student',
+      title: 'Adaptive Dyslexia Platform',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),

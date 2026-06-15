@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+// ── Only import screens that actually exist in your screens/ folder ───────────
+import 'firefly_tracking_game.dart';
+import 'letter_identification_task.dart';
+import 'syllable_train_game.dart';
+import 'letter_bubble_game.dart';
+
 class DashboardScreen extends StatefulWidget {
   final String userName;
   const DashboardScreen({Key? key, this.userName = 'dinithi'}) : super(key: key);
@@ -11,31 +17,142 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedNav = 0;
 
-  final List<_NavItem> _navItems = [
-    _NavItem(emoji: '⭐', label: 'Top Picks', color: Color(0xFFFFCC00)),
-    _NavItem(emoji: '🎮', label: 'Activities', color: Color(0xFF4CAF50)),
-    _NavItem(emoji: '🧩', label: 'Games', color: Color(0xFFFF6B6B)),
+  // ── Nav items ──────────────────────────────────────────────────────────────
+  static const List<_NavItem> _navItems = [
+    _NavItem(emoji: '⭐', label: 'Top Picks', color: Color(0xFFFFB300)),
+    _NavItem(emoji: '🎨', label: 'Activities', color: Color(0xFF43A047)),
+    _NavItem(emoji: '🎮', label: 'Games',      color: Color(0xFFE53935)),
   ];
 
+  // ── All cards — assetImage filenames match exactly what is in assets/thumbnails/ ──
+  static final List<_Card> _allCards = [
+    // ── GAMES ─────────────────────────────────────────────────────────────────
+  
+    _Card(
+      title: 'බුබුලු සෙල්ලම',
+      subtitle: 'ස්වර හඳුනාගනිමු',
+      tag: 'ක්‍රීඩාව',
+      category: 'game',
+      assetImage: 'assets/thumbnails/drawing_game.jpg',
+      fallbackEmoji: '🫧',
+      color1: Color(0xFF00ACC1),
+      color2: Color(0xFF00838F),
+      screenKey: 'letter_bubbles',
+    ),
+    _Card(
+      title: 'Story Sequencing',
+      subtitle: 'Order & Logic',
+      tag: 'Game',
+      category: 'game',
+      assetImage: 'assets/thumbnails/story_sequencing.jpg',
+      fallbackEmoji: '📚',
+      color1: Color(0xFF1B5E20),
+      color2: Color(0xFF2E7D32),
+      screenKey: 'story_seq',
+    ),
+  
+    // ── ACTIVITIES ────────────────────────────────────────────────────────────
+    _Card(
+      title: 'Letter Identification',
+      subtitle: 'Alphabet Recognition',
+      tag: 'Activity',
+      category: 'activity',
+      assetImage: 'assets/thumbnails/letter_identification.jpg',
+      fallbackEmoji: '🔤',
+      color1: Color(0xFFE65100),
+      color2: Color(0xFFBF360C),
+      screenKey: 'letter_id',
+    ),
+    _Card(
+      title: 'Reading Comprehension',
+      subtitle: 'Read & Understand',
+      tag: 'Activity',
+      category: 'activity',
+      assetImage: 'assets/thumbnails/reading_comprehension.jpg',
+      fallbackEmoji: '📖',
+      color1: Color(0xFF006064),
+      color2: Color(0xFF00838F),
+      screenKey: 'read_comp',
+    ),
+    _Card(
+      title: 'Reading Fluency',
+      subtitle: 'Read Smoothly',
+      tag: 'Activity',
+      category: 'activity',
+      // no image yet — emoji fallback
+      assetImage: 'assets/thumbnails/reading_fluency.jpg',
+      fallbackEmoji: '🗣️',
+      color1: Color(0xFF1565C0),
+      color2: Color(0xFF0D47A1),
+      screenKey: 'read_fluency',
+    ),
+    _Card(
+      title: 'Story Reading',
+      subtitle: 'Fun Stories',
+      tag: 'Activity',
+      category: 'activity',
+      assetImage: 'assets/thumbnails/story_reading.jpg',
+      fallbackEmoji: '🌟',
+      color1: Color(0xFF4E342E),
+      color2: Color(0xFF3E2723),
+      screenKey: 'story_read',
+    ),
+    _Card(
+      title: 'Syllable Train',
+      subtitle: 'Break Words Apart',
+      tag: 'Activity',
+      category: 'activity',
+      assetImage: 'assets/thumbnails/syllable_train.jpg',
+      fallbackEmoji: '🚂',
+      color1: Color(0xFF37474F),
+      color2: Color(0xFF263238),
+      screenKey: 'syllable',
+    ),
+  ];
+
+  // ── Tab filtering ──────────────────────────────────────────────────────────
+  List<_Card> get _currentCards {
+    switch (_selectedNav) {
+      case 1:  return _allCards.where((c) => c.category == 'activity').toList();
+      case 2:  return _allCards.where((c) => c.category == 'game').toList();
+      default: return _allCards; // Top Picks = all
+    }
+  }
+
+  // ── Navigation to real screens ─────────────────────────────────────────────
+  void _open(String key) {
+    final map = <String, Widget>{
+      'firefly':      FireflyTrackingGame(),
+      'letter_id':    LetterIdentificationTask(),
+      'syllable':     SyllableTrainGame(),
+      'letter_bubbles': const LetterBubbleGame(),
+    };
+    final screen = map[key];
+    if (screen != null) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  BUILD
+  // ════════════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFB2EBF2), Color(0xFF81D4FA), Color(0xFF4FC3F7)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFB3E5FC), Color(0xFF81D4FA), Color(0xFF4FC3F7)],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              _buildTopBar(),
-              _buildNavBar(),
-              Expanded(
-                child: _buildContent(),
-              ),
+              _topBar(),
+              _navBar(),
+              Expanded(child: _content()),
             ],
           ),
         ),
@@ -43,89 +160,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildTopBar() {
+  // ── Top bar ────────────────────────────────────────────────────────────────
+  Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Hi, ${widget.userName}',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1565C0),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.pink.shade200,
-              border: Border.all(color: Colors.white, width: 2),
-            ),
-            child: ClipOval(
-              child: Image.network(
-                'https://api.dicebear.com/7.x/bottts/png?seed=${widget.userName}',
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(Icons.face, color: Colors.white, size: 26),
+          const Text('Learn & Play',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900,
+                color: Color(0xFF0D47A1), letterSpacing: 0.5)),
+          Row(children: [
+            Text('Hi, ${widget.userName}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
+                  color: Color(0xFF1565C0))),
+            const SizedBox(width: 10),
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.pink.shade200,
+                border: Border.all(color: Colors.white, width: 2.5),
+                boxShadow: [BoxShadow(color: Colors.pink.withOpacity(0.3), blurRadius: 6)],
               ),
+              child: const Center(child: Text('😊', style: TextStyle(fontSize: 22))),
             ),
-          ),
+          ]),
         ],
       ),
     );
   }
 
-  Widget _buildNavBar() {
+  // ── Nav bar ────────────────────────────────────────────────────────────────
+  Widget _navBar() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [BoxShadow(
+            color: Colors.blue.withOpacity(0.15), blurRadius: 14,
+            offset: const Offset(0, 4))],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(_navItems.length, (i) {
           final item = _navItems[i];
-          final selected = _selectedNav == i;
+          final sel  = _selectedNav == i;
           return GestureDetector(
             onTap: () => setState(() => _selectedNav = i),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               decoration: BoxDecoration(
-                color: selected ? item.color.withOpacity(0.18) : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-                border: selected
-                    ? Border.all(color: item.color, width: 2)
-                    : null,
+                color: sel ? item.color.withOpacity(0.15) : Colors.transparent,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                    color: sel ? item.color : Colors.transparent, width: 2),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildNavIcon(item, selected),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-                      color: selected ? item.color : const Color(0xFF1565C0),
-                    ),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  width: 54, height: 54,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: item.color.withOpacity(sel ? 0.22 : 0.10),
+                    boxShadow: sel
+                        ? [BoxShadow(color: item.color.withOpacity(0.35),
+                            blurRadius: 10, spreadRadius: 1)]
+                        : [],
                   ),
-                ],
-              ),
+                  child: Center(child: Text(item.emoji,
+                      style: TextStyle(fontSize: sel ? 28 : 24))),
+                ),
+                const SizedBox(height: 5),
+                Text(item.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: sel ? FontWeight.bold : FontWeight.w500,
+                    color: sel ? item.color : const Color(0xFF1565C0),
+                  )),
+              ]),
             ),
           );
         }),
@@ -133,282 +250,217 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildNavIcon(_NavItem item, bool selected) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 52,
-      height: 52,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: item.color.withOpacity(selected ? 0.25 : 0.12),
-        boxShadow: selected
-            ? [BoxShadow(color: item.color.withOpacity(0.4), blurRadius: 8, spreadRadius: 1)]
-            : [],
-      ),
-      child: Center(
-        child: Text(item.emoji, style: TextStyle(fontSize: selected ? 28 : 24)),
-      ),
-    );
-  }
+  // ── Content ────────────────────────────────────────────────────────────────
+  Widget _content() {
+    final cards    = _currentCards;
+    final featured = cards.take(2).toList();   // first 2 → large hero cards
+    final rest     = cards.skip(2).toList();   // remaining → grid
 
-  Widget _buildContent() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('Featured'),
-          const SizedBox(height: 10),
-          _buildFeaturedRow(),
-          const SizedBox(height: 18),
-          _buildSectionTitle('Keep Learning'),
-          const SizedBox(height: 10),
-          _buildGridCards(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF0D47A1),
-        letterSpacing: 0.3,
-      ),
-    );
-  }
-
-  Widget _buildFeaturedRow() {
-    final featured = [
-      _ContentCard(
-        title: 'Word Beach',
-        subtitle: 'Reading',
-        color1: const Color(0xFF42A5F5),
-        color2: const Color(0xFF1976D2),
-        emoji: '🏖️',
-        progress: 0.45,
-        tag: 'In Progress',
-      ),
-      _ContentCard(
-        title: 'Letter Hunt',
-        subtitle: 'Alphabet',
-        color1: const Color(0xFF66BB6A),
-        color2: const Color(0xFF2E7D32),
-        emoji: '🔍',
-        progress: 0.0,
-        tag: 'New',
-      ),
-    ];
-
-    return Row(
-      children: featured
-          .map((card) => Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: _buildFeaturedCard(card),
-                ),
-              ))
-          .toList(),
-    );
-  }
-
-  Widget _buildFeaturedCard(_ContentCard card) {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [card.color1, card.color2],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: card.color2.withOpacity(0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Background emoji
-          Positioned(
-            right: -10,
-            top: -10,
-            child: Text(card.emoji, style: const TextStyle(fontSize: 80)),
-          ),
-          // Tag
-          Positioned(
-            top: 12,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                card.tag,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+          // ── Section label ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              _selectedNav == 1 ? 'ක්‍රියාකාරකම් (Activities)'
+                  : _selectedNav == 2 ? 'ක්‍රීඩා (Games)'
+                  : 'ඉහළ තේරීම් (Top Picks)',
+              style: const TextStyle(fontSize: 15, color: Color(0xFF1565C0),
+                  fontWeight: FontWeight.w700),
             ),
           ),
-          // Bottom info
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+
+          // ── Two large hero cards ───────────────────────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: featured.map((c) => Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                child: _heroCard(c),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    card.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: card.color2,
-                    ),
-                  ),
-                  if (card.progress > 0) ...[
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: card.progress,
-                        backgroundColor: Colors.grey.shade200,
-                        valueColor: AlwaysStoppedAnimation<Color>(card.color1),
-                        minHeight: 6,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+            )).toList(),
           ),
+
+          // ── Grid for the rest ──────────────────────────────────────────────
+          if (rest.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            const Text('More to Explore',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                  color: Color(0xFF0D47A1))),
+            const SizedBox(height: 10),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.82,
+              ),
+              itemCount: rest.length,
+              itemBuilder: (_, i) => _gridCard(rest[i]),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildGridCards() {
-    final items = [
-      _GridCard(title: 'Sound It Out', emoji: '🔊', color: const Color(0xFFFF8A65), subtitle: 'Phonics'),
-      _GridCard(title: 'Spell & Win', emoji: '✏️', color: const Color(0xFFAB47BC), subtitle: 'Spelling'),
-      _GridCard(title: 'Story Time', emoji: '📖', color: const Color(0xFF26A69A), subtitle: 'Reading'),
-      _GridCard(title: 'Word Match', emoji: '🧠', color: const Color(0xFFEF5350), subtitle: 'Memory'),
-      _GridCard(title: 'Trace It', emoji: '🖊️', color: const Color(0xFFFFCA28), subtitle: 'Writing'),
-      _GridCard(title: 'Animal ABCs', emoji: '🦁', color: const Color(0xFF42A5F5), subtitle: 'Alphabet'),
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.1,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, i) => _buildGridCard(items[i]),
-    );
-  }
-
-  Widget _buildGridCard(_GridCard card) {
+  // ── Hero (large) card ──────────────────────────────────────────────────────
+  Widget _heroCard(_Card c) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () => _open(c.screenKey),
+      child: Container(
+        height: 200,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [BoxShadow(color: c.color2.withOpacity(0.45),
+              blurRadius: 14, offset: const Offset(0, 6))],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Stack(fit: StackFit.expand, children: [
+
+            // ── Thumbnail (asset image or emoji fallback) ──────────────────
+            _thumb(c),
+
+            // ── Dark gradient so text is always readable ───────────────────
+            Container(decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, c.color2.withOpacity(0.88)],
+                stops: const [0.4, 1.0],
+              ),
+            )),
+
+            // ── Tag badge ──────────────────────────────────────────────────
+            Positioned(top: 12, left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.88),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(c.tag, style: TextStyle(
+                    color: c.color2, fontSize: 11, fontWeight: FontWeight.bold)),
+              )),
+
+            // ── Title + subtitle at bottom ─────────────────────────────────
+            Positioned(bottom: 14, left: 14, right: 14,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(c.title, style: const TextStyle(
+                    color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 3),
+                Text(c.subtitle, style: TextStyle(
+                    color: Colors.white.withOpacity(0.88), fontSize: 12)),
+              ])),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  // ── Grid card ──────────────────────────────────────────────────────────────
+  Widget _gridCard(_Card c) {
+    return GestureDetector(
+      onTap: () => _open(c.screenKey),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: card.color.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: c.color1.withOpacity(0.22),
+              blurRadius: 8, offset: const Offset(0, 4))],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: card.color.withOpacity(0.15),
-              ),
-              child: Center(
-                child: Text(card.emoji, style: const TextStyle(fontSize: 30)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+
+          // ── Thumbnail (top ~58%) ───────────────────────────────────────────
+          Expanded(
+            flex: 58,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              child: Stack(fit: StackFit.expand, children: [
+                _thumb(c),
+                // subtle bottom fade
+                Positioned(bottom: 0, left: 0, right: 0, height: 28,
+                  child: Container(decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, c.color2.withOpacity(0.55)],
+                    ),
+                  ))),
+                // tag
+                Positioned(top: 8, left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                        color: c.color1, borderRadius: BorderRadius.circular(10)),
+                    child: Text(c.tag, style: const TextStyle(
+                        color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                  )),
+              ]),
+            ),
+          ),
+
+          // ── Text strip (bottom ~42%) ───────────────────────────────────────
+          Expanded(
+            flex: 42,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(c.title, style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.bold, color: c.color2),
+                      maxLines: 2, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 2),
+                  Text(c.subtitle, style: const TextStyle(fontSize: 10, color: Colors.grey),
+                      maxLines: 1),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              card.title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: card.color.withOpacity(0.9),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              card.subtitle,
-              style: const TextStyle(fontSize: 11, color: Colors.grey),
-            ),
-          ],
-        ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  // ── Thumbnail: tries asset, falls back to gradient + big emoji ─────────────
+  Widget _thumb(_Card c) {
+    return Image.asset(
+      c.assetImage,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        decoration: BoxDecoration(gradient: LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [c.color1, c.color2],
+        )),
+        child: Center(child: Text(c.fallbackEmoji,
+            style: const TextStyle(fontSize: 64))),
       ),
     );
   }
 }
 
+// ── Data models ───────────────────────────────────────────────────────────────
+
 class _NavItem {
-  final String emoji;
-  final String label;
+  final String emoji, label;
   final Color color;
-  _NavItem({required this.emoji, required this.label, required this.color});
+  const _NavItem({required this.emoji, required this.label, required this.color});
 }
 
-class _ContentCard {
-  final String title;
-  final String subtitle;
-  final Color color1;
-  final Color color2;
-  final String emoji;
-  final double progress;
-  final String tag;
-  _ContentCard({
-    required this.title,
-    required this.subtitle,
-    required this.color1,
-    required this.color2,
-    required this.emoji,
-    required this.progress,
-    required this.tag,
+class _Card {
+  final String title, subtitle, tag, category, assetImage, fallbackEmoji, screenKey;
+  final Color color1, color2;
+  const _Card({
+    required this.title, required this.subtitle, required this.tag,
+    required this.category, required this.assetImage, required this.fallbackEmoji,
+    required this.color1, required this.color2, required this.screenKey,
   });
-}
-
-class _GridCard {
-  final String title;
-  final String emoji;
-  final Color color;
-  final String subtitle;
-  _GridCard({required this.title, required this.emoji, required this.color, required this.subtitle});
 }
