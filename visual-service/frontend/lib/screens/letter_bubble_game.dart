@@ -947,12 +947,15 @@ class _LetterBubbleGameState extends State<LetterBubbleGame> with SingleTickerPr
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        "මෙම අකුර ඇති බුබුල තට්ටු කරන්න:  ",
-                        style: TextStyle(
-                          fontSize: 26, // Increased instruction size
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF01579B),
+                      const Flexible(
+                        child: Text(
+                          "මෙම අකුර ඇති බුබුල තෝරන්න:  ",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF01579B),
+                          ),
                         ),
                       ),
                       Container(
