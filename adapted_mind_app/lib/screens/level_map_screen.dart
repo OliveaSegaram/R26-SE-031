@@ -84,22 +84,18 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // ── Background Image ──
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/backgrounds/vertical_map_bg.png'),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-
           // ── Scrollable Map Path ──
           SingleChildScrollView(
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
-            child: SizedBox(
+            child: Container(
               width: screenWidth,
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/backgrounds/story_map_bg.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
               child: Padding(
                 padding: const EdgeInsets.only(top: 120, bottom: 40),
                 child: Stack(
@@ -149,6 +145,52 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
           // ── Top Header Bar ──
           _buildTopHeader(),
+
+          // ── Dev Tools (Temporary Navigation) ──
+          Positioned(
+            bottom: 30,
+            right: 20,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'prev',
+                  onPressed: () {
+                    if (currentLevel > 0) {
+                      setState(() {
+                        levels[currentLevel]['completed'] = false;
+                        currentLevel--;
+                      });
+                      _scrollToCurrentLevel();
+                    }
+                  },
+                  backgroundColor: Colors.white,
+                  elevation: 4,
+                  child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 18),
+                ),
+                const SizedBox(width: 8),
+                FloatingActionButton.extended(
+                  heroTag: 'next',
+                  onPressed: () {
+                    if (currentLevel < levels.length - 1) {
+                      setState(() {
+                        levels[currentLevel]['completed'] = true;
+                        currentLevel++;
+                      });
+                      _scrollToCurrentLevel();
+                    }
+                  },
+                  backgroundColor: AppColors.mint,
+                  elevation: 4,
+                  icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+                  label: Text(
+                    'Complete Task',
+                    style: GoogleFonts.fredoka(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -349,7 +391,9 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     final visualIndex = currentLevel;
     final nodeY = visualIndex * 120.0 + 20;
 
-    return Positioned(
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeInOutCubic,
       left: nodeX - 30,
       top: nodeY + 2,
       child: Container(
