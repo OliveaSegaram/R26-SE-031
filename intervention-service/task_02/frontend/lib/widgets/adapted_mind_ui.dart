@@ -1,35 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../theme/app_theme.dart';
 import 'kid_art.dart';
 
-/// AdaptedMind-style soft sky background.
+/// Navy splash background — matches sign-in / assessment flow.
 class AmBackground extends StatelessWidget {
   const AmBackground({super.key, required this.child});
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF64B5F6),
-                Color(0xFF42A5F5),
-                Color(0xFF1E88E5),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+    return Container(
+      decoration: const BoxDecoration(gradient: AppColors.splashGradient),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            top: -60,
+            right: -40,
+            child: _blob(200, AppColors.mint.withValues(alpha: 0.08)),
           ),
-        ),
-        Positioned(top: -40, left: -30, child: _blob(180, const Color(0x66FFFFFF))),
-        Positioned(bottom: 60, right: -50, child: _blob(220, const Color(0x55FFFFFF))),
-        Positioned(top: 200, right: 40, child: _blob(100, const Color(0x44B3E5FC))),
-        child,
-      ],
+          Positioned(
+            bottom: 80,
+            left: -50,
+            child: _blob(240, AppColors.orange.withValues(alpha: 0.06)),
+          ),
+          child,
+        ],
+      ),
     );
   }
 
@@ -42,7 +41,6 @@ class AmBackground extends StatelessWidget {
   }
 }
 
-/// Big book-style flashcard like AdaptedMind reading cards.
 class AmBookCard extends StatefulWidget {
   const AmBookCard({
     super.key,
@@ -94,10 +92,10 @@ class _AmBookCardState extends State<AmBookCard> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    Color border = Colors.white;
-    if (widget.showResult == true) border = const Color(0xFF00C853);
-    if (widget.showResult == false && widget.selected) border = const Color(0xFFFF5252);
-    if (widget.selected && widget.showResult == null) border = const Color(0xFFFFD600);
+    Color border = AppColors.mint.withValues(alpha: 0.25);
+    if (widget.showResult == true) border = AppColors.mint;
+    if (widget.showResult == false && widget.selected) border = AppColors.orange;
+    if (widget.selected && widget.showResult == null) border = AppColors.gold;
 
     return AnimatedBuilder(
       animation: _bounce,
@@ -115,11 +113,12 @@ class _AmBookCardState extends State<AmBookCard> with SingleTickerProviderStateM
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
+                color: AppColors.darkSlateLight,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: border, width: 4),
+                border: Border.all(color: border, width: 3),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: .18),
+                    color: Colors.black.withValues(alpha: 0.35),
                     blurRadius: 14,
                     offset: const Offset(0, 8),
                   ),
@@ -133,14 +132,14 @@ class _AmBookCardState extends State<AmBookCard> with SingleTickerProviderStateM
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          color: Colors.white,
+                          color: AppColors.primary,
                           child: Text(
                             widget.label!,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF1565C0),
+                            style: GoogleFonts.fredoka(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textLight,
                             ),
                           ),
                         ),
@@ -155,7 +154,6 @@ class _AmBookCardState extends State<AmBookCard> with SingleTickerProviderStateM
   }
 }
 
-/// Square picture panel — keeps drawings from stretching wide.
 class AmPicturePanel extends StatelessWidget {
   const AmPicturePanel({
     super.key,
@@ -186,7 +184,6 @@ class AmPicturePanel extends StatelessWidget {
   }
 }
 
-/// Pink speaker button like AdaptedMind.
 class AmSpeakerBtn extends StatelessWidget {
   const AmSpeakerBtn({super.key, required this.onTap, this.size = 52});
   final VoidCallback onTap;
@@ -195,9 +192,10 @@ class AmSpeakerBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFFF4081),
+      color: AppColors.orange,
       shape: const CircleBorder(),
       elevation: 6,
+      shadowColor: AppColors.orange.withValues(alpha: 0.4),
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
@@ -211,7 +209,6 @@ class AmSpeakerBtn extends StatelessWidget {
   }
 }
 
-/// Huge word display for Grade 1.
 class AmWordHero extends StatelessWidget {
   const AmWordHero({
     super.key,
@@ -229,11 +226,12 @@ class AmWordHero extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .95),
+        color: AppColors.darkSlateLight,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.mint.withValues(alpha: 0.3), width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: .12),
+            color: Colors.black.withValues(alpha: 0.25),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -249,10 +247,10 @@ class AmWordHero extends StatelessWidget {
               Flexible(
                 child: Text(
                   word,
-                  style: const TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF1565C0),
+                  style: GoogleFonts.fredoka(
+                    fontSize: 44,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textLight,
                     height: 1,
                   ),
                 ),
@@ -263,10 +261,10 @@ class AmWordHero extends StatelessWidget {
           Text(
             hint,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF546E7A),
+            style: GoogleFonts.nunito(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
             ),
           ),
         ],
@@ -275,7 +273,6 @@ class AmWordHero extends StatelessWidget {
   }
 }
 
-/// Simple mascot + progress path (AdaptedMind style).
 class AmProgressBar extends StatelessWidget {
   const AmProgressBar({
     super.key,
@@ -294,12 +291,13 @@ class AmProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final progress = total > 0 ? (answered / total).clamp(0.0, 1.0) : 0.0;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         children: [
-          if (onBack != null)
-            _roundBtn(Icons.close_rounded, const Color(0xFFFF4081), onBack!),
+          if (onBack != null) _backBtn(onBack!),
           Container(
             margin: const EdgeInsets.only(right: 8),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -309,37 +307,66 @@ class AmProgressBar extends StatelessWidget {
             ),
             child: Text(
               'මට්ටම $level',
-              style: const TextStyle(
+              style: GoogleFonts.fredoka(
                 color: Colors.white,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
             ),
           ),
           Expanded(
-            child: SizedBox(
-              height: 36,
-              child: CustomPaint(
-                painter: _PathPainter(answered: answered, total: total),
-                child: Align(
-                  alignment: Alignment(-1 + (answered / total.clamp(1, 9)) * 1.8, 0),
-                  child: _mascot(),
-                ),
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  children: [
+                    Container(
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: AppColors.textLight.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      height: 12,
+                      width: constraints.maxWidth * progress,
+                      decoration: BoxDecoration(
+                        color: AppColors.mint,
+                        borderRadius: BorderRadius.circular(6),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.mint.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.darkSlateLight,
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.diamond_rounded, color: Color(0xFFFF4081), size: 22),
+                const Icon(Icons.diamond_rounded, color: AppColors.gold, size: 20),
                 const SizedBox(width: 4),
-                Text('$coins',
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                Text(
+                  '$coins',
+                  style: GoogleFonts.fredoka(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: AppColors.gold,
+                  ),
+                ),
               ],
             ),
           ),
@@ -348,76 +375,34 @@ class AmProgressBar extends StatelessWidget {
     );
   }
 
-  Widget _roundBtn(IconData icon, Color color, VoidCallback onTap) {
+  Widget _backBtn(VoidCallback onTap) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: Material(
-        color: color,
-        shape: const CircleBorder(),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            child: Icon(icon, color: Colors.white, size: 22),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.textLight.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.textLight.withValues(alpha: 0.08)),
           ),
+          child: const Icon(Icons.arrow_back_rounded, color: AppColors.textLight, size: 22),
         ),
       ),
     );
   }
 
-  Widget _mascot() {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: const BoxDecoration(
-        color: Color(0xFF7E57C2),
-        shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
-      ),
-      child: const Icon(Icons.emoji_emotions_rounded, color: Color(0xFFFFEB3B), size: 24),
-    );
-  }
-
   Color _levelColor(int level) {
     return switch (level) {
-      1 => const Color(0xFF43A047),
-      3 => const Color(0xFFE53935),
-      _ => const Color(0xFF1565C0),
+      1 => AppColors.mintDark,
+      3 => AppColors.orange,
+      _ => AppColors.primaryLight,
     };
   }
 }
 
-class _PathPainter extends CustomPainter {
-  _PathPainter({required this.answered, required this.total});
-  final int answered;
-  final int total;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: .6)
-      ..strokeWidth = 4
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(8, size.height / 2), Offset(size.width - 8, size.height / 2), paint);
-    for (var i = 0; i < total.clamp(0, 9); i++) {
-      final x = 8 + (size.width - 16) * i / (total - 1).clamp(1, 8);
-      canvas.drawCircle(
-        Offset(x, size.height / 2),
-        6,
-        Paint()..color = i < answered ? const Color(0xFF00C853) : Colors.white.withValues(alpha: .8),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _PathPainter old) =>
-      old.answered != answered || old.total != total;
-}
-
-/// Big green next-style word button.
 class AmWordChoice extends StatelessWidget {
   const AmWordChoice({
     super.key,
@@ -437,9 +422,9 @@ class AmWordChoice extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: selected ? const Color(0xFFE8F5E9) : Colors.white,
+        color: selected ? AppColors.mint.withValues(alpha: 0.15) : AppColors.darkSlateLight,
         borderRadius: BorderRadius.circular(20),
-        elevation: 6,
+        elevation: 0,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
@@ -449,9 +434,18 @@ class AmWordChoice extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: selected ? const Color(0xFF00C853) : const Color(0xFFBBDEFB),
-                width: 3,
+                color: selected ? AppColors.mint : AppColors.textLight.withValues(alpha: 0.1),
+                width: 2,
               ),
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.mint.withValues(alpha: 0.25),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
             ),
             child: Row(
               children: [
@@ -460,10 +454,10 @@ class AmWordChoice extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF1565C0),
+                    style: GoogleFonts.fredoka(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w600,
+                      color: selected ? AppColors.mint : AppColors.textLight,
                     ),
                   ),
                 ),

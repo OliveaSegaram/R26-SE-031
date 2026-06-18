@@ -38,7 +38,13 @@ Words come from the **approved Grade 1 list** (31 Sinhala words with Tamil) in `
 
 ## Run backend
 
-From `intervention-service/`:
+From `intervention-service/task_02/`:
+
+```bat
+run_backend.bat
+```
+
+Or:
 
 ```bat
 python -m uvicorn main:app --reload --port 8000
@@ -93,7 +99,7 @@ Or use `run_android.bat`.
 2. Start backend on your Mac or PC (if PC, use LAN IP):
 
 ```bash
-cd intervention-service
+cd intervention-service/task_02
 python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 

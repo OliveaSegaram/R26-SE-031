@@ -169,7 +169,7 @@ def _word_visual(word: dict) -> str:
 
 
 def _build_word_match(word: dict, pool: list[dict], level: int) -> dict[str, Any]:
-    options = [word] + _distractors(pool, word, 2)
+    options = [word] + _distractors(pool, word, 3)
     random.shuffle(options)
     return {
         "task_type": "word_match",

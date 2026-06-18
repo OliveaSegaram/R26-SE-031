@@ -12,10 +12,16 @@ class PlayAudioService {
   PlayAudioService({String? baseUrl}) : baseUrl = baseUrl ?? AppConfig.baseUrl;
 
   final String baseUrl;
+  Future<void> _queue = Future<void>.value();
 
   Future<void> speak(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
+    _queue = _queue.then((_) => _speakNow(trimmed));
+    await _queue;
+  }
+
+  Future<void> _speakNow(String trimmed) async {
     try {
       final uri = Uri.parse('$baseUrl/api/v1/c4/tts').replace(
         queryParameters: {'text': trimmed, 'lang': 'si', 'kind': 'ui'},

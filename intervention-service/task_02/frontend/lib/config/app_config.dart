@@ -14,6 +14,13 @@ class AppConfig {
     if (custom.isNotEmpty) {
       return custom.replaceAll(RegExp(r'/+$'), '');
     }
+    // Web on phone: app at http://PC_IP:8080 → API at http://PC_IP:8000
+    if (kIsWeb) {
+      final host = Uri.base.host;
+      if (host.isNotEmpty && host != 'localhost' && host != '127.0.0.1') {
+        return 'http://$host:8000';
+      }
+    }
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       // Android emulator → host machine (use --dart-define on a real phone)
       return 'http://10.0.2.2:8000';

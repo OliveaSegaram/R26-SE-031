@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -7,8 +6,15 @@ import '../config/app_config.dart';
 import '../models/task_models.dart';
 import '../services/play_audio_service.dart';
 import '../services/task02_api.dart';
+import '../theme/app_theme.dart';
 import '../theme/play_theme.dart';
 import '../widgets/adapted_mind_ui.dart';
+import '../widgets/flip_card_question.dart';
+import '../widgets/gradient_button.dart';
+import '../widgets/playful_feedback_overlay.dart';
+import '../widgets/guided_word_match_view.dart';
+import '../widgets/guided_word_build_view.dart';
+import '../widgets/guided_picture_word_view.dart';
 import '../widgets/kid_art.dart';
 
 class TaskFlowScreen extends StatefulWidget {
@@ -42,6 +48,8 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
   List<MatchPair> _rightPairs = [];
   bool _matchWrongFlash = false;
   SessionSummary? _summary;
+  int _guidanceToken = 0;
+  final Set<String> _guidedTaskTypes = {};
 
   @override
   void initState() {
@@ -55,6 +63,7 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
       _error = null;
     });
     try {
+      _guidedTaskTypes.clear();
       final data = await _api.startSession();
       _sessionId = data['session_id'] as String?;
       final q = data['question'] as Map<String, dynamic>?;
@@ -98,6 +107,34 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
       }
       _loading = false;
     });
+    _scheduleGuidance();
+  }
+
+  void _scheduleGuidance() {
+    final token = ++_guidanceToken;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || token != _guidanceToken || _feedback != null) return;
+      await _speakTaskPrompt(_question);
+    });
+  }
+
+  Future<void> _speakTaskPrompt(TaskQuestion? q) async {
+    if (q == null) return;
+    final taskType = q.taskType;
+    if (taskType.isEmpty || _guidedTaskTypes.contains(taskType)) return;
+    _guidedTaskTypes.add(taskType);
+
+    final prompt = q.prompt.trim();
+    if (prompt.isNotEmpty) await _audio.speak(prompt);
+  }
+
+  Future<void> _speakQuestionWord(TaskQuestion q) async {
+    final word = switch (q.taskType) {
+      'word_match' => (q.displayWord ?? q.targetWord ?? '').trim(),
+      'word_build' => (q.targetWord ?? '').trim(),
+      _ => '',
+    };
+    if (word.isNotEmpty) await _audio.speak(word);
   }
 
   Future<void> _speak(String text) async => _audio.speak(text);
@@ -154,8 +191,11 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
         _feedback = feedback;
         _loading = false;
       });
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (mounted) setState(() => _feedback = null);
+      await Future.delayed(const Duration(milliseconds: kFeedbackDisplayMs));
+      if (mounted) {
+        setState(() => _feedback = null);
+        _scheduleGuidance();
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -247,7 +287,7 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
         _feedback = 'නැත! ආයෙ උත්සාහ කරමු!';
         _lastCorrect = false;
       });
-      Future.delayed(const Duration(milliseconds: 900), () {
+      Future.delayed(const Duration(milliseconds: kFeedbackDisplayMs), () {
         if (mounted) {
           setState(() {
             _matchWrongFlash = false;
@@ -267,11 +307,13 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
     if (_summary != null) return _ResultView(summary: _summary!, coins: _coins);
     if (_loading && _question == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: PlayTheme.purple)),
+        backgroundColor: AppColors.darkSlate,
+        body: Center(child: CircularProgressIndicator(color: AppColors.mint)),
       );
     }
     if (_error != null && _question == null) {
       return Scaffold(
+        backgroundColor: AppColors.darkSlate,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -279,15 +321,19 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.cloud_off_rounded,
-                    size: 48, color: PlayTheme.coral),
+                    size: 48, color: AppColors.orange),
                 const SizedBox(height: 12),
-                const Text('සේවාව සම්බන්ධ කරගත නොහැක',
-                    style: TextStyle(fontWeight: FontWeight.w800)),
+                Text('සේවාව සම්බන්ධ කරගත නොහැක',
+                    style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 8),
-                const Text('Backend:', style: TextStyle(fontWeight: FontWeight.w700)),
+                Text('Backend:', style: Theme.of(context).textTheme.bodyLarge),
                 Text(AppConfig.baseUrl, textAlign: TextAlign.center),
                 const SizedBox(height: 16),
-                ElevatedButton(onPressed: _start, child: const Text('නැවත')),
+                GradientButton(
+                  text: 'නැවත',
+                  width: 200,
+                  onPressed: _start,
+                ),
               ],
             ),
           ),
@@ -297,10 +343,14 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
 
     final q = _question!;
     return Scaffold(
+      backgroundColor: AppColors.darkSlate,
       body: AmBackground(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.symmetric(
+              horizontal: MediaQuery.sizeOf(context).width < 420 ? 6 : 12,
+              vertical: 10,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -311,24 +361,22 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
                   level: _level,
                   onBack: () => Navigator.pop(context),
                 ),
-                if (_feedback != null) ...[
-                  const SizedBox(height: 8),
-                  _FeedbackBanner(
-                    text: _feedback!,
-                    correct: _lastCorrect == true,
-                  ),
-                ],
                 const SizedBox(height: 10),
                 Expanded(
                   child: Stack(
                     children: [
                       _bodyFor(q),
+                      if (_feedback != null)
+                        PlayfulFeedbackOverlay(
+                          correct: _lastCorrect == true,
+                          message: _feedback,
+                        ),
                       if (_loading)
                         Container(
-                          color: Colors.black26,
+                          color: AppColors.darkSlate.withValues(alpha: 0.6),
                           child: const Center(
                             child: CircularProgressIndicator(
-                              color: Color(0xFF00C853),
+                              color: AppColors.mint,
                             ),
                           ),
                         ),
@@ -350,7 +398,7 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
           selectedId: _selectedId,
           showResult: _selectedId != null ? _lastCorrect : null,
           onPick: _tryAnswer,
-          onSpeak: _speak,
+          onSpeakWord: () => _speakQuestionWord(q),
         ),
       'picture_word' => _PictureWordView(
           question: q,
@@ -386,104 +434,29 @@ class _TaskFlowScreenState extends State<TaskFlowScreen> {
   }
 }
 
-class _FeedbackBanner extends StatelessWidget {
-  const _FeedbackBanner({required this.text, required this.correct});
-  final String text;
-  final bool correct;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedScale(
-      scale: 1,
-      duration: const Duration(milliseconds: 300),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        decoration: BoxDecoration(
-          color: (correct ? PlayTheme.teal : PlayTheme.sun)
-              .withValues(alpha: .2),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: correct ? PlayTheme.teal : PlayTheme.coral,
-            width: 2,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              correct ? Icons.check_circle_rounded : Icons.info_rounded,
-              color: correct ? PlayTheme.teal : PlayTheme.coral,
-            ),
-            const SizedBox(width: 8),
-            Text(text,
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w800)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _WordMatchView extends StatelessWidget {
   const _WordMatchView({
     required this.question,
     required this.onPick,
-    required this.onSpeak,
+    required this.onSpeakWord,
     this.selectedId,
     this.showResult,
   });
 
   final TaskQuestion question;
   final void Function(String) onPick;
-  final Future<void> Function(String) onSpeak;
+  final Future<void> Function() onSpeakWord;
   final String? selectedId;
   final bool? showResult;
 
   @override
   Widget build(BuildContext context) {
-    final word = question.displayWord ?? question.targetWord ?? '';
-    return Column(
-      children: [
-        AmWordHero(
-          word: word,
-          hint: question.prompt,
-          onSpeak: () => onSpeak(word),
-        ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final side = math.min(
-                (constraints.maxWidth - 24) / 3,
-                constraints.maxHeight,
-              ).clamp(150.0, 260.0);
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: question.options.map((o) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: SizedBox(
-                      width: side,
-                      height: side,
-                      child: AmBookCard(
-                        visual: o.visual,
-                        showLabel: false,
-                        height: side,
-                        bounce: selectedId == null && showResult == null,
-                        selected: selectedId == o.id,
-                        showResult: selectedId == o.id ? showResult : null,
-                        onTap: () => onPick(o.id),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-        ),
-      ],
+    return GuidedWordMatchView(
+      question: question,
+      selectedId: selectedId,
+      showResult: showResult,
+      onPick: onPick,
+      onSpeakWord: onSpeakWord,
     );
   }
 }
@@ -503,42 +476,11 @@ class _PictureWordView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            question.prompt,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              shadows: [
-                Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        AmPicturePanel(
-          visual: question.visual,
-          size: 220,
-        ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: ListView(
-            children: question.options.map((o) {
-              return AmWordChoice(
-                label: o.label,
-                selected: selectedId == o.id,
-                onTap: () => onPick(o.id),
-                onSpeak: () => onSpeak(o.label),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
+    return GuidedPictureWordView(
+      question: question,
+      selectedId: selectedId,
+      onPick: onPick,
+      onSpeak: onSpeak,
     );
   }
 }
@@ -566,148 +508,18 @@ class _WordBuildView extends StatelessWidget {
   final Future<void> Function(String) onSpeak;
   final VoidCallback onClear;
 
-  bool get _allFilled => !slots.any((s) => s.isEmpty);
-
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        AmPicturePanel(
-          visual: question.visual,
-          size: 200,
-          onTap: () => onSpeak(question.targetWord ?? ''),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          question.prompt,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
-        ),
-        if (feedback != null) ...[
-          const SizedBox(height: 6),
-          Text(
-            feedback!,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFFFFF176),
-            ),
-          ),
-        ],
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(slots.length, (i) {
-            final s = slots[i];
-            final box = slots.length > 5 ? 52.0 : 64.0;
-            final font = slots.length > 5 ? 26.0 : 32.0;
-            return GestureDetector(
-              onTap: () => onSlotTap(i),
-              child: Container(
-                width: box,
-                height: box + 8,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: s.isEmpty
-                        ? const Color(0xFFBBDEFB)
-                        : const Color(0xFF00C853),
-                    width: 3,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  s.isEmpty ? '?' : s,
-                  style: TextStyle(
-                    fontSize: font,
-                    fontWeight: FontWeight.w900,
-                    color: s.isEmpty ? Colors.grey : const Color(0xFF1565C0),
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextButton.icon(
-              onPressed: onClear,
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-              label: const Text('නැවත', style: TextStyle(color: Colors.white)),
-            ),
-            AmSpeakerBtn(
-              onTap: () => onSpeak(question.targetWord ?? ''),
-              size: 44,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            alignment: WrapAlignment.center,
-            children: tileBag.map((t) {
-              return Material(
-                elevation: 6,
-                borderRadius: BorderRadius.circular(20),
-                color: const Color(0xFFFFF176),
-                child: InkWell(
-                  onTap: () => onTile(t),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 18),
-                    child: Text(t,
-                        style: const TextStyle(
-                            fontSize: 32, fontWeight: FontWeight.w900)),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _allFilled ? onSubmit : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00C853),
-                disabledBackgroundColor: Colors.white38,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-              ),
-              child: const Text(
-                'හරි! ඊළඟ එක',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
+    return GuidedWordBuildView(
+      question: question,
+      slots: slots,
+      tileBag: tileBag,
+      feedback: feedback,
+      onTile: onTile,
+      onSlotTap: onSlotTap,
+      onSubmit: onSubmit,
+      onSpeak: onSpeak,
+      onClear: onClear,
     );
   }
 }
@@ -744,108 +556,84 @@ class _PictureWordMatchView extends StatelessWidget {
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            question.prompt,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              shadows: [
-                Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
-              ],
-            ),
-          ),
-        ),
+        FlipCardQuestion(text: question.prompt),
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               'යුගල $done / $total',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFFFFF176),
-              ),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontSize: 16,
+                    color: AppColors.gold,
+                  ),
             ),
             const SizedBox(width: 12),
             TextButton.icon(
               onPressed: onReset,
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
-              label: const Text('නැවත', style: TextStyle(color: Colors.white)),
+              icon: const Icon(Icons.refresh_rounded, color: AppColors.textMuted, size: 20),
+              label: Text('නැවත',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 14,
+                      )),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              // Balanced width: not full-screen, not too tiny.
-              final colWidth = math.min(
-                210.0,
-                math.max(185.0, constraints.maxWidth * 0.26),
-              );
-              return Center(
-                child: SizedBox(
-                  width: colWidth * 2 + 16,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(
-                        width: colWidth,
-                        child: _MatchColumn(
-                          title: 'සිංහල වචන',
-                          child: Column(
-                            children: leftPairs.map((p) {
-                              final matched = matchedWords.contains(p.id);
-                              final selected = selectedLeft == p.id;
-                              return Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 3),
-                                  child: _MatchWordTile(
-                                    word: p.word,
-                                    matched: matched,
-                                    selected: selected,
-                                    wrongFlash: wrongFlash && selected,
-                                    onTap: () => onLeftTap(p.id),
-                                    onSpeak: () => onSpeak(p.word),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _MatchColumn(
+                    title: 'සිංහල වචන',
+                    child: Column(
+                      children: leftPairs.map((p) {
+                        final matched = matchedWords.contains(p.id);
+                        final selected = selectedLeft == p.id;
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: _MatchWordTile(
+                              word: p.word,
+                              matched: matched,
+                              selected: selected,
+                              wrongFlash: wrongFlash && selected,
+                              onTap: () => onLeftTap(p.id),
+                              onSpeak: () => onSpeak(p.word),
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      SizedBox(
-                        width: colWidth,
-                        child: _MatchColumn(
-                          title: 'පින්තූර',
-                          child: Column(
-                            children: rightPairs.map((p) {
-                              final matched = matchedWords.contains(p.id);
-                              return Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 3),
-                                  child: _MatchPictureTile(
-                                    visual: p.visual,
-                                    matched: matched,
-                                    onTap: () => onRightTap(p.id),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                    ],
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
-              );
-            },
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _MatchColumn(
+                    title: 'පින්තූර',
+                    child: Column(
+                      children: rightPairs.map((p) {
+                        final matched = matchedWords.contains(p.id);
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: _MatchPictureTile(
+                              visual: p.visual,
+                              matched: matched,
+                              onTap: () => onRightTap(p.id),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -864,12 +652,12 @@ class _MatchColumn extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: Colors.white70,
-            letterSpacing: 0.5,
-          ),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+                letterSpacing: 0.5,
+              ),
         ),
         const SizedBox(height: 6),
         Expanded(child: child),
@@ -897,17 +685,17 @@ class _MatchWordTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bg = Colors.white;
-    Color border = const Color(0xFFBBDEFB);
+    Color bg = AppColors.darkSlateLight;
+    Color border = AppColors.textLight.withValues(alpha: 0.1);
     if (matched) {
-      bg = const Color(0xFFE8F5E9);
-      border = const Color(0xFF00C853);
+      bg = AppColors.mint.withValues(alpha: 0.15);
+      border = AppColors.mint;
     } else if (wrongFlash) {
-      bg = const Color(0xFFFFEBEE);
-      border = PlayTheme.coral;
+      bg = AppColors.orange.withValues(alpha: 0.12);
+      border = AppColors.orange;
     } else if (selected) {
-      bg = const Color(0xFFE3F2FD);
-      border = const Color(0xFF1565C0);
+      bg = AppColors.primaryLight.withValues(alpha: 0.35);
+      border = AppColors.mint;
     }
 
     return Material(
@@ -932,18 +720,17 @@ class _MatchWordTile extends StatelessWidget {
               if (matched)
                 const Padding(
                   padding: EdgeInsets.only(right: 4),
-                  child: Icon(Icons.check_circle_rounded, color: Color(0xFF00C853), size: 18),
+                  child: Icon(Icons.check_circle_rounded, color: AppColors.mint, size: 18),
                 ),
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     word,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: matched ? const Color(0xFF2E7D32) : const Color(0xFF1565C0),
-                    ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontSize: 20,
+                          color: matched ? AppColors.mint : AppColors.textLight,
+                        ),
                   ),
                 ),
               ),
@@ -951,7 +738,7 @@ class _MatchWordTile extends StatelessWidget {
                 const SizedBox(width: 2),
                 GestureDetector(
                   onTap: onSpeak,
-                  child: const Icon(Icons.volume_up_rounded, size: 18, color: Color(0xFF7E57C2)),
+                  child: const Icon(Icons.volume_up_rounded, size: 18, color: AppColors.orange),
                 ),
               ],
             ],
@@ -976,9 +763,9 @@ class _MatchPictureTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: matched ? const Color(0xFFE8F5E9) : Colors.white,
+      color: matched ? AppColors.mint.withValues(alpha: 0.12) : AppColors.darkSlateLight,
       borderRadius: BorderRadius.circular(16),
-      elevation: matched ? 0 : 4,
+      elevation: 0,
       child: InkWell(
         onTap: matched ? null : onTap,
         borderRadius: BorderRadius.circular(16),
@@ -986,8 +773,8 @@ class _MatchPictureTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: matched ? const Color(0xFF00C853) : const Color(0xFFBBDEFB),
-              width: matched ? 3 : 2,
+              color: matched ? AppColors.mint : AppColors.textLight.withValues(alpha: 0.1),
+              width: matched ? 2 : 1,
             ),
           ),
           child: Stack(
@@ -1002,7 +789,7 @@ class _MatchPictureTile extends StatelessWidget {
                   alignment: Alignment.topRight,
                   child: Padding(
                     padding: EdgeInsets.all(6),
-                    child: Icon(Icons.check_circle_rounded, color: Color(0xFF00C853), size: 24),
+                    child: Icon(Icons.check_circle_rounded, color: AppColors.mint, size: 24),
                   ),
                 ),
             ],
@@ -1027,38 +814,35 @@ class _ResultView extends StatelessWidget {
     };
 
     return Scaffold(
+      backgroundColor: AppColors.darkSlate,
       body: AmBackground(
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(28),
             child: Column(
               children: [
-                const Icon(Icons.emoji_events_rounded,
-                    size: 80, color: Color(0xFFFFD600)),
+                const Icon(Icons.emoji_events_rounded, size: 80, color: AppColors.gold),
                 const SizedBox(height: 12),
-                const Text('සුබ පැතුම්!',
-                    style: TextStyle(
-                        fontSize: 38,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white)),
+                Text('සුබ පැතුම්!',
+                    style: Theme.of(context).textTheme.displaySmall),
                 const SizedBox(height: 8),
                 Text('+$coins කාසි',
-                    style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFFFFF176))),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.gold,
+                        )),
                 const SizedBox(height: 20),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.darkSlateLight,
                     borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [
+                    border: Border.all(color: AppColors.mint.withValues(alpha: 0.25)),
+                    boxShadow: [
                       BoxShadow(
-                        color: Colors.black12,
+                        color: Colors.black.withValues(alpha: 0.25),
                         blurRadius: 16,
-                        offset: Offset(0, 8),
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
@@ -1066,44 +850,30 @@ class _ResultView extends StatelessWidget {
                     children: [
                       Text(
                         '${(summary.accuracy * 100).round()}%',
-                        style: TextStyle(
-                          fontSize: 64,
-                          fontWeight: FontWeight.w900,
-                          color: color,
-                        ),
+                        style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                              fontSize: 56,
+                              color: color,
+                            ),
                       ),
-                      const Text('නිවැරදි',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700, fontSize: 20)),
+                      Text('නිවැරදි',
+                          style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 12),
                       Text(
                         summary.labelSi,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          height: 1.35,
-                        ),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              height: 1.35,
+                            ),
                       ),
                     ],
                   ),
                 ),
                 const Spacer(),
-                SizedBox(
-                  width: double.infinity,
+                GradientButton(
+                  text: 'නැවත ක්‍රීඩා කරමු',
                   height: 58,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00C853),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    child: const Text('නැවත ක්‍රීඩා කරමු',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.w900)),
-                  ),
+                  gradient: AppColors.mintGradient,
+                  onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),

@@ -2,12 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// Grade 1 picture cards — bundled PNG scaled to fill the card.
+/// Grade 1 picture cards — JPG / PNG in assets/pictures/, emoji fallback.
 class KidArt extends StatelessWidget {
   const KidArt({super.key, required this.visual, this.letter});
 
   final String visual;
   final String? letter;
+
+  /// Tried in order when loading (first match wins).
+  static const pictureExtensions = ['jpg', 'jpeg', 'png'];
 
   static const _assetVisuals = {
     'house', 'tree', 'bird', 'water', 'river', 'sun', 'moon', 'stars',
@@ -71,11 +74,18 @@ class KidArt extends StatelessWidget {
     'dance': '💃',
   };
 
+  /// Mobile-friendly export: 512×512 JPG, ~80–150 KB, square, light background.
+  static List<String> assetPathCandidates(String visual) {
+    if (!_assetVisuals.contains(visual)) return const [];
+    return pictureExtensions
+        .map((ext) => 'assets/pictures/$visual.$ext')
+        .toList();
+  }
+
+  /// First preferred path (for docs / tooling).
   static String? assetPath(String visual) {
-    if (_assetVisuals.contains(visual)) {
-      return 'assets/pictures/$visual.png';
-    }
-    return null;
+    final paths = assetPathCandidates(visual);
+    return paths.isEmpty ? null : paths.first;
   }
 
   static Color bgColor(String visual) {
@@ -121,7 +131,7 @@ class KidArt extends StatelessWidget {
       );
     }
 
-    final path = assetPath(visual);
+    final paths = assetPathCandidates(visual);
     return LayoutBuilder(
       builder: (context, constraints) {
         final pad = math.min(constraints.maxWidth, constraints.maxHeight) * 0.06;
@@ -138,15 +148,8 @@ class KidArt extends StatelessWidget {
           alignment: Alignment.center,
           child: Padding(
             padding: EdgeInsets.all(pad.clamp(6, 18)),
-            child: path != null
-                ? Image.asset(
-                    path,
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                    errorBuilder: (_, __, ___) => _emojiFallback(visual, constraints),
-                  )
+            child: paths.isNotEmpty
+                ? _PictureAsset(paths: paths, fallback: _emojiFallback(visual, constraints))
                 : _emojiFallback(visual, constraints),
           ),
         );
@@ -160,6 +163,32 @@ class KidArt extends StatelessWidget {
       _emoji[visual] ?? '❓',
       style: TextStyle(fontSize: size, height: 1),
       textAlign: TextAlign.center,
+    );
+  }
+}
+
+/// Tries JPG → JPEG → PNG until one loads.
+class _PictureAsset extends StatelessWidget {
+  const _PictureAsset({required this.paths, required this.fallback});
+
+  final List<String> paths;
+  final Widget fallback;
+
+  @override
+  Widget build(BuildContext context) {
+    return _imageAt(0);
+  }
+
+  Widget _imageAt(int index) {
+    if (index >= paths.length) return fallback;
+    return Image.asset(
+      paths[index],
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      gaplessPlayback: true,
+      errorBuilder: (_, __, ___) => _imageAt(index + 1),
     );
   }
 }

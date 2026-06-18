@@ -1,6 +1,6 @@
 {
-  "source": "Authoritative Grade 1 word list — these 31 words only",
-  "visual_note": "PNG in assets/pictures/ with emoji fallback",
+  "source": "Authoritative Grade 1 word list — these 30 words only",
+  "visual_note": "JPG or PNG in assets/pictures/ (e.g. cat.jpg) — 512×512 recommended for mobile",
   "lessons": [
     {
       "id": 1,
@@ -59,7 +59,7 @@
       "title": "කෑම බීම",
       "words": [
         {"word": "කෑම", "tamil": "உணவு", "visual": "food", "meaning": "අපි කන දේ", "syllables": ["කෑ", "ම"], "lesson_ref": "පාඩම 6"},
-        {"word": "පළතුරු", "tamil": "பழங்கள்", "visual": "apple", "meaning": "ගස්වල ඵල", "syllables": ["පළ", "තු", "රු"], "lesson_ref": "පාඩම 6"},
+        {"word": "පළතුරු", "tamil": "பழங்கள்", "visual": "fruit", "meaning": "ගස්වල ඵල", "syllables": ["පළ", "තු", "රු"], "lesson_ref": "පාඩම 6"},
         {"word": "කිරි", "tamil": "பால்", "visual": "milk", "meaning": "බොන කිරි", "syllables": ["කි", "රි"], "lesson_ref": "පාඩම 6"}
       ]
     },
@@ -71,7 +71,6 @@
         {"word": "සඳ", "tamil": "நிலா", "visual": "moon", "meaning": "රෑ පායන දේ", "syllables": ["ස", "ඳ"], "lesson_ref": "පාඩම 7"},
         {"word": "උදේ", "tamil": "காலை", "visual": "morning", "meaning": "උදෑසන", "syllables": ["උ", "දේ"], "lesson_ref": "පාඩම 7"},
         {"word": "රෑ", "tamil": "இரவு", "visual": "night", "meaning": "රාත්‍රිය", "syllables": ["රෑ"], "lesson_ref": "පාඩම 7"},
-        {"word": "අවුරුදු", "tamil": "புத்தாண்டு", "visual": "celebration", "meaning": "නව වසර", "syllables": ["අ", "වු", "රු", "දු"], "lesson_ref": "පාඩම 7"},
         {"word": "ඇඳුම්", "tamil": "உடைகள்", "visual": "clothes", "meaning": "ඇඳුම්", "syllables": ["ඇ", "ඳු", "ම්"], "lesson_ref": "පාඩම 7"}
       ]
     }

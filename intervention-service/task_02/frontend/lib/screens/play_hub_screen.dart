@@ -1,6 +1,11 @@
-import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../theme/app_theme.dart';
 import '../widgets/adapted_mind_ui.dart';
+import '../widgets/gradient_button.dart';
 import '../widgets/kid_art.dart';
 import 'task_flow_screen.dart';
 
@@ -10,121 +15,121 @@ class PlayHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.darkSlate,
       body: AmBackground(
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              children: [
-                const SizedBox(height: 24),
-                Row(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const buttonBlock = 54.0 + 16.0 + 8.0;
+              final contentHeight = math.max(0, constraints.maxHeight - buttonBlock);
+              final pictureSize = math
+                  .min(constraints.maxWidth * 0.38, contentHeight * 0.42)
+                  .clamp(80.0, 180.0);
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF7E57C2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.emoji_emotions_rounded,
-                        color: Color(0xFFFFEB3B),
-                        size: 34,
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 16),
+                            Text(
+                              'Adapted Mind',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.fredoka(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.orange,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'ආයුබෝවන්!',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.nunito(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                            Text(
+                              'පළමු ශ්‍රේණිය — කියවීම',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.fredoka(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textLight,
+                              ),
+                            ),
+                            SizedBox(height: math.max(16, constraints.maxHeight * 0.04)),
+                            Center(
+                              child: Container(
+                                width: pictureSize,
+                                height: pictureSize,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: AppColors.mint.withValues(alpha: 0.35),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.mint.withValues(alpha: 0.15),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: const KidArt(visual: 'book'),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              'පින්තූර, වචන, සහ කොටස්\nක්‍රීඩාව එකටම එනවා!',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.nunito(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textLight,
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'මධ්‍යම මට්ටමෙන් පටන් ගන්නවා.\nවැරදුණොත් සරල මට්ටමට යනවා.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.nunito(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textMuted,
+                                height: 1.45,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'ආයුබෝවන්!',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            'පළමු ශ්‍රේණිය — කියවීම',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16, top: 8),
+                      child: GradientButton(
+                        text: 'පටන් ගමු!',
+                        icon: Icons.play_arrow_rounded,
+                        height: 54,
+                        gradient: AppColors.mintGradient,
+                        onPressed: () => _start(context),
                       ),
                     ),
                   ],
                 ),
-                const Spacer(),
-                SizedBox(
-                  width: 200,
-                  height: 200,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: const KidArt(visual: 'book'),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'පින්තූර, වචන, සහ කොටස්\nක්‍රීඩාව එකටම එනවා!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    height: 1.35,
-                    shadows: [
-                      Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'මධ්‍යම මට්ටමෙන් පටන් ගන්නවා.\nවැරදුණොත් සරල මට්ටමට යනවා.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xE6FFFFFF),
-                    height: 1.4,
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  height: 68,
-                  child: ElevatedButton(
-                    onPressed: () => _start(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00C853),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(34),
-                      ),
-                      elevation: 10,
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.play_arrow_rounded, size: 40),
-                        SizedBox(width: 10),
-                        Text(
-                          'පටන් ගමු!',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 28),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
