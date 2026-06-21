@@ -34,7 +34,13 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     {'label': '🏆', 'title': 'Complete!', 'type': 'trophy', 'completed': false},
   ];
 
-  // Characters are now integrated into the background image
+  // Characters placed alongside the path for decoration
+  final List<Map<String, dynamic>> _decorCharacters = [
+    {'asset': 'assets/images/solo_pink.png', 'atLevel': 1, 'side': 'right'},
+    {'asset': 'assets/images/solo_green.png', 'atLevel': 4, 'side': 'left'},
+    {'asset': 'assets/images/solo_yellow.png', 'atLevel': 7, 'side': 'right'},
+    {'asset': 'assets/images/solo_teal.png', 'atLevel': 9, 'side': 'left'},
+  ];
 
   @override
   void initState() {
@@ -54,8 +60,12 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     // Each node is roughly 120px apart, scroll to show current level centered
     final targetScroll = currentLevel * 120.0 - 200;
     if (_scrollController.hasClients && targetScroll > 0) {
+      final clampedScroll = targetScroll.clamp(
+        0.0,
+        _scrollController.position.maxScrollExtent,
+      );
       _scrollController.animateTo(
-        targetScroll,
+        clampedScroll,
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeOut,
       );
@@ -88,57 +98,95 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           SingleChildScrollView(
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
-            child: Container(
+            child: SizedBox(
               width: screenWidth,
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/backgrounds/story_map_bg.png'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.only(top: 120, bottom: 40),
-                child: Stack(
-                  children: [
-                    // Dotted path connecting nodes
-                    CustomPaint(
-                      size: Size(screenWidth, levels.length * 120.0),
-                      painter: PathPainter(
+              height: levels.length * 120.0 + 160, // total scrollable height
+              child: Stack(
+                children: [
+                  // ── Layer 1: GREYSCALE background (always visible) ──
+                  Positioned.fill(
+                    child: ColorFiltered(
+                      colorFilter: const ColorFilter.matrix(<double>[
+                        0.2126, 0.7152, 0.0722, 0, 0,
+                        0.2126, 0.7152, 0.0722, 0, 0,
+                        0.2126, 0.7152, 0.0722, 0, 0,
+                        0,      0,      0,      1, 0,
+                      ]),
+                      child: Image.asset(
+                        'assets/images/backgrounds/story_bg.png',
+                        fit: BoxFit.cover,
+                        width: screenWidth,
+                        height: levels.length * 120.0 + 160,
+                      ),
+                    ),
+                  ),
+
+                  // ── Layer 2: COLORED background revealed at completed nodes ──
+                  Positioned.fill(
+                    child: ClipPath(
+                      clipper: CompletedZoneClipper(
                         levels: levels,
                         currentLevel: currentLevel,
                         getNodeX: (i) => _getNodeX(i, screenWidth),
                         nodeSpacing: 120.0,
+                        topPadding: 120.0,
+                      ),
+                      child: Image.asset(
+                        'assets/images/backgrounds/story_bg.png',
+                        fit: BoxFit.cover,
+                        width: screenWidth,
+                        height: levels.length * 120.0 + 160,
                       ),
                     ),
+                  ),
 
-
-
-                    // Level nodes
-                    ...List.generate(levels.length, (index) {
-                      final level = levels[index];
-                      final nodeX = _getNodeX(index, screenWidth);
-                      final nodeY = index * 120.0 + 20;
-                      final isCompleted = level['completed'] as bool;
-                      final isCurrent = index == currentLevel;
-                      final isLocked = index > currentLevel;
-
-                      return Positioned(
-                        left: nodeX - 32,
-                        top: nodeY,
-                        child: _buildNode(
-                          level: level,
-                          index: index,
-                          isCompleted: isCompleted,
-                          isCurrent: isCurrent,
-                          isLocked: isLocked,
+                  // ── Map content overlay ──
+                  Padding(
+                    padding: const EdgeInsets.only(top: 120, bottom: 40),
+                    child: Stack(
+                      children: [
+                        // Dotted path connecting nodes
+                        CustomPaint(
+                          size: Size(screenWidth, levels.length * 120.0),
+                          painter: PathPainter(
+                            levels: levels,
+                            currentLevel: currentLevel,
+                            getNodeX: (i) => _getNodeX(i, screenWidth),
+                            nodeSpacing: 120.0,
+                          ),
                         ),
-                      );
-                    }),
 
-                    // Character avatar on current level
-                    _buildPlayerCharacter(screenWidth),
-                  ],
-                ),
+                        // Decorative characters alongside the path
+                        ..._buildDecoCharacters(screenWidth),
+
+                        // Level nodes
+                        ...List.generate(levels.length, (index) {
+                          final level = levels[index];
+                          final nodeX = _getNodeX(index, screenWidth);
+                          final nodeY = index * 120.0 + 20;
+                          final isCompleted = level['completed'] as bool;
+                          final isCurrent = index == currentLevel;
+                          final isLocked = index > currentLevel;
+
+                          return Positioned(
+                            left: nodeX - 32,
+                            top: nodeY,
+                            child: _buildNode(
+                              level: level,
+                              index: index,
+                              isCompleted: isCompleted,
+                              isCurrent: isCurrent,
+                              isLocked: isLocked,
+                            ),
+                          );
+                        }),
+
+                        // Character avatar on current level
+                        _buildPlayerCharacter(screenWidth),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -410,6 +458,59 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   }
 
 
+  // ═══════════════════════════════════════
+  // DECORATIVE CHARACTERS
+  // ═══════════════════════════════════════
+  List<Widget> _buildDecoCharacters(double screenWidth) {
+    return _decorCharacters.map((deco) {
+      final atLevel = deco['atLevel'] as int;
+      final side = deco['side'] as String;
+      final asset = deco['asset'] as String;
+      
+      // Top to bottom positioning
+      final nodeY = atLevel * 120.0 - 15;
+      final nodeX = _getNodeX(atLevel, screenWidth);
+
+      double xPos;
+      if (side == 'left') {
+        xPos = nodeX - 130;
+      } else {
+        xPos = nodeX + 70;
+      }
+
+      // Clamp to screen bounds
+      xPos = xPos.clamp(4.0, screenWidth - 104.0);
+
+      final isReached = atLevel <= currentLevel;
+
+      Widget characterImage = Image.asset(
+        asset,
+        width: 100,
+        height: 100,
+        fit: BoxFit.contain,
+      );
+
+      // Greyscale the character if level hasn't been reached yet
+      if (!isReached) {
+        characterImage = ColorFiltered(
+          colorFilter: const ColorFilter.matrix(<double>[
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0.2126, 0.7152, 0.0722, 0, 0,
+            0,      0,      0,      1, 0,
+          ]),
+          child: Opacity(opacity: 0.5, child: characterImage),
+        );
+      }
+
+      return Positioned(
+        left: xPos,
+        top: nodeY,
+        child: characterImage,
+      );
+    }).toList();
+  }
+
 }
 
 // ═══════════════════════════════════════
@@ -431,14 +532,14 @@ class PathPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final completedPaint = Paint()
-      ..color = const Color(0xFF2DD4A8) // AppColors.mint
-      ..strokeWidth = 5
+      ..color = AppColors.orange // Vibrant orange for high visibility on pastel background
+      ..strokeWidth = 6
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     final lockedPaint = Paint()
-      ..color = Colors.grey.shade300
-      ..strokeWidth = 5
+      ..color = Colors.white.withValues(alpha: 0.6) // Subtle semi-transparent white for locked paths
+      ..strokeWidth = 6
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
@@ -483,4 +584,47 @@ class PathPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+// ═══════════════════════════════════════
+// COMPLETED ZONE CLIPPER
+// Reveals the colored background from the top
+// down to the current level position
+// ═══════════════════════════════════════
+class CompletedZoneClipper extends CustomClipper<Path> {
+  final List<Map<String, dynamic>> levels;
+  final int currentLevel;
+  final double Function(int) getNodeX;
+  final double nodeSpacing;
+  final double topPadding;
+
+  CompletedZoneClipper({
+    required this.levels,
+    required this.currentLevel,
+    required this.getNodeX,
+    required this.nodeSpacing,
+    required this.topPadding,
+  });
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+
+    // Color up everything from the top down to the current level's position
+    // After completing task N, the area above task N+1 is fully colored
+    // If at the last level, color the entire background
+    final isLastLevel = currentLevel >= levels.length - 1;
+    final revealHeight = isLastLevel
+        ? size.height
+        : topPadding + currentLevel * nodeSpacing + 20 + 32;
+
+    path.addRect(Rect.fromLTWH(0, 0, size.width, revealHeight));
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CompletedZoneClipper oldClipper) {
+    return oldClipper.currentLevel != currentLevel;
+  }
 }
