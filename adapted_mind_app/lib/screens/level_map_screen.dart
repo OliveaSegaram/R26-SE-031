@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import 'math_game_screen.dart';
-
+import 'games/letter_bubble_game.dart';
+import 'games/word_start_letter_game.dart';
+import 'games/letter_identification_task.dart';
+import 'games/syllable_train_game.dart';
+import 'games/firefly_tracking_game.dart';
 class LevelMapScreen extends StatefulWidget {
   const LevelMapScreen({super.key});
 
@@ -17,12 +21,12 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   final ScrollController _scrollController = ScrollController();
 
   // Current progress (0-indexed)
-  int currentLevel = 2; // Player has completed levels 0,1 and is on level 2
+  int currentLevel = 0; // Player starts at level 0
 
   // Level data
   final List<Map<String, dynamic>> levels = [
-    {'label': '1', 'title': 'අ', 'type': 'lesson', 'completed': true},
-    {'label': '2', 'title': 'ආ', 'type': 'lesson', 'completed': true},
+    {'label': '1', 'title': 'අ', 'type': 'lesson', 'completed': false},
+    {'label': '2', 'title': 'ආ', 'type': 'lesson', 'completed': false},
     {'label': '3', 'title': 'ඇ', 'type': 'lesson', 'completed': false},
     {'label': '⭐', 'title': 'Review', 'type': 'star', 'completed': false},
     {'label': '4', 'title': 'ඈ', 'type': 'lesson', 'completed': false},
@@ -364,12 +368,43 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     }
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (!isLocked) {
-          Navigator.push(
+          Widget nextScreen;
+          switch (index) {
+            case 0:
+              nextScreen = const LetterBubbleGame();
+              break;
+            case 1:
+              nextScreen = const WordStartLetterGame();
+              break;
+            case 2:
+              nextScreen = const LetterIdentificationTask();
+              break;
+            case 3:
+              nextScreen = const SyllableTrainGame(); // Currently mapped to star node
+              break;
+            case 4:
+              nextScreen = const FireflyTrackingGame();
+              break;
+            default:
+              nextScreen = const MathGameScreen();
+          }
+
+          final result = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const MathGameScreen()),
+            MaterialPageRoute(builder: (context) => nextScreen),
           );
+
+          if (result == true && index == currentLevel) {
+            setState(() {
+              levels[currentLevel]['completed'] = true;
+              if (currentLevel < levels.length - 1) {
+                currentLevel++;
+              }
+            });
+            _scrollToCurrentLevel();
+          }
         }
       },
       child: SizedBox(
