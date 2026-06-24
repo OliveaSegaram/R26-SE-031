@@ -59,7 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           // Blurred Background
           Image.asset(
-            'assets/images/backgrounds/new-map.png',
+            'assets/images/backgrounds/story_bg.png',
             fit: BoxFit.cover,
           ),
           BackdropFilter(
