@@ -2,12 +2,16 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
-import 'math_game_screen.dart';
-import 'games/letter_bubble_game.dart';
-import 'games/word_start_letter_game.dart';
-import 'games/letter_identification_task.dart';
-import 'games/syllable_train_game.dart';
-import 'games/firefly_tracking_game.dart';
+import 'games/visual_skills/activity1_spot_difference.dart';
+import 'games/visual_skills/activity2_pattern.dart';
+import 'games/visual_skills/activity3_missing_picture.dart';
+import 'games/visual_skills/activity4_visual_memory.dart';
+import 'games/visual_skills/activity5_category_sorting.dart';
+import 'games/visual_skills/activity6_hidden_shape.dart';
+import 'games/visual_skills/activity7_size_ordering.dart';
+import 'games/visual_skills/activity8_position.dart';
+import 'games/visual_skills/activity9_sequence.dart';
+import 'games/visual_skills/activity10_shadow_match.dart';
 class LevelMapScreen extends StatefulWidget {
   const LevelMapScreen({super.key});
 
@@ -22,19 +26,19 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
   // Current progress (0-indexed)
   int currentLevel = 0; // Player starts at level 0
+  bool _isNavigating = false; // Guard to prevent double pushes
 
-  // Level data
+  // Level data - 10 Visual Skills Tasks
   final List<Map<String, dynamic>> levels = [
-    {'label': '1', 'title': 'අ', 'type': 'lesson', 'completed': false},
-    {'label': '2', 'title': 'ආ', 'type': 'lesson', 'completed': false},
-    {'label': '3', 'title': 'ඇ', 'type': 'lesson', 'completed': false},
-    {'label': '⭐', 'title': 'Review', 'type': 'star', 'completed': false},
-    {'label': '4', 'title': 'ඈ', 'type': 'lesson', 'completed': false},
-    {'label': '5', 'title': 'ඉ', 'type': 'lesson', 'completed': false},
-    {'label': '6', 'title': 'ඊ', 'type': 'lesson', 'completed': false},
-    {'label': '⭐', 'title': 'Review', 'type': 'star', 'completed': false},
-    {'label': '7', 'title': 'උ', 'type': 'lesson', 'completed': false},
-    {'label': '8', 'title': 'ඌ', 'type': 'lesson', 'completed': false},
+    {'label': '1', 'title': 'Spot Diff', 'type': 'lesson', 'completed': false},
+    {'label': '2', 'title': 'Pattern', 'type': 'lesson', 'completed': false},
+    {'label': '3', 'title': 'Missing', 'type': 'lesson', 'completed': false},
+    {'label': '4', 'title': 'Memory', 'type': 'lesson', 'completed': false},
+    {'label': '5', 'title': 'Category', 'type': 'lesson', 'completed': false},
+    {'label': '6', 'title': 'Hidden', 'type': 'lesson', 'completed': false},
+    {'label': '7', 'title': 'Size', 'type': 'lesson', 'completed': false},
+    {'label': '8', 'title': 'Position', 'type': 'lesson', 'completed': false},
+    {'label': '9', 'title': 'Sequence', 'type': 'lesson', 'completed': false},
     {'label': '🏆', 'title': 'Complete!', 'type': 'trophy', 'completed': false},
   ];
 
@@ -57,7 +61,18 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     // Scroll to current level after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToCurrentLevel();
+      _autoStartFirstLevel();
     });
+  }
+
+  void _autoStartFirstLevel() {
+    if (currentLevel == 0 && !(levels[0]['completed'] as bool)) {
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted && currentLevel == 0 && !_isNavigating) {
+          _navigateToLevel(0);
+        }
+      });
+    }
   }
 
   void _scrollToCurrentLevel() {
@@ -198,51 +213,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           // ── Top Header Bar ──
           _buildTopHeader(),
 
-          // ── Dev Tools (Temporary Navigation) ──
-          Positioned(
-            bottom: 30,
-            right: 20,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton.small(
-                  heroTag: 'prev',
-                  onPressed: () {
-                    if (currentLevel > 0) {
-                      setState(() {
-                        levels[currentLevel]['completed'] = false;
-                        currentLevel--;
-                      });
-                      _scrollToCurrentLevel();
-                    }
-                  },
-                  backgroundColor: Colors.white,
-                  elevation: 4,
-                  child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primary, size: 18),
-                ),
-                const SizedBox(width: 8),
-                FloatingActionButton.extended(
-                  heroTag: 'next',
-                  onPressed: () {
-                    if (currentLevel < levels.length - 1) {
-                      setState(() {
-                        levels[currentLevel]['completed'] = true;
-                        currentLevel++;
-                      });
-                      _scrollToCurrentLevel();
-                    }
-                  },
-                  backgroundColor: AppColors.mint,
-                  elevation: 4,
-                  icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-                  label: Text(
-                    'Complete Task',
-                    style: GoogleFonts.fredoka(color: Colors.white, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // No dev tools buttons in production
         ],
       ),
     );
@@ -296,8 +267,8 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           // Title
           Expanded(
             child: Text(
-              'Sinhala Letters',
-              style: GoogleFonts.fredoka(
+              'හැඩ හඳුනාගැනීම',
+              style: GoogleFonts.notoSansSinhala(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -368,43 +339,9 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     }
 
     return GestureDetector(
-      onTap: () async {
+      onTap: () {
         if (!isLocked) {
-          Widget nextScreen;
-          switch (index) {
-            case 0:
-              nextScreen = const LetterBubbleGame();
-              break;
-            case 1:
-              nextScreen = const WordStartLetterGame();
-              break;
-            case 2:
-              nextScreen = const LetterIdentificationTask();
-              break;
-            case 3:
-              nextScreen = const SyllableTrainGame(); // Currently mapped to star node
-              break;
-            case 4:
-              nextScreen = const FireflyTrackingGame();
-              break;
-            default:
-              nextScreen = const MathGameScreen();
-          }
-
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => nextScreen),
-          );
-
-          if (result == true && index == currentLevel) {
-            setState(() {
-              levels[currentLevel]['completed'] = true;
-              if (currentLevel < levels.length - 1) {
-                currentLevel++;
-              }
-            });
-            _scrollToCurrentLevel();
-          }
+          _navigateToLevel(index);
         }
       },
       child: SizedBox(
@@ -546,7 +483,73 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     }).toList();
   }
 
+  Future<void> _navigateToLevel(int index) async {
+    if (_isNavigating) return;
+    _isNavigating = true;
+
+    Widget nextScreen;
+    switch (index) {
+      case 0:
+        nextScreen = const Activity1SpotDifference();
+        break;
+      case 1:
+        nextScreen = const Activity2Pattern();
+        break;
+      case 2:
+        nextScreen = const Activity3MissingPicture();
+        break;
+      case 3:
+        nextScreen = const Activity4VisualMemory();
+        break;
+      case 4:
+        nextScreen = const Activity5CategorySorting();
+        break;
+      case 5:
+        nextScreen = const Activity6HiddenShape();
+        break;
+      case 6:
+        nextScreen = const Activity7SizeOrdering();
+        break;
+      case 7:
+        nextScreen = const Activity8Position();
+        break;
+      case 8:
+        nextScreen = const Activity9Sequence();
+        break;
+      case 9:
+        nextScreen = const Activity10ShadowMatch();
+        break;
+      default:
+        nextScreen = const Activity1SpotDifference();
+    }
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => nextScreen),
+    );
+
+    _isNavigating = false;
+
+    if (result == true && index == currentLevel) {
+      setState(() {
+        levels[currentLevel]['completed'] = true;
+        if (currentLevel < levels.length - 1) {
+          currentLevel++;
+        }
+      });
+      _scrollToCurrentLevel();
+      
+      // Auto-start next level after returning to the map
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && currentLevel == index + 1 && !_isNavigating) {
+          _navigateToLevel(currentLevel);
+        }
+      });
+    }
+  }
+
 }
+
 
 // ═══════════════════════════════════════
 // PATH PAINTER (dotted trail between nodes)
