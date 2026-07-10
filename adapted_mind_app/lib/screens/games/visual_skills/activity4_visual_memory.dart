@@ -50,15 +50,26 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
   void _toggleSelection(String item) async {
     if (_isComplete) return;
 
+    bool reachedLimit = false;
+
     setState(() {
       if (_selectedItems.contains(item)) {
         _selectedItems.remove(item);
       } else {
-        _selectedItems.add(item);
+        if (_selectedItems.length < _targetItems.length) {
+          _selectedItems.add(item);
+        } else {
+          reachedLimit = true;
+        }
       }
     });
 
-    _checkCompletion();
+    if (reachedLimit) {
+      // User tried to select an 8th item, play error
+      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+    } else {
+      _checkCompletion();
+    }
   }
   
   void _checkCompletion() async {
@@ -73,6 +84,9 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) Navigator.pop(context, true);
         });
+      } else {
+        // Reached 7 items but they are not all correct
+        await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
       }
     }
   }
@@ -156,7 +170,7 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
                 ),
               ] else ...[
                 Text(
-                  'ඔබට මතක රූප තෝරන්න',
+                  'ඔබට මතක රූප තෝරන්න\n(${_selectedItems.length} / ${_targetItems.length})',
                   style: GoogleFonts.notoSansSinhala(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
