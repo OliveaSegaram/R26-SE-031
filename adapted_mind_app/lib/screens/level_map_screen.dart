@@ -416,13 +416,15 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       curve: Curves.easeInOutCubic,
       left: nodeX - 30,
       top: nodeY + 2,
-      child: Container(
-        width: 60,
-        height: 60,
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/solo_blue.png'),
-            fit: BoxFit.contain,
+      child: IgnorePointer(
+        child: Container(
+          width: 60,
+          height: 60,
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/solo_blue.png'),
+              fit: BoxFit.contain,
+            ),
           ),
         ),
       ),
@@ -478,7 +480,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       return Positioned(
         left: xPos,
         top: nodeY,
-        child: characterImage,
+        child: IgnorePointer(child: characterImage),
       );
     }).toList();
   }
