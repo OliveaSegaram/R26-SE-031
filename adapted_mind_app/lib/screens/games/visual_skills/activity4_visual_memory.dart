@@ -87,6 +87,15 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
       } else {
         // Reached 7 items but they are not all correct
         await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+        
+        // Auto-deselect incorrect items after a short delay for visual feedback
+        Future.delayed(const Duration(milliseconds: 800), () {
+          if (mounted) {
+            setState(() {
+              _selectedItems.removeWhere((item) => !_targetItems.contains(item));
+            });
+          }
+        });
       }
     }
   }
