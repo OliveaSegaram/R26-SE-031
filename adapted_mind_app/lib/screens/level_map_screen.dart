@@ -487,64 +487,66 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     if (_isNavigating) return;
     _isNavigating = true;
 
-    Widget nextScreen;
-    switch (index) {
-      case 0:
-        nextScreen = const Activity1SpotDifference();
-        break;
-      case 1:
-        nextScreen = const Activity2Pattern();
-        break;
-      case 2:
-        nextScreen = const Activity3MissingPicture();
-        break;
-      case 3:
-        nextScreen = const Activity4VisualMemory();
-        break;
-      case 4:
-        nextScreen = const Activity5CategorySorting();
-        break;
-      case 5:
-        nextScreen = const Activity6HiddenShape();
-        break;
-      case 6:
-        nextScreen = const Activity7SizeOrdering();
-        break;
-      case 7:
-        nextScreen = const Activity8Position();
-        break;
-      case 8:
-        nextScreen = const Activity9Sequence();
-        break;
-      case 9:
-        nextScreen = const Activity10ShadowMatch();
-        break;
-      default:
-        nextScreen = const Activity1SpotDifference();
-    }
+    try {
+      Widget nextScreen;
+      switch (index) {
+        case 0:
+          nextScreen = const Activity1SpotDifference();
+          break;
+        case 1:
+          nextScreen = const Activity2Pattern();
+          break;
+        case 2:
+          nextScreen = const Activity3MissingPicture();
+          break;
+        case 3:
+          nextScreen = const Activity4VisualMemory();
+          break;
+        case 4:
+          nextScreen = const Activity5CategorySorting();
+          break;
+        case 5:
+          nextScreen = const Activity6HiddenShape();
+          break;
+        case 6:
+          nextScreen = const Activity7SizeOrdering();
+          break;
+        case 7:
+          nextScreen = const Activity8Position();
+          break;
+        case 8:
+          nextScreen = const Activity9Sequence();
+          break;
+        case 9:
+          nextScreen = const Activity10ShadowMatch();
+          break;
+        default:
+          nextScreen = const Activity1SpotDifference();
+      }
 
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => nextScreen),
-    );
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => nextScreen),
+      );
 
-    _isNavigating = false;
-
-    if (result == true && index == currentLevel) {
-      setState(() {
-        levels[currentLevel]['completed'] = true;
-        if (currentLevel < levels.length - 1) {
-          currentLevel++;
-        }
-      });
-      _scrollToCurrentLevel();
-      
-      // Auto-start next level after returning to the map
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted && currentLevel == index + 1 && !_isNavigating) {
-          _navigateToLevel(currentLevel);
-        }
-      });
+      if (result == true && index == currentLevel) {
+        setState(() {
+          levels[currentLevel]['completed'] = true;
+          if (currentLevel < levels.length - 1) {
+            currentLevel++;
+          }
+        });
+        _scrollToCurrentLevel();
+        
+        // Auto-start next level after returning to the map
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && currentLevel == index + 1 && !_isNavigating) {
+            _navigateToLevel(currentLevel);
+          }
+        });
+      }
+    } finally {
+      _isNavigating = false;
     }
   }
 
