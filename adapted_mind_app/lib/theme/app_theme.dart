@@ -27,6 +27,7 @@ class AppColors {
   static const Color darkSlate = Color(0xFF0E1E33); // Dark bg (navy-tinted)
   static const Color darkSlateLight = Color(0xFF172D4A); // Card bg
   static const Color cream = Color(0xFFFFFDF7); // Light bg
+  static const Color backgroundLight = Color(0xFFF4F7F9); // Light blueish-grey bg
   static const Color warmGrey = Color(0xFFF5F0EB);
   static const Color textDark = Color(0xFF1B3A5C);
   static const Color textLight = Color(0xFFF0F4F8);
