@@ -3,7 +3,7 @@ import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/speech_bubble.dart';
 import '../widgets/gradient_button.dart';
-import 'onboarding_intro_screen.dart';
+import 'select_student_screen.dart';
 
 /// Screen 3: Character Introduction
 /// Monster introduces itself with speech bubble and typewriter effect.
@@ -150,7 +150,7 @@ class _CharacterIntroScreenState extends State<CharacterIntroScreen>
                             PageRouteBuilder(
                               pageBuilder: (context, animation,
                                       secondaryAnimation) =>
-                                  const OnboardingIntroScreen(),
+                                  const SelectStudentScreen(),
                               transitionsBuilder: (context, animation,
                                   secondaryAnimation, child) {
                                 return SlideTransition(

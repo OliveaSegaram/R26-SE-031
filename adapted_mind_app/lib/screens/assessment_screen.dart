@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../theme/app_theme.dart';
 import '../models/assessment_question.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/flip_card_question.dart';
 import '../widgets/pressable_game_button.dart';
-import 'calculating_results_screen.dart';
+import 'parent_account_screen.dart';
 
 class AssessmentScreen extends StatefulWidget {
   const AssessmentScreen({super.key});
@@ -18,13 +18,13 @@ class AssessmentScreen extends StatefulWidget {
 class _AssessmentScreenState extends State<AssessmentScreen> {
   // Tracking current question
   int _currentIndex = 0;
-  int _totalScore = 0;
+
 
   // Track the selected answer for the CURRENT page. 
   // null = nothing selected, true = Yes, false = No.
   bool? _currentSelection;
 
-  final List<AssessmentQuestion> _questions = AssessmentQuestion.allQuestions;
+  final List<AssessmentQuestion> _questions = AssessmentQuestion.allQuestions.take(10).toList();
 
   @override
   void dispose() {
@@ -40,10 +40,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   void _onContinue() {
     if (_currentSelection == null) return;
 
-    // Add score if Yes
-    if (_currentSelection == true) {
-      _totalScore += _questions[_currentIndex].yesWeight;
-    }
+
 
     if (_currentIndex < _questions.length - 1) {
       // Go to next question
@@ -60,7 +57,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   void _navigateToResults() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => CalculatingResultsScreen(score: _totalScore),
+        builder: (context) => const ParentAccountScreen(),
       ),
     );
   }

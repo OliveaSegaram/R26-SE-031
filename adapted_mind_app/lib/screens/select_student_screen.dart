@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import 'dashboard_screen.dart';
+import 'parent_account_screen.dart';
+import 'assessment_screen.dart';
+import 'add_student_screen.dart';
 
 class SelectStudentScreen extends StatelessWidget {
   const SelectStudentScreen({super.key});
@@ -164,8 +167,11 @@ class SelectStudentScreen extends StatelessWidget {
                         icon: Icons.person_outline,
                         label: 'Parent Account',
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Parent Account settings coming soon!')),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ParentAccountScreen(),
+                            ),
                           );
                         },
                       ),
@@ -174,8 +180,11 @@ class SelectStudentScreen extends StatelessWidget {
                         icon: Icons.add_circle_outline,
                         label: 'Add Student',
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Add Student feature coming soon!')),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AddStudentScreen(),
+                            ),
                           );
                         },
                       ),

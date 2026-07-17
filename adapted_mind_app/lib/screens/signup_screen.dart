@@ -3,7 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
-import 'assessment_screen.dart';
+
+import 'character_intro_screen.dart';
 
 /// Screen 5: Sign In / Sign In
 /// Form with large kid-friendly inputs, social login options,
@@ -253,7 +254,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                               onPressed: () {
                                 Navigator.of(context).pushReplacement(
                                   MaterialPageRoute(
-                                    builder: (context) => const AssessmentScreen(),
+                                    builder: (context) => const CharacterIntroScreen(),
                                   ),
                                 );
                               },
