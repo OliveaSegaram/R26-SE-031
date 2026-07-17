@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
-import 'character_intro_screen.dart';
+
 import 'signin_screen.dart';
+import 'signup_screen.dart';
 
 /// Screen 2: Welcome / Get Started
 /// Updated to precisely match the Collaboo design layout, but using original Adapted Mind assets and colors.
@@ -247,7 +248,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           style: GoogleFonts.nunito(
                             fontSize: 17,
                             fontWeight: FontWeight.w500,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             height: 1.4,
                           ),
                         ),
@@ -262,7 +263,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               PageRouteBuilder(
                                 pageBuilder: (context, animation,
                                         secondaryAnimation) =>
-                                    const CharacterIntroScreen(),
+                                    const SignUpScreen(),
                                 transitionsBuilder: (context, animation,
                                     secondaryAnimation, child) {
                                   return SlideTransition(
