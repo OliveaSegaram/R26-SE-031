@@ -3,20 +3,21 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
+import '../services/auth_service.dart';
+import 'signup_screen.dart';
+import 'select_student_screen.dart';
 
-import 'character_intro_screen.dart';
-
-/// Screen 5: Sign In / Sign In
+/// Screen 5: Sign In / Sign Up
 /// Form with large kid-friendly inputs, social login options,
 /// and a peek-a-boo character in the corner.
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class SignInScreen extends StatefulWidget {
+  const SignInScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen>
+class _SignInScreenState extends State<SignInScreen>
     with TickerProviderStateMixin {
   late AnimationController _contentController;
   late AnimationController _monsterPeekController;
@@ -26,7 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen>
   late Animation<Offset> _monsterPeekAnimation;
 
   bool _obscurePassword = true;
-  final _nameController = TextEditingController();
+  bool _isLoading = false;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -55,8 +56,8 @@ class _SignUpScreenState extends State<SignUpScreen>
       vsync: this,
     );
     _monsterPeekAnimation = Tween<Offset>(
-      begin: const Offset(100, 100),
-      end: const Offset(-5, -30), // Moved right so arm isn't cut off, and further up
+      begin: const Offset(-100, 100),
+      end: const Offset(5, -30), // Moved right so arm isn't cut off, and further up
     ).animate(
       CurvedAnimation(
         parent: _monsterPeekController,
@@ -74,7 +75,6 @@ class _SignUpScreenState extends State<SignUpScreen>
   void dispose() {
     _contentController.dispose();
     _monsterPeekController.dispose();
-    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -170,7 +170,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Create an Account!',
+                              'Welcome Back!',
                               style: GoogleFonts.fredoka(
                                 fontSize: 30,
                                 fontWeight: FontWeight.w700,
@@ -179,7 +179,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Join the adventure today!',
+                              'Enter your details to continue the adventure',
                               style: GoogleFonts.nunito(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w400,
@@ -200,21 +200,11 @@ class _SignUpScreenState extends State<SignUpScreen>
                         opacity: _contentFade,
                         child: Column(
                           children: [
-                            // Name field
-                            _buildInputField(
-                              controller: _nameController,
-                              hint: 'Full Name',
-                              icon: Icons.person_outline_rounded,
-                              keyboardType: TextInputType.name,
-                            ),
-
-                            const SizedBox(height: 16),
-
                             // Email field
                             _buildInputField(
                               controller: _emailController,
                               hint: 'Email or Username',
-                              icon: Icons.alternate_email_rounded,
+                              icon: Icons.person_rounded,
                               keyboardType: TextInputType.emailAddress,
                             ),
 
@@ -249,16 +239,45 @@ class _SignUpScreenState extends State<SignUpScreen>
                             const SizedBox(height: 20),
 
                             // Sign in button
-                            GradientButton(
-                              text: 'SIGN UP',
-                              onPressed: () {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(
-                                    builder: (context) => const CharacterIntroScreen(),
+                            _isLoading
+                                ? const Center(child: CircularProgressIndicator(color: AppColors.orange))
+                                : GradientButton(
+                                    text: 'SIGN IN',
+                                    onPressed: () async {
+                                      final email = _emailController.text;
+                                      final password = _passwordController.text;
+                                      if (email.isEmpty || password.isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Please enter your email and password.')),
+                                        );
+                                        return;
+                                      }
+
+                                      setState(() { _isLoading = true; });
+
+                                      final error = await AuthService().login(email, password);
+
+                                      if (!mounted) return;
+                                      setState(() { _isLoading = false; });
+
+                                      if (error == null) {
+                                        // Login success!
+                                        Navigator.of(context).pushReplacement(
+                                          MaterialPageRoute(
+                                            builder: (context) => const SelectStudentScreen(),
+                                          ),
+                                        );
+                                      } else {
+                                        // Show error
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(error),
+                                            backgroundColor: Colors.red.shade400,
+                                          ),
+                                        );
+                                      }
+                                    },
                                   ),
-                                );
-                              },
-                            ),
 
                             const SizedBox(height: 28),
 
@@ -328,7 +347,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  "Already have an account? ",
+                                  "Don't have an account? ",
                                   style: GoogleFonts.nunito(
                                     color: AppColors.textMuted,
                                     fontSize: 14,
@@ -336,10 +355,14 @@ class _SignUpScreenState extends State<SignUpScreen>
                                 ),
                                 GestureDetector(
                                   onTap: () {
-                                    Navigator.of(context).pop();
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const SignUpScreen(),
+                                      ),
+                                    );
                                   },
                                   child: Text(
-                                    'Sign In',
+                                    'Sign Up',
                                     style: GoogleFonts.nunito(
                                       color: AppColors.orange,
                                       fontWeight: FontWeight.w700,
@@ -378,7 +401,7 @@ class _SignUpScreenState extends State<SignUpScreen>
           // Character peek-a-boo from bottom left
           Positioned(
             bottom: 0,
-            right: 0,
+            left: 0,
             child: AnimatedBuilder(
               animation: _monsterPeekAnimation,
               builder: (context, child) {
@@ -391,7 +414,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                 size: 110,
                 animation: MonsterAnimation.idle,
                 showBody: true,
-                imagePath: 'assets/images/solo_pink_up.png',
+                imagePath: 'assets/images/solo_green.png',
               ),
             ),
           ),
