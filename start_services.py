@@ -39,6 +39,7 @@ SERVICES = [
     {"name": "C2-AVLI", "path": "visual-service-v1", "port": 8014, "desc": "Adaptive Visual Learning Interface"},
     {"name": "C3-PLCE", "path": "content-service-v1", "port": 8012, "desc": "Content Engine"},
     {"name": "C4-IIGE", "path": "intervention-service-v1", "port": 8013, "desc": "Intervention Engine"},
+    {"name": "C5-AUTH", "path": "backend/auth-service-v1", "port": 8015, "desc": "Authentication Engine"},
 ]
 
 def check_port_available(port):
@@ -205,13 +206,13 @@ def start_single(service_name):
 
     service = None
     for svc in SERVICES:
-        if svc['name'].replace('-', '').upper() == service_name or svc['path'].split('-')[0].upper() == service_name:
+        if svc['name'].split('-')[0].upper() == service_name or svc['name'].replace('-', '').upper() == service_name or svc['path'].split('-')[0].upper() == service_name:
             service = svc
             break
 
     if not service:
         print(f"[ERROR] Unknown service: {service_name}")
-        print(f"  Available: C1, C2, C3, C4")
+        print(f"  Available: C1, C2, C3, C4, C5")
         return
 
     print("\n" + "=" * 70)
@@ -247,6 +248,6 @@ if __name__ == "__main__":
             start_single(arg)
         else:
             print(f"[ERROR] Unknown argument: {arg}")
-            print("Usage: python start_services.py [--test|--c1|--c2|--c3|--c4]")
+            print("Usage: python start_services.py [--test|--c1|--c2|--c3|--c4|--c5]")
     else:
         run_all()
