@@ -21,7 +21,7 @@ SERVICES = [
     {"name": "C2 Visual",     "path": "visual-service-v1",     "port": 8014},
     {"name": "C3 Content",    "path": "content-service-v1",    "port": 8012},
     {"name": "C4 Intervention", "path": "intervention-service-v1", "port": 8013},
-    {"name": "C5 Auth",       "path": "backend/auth-service-v1",       "port": 8015},
+    {"name": "C5 Auth",       "path": "app/backend/auth-service-v1",       "port": 8015},
 ]
 
 def run():

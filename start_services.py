@@ -39,7 +39,7 @@ SERVICES = [
     {"name": "C2-AVLI", "path": "visual-service-v1", "port": 8014, "desc": "Adaptive Visual Learning Interface"},
     {"name": "C3-PLCE", "path": "content-service-v1", "port": 8012, "desc": "Content Engine"},
     {"name": "C4-IIGE", "path": "intervention-service-v1", "port": 8013, "desc": "Intervention Engine"},
-    {"name": "C5-AUTH", "path": "backend/auth-service-v1", "port": 8015, "desc": "Authentication Engine"},
+    {"name": "C5-AUTH", "path": "app/backend/auth-service-v1", "port": 8015, "desc": "Authentication Engine"},
 ]
 
 def check_port_available(port):

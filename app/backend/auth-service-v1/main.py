@@ -19,7 +19,7 @@ from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 # Allow importing from shared/
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from shared.database import connect_to_mongo, close_mongo_connection, get_db
 from models import UserCreate, UserLogin, Token, UserResponse
