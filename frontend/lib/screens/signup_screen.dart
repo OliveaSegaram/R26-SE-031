@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
+import '../services/auth_service.dart';
 
 import 'character_intro_screen.dart';
 
@@ -26,6 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen>
   late Animation<Offset> _monsterPeekAnimation;
 
   bool _obscurePassword = true;
+  bool _isLoading = false;
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -249,16 +251,46 @@ class _SignUpScreenState extends State<SignUpScreen>
                             const SizedBox(height: 20),
 
                             // Sign in button
-                            GradientButton(
-                              text: 'SIGN UP',
-                              onPressed: () {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(
-                                    builder: (context) => const CharacterIntroScreen(),
+                            _isLoading
+                                ? const Center(child: CircularProgressIndicator(color: AppColors.orange))
+                                : GradientButton(
+                                    text: 'SIGN UP',
+                                    onPressed: () async {
+                                      final name = _nameController.text;
+                                      final email = _emailController.text;
+                                      final password = _passwordController.text;
+
+                                      if (name.isEmpty || email.isEmpty || password.isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Please fill in all fields.')),
+                                        );
+                                        return;
+                                      }
+
+                                      setState(() { _isLoading = true; });
+
+                                      final error = await AuthService().signup(name, email, password);
+
+                                      if (!mounted) return;
+                                      setState(() { _isLoading = false; });
+
+                                      if (error == null) {
+                                        // Auto-login or just proceed to the intro
+                                        Navigator.of(context).pushReplacement(
+                                          MaterialPageRoute(
+                                            builder: (context) => const CharacterIntroScreen(),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(error),
+                                            backgroundColor: Colors.red.shade400,
+                                          ),
+                                        );
+                                      }
+                                    },
                                   ),
-                                );
-                              },
-                            ),
 
                             const SizedBox(height: 28),
 

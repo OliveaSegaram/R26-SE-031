@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
+import '../services/auth_service.dart';
 import 'signup_screen.dart';
 import 'select_student_screen.dart';
 
@@ -26,6 +27,7 @@ class _SignInScreenState extends State<SignInScreen>
   late Animation<Offset> _monsterPeekAnimation;
 
   bool _obscurePassword = true;
+  bool _isLoading = false;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -237,16 +239,45 @@ class _SignInScreenState extends State<SignInScreen>
                             const SizedBox(height: 20),
 
                             // Sign in button
-                            GradientButton(
-                              text: 'SIGN IN',
-                              onPressed: () {
-                                Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute(
-                                    builder: (context) => const SelectStudentScreen(),
+                            _isLoading
+                                ? const Center(child: CircularProgressIndicator(color: AppColors.orange))
+                                : GradientButton(
+                                    text: 'SIGN IN',
+                                    onPressed: () async {
+                                      final email = _emailController.text;
+                                      final password = _passwordController.text;
+                                      if (email.isEmpty || password.isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Please enter your email and password.')),
+                                        );
+                                        return;
+                                      }
+
+                                      setState(() { _isLoading = true; });
+
+                                      final error = await AuthService().login(email, password);
+
+                                      if (!mounted) return;
+                                      setState(() { _isLoading = false; });
+
+                                      if (error == null) {
+                                        // Login success!
+                                        Navigator.of(context).pushReplacement(
+                                          MaterialPageRoute(
+                                            builder: (context) => const SelectStudentScreen(),
+                                          ),
+                                        );
+                                      } else {
+                                        // Show error
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(error),
+                                            backgroundColor: Colors.red.shade400,
+                                          ),
+                                        );
+                                      }
+                                    },
                                   ),
-                                );
-                              },
-                            ),
 
                             const SizedBox(height: 28),
 
