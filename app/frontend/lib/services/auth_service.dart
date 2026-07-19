@@ -145,4 +145,122 @@ class AuthService {
       return 'Failed to connect to the server.';
     }
   }
+
+  /// Add a student under the current parent
+  Future<String?> addStudent(Map<String, dynamic> studentData) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/students'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(studentData),
+      );
+
+      if (response.statusCode == 201) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        } else if (data['detail'] is List) {
+          final err = data['detail'][0];
+          final field = err['loc']?.last?.toString() ?? 'Field';
+          return '$field: ${err['msg']}';
+        }
+        return 'Failed to add student.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Update an existing student
+  Future<String?> updateStudent(String studentId, Map<String, dynamic> studentData) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.put(
+        Uri.parse('$_baseUrl/students/$studentId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(studentData),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        } else if (data['detail'] is List) {
+          final err = data['detail'][0];
+          final field = err['loc']?.last?.toString() ?? 'Field';
+          return '$field: ${err['msg']}';
+        }
+        return 'Failed to update student.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Get list of students for current parent
+  Future<List<dynamic>> getStudents() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return [];
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/students'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Verify parent password
+  Future<String?> verifyPassword(String password) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/verify-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        }
+        return 'Incorrect password.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
 }
