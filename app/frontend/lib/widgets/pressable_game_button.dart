@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
+/// Dyslexia-accessible pressable game button.
+/// Green for yes, coral for no — both on warm white unselected state.
 class PressableGameButton extends StatefulWidget {
   final String text;
   final IconData icon;
@@ -62,11 +63,15 @@ class _PressableGameButtonState extends State<PressableGameButton>
   Widget build(BuildContext context) {
     final bgColor = widget.isSelected 
         ? widget.activeColor 
-        : AppColors.darkSlateLight;
+        : AppColors.cardSurface;
     
     final textColor = widget.isSelected 
-        ? AppColors.darkSlate 
-        : AppColors.textLight;
+        ? Colors.white 
+        : AppColors.textPrimary;
+
+    final borderColor = widget.isSelected
+        ? widget.activeColor
+        : AppColors.borderLight;
 
     return GestureDetector(
       onTapDown: _onTapDown,
@@ -86,18 +91,14 @@ class _PressableGameButtonState extends State<PressableGameButton>
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: widget.isSelected ? widget.activeColor : AppColors.textLight.withValues(alpha: 0.1), 
-              width: 2
-            ),
+            border: Border.all(color: borderColor, width: 2),
             boxShadow: [
-              // 3D bottom shadow
               BoxShadow(
                 color: widget.isSelected 
-                    ? widget.activeColor.withValues(alpha: 0.4) 
-                    : Colors.black.withValues(alpha: 0.5),
-                offset: widget.isSelected ? const Offset(0, 2) : const Offset(0, 8),
-                blurRadius: widget.isSelected ? 10 : 0,
+                    ? widget.activeColor.withValues(alpha: 0.3) 
+                    : AppColors.shadow,
+                offset: widget.isSelected ? const Offset(0, 2) : const Offset(0, 4),
+                blurRadius: widget.isSelected ? 10 : 4,
               ),
             ],
           ),
@@ -112,9 +113,9 @@ class _PressableGameButtonState extends State<PressableGameButton>
               const SizedBox(width: 16),
               Text(
                 widget.text,
-                style: GoogleFonts.nunito(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
+                style: AppTypography.body(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
                   color: textColor,
                 ),
               ),

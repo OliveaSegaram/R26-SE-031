@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
 /// A vibrant gradient button with press animation for kid-friendly UI.
+/// Dyslexia-accessible: calm blue gradient, sentence case, 18pt+ text.
 class GradientButton extends StatefulWidget {
   final String text;
   final VoidCallback onPressed;
@@ -10,6 +10,8 @@ class GradientButton extends StatefulWidget {
   final double width;
   final double height;
   final IconData? icon;
+  final Color? textColor;
+  final Color? iconColor;
 
   const GradientButton({
     super.key,
@@ -19,6 +21,8 @@ class GradientButton extends StatefulWidget {
     this.width = double.infinity,
     this.height = 56,
     this.icon,
+    this.textColor,
+    this.iconColor,
   });
 
   @override
@@ -69,14 +73,18 @@ class _GradientButtonState extends State<GradientButton>
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
-            gradient: widget.gradient ?? AppColors.primaryGradient,
+            gradient: widget.gradient ?? AppColors.blueButtonGradient,
             borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
-                color: (widget.gradient?.colors.first ?? AppColors.orange)
-                    .withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 5),
+                color: AppColors.calmBlueDark.withValues(alpha: 0.35),
+                blurRadius: 15,
+                offset: const Offset(0, 6),
+                spreadRadius: -2,
               ),
             ],
           ),
@@ -84,16 +92,14 @@ class _GradientButtonState extends State<GradientButton>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (widget.icon != null) ...[
-                Icon(widget.icon, color: Colors.white, size: 22),
+                Icon(widget.icon, color: widget.iconColor ?? Colors.white, size: 22),
                 const SizedBox(width: 10),
               ],
               Text(
                 widget.text,
-                style: GoogleFonts.fredoka(
+                style: AppTypography.button(
                   fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                  letterSpacing: 1.2,
+                  color: widget.textColor ?? Colors.white,
                 ),
               ),
             ],
@@ -163,20 +169,20 @@ class _OutlinedGradientButtonState extends State<OutlinedGradientButton>
           width: double.infinity,
           height: 56,
           decoration: BoxDecoration(
+            color: AppColors.warmWhite,
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: AppColors.textLight.withValues(alpha: 0.25),
+              color: AppColors.calmBlue.withValues(alpha: 0.4),
               width: 2,
             ),
           ),
           child: Center(
             child: Text(
               widget.text,
-              style: GoogleFonts.fredoka(
+              style: AppTypography.button(
                 fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textLight.withValues(alpha: 0.7),
-                letterSpacing: 0.8,
+                fontWeight: FontWeight.w600,
+                color: AppColors.calmBlue,
               ),
             ),
           ),

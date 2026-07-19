@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
 /// Animated speech bubble with typewriter text effect.
-/// Pops in with a scale animation, then types out text character by character.
+/// Dyslexia-accessible: mint green bg, dark grey text, enhanced spacing.
 class SpeechBubble extends StatefulWidget {
   final String text;
   final double maxWidth;
@@ -12,7 +11,7 @@ class SpeechBubble extends StatefulWidget {
   const SpeechBubble({
     super.key,
     required this.text,
-    this.maxWidth = 280,
+    this.maxWidth = 300,
     this.delay = const Duration(milliseconds: 400),
   });
 
@@ -75,19 +74,24 @@ class _SpeechBubbleState extends State<SpeechBubble>
         children: [
           Container(
             constraints: BoxConstraints(maxWidth: widget.maxWidth),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
             decoration: BoxDecoration(
-              color: AppColors.darkSlate.withValues(alpha: 0.6), // Translucent dark background instead of white
+              color: AppColors.mintBg,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.orange.withValues(alpha: 0.8), // Highlight border
+                color: AppColors.gentleGreen.withValues(alpha: 0.5),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.orange.withValues(alpha: 0.15), // Neon glow
-                  blurRadius: 20,
+                  color: AppColors.gentleGreen.withValues(alpha: 0.15),
+                  blurRadius: 16,
                   spreadRadius: 2,
+                ),
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -99,13 +103,12 @@ class _SpeechBubbleState extends State<SpeechBubble>
                 final displayText = _characters.take(charCount).join();
                 return Text(
                   displayText,
-                  style: GoogleFonts.nunito(
+                  style: AppTypography.body(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textLight, // Bright text instead of dark text
-                    height: 1.4,
+                    color: AppColors.textBrown,
                   ),
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.left,
                 );
               },
             ),
@@ -125,7 +128,7 @@ class _BubbleTailPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.orange.withValues(alpha: 0.8)
+      ..color = AppColors.gentleGreen.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
     final path = Path()
@@ -135,6 +138,19 @@ class _BubbleTailPainter extends CustomPainter {
       ..close();
 
     canvas.drawPath(path, paint);
+
+    // Fill the inside with mintBg
+    final fillPaint = Paint()
+      ..color = AppColors.mintBg
+      ..style = PaintingStyle.fill;
+
+    final fillPath = Path()
+      ..moveTo(1.5, 0)
+      ..lineTo(size.width / 2, size.height - 2)
+      ..lineTo(size.width - 1.5, 0)
+      ..close();
+
+    canvas.drawPath(fillPath, fillPaint);
   }
 
   @override
