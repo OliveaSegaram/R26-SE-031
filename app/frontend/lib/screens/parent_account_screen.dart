@@ -4,6 +4,7 @@ import '../../theme/app_theme.dart';
 import 'welcome_screen.dart'; // For logout routing
 import 'assessment_screen.dart';
 import 'add_student_screen.dart';
+import 'dashboard_screen.dart';
 import '../services/auth_service.dart';
 class ParentAccountScreen extends StatefulWidget {
   const ParentAccountScreen({super.key});
@@ -22,6 +23,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
   bool _isLoading = true;
   String _userName = 'Loading...';
   String _userEmail = 'Loading...';
+  List<dynamic> _students = [];
 
   @override
   void initState() {
@@ -31,9 +33,12 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
 
   Future<void> _loadUserProfile() async {
     final profile = await AuthService().getUserProfile();
+    final students = await AuthService().getStudents();
+    
     if (mounted) {
       setState(() {
         _isLoading = false;
+        _students = students;
         if (profile != null) {
           _userName = profile['name'] ?? 'Unknown';
           _userEmail = profile['email'] ?? 'Unknown';
@@ -164,30 +169,86 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          // Student 1
-          Row(
-            children: [
-              Expanded(flex: 2, child: _buildTableData('Alex')),
-              Expanded(flex: 1, child: _buildTableData('3rd')),
-              Expanded(
-                flex: 2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.darkSlate,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+          if (_students.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'No students added yet. Add a student to get started!',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+              ),
+            )
+          else
+            ..._students.map((student) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: InkWell(
+                  onTap: () {
+                    // Navigate to child's dashboard
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DashboardScreen(studentData: student as Map<String, dynamic>),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(10),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('No Limit', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textLight)),
-                      const Icon(Icons.arrow_drop_down, color: AppColors.textMuted),
+                      Expanded(
+                        flex: 2, 
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: AppColors.darkSlateLight,
+                              backgroundImage: AssetImage(student['avatar_url'] ?? 'assets/images/solo_blue.png'),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(child: _buildTableData(student['first_name'] ?? 'Unknown')),
+                          ],
+                        ),
+                      ),
+                      Expanded(flex: 1, child: _buildTableData(student['grade'] ?? 'N/A')),
+                      Expanded(
+                        flex: 2,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.darkSlate,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(student['daily_limit'] ?? 'No Limit', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textLight)),
+                                    const Icon(Icons.arrow_drop_down, color: AppColors.textMuted),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AddStudentScreen(editStudentData: student as Map<String, dynamic>),
+                                  ),
+                                );
+                              },
+                              child: const Icon(Icons.edit, color: AppColors.mint, size: 20),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
+              );
+            }),
           const SizedBox(height: 20),
           Align(
             alignment: Alignment.centerLeft,

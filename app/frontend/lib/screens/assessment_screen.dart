@@ -6,10 +6,13 @@ import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/flip_card_question.dart';
 import '../widgets/pressable_game_button.dart';
+import '../services/auth_service.dart';
 import 'parent_account_screen.dart';
 
 class AssessmentScreen extends StatefulWidget {
-  const AssessmentScreen({super.key});
+  final Map<String, dynamic>? studentData;
+
+  const AssessmentScreen({super.key, this.studentData});
 
   @override
   State<AssessmentScreen> createState() => _AssessmentScreenState();
@@ -18,11 +21,14 @@ class AssessmentScreen extends StatefulWidget {
 class _AssessmentScreenState extends State<AssessmentScreen> {
   // Tracking current question
   int _currentIndex = 0;
-
+  bool _isLoading = false;
 
   // Track the selected answer for the CURRENT page. 
   // null = nothing selected, true = Yes, false = No.
   bool? _currentSelection;
+
+  // Track all answers
+  final List<bool> _answers = [];
 
   final List<AssessmentQuestion> _questions = AssessmentQuestion.allQuestions.take(10).toList();
 
@@ -40,25 +46,63 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   void _onContinue() {
     if (_currentSelection == null) return;
 
-
+    if (_answers.length == _currentIndex) {
+      _answers.add(_currentSelection!);
+    } else {
+      _answers[_currentIndex] = _currentSelection!;
+    }
 
     if (_currentIndex < _questions.length - 1) {
       // Go to next question
       setState(() {
         _currentIndex++;
-        _currentSelection = null; // Reset selection for next question
+        _currentSelection = _answers.length > _currentIndex ? _answers[_currentIndex] : null;
       });
     } else {
       // Finish assessment
+      _submitAssessment();
+    }
+  }
+
+  Future<void> _submitAssessment() async {
+    if (widget.studentData == null) {
+      _navigateToResults();
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final data = Map<String, dynamic>.from(widget.studentData!);
+    data['assessment_results'] = _answers;
+
+    final error = await AuthService().addStudent(data);
+    
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: Colors.red),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Student added successfully!'), backgroundColor: Colors.green),
+      );
       _navigateToResults();
     }
   }
 
   void _navigateToResults() {
-    Navigator.of(context).pushReplacement(
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (context) => const ParentAccountScreen(),
       ),
+      (route) => false,
     );
   }
 
@@ -69,8 +113,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.darkSlate,
-      body: SafeArea(
-        child: Column(
+      body: _isLoading 
+          ? const Center(child: CircularProgressIndicator(color: AppColors.mint))
+          : SafeArea(
+              child: Column(
           children: [
             // Top Bar: Back button + Progress Bar
             Padding(
@@ -145,22 +191,23 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     return Padding(
       key: ValueKey<int>(index), // Essential for AnimatedSwitcher to know it changed
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Breathing Quiz Master character
-          const MonsterCharacter(
-            size: 140,
-            animation: MonsterAnimation.idle,
-            imagePath: 'assets/images/quiz_master.png',
-          ),
-          
-          const SizedBox(height: 10),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Breathing Quiz Master character
+            const MonsterCharacter(
+              size: 140,
+              animation: MonsterAnimation.idle,
+              imagePath: 'assets/images/quiz_master.png',
+            ),
+            
+            const SizedBox(height: 10),
 
-          // 3D Flipping Flashcard
-          FlipCardQuestion(
-            text: question.questionText,
-          ),
+            // 3D Flipping Flashcard
+            FlipCardQuestion(
+              text: question.questionText,
+            ),
           
           const SizedBox(height: 40),
 
@@ -184,6 +231,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             activeColor: AppColors.orange,
           ),
         ],
+      ),
       ),
     );
   }
