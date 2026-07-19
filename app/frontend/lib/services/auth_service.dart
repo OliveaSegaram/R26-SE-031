@@ -8,7 +8,7 @@ class AuthService {
   static String get _baseUrl {
     if (kIsWeb) return 'http://127.0.0.1:8015/api/v1/auth';
     if (Platform.isAndroid) return 'http://10.0.2.2:8015/api/v1/auth';
-    if (Platform.isIOS) return 'http://Isaras-MacBook-Air.local:8015/api/v1/auth'; // Mac's hostname
+    if (Platform.isIOS) return 'https://zpmkd-2402-d000-8130-9a35-e892-f7e9-99ba-92a2.free.pinggy.net/api/v1/auth'; // Pinggy Public Tunnel
     return 'http://127.0.0.1:8015/api/v1/auth';
   }
 
@@ -41,7 +41,7 @@ class AuthService {
         return data['detail'] ?? 'Incorrect email or password.';
       }
     } catch (e) {
-      return 'Failed to connect to the authentication server.';
+      return 'Network Error: $e';
     }
   }
 
@@ -77,7 +77,8 @@ class AuthService {
         return 'Failed to sign up. Please check your inputs.';
       }
     } catch (e) {
-      return 'Failed to connect to the authentication server.';
+      print('SIGNUP ERROR: $e');
+      return 'Network Error: $e';
     }
   }
 
