@@ -6,12 +6,12 @@ import 'screens/splash_screen.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set status bar style for dark backgrounds
+  // Set status bar style for light backgrounds (dark icons)
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.dark,    // Dark icons on light bg
+      statusBarBrightness: Brightness.light,       // Light background
     ),
   );
 
@@ -31,7 +31,7 @@ class AdaptedMindApp extends StatelessWidget {
     return MaterialApp(
       title: 'AdaptedMind',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
       home: const SplashScreen(),
     );
   }

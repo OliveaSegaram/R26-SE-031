@@ -7,8 +7,7 @@ import 'signin_screen.dart';
 import 'assessment_screen.dart';
 
 /// Screen 4: Onboarding Questions Intro
-/// Monster explains that a few questions are coming before starting the adventure.
-/// Clean design with info cards.
+/// Dyslexia-accessible: crème bg, colored info cards on mint/blue/amber backgrounds.
 class OnboardingIntroScreen extends StatefulWidget {
   const OnboardingIntroScreen({super.key});
 
@@ -53,10 +52,10 @@ class _OnboardingIntroScreenState extends State<OnboardingIntroScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkSlate,
+      backgroundColor: AppColors.cream,
       body: Stack(
         children: [
-          // Gradient accent - bottom left
+          // Gradient accent — gentle green glow bottom-left
           Positioned(
             bottom: -80,
             left: -60,
@@ -67,7 +66,7 @@ class _OnboardingIntroScreenState extends State<OnboardingIntroScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.mint.withValues(alpha: 0.06),
+                    AppColors.gentleGreen.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
                 ),
@@ -97,8 +96,8 @@ class _OnboardingIntroScreenState extends State<OnboardingIntroScreen>
                             margin: const EdgeInsets.symmetric(horizontal: 3),
                             decoration: BoxDecoration(
                               color: i <= 1
-                                  ? AppColors.orange
-                                  : AppColors.textLight.withValues(alpha: 0.15),
+                                  ? AppColors.calmBlue
+                                  : AppColors.borderLight,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           );
@@ -148,20 +147,23 @@ class _OnboardingIntroScreenState extends State<OnboardingIntroScreen>
                         children: [
                           _buildInfoCard(
                             icon: Icons.timer_rounded,
-                            text: 'Takes less than 2 minutes',
-                            color: AppColors.orange,
+                            text: 'takes less than 2 minutes',
+                            bgColor: AppColors.mintBg,
+                            iconColor: AppColors.gentleGreen,
                           ),
                           const SizedBox(height: 10),
                           _buildInfoCard(
                             icon: Icons.auto_awesome_rounded,
-                            text: 'Helps us personalize your learning',
-                            color: AppColors.gold,
+                            text: 'helps us personalize your learning',
+                            bgColor: AppColors.slateBg,
+                            iconColor: AppColors.calmBlue,
                           ),
                           const SizedBox(height: 10),
                           _buildInfoCard(
                             icon: Icons.favorite_rounded,
-                            text: 'No wrong answers - just be you!',
-                            color: AppColors.mint,
+                            text: 'no wrong answers — just be you!',
+                            bgColor: const Color(0xFFFFF3E0),
+                            iconColor: AppColors.warmAmber,
                           ),
                         ],
                       ),
@@ -179,7 +181,7 @@ class _OnboardingIntroScreenState extends State<OnboardingIntroScreen>
                     child: FadeTransition(
                       opacity: _contentFade,
                       child: GradientButton(
-                        text: "LET'S GO!",
+                        text: "let's go!",
                         icon: Icons.celebration_rounded,
                         onPressed: () {
                           Navigator.of(context).push(
@@ -222,36 +224,37 @@ class _OnboardingIntroScreenState extends State<OnboardingIntroScreen>
   Widget _buildInfoCard({
     required IconData icon,
     required String text,
-    required Color color,
+    required Color bgColor,
+    required Color iconColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: color.withValues(alpha: 0.15),
+          color: iconColor.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              color: iconColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: iconColor, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                color: AppColors.textLight.withValues(alpha: 0.8),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+              style: AppTypography.body(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
             ),
           ),
@@ -264,18 +267,16 @@ class _OnboardingIntroScreenState extends State<OnboardingIntroScreen>
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(),
       child: Container(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: AppColors.textLight.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.textLight.withValues(alpha: 0.08),
-          ),
+          color: AppColors.cardSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderLight),
         ),
         child: const Icon(
           Icons.arrow_back_rounded,
-          color: AppColors.textLight,
+          color: AppColors.textPrimary,
           size: 22,
         ),
       ),

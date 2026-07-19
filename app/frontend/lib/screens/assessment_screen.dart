@@ -9,6 +9,8 @@ import '../widgets/pressable_game_button.dart';
 import '../services/auth_service.dart';
 import 'parent_account_screen.dart';
 
+/// Assessment Screen
+/// Dyslexia-accessible: crème bg, green progress bar, warm white question card.
 class AssessmentScreen extends StatefulWidget {
   final Map<String, dynamic>? studentData;
 
@@ -87,11 +89,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
+        SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Student added successfully!'), backgroundColor: Colors.green),
+        SnackBar(content: const Text('student added successfully!'), backgroundColor: AppColors.gentleGreen),
       );
       _navigateToResults();
     }
@@ -112,9 +114,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     final progress = (_currentIndex + 1) / _questions.length;
 
     return Scaffold(
-      backgroundColor: AppColors.darkSlate,
+      backgroundColor: AppColors.cream,
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator(color: AppColors.mint))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.gentleGreen))
           : SafeArea(
               child: Column(
           children: [
@@ -131,21 +133,21 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                         Container(
                           height: 12,
                           decoration: BoxDecoration(
-                            color: AppColors.textLight.withValues(alpha: 0.1),
+                            color: AppColors.borderLight,
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
                           height: 12,
-                          width: MediaQuery.of(context).size.width * 0.8 * progress, // Approximation
+                          width: MediaQuery.of(context).size.width * 0.8 * progress,
                           decoration: BoxDecoration(
-                            color: AppColors.mint,
+                            color: AppColors.gentleGreen,
                             borderRadius: BorderRadius.circular(6),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.mint.withValues(alpha: 0.4),
-                                blurRadius: 8,
+                                color: AppColors.gentleGreen.withValues(alpha: 0.3),
+                                blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
                             ],
@@ -176,7 +178,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 duration: const Duration(milliseconds: 200),
                 opacity: _currentSelection == null ? 0.5 : 1.0,
                 child: GradientButton(
-                  text: _currentIndex == _questions.length - 1 ? 'FINISH' : 'CONTINUE',
+                  text: _currentIndex == _questions.length - 1 ? 'finish' : 'continue',
                   onPressed: _currentSelection == null ? () {} : _onContinue,
                 ),
               ),
@@ -189,13 +191,13 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
   Widget _buildQuestionPage(AssessmentQuestion question, int index) {
     return Padding(
-      key: ValueKey<int>(index), // Essential for AnimatedSwitcher to know it changed
+      key: ValueKey<int>(index),
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Breathing Quiz Master character
+            // Quiz Master character
             const MonsterCharacter(
               size: 140,
               animation: MonsterAnimation.idle,
@@ -204,31 +206,31 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             
             const SizedBox(height: 10),
 
-            // 3D Flipping Flashcard
+            // Question Card
             FlipCardQuestion(
               text: question.questionText,
             ),
           
           const SizedBox(height: 40),
 
-          // 3D Pressable YES Button
+          // YES Button
           PressableGameButton(
-            text: 'Yes',
+            text: 'yes',
             icon: Icons.check_circle_outline_rounded,
             isSelected: _currentSelection == true,
             onTap: () => _onOptionSelected(true),
-            activeColor: AppColors.mint,
+            activeColor: AppColors.gentleGreen,
           ),
 
           const SizedBox(height: 20),
 
-          // 3D Pressable NO Button
+          // NO Button
           PressableGameButton(
-            text: 'No',
+            text: 'no',
             icon: Icons.cancel_outlined,
             isSelected: _currentSelection == false,
             onTap: () => _onOptionSelected(false),
-            activeColor: AppColors.orange,
+            activeColor: AppColors.softCoral,
           ),
         ],
       ),
@@ -242,25 +244,23 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         if (_currentIndex > 0) {
           setState(() {
             _currentIndex--;
-            _currentSelection = null; // Normally we'd restore previous answer, but keeping it simple
+            _currentSelection = null;
           });
         } else {
           Navigator.of(context).pop();
         }
       },
       child: Container(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: AppColors.textLight.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.textLight.withValues(alpha: 0.08),
-          ),
+          color: AppColors.cardSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderLight),
         ),
         child: const Icon(
           Icons.arrow_back_rounded,
-          color: AppColors.textLight,
+          color: AppColors.textPrimary,
           size: 22,
         ),
       ),

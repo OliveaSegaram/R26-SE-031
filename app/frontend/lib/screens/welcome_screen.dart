@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
 
@@ -7,7 +6,8 @@ import 'signin_screen.dart';
 import 'signup_screen.dart';
 
 /// Screen 2: Welcome / Get Started
-/// Updated to precisely match the Collaboo design layout, but using original Adapted Mind assets and colors.
+/// Dyslexia-accessible: warm crème top, pale slate blue bottom,
+/// dark grey text, calm blue buttons.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -34,7 +34,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   void initState() {
     super.initState();
 
-    // Top section (app name) fade + slide
     _topController = AnimationController(
       duration: const Duration(milliseconds: 900),
       vsync: this,
@@ -47,7 +46,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       CurvedAnimation(parent: _topController, curve: Curves.easeOutCubic),
     );
 
-    // Characters pop in
     _characterController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -63,16 +61,14 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       curve: Curves.easeOut,
     );
 
-    // Gentle floating bounce
     _bounceController = AnimationController(
-      duration: const Duration(milliseconds: 2400),
+      duration: const Duration(milliseconds: 2800),
       vsync: this,
     );
-    _bounceAnimation = Tween<double>(begin: 0, end: -5).animate(
+    _bounceAnimation = Tween<double>(begin: 0, end: -4).animate(
       CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut),
     );
 
-    // Buttons slide up
     _buttonController = AnimationController(
       duration: const Duration(milliseconds: 700),
       vsync: this,
@@ -88,7 +84,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       CurvedAnimation(parent: _buttonController, curve: Curves.easeOutCubic),
     );
 
-    // Staggered animation sequence
     _topController.forward();
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) _characterController.forward();
@@ -116,18 +111,18 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: AppColors.primaryDark,
+      backgroundColor: AppColors.calmBlue,
       body: Stack(
         children: [
-          // === NAVY BLUE BOTTOM BACKGROUND ===
+          // === SLATE BLUE BOTTOM BACKGROUND ===
           Container(
             width: double.infinity,
             height: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.primary,
-                  AppColors.primaryDark,
+                  AppColors.calmBlue,
+                  Color(0xFF3570B0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -135,7 +130,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             ),
           ),
 
-          // === WHITE WAVY TOP SECTION ===
+          // === WARM WHITE WAVY TOP SECTION ===
           ClipPath(
             clipper: WavyClipper(),
             child: Container(
@@ -148,7 +143,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   children: [
                     SizedBox(height: screenHeight * 0.04),
 
-                    // App name — animated slide down
+                    // App name
                     AnimatedBuilder(
                       animation: _topController,
                       builder: (context, child) {
@@ -165,34 +160,30 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         children: [
                           Text(
                             'Adapted',
-                            style: GoogleFonts.fredoka(
-                              fontSize: 50,
+                            style: AppTypography.heading(
+                              fontSize: 48,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                              height: 1.0,
-                              letterSpacing: -1.0,
+                              color: AppColors.textPrimary,
                             ),
                           ),
                           Text(
                             'Mind',
-                            style: GoogleFonts.fredoka(
-                              fontSize: 50,
+                            style: AppTypography.heading(
+                              fontSize: 48,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.orange,
-                              height: 1.0,
-                              letterSpacing: -1.0,
+                              color: AppColors.calmBlue,
                             ),
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 12), // Reduced gap under title
+                    const SizedBox(height: 12),
 
                     // === MONSTER CHARACTERS GROUP ===
                     Expanded(
                       child: Padding(
-                        padding: EdgeInsets.only(bottom: screenHeight * 0.04), // Reduced bottom padding since image moved up
+                        padding: EdgeInsets.only(bottom: screenHeight * 0.04),
                         child: AnimatedBuilder(
                           animation: Listenable.merge([
                             _characterController,
@@ -216,7 +207,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             );
                           },
                           child: Align(
-                            alignment: Alignment.topCenter, // Aligns image closer to the title
+                            alignment: Alignment.topCenter,
                             child: _buildCharacterGroup(screenWidth),
                           ),
                         ),
@@ -241,23 +232,33 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     opacity: _buttonFadeAnimation,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Your Sinhala learning\nadventure awaits!',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.nunito(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.9),
-                            height: 1.4,
+                        Center(
+                          child: Text(
+                            'your sinhala learning\nadventure awaits!',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.body(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              height: 1.3,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 32),
 
                         // GET STARTED button
                         GradientButton(
-                          text: 'GET STARTED',
+                          text: 'get started',
                           icon: Icons.rocket_launch_rounded,
+                          textColor: AppColors.calmBlueDark,
+                          iconColor: AppColors.calmBlueDark,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFFFFF), Color(0xFFF4F6F9)],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
                           onPressed: () {
                             Navigator.of(context).push(
                               PageRouteBuilder(
@@ -288,7 +289,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
                         // I ALREADY HAVE AN ACCOUNT button
                         OutlinedGradientButton(
-                          text: 'I ALREADY HAVE AN ACCOUNT',
+                          text: 'i already have an account',
                           onPressed: () {
                             Navigator.of(context).push(
                               PageRouteBuilder(
@@ -328,7 +329,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
-  /// Displays the generated single image of the furry monsters group.
   Widget _buildCharacterGroup(double screenWidth) {
     final groupWidth = screenWidth * 0.85;
 
@@ -342,21 +342,18 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 }
 
-/// Custom wavy curve matching the reference image.
+/// Custom wavy curve for crème-to-blue transition.
 class WavyClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     Path path = Path();
-    // Start at top left, go down
     path.lineTo(0, size.height * 0.85);
     
-    // Curve dipping down in the middle-left, and going up towards the right
     path.quadraticBezierTo(
       size.width * 0.45, size.height * 1.05, 
       size.width, size.height * 0.65,
     );
     
-    // Line to top right, close path
     path.lineTo(size.width, 0);
     path.close();
     return path;

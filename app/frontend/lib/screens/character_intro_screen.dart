@@ -6,8 +6,7 @@ import '../widgets/gradient_button.dart';
 import 'select_student_screen.dart';
 
 /// Screen 3: Character Introduction
-/// Monster introduces itself with speech bubble and typewriter effect.
-/// Clean background, excited bounce animation.
+/// Dyslexia-accessible: crème bg, mint green speech bubble, calm blue accents.
 class CharacterIntroScreen extends StatefulWidget {
   const CharacterIntroScreen({super.key});
 
@@ -52,10 +51,10 @@ class _CharacterIntroScreenState extends State<CharacterIntroScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkSlate,
+      backgroundColor: AppColors.cream,
       body: Stack(
         children: [
-          // Subtle gradient accent
+          // Subtle gradient accent — warm amber glow
           Positioned(
             top: -100,
             right: -50,
@@ -66,7 +65,7 @@ class _CharacterIntroScreenState extends State<CharacterIntroScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.orange.withValues(alpha: 0.08),
+                    AppColors.warmAmber.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
                 ),
@@ -96,8 +95,8 @@ class _CharacterIntroScreenState extends State<CharacterIntroScreen>
                             margin: const EdgeInsets.symmetric(horizontal: 3),
                             decoration: BoxDecoration(
                               color: i == 0
-                                  ? AppColors.orange
-                                  : AppColors.textLight.withValues(alpha: 0.15),
+                                  ? AppColors.calmBlue
+                                  : AppColors.borderLight,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           );
@@ -123,7 +122,7 @@ class _CharacterIntroScreenState extends State<CharacterIntroScreen>
 
                 const SizedBox(height: 16),
 
-                // Character with no animation as requested
+                // Character
                 FadeTransition(
                   opacity: _contentFade,
                   child: const MonsterCharacter(
@@ -144,7 +143,7 @@ class _CharacterIntroScreenState extends State<CharacterIntroScreen>
                     child: FadeTransition(
                       opacity: _contentFade,
                       child: GradientButton(
-                        text: 'CONTINUE',
+                        text: 'continue',
                         onPressed: () {
                           Navigator.of(context).push(
                             PageRouteBuilder(
@@ -187,18 +186,16 @@ class _CharacterIntroScreenState extends State<CharacterIntroScreen>
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(),
       child: Container(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: AppColors.textLight.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.textLight.withValues(alpha: 0.08),
-          ),
+          color: AppColors.cardSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderLight),
         ),
         child: const Icon(
           Icons.arrow_back_rounded,
-          color: AppColors.textLight,
+          color: AppColors.textPrimary,
           size: 22,
         ),
       ),

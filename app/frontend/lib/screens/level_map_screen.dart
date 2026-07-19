@@ -12,6 +12,10 @@ import 'games/visual_skills/activity7_size_ordering.dart';
 import 'games/visual_skills/activity8_position.dart';
 import 'games/visual_skills/activity9_sequence.dart';
 import 'games/visual_skills/activity10_shadow_match.dart';
+
+/// Level Map Screen
+/// Dyslexia-accessible: calm blue header, gentle green/warm amber nodes,
+/// crème-tinted background, dark grey text.
 class LevelMapScreen extends StatefulWidget {
   final Map<String, dynamic>? studentData;
 
@@ -27,24 +31,24 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   final ScrollController _scrollController = ScrollController();
 
   // Current progress (0-indexed)
-  int currentLevel = 0; // Player starts at level 0
-  bool _isNavigating = false; // Guard to prevent double pushes
+  int currentLevel = 0;
+  bool _isNavigating = false;
 
   // Level data - 10 Visual Skills Tasks
   final List<Map<String, dynamic>> levels = [
-    {'label': '1', 'title': 'Spot Diff', 'type': 'lesson', 'completed': false},
-    {'label': '2', 'title': 'Pattern', 'type': 'lesson', 'completed': false},
-    {'label': '3', 'title': 'Missing', 'type': 'lesson', 'completed': false},
-    {'label': '4', 'title': 'Memory', 'type': 'lesson', 'completed': false},
-    {'label': '5', 'title': 'Category', 'type': 'lesson', 'completed': false},
-    {'label': '6', 'title': 'Hidden', 'type': 'lesson', 'completed': false},
-    {'label': '7', 'title': 'Size', 'type': 'lesson', 'completed': false},
-    {'label': '8', 'title': 'Position', 'type': 'lesson', 'completed': false},
-    {'label': '9', 'title': 'Sequence', 'type': 'lesson', 'completed': false},
-    {'label': '🏆', 'title': 'Complete!', 'type': 'trophy', 'completed': false},
+    {'label': '1', 'title': 'spot diff', 'type': 'lesson', 'completed': false},
+    {'label': '2', 'title': 'pattern', 'type': 'lesson', 'completed': false},
+    {'label': '3', 'title': 'missing', 'type': 'lesson', 'completed': false},
+    {'label': '4', 'title': 'memory', 'type': 'lesson', 'completed': false},
+    {'label': '5', 'title': 'category', 'type': 'lesson', 'completed': false},
+    {'label': '6', 'title': 'hidden', 'type': 'lesson', 'completed': false},
+    {'label': '7', 'title': 'size', 'type': 'lesson', 'completed': false},
+    {'label': '8', 'title': 'position', 'type': 'lesson', 'completed': false},
+    {'label': '9', 'title': 'sequence', 'type': 'lesson', 'completed': false},
+    {'label': '🏆', 'title': 'complete!', 'type': 'trophy', 'completed': false},
   ];
 
-  // Characters placed alongside the path for decoration
+  // Decorative characters
   final List<Map<String, dynamic>> _decorCharacters = [
     {'asset': 'assets/images/solo_pink.png', 'atLevel': 1, 'side': 'right'},
     {'asset': 'assets/images/solo_green.png', 'atLevel': 4, 'side': 'left'},
@@ -60,7 +64,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       vsync: this,
     )..repeat(reverse: true);
 
-    // Scroll to current level after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToCurrentLevel();
       _autoStartFirstLevel();
@@ -78,7 +81,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   }
 
   void _scrollToCurrentLevel() {
-    // Each node is roughly 120px apart, scroll to show current level centered
     final targetScroll = currentLevel * 120.0 - 200;
     if (_scrollController.hasClients && targetScroll > 0) {
       final clampedScroll = targetScroll.clamp(
@@ -100,11 +102,10 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     super.dispose();
   }
 
-  // Zigzag X offset for node positioning (Duolingo-style)
+  // Zigzag X offset (Duolingo-style)
   double _getNodeX(int index, double screenWidth) {
     final centerX = screenWidth / 2;
     final amplitude = screenWidth * 0.2;
-    // Sine wave for smooth zigzag
     return centerX + sin(index * 0.8) * amplitude;
   }
 
@@ -115,16 +116,16 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // ── Scrollable Map Path ──
+          // Scrollable Map Path
           SingleChildScrollView(
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
             child: SizedBox(
               width: screenWidth,
-              height: levels.length * 120.0 + 160, // total scrollable height
+              height: levels.length * 120.0 + 160,
               child: Stack(
                 children: [
-                  // ── Layer 1: GREYSCALE background (always visible) ──
+                  // GREYSCALE background (locked)
                   Positioned.fill(
                     child: ColorFiltered(
                       colorFilter: const ColorFilter.matrix(<double>[
@@ -142,7 +143,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                     ),
                   ),
 
-                  // ── Layer 2: COLORED background revealed at completed nodes ──
+                  // COLORED background revealed for completed
                   Positioned.fill(
                     child: ClipPath(
                       clipper: CompletedZoneClipper(
@@ -161,12 +162,12 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                     ),
                   ),
 
-                  // ── Map content overlay ──
+                  // Map content overlay
                   Padding(
                     padding: const EdgeInsets.only(top: 120, bottom: 40),
                     child: Stack(
                       children: [
-                        // Dotted path connecting nodes
+                        // Path
                         CustomPaint(
                           size: Size(screenWidth, levels.length * 120.0),
                           painter: PathPainter(
@@ -177,7 +178,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                           ),
                         ),
 
-                        // Decorative characters alongside the path
+                        // Decorative characters
                         ..._buildDecoCharacters(screenWidth),
 
                         // Level nodes
@@ -202,7 +203,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                           );
                         }),
 
-                        // Character avatar on current level
+                        // Player character
                         _buildPlayerCharacter(screenWidth),
                       ],
                     ),
@@ -212,18 +213,13 @@ class _LevelMapScreenState extends State<LevelMapScreen>
             ),
           ),
 
-          // ── Top Header Bar ──
+          // Top Header Bar
           _buildTopHeader(),
-
-          // No dev tools buttons in production
         ],
       ),
     );
   }
 
-  // ═══════════════════════════════════════
-  // TOP HEADER
-  // ═══════════════════════════════════════
   Widget _buildTopHeader() {
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -233,13 +229,13 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         14,
       ),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: AppColors.calmBlue,
         borderRadius: const BorderRadius.vertical(
           bottom: Radius.circular(24),
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.4),
+            color: AppColors.calmBlueDark.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -254,7 +250,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.primaryLight,
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -270,7 +266,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           Expanded(
             child: Text(
               'හැඩ හඳුනාගැනීම',
-              style: GoogleFonts.notoSansSinhala(
+              style: AppTypography.sinhala(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -282,7 +278,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.orange,
+              color: AppColors.warmAmber,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -292,11 +288,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                 const SizedBox(width: 4),
                 Text(
                   '$currentLevel/${levels.length}',
-                  style: GoogleFonts.fredoka(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                  style: AppTypography.button(fontSize: 14),
                 ),
               ],
             ),
@@ -306,9 +298,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     );
   }
 
-  // ═══════════════════════════════════════
-  // LEVEL NODE
-  // ═══════════════════════════════════════
   Widget _buildNode({
     required Map<String, dynamic> level,
     required int index,
@@ -324,10 +313,10 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     double size = 64;
 
     if (isCompleted) {
-      bgColor = AppColors.mint;
-      borderColor = AppColors.mintDark;
+      bgColor = AppColors.gentleGreen;
+      borderColor = AppColors.gentleGreenDark;
     } else if (isCurrent) {
-      bgColor = AppColors.orange;
+      bgColor = AppColors.warmAmber;
       borderColor = AppColors.orangeDark;
     } else {
       bgColor = Colors.grey.shade300;
@@ -375,7 +364,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                     ),
                     if (isCurrent)
                       BoxShadow(
-                        color: AppColors.orange.withValues(alpha: 0.35),
+                        color: AppColors.warmAmber.withValues(alpha: 0.3),
                         blurRadius: 16,
                         spreadRadius: 4,
                       ),
@@ -387,12 +376,10 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                           color: Colors.grey.shade500, size: 24)
                       : Text(
                           type == 'trophy' ? '🏆' : label,
-                          style: GoogleFonts.fredoka(
+                          style: AppTypography.button(
                             fontSize: type == 'star' || type == 'trophy'
                                 ? 22
                                 : 20,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
                           ),
                         ),
                 ),
@@ -405,13 +392,9 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     );
   }
 
-  // ═══════════════════════════════════════
-  // PLAYER CHARACTER
-  // ═══════════════════════════════════════
   Widget _buildPlayerCharacter(double screenWidth) {
     final nodeX = _getNodeX(currentLevel, screenWidth);
-    final visualIndex = currentLevel;
-    final nodeY = visualIndex * 120.0 + 20;
+    final nodeY = currentLevel * 120.0 + 20;
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 800),
@@ -433,17 +416,12 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     );
   }
 
-
-  // ═══════════════════════════════════════
-  // DECORATIVE CHARACTERS
-  // ═══════════════════════════════════════
   List<Widget> _buildDecoCharacters(double screenWidth) {
     return _decorCharacters.map((deco) {
       final atLevel = deco['atLevel'] as int;
       final side = deco['side'] as String;
       final asset = deco['asset'] as String;
       
-      // Top to bottom positioning
       final nodeY = atLevel * 120.0 - 15;
       final nodeX = _getNodeX(atLevel, screenWidth);
 
@@ -454,7 +432,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         xPos = nodeX + 70;
       }
 
-      // Clamp to screen bounds
       xPos = xPos.clamp(4.0, screenWidth - 104.0);
 
       final isReached = atLevel <= currentLevel;
@@ -466,7 +443,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         fit: BoxFit.contain,
       );
 
-      // Greyscale the character if level hasn't been reached yet
       if (!isReached) {
         characterImage = ColorFiltered(
           colorFilter: const ColorFilter.matrix(<double>[
@@ -542,7 +518,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         });
         _scrollToCurrentLevel();
         
-        // Auto-start next level after returning to the map
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted && currentLevel == index + 1 && !_isNavigating) {
             _navigateToLevel(currentLevel);
@@ -553,13 +528,10 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       _isNavigating = false;
     }
   }
-
 }
 
 
-// ═══════════════════════════════════════
-// PATH PAINTER (dotted trail between nodes)
-// ═══════════════════════════════════════
+// Path Painter (dotted trail)
 class PathPainter extends CustomPainter {
   final List<Map<String, dynamic>> levels;
   final int currentLevel;
@@ -576,36 +548,31 @@ class PathPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final completedPaint = Paint()
-      ..color = AppColors.orange // Vibrant orange for high visibility on pastel background
+      ..color = AppColors.warmAmber
       ..strokeWidth = 6
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     final lockedPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.6) // Subtle semi-transparent white for locked paths
+      ..color = Colors.white.withValues(alpha: 0.6)
       ..strokeWidth = 6
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     for (int i = 0; i < levels.length - 1; i++) {
-      final fromIndex = i;
-      final toIndex = i + 1;
+      final fromX = getNodeX(i);
+      final fromY = i * nodeSpacing + 20 + 32;
+      final toX = getNodeX(i + 1);
+      final toY = (i + 1) * nodeSpacing + 20 + 32;
 
-      final fromX = getNodeX(fromIndex);
-      final fromY = fromIndex * nodeSpacing + 20 + 32; // center of node
-      final toX = getNodeX(toIndex);
-      final toY = toIndex * nodeSpacing + 20 + 32;
-
-      final isCompletedPath = toIndex <= currentLevel;
+      final isCompletedPath = (i + 1) <= currentLevel;
       final paint = isCompletedPath ? completedPaint : lockedPaint;
 
-      // Draw dashed line
       _drawDashedLine(canvas, Offset(fromX, fromY), Offset(toX, toY), paint);
     }
   }
 
-  void _drawDashedLine(
-      Canvas canvas, Offset start, Offset end, Paint paint) {
+  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
     final dx = end.dx - start.dx;
     final dy = end.dy - start.dy;
     final distance = sqrt(dx * dx + dy * dy);
@@ -630,11 +597,7 @@ class PathPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-// ═══════════════════════════════════════
-// COMPLETED ZONE CLIPPER
-// Reveals the colored background from the top
-// down to the current level position
-// ═══════════════════════════════════════
+// Completed Zone Clipper
 class CompletedZoneClipper extends CustomClipper<Path> {
   final List<Map<String, dynamic>> levels;
   final int currentLevel;
@@ -653,17 +616,12 @@ class CompletedZoneClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
-
-    // Color up everything from the top down to the current level's position
-    // After completing task N, the area above task N+1 is fully colored
-    // If at the last level, color the entire background
     final isLastLevel = currentLevel >= levels.length - 1;
     final revealHeight = isLastLevel
         ? size.height
         : topPadding + currentLevel * nodeSpacing + 20 + 32;
 
     path.addRect(Rect.fromLTWH(0, 0, size.width, revealHeight));
-
     return path;
   }
 

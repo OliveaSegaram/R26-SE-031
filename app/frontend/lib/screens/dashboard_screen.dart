@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import 'level_map_screen.dart';
+import 'select_student_screen.dart';
+import 'parent_account_screen.dart';
 
+/// Dashboard Screen
+/// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
+/// calm blue accents, 16pt+ Sinhala text.
 class DashboardScreen extends StatefulWidget {
   final Map<String, dynamic>? studentData;
 
@@ -13,207 +18,227 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProviderStateMixin {
-  int _selectedCategory = 0;
-  late AnimationController _animationController;
+class _DashboardScreenState extends State<DashboardScreen>
+    with TickerProviderStateMixin {
+  int _selectedTabIndex = 0;
 
-  final List<Map<String, String>> _categories = [
-    {'label': 'Top Picks', 'icon': 'assets/images/icons/icon-star.png'},
-    {'label': 'Health', 'icon': 'assets/images/icons/icon-health.png'},
-    {'label': 'ABC', 'icon': 'assets/images/icons/icon-abc.png'},
-    {'label': 'World', 'icon': 'assets/images/icons/icon-globe.png'},
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  final List<Map<String, dynamic>> _categories = [
+    {'label': 'all skills', 'icon': Icons.apps_rounded},
+    {'label': 'visual', 'icon': Icons.visibility_rounded},
+    {'label': 'auditory', 'icon': Icons.hearing_rounded},
+    {'label': 'reading', 'icon': Icons.menu_book_rounded},
+    {'label': 'writing', 'icon': Icons.edit_rounded},
   ];
 
-  final List<Map<String, dynamic>> _skillCards = [
-    {'image': 'assets/images/cards/card_shape.png', 'title': 'හැඩ හඳුනාගැනීම', 'progress': 0.35},
-    {'image': 'assets/images/cards/card_sound.png', 'title': 'ශබ්ද වෙනස හඳුනාගැනීම', 'progress': null},
-    {'image': 'assets/images/cards/card_letter.png', 'title': 'අකුරු හඳුනාගැනීම', 'progress': 0.70},
-    {'image': 'assets/images/cards/card_initial.png', 'title': 'මුල් ශබ්දය', 'progress': null},
-    {'image': 'assets/images/cards/card_ending.png', 'title': 'අවසන් ශබ්දය', 'progress': 0.15},
-    {'image': 'assets/images/cards/card_diacritics.png', 'title': 'පිල්ලම් හඳුනාගැනීම', 'progress': null},
-    {'image': 'assets/images/cards/card_rhyme.png', 'title': 'එළිසමය සහිත වචන', 'progress': 0.50},
-    {'image': 'assets/images/cards/card_blend.png', 'title': 'අකුරු ගැලපීම', 'progress': 0.85},
-    {'image': 'assets/images/cards/card_word.png', 'title': 'වචන සෑදීම', 'progress': null},
-    {'image': 'assets/images/cards/card_sentence.png', 'title': 'වාක්‍ය කියවීම', 'progress': 0.05},
+  final List<Map<String, dynamic>> _skills = [
+    {
+      'title': 'හැඩ හඳුනාගැනීම',
+      'subtitle': 'shape recognition',
+      'icon': 'assets/images/category_visual.png',
+      'progress': 0.45,
+      'category': 'visual',
+      'color': AppColors.calmBlue,
+      'isNew': true,
+    },
+    {
+      'title': 'වර්ණ වර්ගීකරණය',
+      'subtitle': 'color classification',
+      'icon': 'assets/images/category_reading.png',
+      'progress': 0.70,
+      'category': 'visual',
+      'color': AppColors.gentleGreen,
+      'isNew': false,
+    },
+    {
+      'title': 'ශබ්ද හඳුනාගැනීම',
+      'subtitle': 'sound recognition',
+      'icon': 'assets/images/category_auditory.png',
+      'progress': 0.30,
+      'category': 'auditory',
+      'color': AppColors.warmAmber,
+      'isNew': true,
+    },
+    {
+      'title': 'අකුරු කියවීම',
+      'subtitle': 'letter reading',
+      'icon': 'assets/images/category_reading.png',
+      'progress': 0.15,
+      'category': 'reading',
+      'color': AppColors.softCoral,
+      'isNew': false,
+    },
+    {
+      'title': 'රටා ගැලපීම',
+      'subtitle': 'pattern matching',
+      'icon': 'assets/images/category_visual.png',
+      'progress': 0.55,
+      'category': 'visual',
+      'color': AppColors.calmBlue,
+      'isNew': false,
+    },
+    {
+      'title': 'වචන ලිවීම',
+      'subtitle': 'word writing',
+      'icon': 'assets/images/category_writing.png',
+      'progress': 0.0,
+      'category': 'writing',
+      'color': AppColors.gentleGreen,
+      'isNew': true,
+    },
   ];
+
+  List<Map<String, dynamic>> get _filteredSkills {
+    if (_selectedTabIndex == 0) return _skills;
+    final category = _categories[_selectedTabIndex]['label'] as String;
+    return _skills.where((s) => s['category'] == category).toList();
+  }
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
       vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..forward();
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
+    _fadeController.forward();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _fadeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final studentName = widget.studentData?['first_name'] ?? 'learner';
+    final avatarUrl = widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png';
+
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background utilizing the AppTheme Gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: AppColors.splashGradient,
-            ),
-          ),
-          // A subtle pattern or glow to make it more advanced
-          Positioned(
-            top: -100,
-            right: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.orange.withValues(alpha: 0.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.orange.withValues(alpha: 0.2),
-                    blurRadius: 100,
-                    spreadRadius: 50,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -50,
-            left: -50,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.mint.withValues(alpha: 0.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.mint.withValues(alpha: 0.2),
-                    blurRadius: 100,
-                    spreadRadius: 50,
-                  ),
-                ],
-              ),
-            ),
-          ),
+      backgroundColor: AppColors.cream,
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              _buildHeader(studentName, avatarUrl),
 
-          SafeArea(
-            child: Column(
-              children: [
-                // ── Top Bar: Profile + Greeting ──
-                _buildTopBar(),
+              const SizedBox(height: 16),
 
-                const SizedBox(height: 16),
-
-                // ── Top Navigation Icons ──
-                _buildTopNavBar(),
-
-                const SizedBox(height: 32),
-
-                // ── Skills Grid ──
-                Expanded(
-                  child: FadeTransition(
-                    opacity: _animationController,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.1),
-                        end: Offset.zero,
-                      ).animate(CurvedAnimation(
-                        parent: _animationController,
-                        curve: Curves.easeOutCubic,
-                      )),
-                      child: GridView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 20,
-                          crossAxisSpacing: 20,
-                          childAspectRatio: 0.78,
-                        ),
-                        itemCount: _skillCards.length,
-                        itemBuilder: (context, index) {
-                          final card = _skillCards[index];
-                          return _buildSkillCard(
-                            imagePath: card['image'] as String,
-                            title: card['title'] as String,
-                            progress: card['progress'] as double?,
-                          );
-                        },
+              // Welcome message
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'hello, $studentName!',
+                      style: AppTypography.heading(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "let's continue learning today",
+                      style: AppTypography.body(
+                        fontSize: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Category tabs
+              _buildCategoryTabs(),
+
+              const SizedBox(height: 16),
+
+              // Skill cards grid
+              Expanded(
+                child: _buildSkillsGrid(),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  // ═══════════════════════════════════════
-  // TOP BAR (Profile)
-  // ═══════════════════════════════════════
-  Widget _buildTopBar() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.primaryDark.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+  Widget _buildHeader(String name, String avatarUrl) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
       child: Row(
         children: [
-          // Avatar (No orange border, no white background)
+          // Back to student select
           GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Image.asset(
-              widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png',
-              width: 56,
-              height: 56,
-              fit: BoxFit.contain,
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const SelectStudentScreen()),
+              );
+            },
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.cardSurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderLight),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: AppColors.textPrimary,
+                size: 22,
+              ),
             ),
           ),
-          const SizedBox(width: 16),
-
-          // Greeting
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hi, ${widget.studentData?['first_name'] ?? 'Ace'}! 👋',
-                  style: GoogleFonts.fredoka(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+          const Spacer(),
+          // Avatar
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ParentAccountScreen()),
+              );
+            },
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.calmBlue, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.calmBlue.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                Text(
-                  "Let's play and learn!",
-                  style: GoogleFonts.nunito(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset(avatarUrl, fit: BoxFit.cover),
+              ),
             ),
           ),
         ],
@@ -221,143 +246,216 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     );
   }
 
-  // ═══════════════════════════════════════
-  // TOP NAVIGATION ICONS (Original 6 icons, full width, NO background)
-  // ═══════════════════════════════════════
-  Widget _buildTopNavBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(_categories.length, (index) {
-          final isActive = _selectedCategory == index;
-          final cat = _categories[index];
+  Widget _buildCategoryTabs() {
+    return SizedBox(
+      height: 44,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _categories.length,
+        itemBuilder: (context, index) {
+          final isSelected = _selectedTabIndex == index;
+          final category = _categories[index];
+
           return GestureDetector(
-            onTap: () => setState(() => _selectedCategory = index),
+            onTap: () => setState(() => _selectedTabIndex = index),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
-              transform: Matrix4.identity()..scale(isActive ? 1.15 : 1.0),
-              child: Column(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.calmBlue : AppColors.cardSurface,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: isSelected ? AppColors.calmBlue : AppColors.borderLight,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.calmBlue.withValues(alpha: 0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Icon purely displayed without any background Container
-                  Image.asset(
-                    cat['icon']!,
-                    width: 60,
-                    height: 60,
+                  Icon(
+                    category['icon'] as IconData,
+                    size: 18,
+                    color: isSelected ? Colors.white : AppColors.textSecondary,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(width: 6),
                   Text(
-                    cat['label']!,
-                    style: GoogleFonts.fredoka(
-                      fontSize: isActive ? 13 : 11,
-                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                      color: isActive ? AppColors.gold : Colors.white70,
+                    category['label'] as String,
+                    style: AppTypography.caption(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? Colors.white : AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
           );
-        }),
+        },
       ),
     );
   }
 
-  // ═══════════════════════════════════════
-  // SKILL CARD (Premium 3D Look, Fill Image, Progress Bar)
-  // ═══════════════════════════════════════
-  Widget _buildSkillCard({
-    required String imagePath,
-    required String title,
-    double? progress,
-  }) {
+  Widget _buildSkillsGrid() {
+    final skills = _filteredSkills;
+
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: 0.78,
+      ),
+      itemCount: skills.length,
+      itemBuilder: (context, index) {
+        final skill = skills[index];
+        return _buildSkillCard(skill);
+      },
+    );
+  }
+
+  Widget _buildSkillCard(Map<String, dynamic> skill) {
+    final color = skill['color'] as Color;
+    final progress = skill['progress'] as double;
+    final isNew = skill['isNew'] as bool;
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => LevelMapScreen(studentData: widget.studentData)),
+          MaterialPageRoute(
+            builder: (context) => LevelMapScreen(studentData: widget.studentData),
+          ),
         );
       },
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.darkSlateLight,
+          color: AppColors.cardSurface,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1.5),
+          border: Border.all(color: AppColors.borderLight),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
           children: [
-            // Image Section (Fills the entire space)
-            Expanded(
-              flex: 3,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-                child: Hero(
-                  tag: imagePath,
-                  child: Image.asset(
-                    imagePath,
-                    fit: BoxFit.cover, // Ensures the image fills the space completely
-                  ),
-                ),
-              ),
-            ),
-
-            // Text & Progress Section
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.notoSansSinhala(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                  // Icon
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  if (progress != null) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 7,
-                        backgroundColor: Colors.white.withValues(alpha: 0.1),
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.mint),
-                      ),
-                    ),
-                  ] else
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.gold.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '✨ NEW',
-                        style: GoogleFonts.fredoka(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.gold,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        skill['icon'] as String,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.auto_awesome_rounded,
+                          color: color,
+                          size: 28,
                         ),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Sinhala title
+                  Text(
+                    skill['title'] as String,
+                    style: AppTypography.sinhala(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // English subtitle
+                  Text(
+                    skill['subtitle'] as String,
+                    style: AppTypography.caption(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Progress bar
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            backgroundColor: AppColors.borderLight,
+                            color: color,
+                            minHeight: 6,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${(progress * 100).round()}%',
+                        style: AppTypography.caption(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
+
+            // "new" badge
+            if (isNew)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.warmAmber,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'new',
+                    style: AppTypography.caption(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

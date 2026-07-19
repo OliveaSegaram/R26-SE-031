@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
-import 'assessment_screen.dart'; // Navigation after SAVE CHANGES
+import 'assessment_screen.dart';
 import '../services/auth_service.dart';
 import 'parent_account_screen.dart';
 
+/// Add Student Screen
+/// Dyslexia-accessible: crème bg, warm white form, calm blue border,
+/// gentle green avatar selection, sentence case text.
 class AddStudentScreen extends StatefulWidget {
   final Map<String, dynamic>? editStudentData;
 
@@ -63,16 +65,17 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.textLight),
+          icon: const Icon(Icons.close, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          widget.editStudentData == null ? 'Add a student' : 'Edit student',
-          style: Theme.of(context).textTheme.headlineMedium,
+          widget.editStudentData == null ? 'add a student' : 'edit student',
+          style: AppTypography.heading(fontSize: 22, color: AppColors.textPrimary),
         ),
         centerTitle: true,
       ),
@@ -87,17 +90,23 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                 Center(
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: AppColors.darkSlateLight,
-                        backgroundImage: AssetImage(_selectedAvatarUrl),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.calmBlue, width: 3),
+                        ),
+                        child: CircleAvatar(
+                          radius: 40,
+                          backgroundColor: AppColors.cardSurface,
+                          backgroundImage: AssetImage(_selectedAvatarUrl),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Editing ${widget.editStudentData!['first_name']}',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: AppColors.textLight,
-                          fontWeight: FontWeight.bold,
+                        'editing ${widget.editStudentData!['first_name']}',
+                        style: AppTypography.heading(
+                          fontSize: 20,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ],
@@ -106,26 +115,30 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                 const SizedBox(height: 32),
               ] else ...[
                 Text(
-                  'Add an additional student for free. You are allowed to add up to 5 children to your account.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textMuted,
+                  'add an additional student for free. you are allowed to add up to 5 children to your account.',
+                  style: AppTypography.body(
+                    fontSize: 16,
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 32),
               ],
               
               Text(
-                widget.editStudentData == null ? 'New Student Information' : 'Student Information',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.mint,
+                widget.editStudentData == null ? 'new student information' : 'student information',
+                style: AppTypography.heading(
+                  fontSize: 20,
+                  color: AppColors.calmBlue,
                 ),
               ),
               const SizedBox(height: 24),
               
               Text(
-                'Choose a Monster Profile Picture',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.textLight,
+                'choose a monster profile picture',
+                style: AppTypography.body(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -142,13 +155,13 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected ? AppColors.mint : Colors.transparent,
+                            color: isSelected ? AppColors.gentleGreen : Colors.transparent,
                             width: 3,
                           ),
                         ),
                         child: CircleAvatar(
                           radius: 36,
-                          backgroundColor: AppColors.darkSlateLight,
+                          backgroundColor: AppColors.cardSurface,
                           backgroundImage: AssetImage(url),
                         ),
                       ),
@@ -162,51 +175,58 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.darkSlateLight,
-                  borderRadius: BorderRadius.circular(20),
+                  color: AppColors.cardSurface,
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: AppColors.mint.withValues(alpha: 0.2),
+                    color: AppColors.borderBlue,
                     width: 1,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadow,
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
                     TextFormField(
                       controller: _firstNameController,
                       decoration: const InputDecoration(
-                        hintText: 'Student First Name',
+                        hintText: 'student first name',
                       ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                      style: AppTypography.body(fontSize: 16),
+                      validator: (val) => val == null || val.isEmpty ? 'required' : null,
                     ),
                     const SizedBox(height: 16),
                     
                     TextFormField(
                       controller: _lastNameController,
                       decoration: const InputDecoration(
-                        hintText: 'Student Last Name',
+                        hintText: 'student last name',
                       ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                      style: AppTypography.body(fontSize: 16),
+                      validator: (val) => val == null || val.isEmpty ? 'required' : null,
                     ),
                     const SizedBox(height: 16),
                     
                     TextFormField(
                       controller: _usernameController,
                       decoration: const InputDecoration(
-                        hintText: 'Student Username (login)',
+                        hintText: 'student username (login)',
                       ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                      style: AppTypography.body(fontSize: 16),
+                      validator: (val) => val == null || val.isEmpty ? 'required' : null,
                     ),
                     const SizedBox(height: 16),
                     
                     DropdownButtonFormField<String>(
                       value: _selectedGrade,
-                      hint: const Text('Student Grade'),
+                      hint: Text('student grade', style: AppTypography.body(fontSize: 16, color: AppColors.textHint)),
                       decoration: const InputDecoration(),
-                      dropdownColor: AppColors.darkSlate,
-                      style: const TextStyle(color: Colors.white),
+                      dropdownColor: AppColors.cardSurface,
+                      style: AppTypography.body(fontSize: 16),
                       items: _grades.map((grade) {
                         return DropdownMenuItem(
                           value: grade,
@@ -222,12 +242,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     DropdownButtonFormField<String>(
                       value: _selectedDailyLimit,
                       decoration: const InputDecoration(),
-                      dropdownColor: AppColors.darkSlate,
-                      style: const TextStyle(color: Colors.white),
+                      dropdownColor: AppColors.cardSurface,
+                      style: AppTypography.body(fontSize: 16),
                       items: _limits.map((limit) {
                         return DropdownMenuItem(
                           value: limit,
-                          child: Text('Daily Limit: $limit'),
+                          child: Text('daily limit: $limit'),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -240,10 +260,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       controller: _passwordController,
                       obscureText: true,
                       decoration: const InputDecoration(
-                        hintText: 'AdaptedMind Parent Account Password',
+                        hintText: 'parent account password',
                       ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                      style: AppTypography.body(fontSize: 16),
+                      validator: (val) => val == null || val.isEmpty ? 'required' : null,
                     ),
                   ],
                 ),
@@ -251,7 +271,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               
               const SizedBox(height: 32),
               
-              // Save Changes Button
+              // Save Button
               Align(
                 alignment: Alignment.centerLeft,
                 child: ElevatedButton(
@@ -274,7 +294,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                         setState(() { _isLoading = false; });
                         
                         if (pwdError != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(pwdError), backgroundColor: Colors.red));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(pwdError), backgroundColor: AppColors.softCoral));
                           return;
                         }
 
@@ -293,9 +313,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                         if (!mounted) return;
                         setState(() { _isLoading = false; });
                         if (error != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: Colors.red));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error), backgroundColor: AppColors.softCoral));
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student updated successfully!'), backgroundColor: Colors.green));
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('student updated successfully!'), backgroundColor: AppColors.gentleGreen));
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
@@ -306,27 +326,22 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       }
                     } else if (_selectedGrade == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please select a grade')),
+                        const SnackBar(content: Text('please select a grade')),
                       );
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.orange,
+                    backgroundColor: AppColors.calmBlue,
                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: _isLoading 
                     ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : Text(
-                        widget.editStudentData == null ? 'SAVE CHANGES' : 'UPDATE CHANGES',
-                        style: GoogleFonts.fredoka(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.2,
-                        ),
+                        widget.editStudentData == null ? 'save changes' : 'update changes',
+                        style: AppTypography.button(fontSize: 18),
                       ),
                 ),
               ),

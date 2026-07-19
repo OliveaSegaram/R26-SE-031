@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
-import 'welcome_screen.dart'; // For logout routing
+import 'welcome_screen.dart';
 import 'assessment_screen.dart';
 import 'add_student_screen.dart';
 import 'dashboard_screen.dart';
 import '../services/auth_service.dart';
+
+/// Parent Account Screen
+/// Dyslexia-accessible: crème bg, warm white cards, calm blue section headers,
+/// gentle green switches, sentence case text.
 class ParentAccountScreen extends StatefulWidget {
   const ParentAccountScreen({super.key});
 
@@ -14,15 +17,14 @@ class ParentAccountScreen extends StatefulWidget {
 }
 
 class _ParentAccountScreenState extends State<ParentAccountScreen> {
-  // Dummy State for switches
   bool progressEmails = true;
   bool promotions = false;
   bool newsletters = false;
   bool periodicUpdates = true;
 
   bool _isLoading = true;
-  String _userName = 'Loading...';
-  String _userEmail = 'Loading...';
+  String _userName = 'loading...';
+  String _userEmail = 'loading...';
   List<dynamic> _students = [];
 
   @override
@@ -40,10 +42,10 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
         _isLoading = false;
         _students = students;
         if (profile != null) {
-          _userName = profile['name'] ?? 'Unknown';
-          _userEmail = profile['email'] ?? 'Unknown';
+          _userName = profile['name'] ?? 'unknown';
+          _userEmail = profile['email'] ?? 'unknown';
         } else {
-          _userName = 'Error loading profile';
+          _userName = 'error loading profile';
           _userEmail = '';
         }
       });
@@ -53,16 +55,17 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textLight),
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Parent Account',
-          style: Theme.of(context).textTheme.headlineMedium,
+          'parent account',
+          style: AppTypography.heading(fontSize: 22, color: AppColors.textPrimary),
         ),
         centerTitle: true,
       ),
@@ -71,26 +74,26 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildSectionHeader('Account'),
+            _buildSectionHeader('account'),
             if (_isLoading)
-              const Center(child: CircularProgressIndicator())
+              const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
             else
               _buildAccountCard(),
             const SizedBox(height: 24),
             
-            _buildSectionHeader('Manage Students'),
+            _buildSectionHeader('manage students'),
             _buildStudentsCard(),
             const SizedBox(height: 24),
             
-            _buildSectionHeader('Manage Subscription'),
+            _buildSectionHeader('manage subscription'),
             _buildSubscriptionCard(),
             const SizedBox(height: 24),
             
-            _buildSectionHeader('Email Settings'),
+            _buildSectionHeader('email settings'),
             _buildEmailSettingsCard(),
             const SizedBox(height: 24),
             
-            _buildSectionHeader('Additional Help'),
+            _buildSectionHeader('additional help'),
             _buildHelpCard(),
             const SizedBox(height: 40),
           ],
@@ -104,8 +107,9 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: AppColors.mint,
+        style: AppTypography.heading(
+          fontSize: 20,
+          color: AppColors.calmBlue,
         ),
       ),
     );
@@ -115,12 +119,19 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.darkSlateLight,
+        color: AppColors.cardSurface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.mint.withValues(alpha: 0.2),
+          color: AppColors.borderLight,
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: child,
     );
@@ -131,11 +142,11 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow('Owner Name', _userName),
-          const Divider(color: Colors.white12, height: 24),
-          _buildInfoRow('Email', _userEmail),
-          const Divider(color: Colors.white12, height: 24),
-          _buildInfoRow('Password', '********'),
+          _buildInfoRow('owner name', _userName),
+          Divider(color: AppColors.borderLight, height: 24),
+          _buildInfoRow('email', _userEmail),
+          Divider(color: AppColors.borderLight, height: 24),
+          _buildInfoRow('password', '********'),
           const SizedBox(height: 16),
           Align(
             alignment: Alignment.centerRight,
@@ -143,10 +154,14 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
               onPressed: () {
                 _showChangePasswordDialog();
               },
-              icon: const Icon(Icons.edit, color: AppColors.orange, size: 18),
+              icon: const Icon(Icons.edit, color: AppColors.calmBlue, size: 18),
               label: Text(
-                'EDIT PASSWORD',
-                style: GoogleFonts.fredoka(color: AppColors.orange),
+                'edit password',
+                style: AppTypography.body(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.calmBlue,
+                ),
               ),
             ),
           )
@@ -163,9 +178,9 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
           // Table Header
           Row(
             children: [
-              Expanded(flex: 2, child: _buildTableHeader('Student')),
-              Expanded(flex: 1, child: _buildTableHeader('Grade')),
-              Expanded(flex: 2, child: _buildTableHeader('Time Limit')),
+              Expanded(flex: 2, child: _buildTableHeader('student')),
+              Expanded(flex: 1, child: _buildTableHeader('grade')),
+              Expanded(flex: 2, child: _buildTableHeader('time limit')),
             ],
           ),
           const SizedBox(height: 12),
@@ -173,8 +188,8 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
-                'No students added yet. Add a student to get started!',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+                'no students added yet. add a student to get started!',
+                style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary),
               ),
             )
           else
@@ -183,7 +198,6 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: InkWell(
                   onTap: () {
-                    // Navigate to child's dashboard
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -200,15 +214,15 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                           children: [
                             CircleAvatar(
                               radius: 16,
-                              backgroundColor: AppColors.darkSlateLight,
+                              backgroundColor: AppColors.cardSurface,
                               backgroundImage: AssetImage(student['avatar_url'] ?? 'assets/images/solo_blue.png'),
                             ),
                             const SizedBox(width: 12),
-                            Expanded(child: _buildTableData(student['first_name'] ?? 'Unknown')),
+                            Expanded(child: _buildTableData(student['first_name'] ?? 'unknown')),
                           ],
                         ),
                       ),
-                      Expanded(flex: 1, child: _buildTableData(student['grade'] ?? 'N/A')),
+                      Expanded(flex: 1, child: _buildTableData(student['grade'] ?? 'n/a')),
                       Expanded(
                         flex: 2,
                         child: Row(
@@ -217,14 +231,18 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.darkSlate,
+                                  color: AppColors.warmWhite,
                                   borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppColors.borderLight),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(student['daily_limit'] ?? 'No Limit', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textLight)),
-                                    const Icon(Icons.arrow_drop_down, color: AppColors.textMuted),
+                                    Text(
+                                      student['daily_limit'] ?? 'no limit',
+                                      style: AppTypography.caption(fontSize: 13, color: AppColors.textPrimary),
+                                    ),
+                                    const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
                                   ],
                                 ),
                               ),
@@ -239,7 +257,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                                   ),
                                 );
                               },
-                              child: const Icon(Icons.edit, color: AppColors.mint, size: 20),
+                              child: const Icon(Icons.edit, color: AppColors.calmBlue, size: 20),
                             ),
                           ],
                         ),
@@ -261,10 +279,14 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                   ),
                 );
               },
-              icon: const Icon(Icons.add, color: AppColors.mint, size: 18),
+              icon: const Icon(Icons.add, color: AppColors.gentleGreen, size: 18),
               label: Text(
-                'ADD STUDENT',
-                style: GoogleFonts.fredoka(color: AppColors.mint),
+                'add student',
+                style: AppTypography.body(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.gentleGreen,
+                ),
               ),
             ),
           )
@@ -278,50 +300,58 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow('Current Plan', 'Premium Monthly'),
+          _buildInfoRow('current plan', 'premium monthly'),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    _showComingSoon('Cancel Subscription');
+                    _showComingSoon('cancel subscription');
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.redAccent, side: const BorderSide(color: Colors.redAccent),
+                    foregroundColor: AppColors.softCoral,
+                    side: const BorderSide(color: AppColors.softCoral),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('CANCEL'),
+                  child: Text('cancel', style: AppTypography.button(fontSize: 14, color: AppColors.softCoral)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    _showComingSoon('Hold Subscription');
+                    _showComingSoon('hold subscription');
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.gold, side: const BorderSide(color: AppColors.gold),
+                    foregroundColor: AppColors.warmAmber,
+                    side: const BorderSide(color: AppColors.warmAmber),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('HOLD'),
+                  child: Text('hold', style: AppTypography.button(fontSize: 14, color: AppColors.warmAmber)),
                 ),
               ),
             ],
           ),
-          const Divider(color: Colors.white12, height: 32),
-          _buildInfoRow('Payment Method', 'Visa ending in 4242'),
+          Divider(color: AppColors.borderLight, height: 32),
+          _buildInfoRow('payment method', 'visa ending in 4242'),
           const SizedBox(height: 8),
-          _buildInfoRow('Next Payment', 'Aug 15, 2026 (\$9.99)'),
+          _buildInfoRow('next payment', 'aug 15, 2026 (\$9.99)'),
           const SizedBox(height: 16),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: () {
-                _showComingSoon('Update Payment Method');
+                _showComingSoon('update payment method');
               },
-              icon: const Icon(Icons.credit_card, color: AppColors.mint, size: 18),
+              icon: const Icon(Icons.credit_card, color: AppColors.calmBlue, size: 18),
               label: Text(
-                'UPDATE PAYMENT',
-                style: GoogleFonts.fredoka(color: AppColors.mint),
+                'update payment',
+                style: AppTypography.body(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.calmBlue,
+                ),
               ),
             ),
           )
@@ -334,19 +364,19 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
     return _buildCardContainer(
       child: Column(
         children: [
-          _buildSwitchRow('Progress Emails', progressEmails, (val) {
+          _buildSwitchRow('progress emails', progressEmails, (val) {
             setState(() => progressEmails = val);
           }),
-          const Divider(color: Colors.white12),
-          _buildSwitchRow('Promotions', promotions, (val) {
+          Divider(color: AppColors.borderLight),
+          _buildSwitchRow('promotions', promotions, (val) {
             setState(() => promotions = val);
           }),
-          const Divider(color: Colors.white12),
-          _buildSwitchRow('Newsletters', newsletters, (val) {
+          Divider(color: AppColors.borderLight),
+          _buildSwitchRow('newsletters', newsletters, (val) {
             setState(() => newsletters = val);
           }),
-          const Divider(color: Colors.white12),
-          _buildSwitchRow('Periodic Updates', periodicUpdates, (val) {
+          Divider(color: AppColors.borderLight),
+          _buildSwitchRow('periodic updates', periodicUpdates, (val) {
             setState(() => periodicUpdates = val);
           }),
         ],
@@ -359,9 +389,9 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow('Email Support', 'support@adaptedmind.com'),
-          const Divider(color: Colors.white12, height: 24),
-          _buildInfoRow('Phone Support', '1-800-123-4567'),
+          _buildInfoRow('email support', 'support@adaptedmind.com'),
+          Divider(color: AppColors.borderLight, height: 24),
+          _buildInfoRow('phone support', '1-800-123-4567'),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -374,11 +404,11 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                 );
               },
               icon: const Icon(Icons.logout),
-              label: const Text('LOGOUT'),
+              label: Text('logout', style: AppTypography.button(fontSize: 16)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.darkSlate,
+                backgroundColor: AppColors.softCoral,
                 foregroundColor: Colors.white,
-                side: BorderSide(color: AppColors.mint.withValues(alpha: 0.5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
             ),
           )
@@ -393,12 +423,17 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary),
         ),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            value,
+            style: AppTypography.body(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+            textAlign: TextAlign.right,
           ),
         ),
       ],
@@ -411,25 +446,26 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.bodyLarge,
+          style: AppTypography.body(fontSize: 16, color: AppColors.textPrimary),
         ),
         Row(
           children: [
             Text(
-              value ? 'ON' : 'OFF',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: value ? AppColors.mint : AppColors.textMuted,
-                fontWeight: FontWeight.bold,
+              value ? 'on' : 'off',
+              style: AppTypography.caption(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: value ? AppColors.gentleGreen : AppColors.textSecondary,
               ),
             ),
             const SizedBox(width: 8),
             Switch(
               value: value,
               onChanged: onChanged,
-              activeColor: AppColors.mint,
-              activeTrackColor: AppColors.mint.withValues(alpha: 0.3),
-              inactiveThumbColor: AppColors.textMuted,
-              inactiveTrackColor: AppColors.darkSlate,
+              activeColor: AppColors.gentleGreen,
+              activeTrackColor: AppColors.gentleGreen.withValues(alpha: 0.3),
+              inactiveThumbColor: AppColors.textSecondary,
+              inactiveTrackColor: AppColors.borderLight,
             ),
           ],
         )
@@ -440,9 +476,10 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
   Widget _buildTableHeader(String text) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: AppColors.mint,
-        fontWeight: FontWeight.w600,
+      style: AppTypography.caption(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: AppColors.calmBlue,
       ),
     );
   }
@@ -450,7 +487,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
   Widget _buildTableData(String text) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.bodyLarge,
+      style: AppTypography.body(fontSize: 14, color: AppColors.textPrimary),
     );
   }
 
@@ -472,37 +509,34 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              backgroundColor: AppColors.darkSlate,
-              title: Text('Change Password', style: TextStyle(color: AppColors.mint)),
+              backgroundColor: AppColors.cardSurface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: Text('change password', style: AppTypography.heading(fontSize: 20, color: AppColors.textPrimary)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (errorMessage != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: Text(errorMessage!, style: const TextStyle(color: Colors.redAccent)),
+                      child: Text(errorMessage!, style: AppTypography.body(fontSize: 14, color: AppColors.softCoral)),
                     ),
                   TextField(
                     controller: oldPasswordController,
                     obscureText: true,
-                    style: const TextStyle(color: AppColors.textLight),
+                    style: AppTypography.body(fontSize: 16),
                     decoration: InputDecoration(
-                      labelText: 'Current Password',
-                      labelStyle: const TextStyle(color: AppColors.textMuted),
-                      enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                      focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: AppColors.mint)),
+                      labelText: 'current password',
+                      labelStyle: AppTypography.caption(),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: newPasswordController,
                     obscureText: true,
-                    style: const TextStyle(color: AppColors.textLight),
+                    style: AppTypography.body(fontSize: 16),
                     decoration: InputDecoration(
-                      labelText: 'New Password',
-                      labelStyle: const TextStyle(color: AppColors.textMuted),
-                      enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                      focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: AppColors.mint)),
+                      labelText: 'new password',
+                      labelStyle: AppTypography.caption(),
                     ),
                   ),
                 ],
@@ -510,7 +544,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
               actions: [
                 TextButton(
                   onPressed: isLoading ? null : () => Navigator.pop(context),
-                  child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+                  child: Text('cancel', style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary)),
                 ),
                 ElevatedButton(
                   onPressed: isLoading
@@ -538,14 +572,17 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                             if (!context.mounted) return;
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Password changed successfully!'), backgroundColor: Colors.green),
+                              const SnackBar(content: Text('password changed successfully!'), backgroundColor: AppColors.gentleGreen),
                             );
                           }
                         },
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.mint),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.calmBlue,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                   child: isLoading
                       ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Save', style: TextStyle(color: AppColors.darkSlate)),
+                      : Text('save', style: AppTypography.button(fontSize: 14)),
                 ),
               ],
             );
