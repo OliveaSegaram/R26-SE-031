@@ -13,7 +13,9 @@ import 'games/visual_skills/activity8_position.dart';
 import 'games/visual_skills/activity9_sequence.dart';
 import 'games/visual_skills/activity10_shadow_match.dart';
 class LevelMapScreen extends StatefulWidget {
-  const LevelMapScreen({super.key});
+  final Map<String, dynamic>? studentData;
+
+  const LevelMapScreen({super.key, this.studentData});
 
   @override
   State<LevelMapScreen> createState() => _LevelMapScreenState();
@@ -420,9 +422,9 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         child: Container(
           width: 60,
           height: 60,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/images/solo_blue.png'),
+              image: AssetImage(widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png'),
               fit: BoxFit.contain,
             ),
           ),

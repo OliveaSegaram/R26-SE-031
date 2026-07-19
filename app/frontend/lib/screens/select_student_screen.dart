@@ -6,9 +6,34 @@ import 'dashboard_screen.dart';
 import 'parent_account_screen.dart';
 import 'assessment_screen.dart';
 import 'add_student_screen.dart';
+import '../services/auth_service.dart';
 
-class SelectStudentScreen extends StatelessWidget {
+class SelectStudentScreen extends StatefulWidget {
   const SelectStudentScreen({super.key});
+
+  @override
+  State<SelectStudentScreen> createState() => _SelectStudentScreenState();
+}
+
+class _SelectStudentScreenState extends State<SelectStudentScreen> {
+  List<dynamic> _students = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStudents();
+  }
+
+  Future<void> _loadStudents() async {
+    final students = await AuthService().getStudents();
+    if (mounted) {
+      setState(() {
+        _students = students;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,98 +89,115 @@ class SelectStudentScreen extends StatelessWidget {
             child: Column(
               children: [
                 const Spacer(),
-                
                 // Student Cards Area
-                Center(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DashboardScreen(),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 220,
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 30,
-                            offset: Offset(0, 8),
-                          ),
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AspectRatio(
-                            aspectRatio: 1,
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
+                Expanded(
+                  child: _isLoading 
+                    ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                    : _students.isEmpty 
+                        ? Center(child: Text("No students yet. Add a student below!", style: TextStyle(color: Colors.white, fontSize: 18)))
+                        : Center(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: _students.map((student) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 16),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => DashboardScreen(studentData: student as Map<String, dynamic>),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        width: 180,
+                                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(20),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Colors.black12,
+                                              blurRadius: 30,
+                                              offset: Offset(0, 8),
+                                            ),
+                                            BoxShadow(
+                                              color: Colors.black12,
+                                              blurRadius: 8,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            AspectRatio(
+                                              aspectRatio: 1,
+                                              child: Container(
+                                                width: double.infinity,
+                                                decoration: BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(16),
+                                                ),
+                                                child: Stack(
+                                                  fit: StackFit.expand,
+                                                  children: [
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        borderRadius: BorderRadius.circular(16),
+                                                        gradient: const LinearGradient(
+                                                          begin: Alignment.topLeft,
+                                                          end: Alignment.bottomRight,
+                                                          colors: [AppColors.goldLight, AppColors.cream],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      decoration: const BoxDecoration(
+                                                        gradient: RadialGradient(
+                                                          center: Alignment(0, -0.14),
+                                                          radius: 0.5,
+                                                          colors: [Colors.white, Colors.transparent],
+                                                          stops: [0.3, 0.35],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    ClipRRect(
+                                                      borderRadius: BorderRadius.circular(16),
+                                                      child: Image.asset(
+                                                        student['avatar_url'] ?? 'assets/images/solo_blue.png',
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              student['first_name'] ?? 'Unknown',
+                                              style: GoogleFonts.fredoka(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.w700,
+                                                color: AppColors.primary,
+                                                letterSpacing: 0.5,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
                               ),
-                              child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    gradient: const LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [AppColors.goldLight, AppColors.cream],
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  decoration: const BoxDecoration(
-                                    gradient: RadialGradient(
-                                      center: Alignment(0, -0.14),
-                                      radius: 0.5,
-                                      colors: [Colors.white, Colors.transparent],
-                                      stops: [0.3, 0.35],
-                                    ),
-                                  ),
-                                ),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Image.asset(
-                                    'assets/images/solo_blue.png',
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                          Text(
-                            'Ace',
-                            style: GoogleFonts.fredoka(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ),
-                
-                const Spacer(),
                 
                 // Bottom Action Buttons
                 Padding(

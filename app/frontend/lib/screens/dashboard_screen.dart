@@ -5,7 +5,9 @@ import '../theme/app_theme.dart';
 import 'level_map_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final Map<String, dynamic>? studentData;
+
+  const DashboardScreen({super.key, this.studentData});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -182,7 +184,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Image.asset(
-              'assets/images/solo_blue.png',
+              widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png',
               width: 56,
               height: 56,
               fit: BoxFit.contain,
@@ -196,9 +198,9 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hi, Ace! 👋',
+                  'Hi, ${widget.studentData?['first_name'] ?? 'Ace'}! 👋',
                   style: GoogleFonts.fredoka(
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
@@ -276,7 +278,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const LevelMapScreen()),
+          MaterialPageRoute(builder: (context) => LevelMapScreen(studentData: widget.studentData)),
         );
       },
       child: Container(
