@@ -13,10 +13,17 @@ class UserLogin(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
-    
+
+class TokenRefreshRequest(BaseModel):
+    refresh_token: str
 class UserResponse(BaseModel):
     id: str
     name: str
     email: EmailStr
     role: str
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str = Field(..., min_length=8)
