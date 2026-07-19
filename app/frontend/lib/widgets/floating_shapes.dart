@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 /// Decorative floating shapes for backgrounds.
-/// Not used in the current minimalistic design, but kept as a utility.
+/// Dyslexia-accessible: pastel colors, reduced speed & count for less distraction.
 class FloatingShapes extends StatefulWidget {
   final int count;
   final List<Color>? colors;
 
   const FloatingShapes({
     super.key,
-    this.count = 15,
+    this.count = 10,     // Reduced from 15 — less visual noise
     this.colors,
   });
 
@@ -27,30 +27,30 @@ class _FloatingShapesState extends State<FloatingShapes>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(seconds: 10),
+      duration: const Duration(seconds: 14),  // Slower (was 10)
       vsync: this,
     )..repeat();
 
     final random = Random();
     final colors = widget.colors ??
         [
-          AppColors.gold.withValues(alpha: 0.3),
-          AppColors.orange.withValues(alpha: 0.25),
-          AppColors.orangeLight.withValues(alpha: 0.2),
-          AppColors.mint.withValues(alpha: 0.2),
-          Colors.white.withValues(alpha: 0.15),
+          AppColors.warmAmber.withValues(alpha: 0.2),
+          AppColors.gentleGreen.withValues(alpha: 0.15),
+          AppColors.calmBlue.withValues(alpha: 0.15),
+          AppColors.softCoral.withValues(alpha: 0.12),
+          AppColors.textSecondary.withValues(alpha: 0.08),
         ];
 
     _shapes = List.generate(widget.count, (i) {
       return _ShapeData(
         x: random.nextDouble(),
         y: random.nextDouble(),
-        size: 4 + random.nextDouble() * 12,
-        speed: 0.3 + random.nextDouble() * 0.7,
+        size: 4 + random.nextDouble() * 10,   // Slightly smaller
+        speed: 0.2 + random.nextDouble() * 0.4, // Slower movement
         phase: random.nextDouble() * 2 * pi,
         color: colors[random.nextInt(colors.length)],
         shape: _ShapeType.values[random.nextInt(_ShapeType.values.length)],
-        rotationSpeed: (random.nextDouble() - 0.5) * 2,
+        rotationSpeed: (random.nextDouble() - 0.5) * 1.2, // Gentler rotation
       );
     });
   }
@@ -113,9 +113,9 @@ class _FloatingShapesPainter extends CustomPainter {
     for (final shape in shapes) {
       final time = progress * 2 * pi;
       final dx = shape.x * size.width +
-          sin(time * shape.speed + shape.phase) * 15;
+          sin(time * shape.speed + shape.phase) * 12;  // Reduced amplitude
       final dy = shape.y * size.height +
-          cos(time * shape.speed * 0.7 + shape.phase) * 20;
+          cos(time * shape.speed * 0.7 + shape.phase) * 15;
 
       final paint = Paint()
         ..color = shape.color
@@ -123,7 +123,7 @@ class _FloatingShapesPainter extends CustomPainter {
 
       canvas.save();
       canvas.translate(dx, dy);
-      canvas.rotate(time * shape.rotationSpeed * 0.3);
+      canvas.rotate(time * shape.rotationSpeed * 0.2);  // Slower rotation
 
       switch (shape.shape) {
         case _ShapeType.circle:

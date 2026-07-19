@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_theme.dart';
 import 'welcome_screen.dart';
 
 /// Screen 1: Splash Screen
-/// Inspired by the "Moody" style — app name letters animate into center,
-/// with character images replacing two letters.
-/// Navy blue + coral + teal color palette.
+/// Dyslexia-accessible: warm crème gradient, dark grey text particles,
+/// calm blue & amber accents. No pure black on white.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -33,15 +32,15 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<Offset> _taglineSlideAnimation;
   late Animation<double> _exitAnimation;
 
-  // Color constants — navy blue + orange + mint green palette
-  static const Color _navyDark = Color(0xFF0E1E33);
-  static const Color _navyMid = Color(0xFF1B3A5C);
-  static const Color _navyLight = Color(0xFF2E5A8A);
-  static const Color _coral = Color(0xFFFF7B3A);      // vibrant orange
-  static const Color _coralLight = Color(0xFFFF9F6C);  // soft orange
-  static const Color _teal = Color(0xFF2DD4A8);        // mint green
-  static const Color _tealLight = Color(0xFF6EEECF);   // light mint
-  static const Color _gold = Color(0xFFFFD166);         // sunshine gold
+  // Dyslexia-accessible color constants matching AppTheme
+  static const Color _creamLight = AppColors.cream;
+  static const Color _creamMid = AppColors.warmWhite;
+  static const Color _creamDark = Color(0xFFF3EDDF); // Slightly darker for gradient depth
+  static const Color _calmBlue = AppColors.calmBlue;
+  static const Color _calmBlueLight = AppColors.calmBlueLight;
+  static const Color _gentleGreen = AppColors.gentleGreen;
+  static const Color _warmAmber = AppColors.warmAmber;
+  static const Color _textDark = AppColors.textPrimary;
 
   // Sinhala hodiya characters for background animation
   static const List<String> _sinhalaChars = [
@@ -65,22 +64,21 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _initParticles() {
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < 20; i++) {
       _particles.add(_Particle(
         x: _random.nextDouble(),
         y: _random.nextDouble(),
-        size: _random.nextDouble() * 16 + 12, // font size 12-28
-        speed: _random.nextDouble() * 0.25 + 0.05,
-        opacity: _random.nextDouble() * 0.25 + 0.05,
-        color: [_coral, _teal, _gold, Colors.white][_random.nextInt(4)],
+        size: _random.nextDouble() * 20 + 16, // Larger letters
+        speed: _random.nextDouble() * 0.15 + 0.05,
+        opacity: _random.nextDouble() * 0.3 + 0.15, // Higher visibility (0.15 to 0.45)
+        color: [_calmBlue, _gentleGreen, _warmAmber, _textDark][_random.nextInt(4)],
         character: _sinhalaChars[_random.nextInt(_sinhalaChars.length)],
-        rotation: (_random.nextDouble() - 0.5) * 0.6, // slight tilt
+        rotation: (_random.nextDouble() - 0.5) * 0.4,
       ));
     }
   }
 
   void _initAnimations() {
-    // Background fade in
     _bgController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -90,35 +88,31 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.easeOut,
     );
 
-    // Letter fly-in (staggered via intervals)
     _letterController = AnimationController(
       duration: const Duration(milliseconds: 1800),
       vsync: this,
     );
 
-    // Character bounce after landing
     _characterBounceController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1400),
       vsync: this,
     );
     _characterBounceAnimation =
-        Tween<double>(begin: 0.95, end: 1.05).animate(
+        Tween<double>(begin: 0.97, end: 1.03).animate(
       CurvedAnimation(
         parent: _characterBounceController,
         curve: Curves.easeInOut,
       ),
     );
 
-    // Glow pulse
     _glowController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 2500),
       vsync: this,
     );
-    _glowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(
+    _glowAnimation = Tween<double>(begin: 0.3, end: 0.7).animate(
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
-    // Tagline fade + slide
     _taglineController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -135,13 +129,11 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.easeOutCubic,
     ));
 
-    // Particle float
     _particleController = AnimationController(
-      duration: const Duration(seconds: 10),
+      duration: const Duration(seconds: 12),
       vsync: this,
     );
 
-    // Exit fade
     _exitController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -153,15 +145,12 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _startAnimationSequence() {
-    // 1. Background fades in
     _bgController.forward();
 
-    // 2. Letters fly in (starts 300ms after bg)
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) _letterController.forward();
     });
 
-    // 3. After letters land, start character bounce + glow
     Future.delayed(const Duration(milliseconds: 2100), () {
       if (mounted) {
         _characterBounceController.repeat(reverse: true);
@@ -169,17 +158,14 @@ class _SplashScreenState extends State<SplashScreen>
       }
     });
 
-    // 4. Tagline appears
     Future.delayed(const Duration(milliseconds: 2400), () {
       if (mounted) _taglineController.forward();
     });
 
-    // 5. Start particles
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) _particleController.repeat();
     });
 
-    // 6. Auto navigate after 4 seconds
     Future.delayed(const Duration(milliseconds: 4000), () {
       if (mounted) {
         _exitController.forward().then((_) {
@@ -213,10 +199,9 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  /// Builds a single animated letter element
   Widget _buildLetterElement({
     required String text,
-    required double delay, // 0.0 - 1.0 within letter controller
+    required double delay,
     required Offset fromOffset,
     required double fontSize,
     bool isImage = false,
@@ -268,22 +253,15 @@ class _SplashScreenState extends State<SplashScreen>
           ? _buildCharacterLetter(imagePath!, imageSize)
           : Text(
               text,
-              style: GoogleFonts.fredoka(
+              style: AppTypography.heading(
                 fontSize: fontSize,
                 fontWeight: FontWeight.w700,
-                color: textColor ?? Colors.white,
-                shadows: [
-                  Shadow(
-                    color: (textColor ?? Colors.white).withValues(alpha: 0.4),
-                    blurRadius: 12,
-                  ),
-                ],
+                color: textColor ?? _textDark,
               ),
             ),
     );
   }
 
-  /// Character image styled as a letter replacement
   Widget _buildCharacterLetter(String imagePath, double size) {
     return AnimatedBuilder(
       animation: _characterBounceController,
@@ -300,7 +278,7 @@ class _SplashScreenState extends State<SplashScreen>
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: _coral.withValues(alpha: 0.3),
+              color: _warmAmber.withValues(alpha: 0.25),
               blurRadius: 15,
               spreadRadius: 2,
             ),
@@ -319,7 +297,6 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    // Responsive sizing
     final isSmallScreen = screenSize.width < 380;
     final letterSize = isSmallScreen ? 38.0 : 46.0;
     final charImageSize = isSmallScreen ? 52.0 : 62.0;
@@ -343,7 +320,7 @@ class _SplashScreenState extends State<SplashScreen>
           },
           child: Stack(
             children: [
-              // === BACKGROUND ===
+              // === BACKGROUND — warm crème gradient ===
               _buildBackground(screenSize),
 
               // === FLOATING PARTICLES ===
@@ -357,8 +334,7 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Top word: "Adapted" with character replacing "d" (last d)
-                    // A-d-a-p-t-e-d → A d a p t e [character]
+                    // Top word: "Adapted"
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -368,42 +344,42 @@ class _SplashScreenState extends State<SplashScreen>
                           delay: 0.0,
                           fromOffset: const Offset(-80, -60),
                           fontSize: letterSize,
-                          textColor: Colors.white,
+                          textColor: _textDark,
                         ),
                         _buildLetterElement(
                           text: 'd',
                           delay: 0.05,
                           fromOffset: const Offset(0, -100),
                           fontSize: letterSize,
-                          textColor: _tealLight,
+                          textColor: _calmBlue,
                         ),
                         _buildLetterElement(
                           text: 'a',
                           delay: 0.10,
                           fromOffset: const Offset(60, -40),
                           fontSize: letterSize,
-                          textColor: Colors.white,
+                          textColor: _textDark,
                         ),
                         _buildLetterElement(
                           text: 'p',
                           delay: 0.15,
                           fromOffset: const Offset(-50, 80),
                           fontSize: letterSize,
-                          textColor: _coralLight,
+                          textColor: _warmAmber,
                         ),
                         _buildLetterElement(
                           text: 't',
                           delay: 0.20,
                           fromOffset: const Offset(90, 30),
                           fontSize: letterSize,
-                          textColor: Colors.white,
+                          textColor: _textDark,
                         ),
                         _buildLetterElement(
                           text: 'e',
                           delay: 0.25,
                           fromOffset: const Offset(-40, -70),
                           fontSize: letterSize,
-                          textColor: _tealLight,
+                          textColor: _calmBlue,
                         ),
                         // Monster character replaces the final 'd'
                         _buildLetterElement(
@@ -420,8 +396,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                     const SizedBox(height: 4),
 
-                    // Bottom word: "Mind" with owl replacing "i"
-                    // M-[character]-n-d
+                    // Bottom word: "Mind"
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -431,9 +406,8 @@ class _SplashScreenState extends State<SplashScreen>
                           delay: 0.38,
                           fromOffset: const Offset(-100, 0),
                           fontSize: letterSize,
-                          textColor: _coralLight,
+                          textColor: _warmAmber,
                         ),
-                        // Owl character replaces "i"
                         _buildLetterElement(
                           text: '',
                           delay: 0.45,
@@ -448,14 +422,14 @@ class _SplashScreenState extends State<SplashScreen>
                           delay: 0.50,
                           fromOffset: const Offset(80, 60),
                           fontSize: letterSize,
-                          textColor: Colors.white,
+                          textColor: _textDark,
                         ),
                         _buildLetterElement(
                           text: 'd',
                           delay: 0.55,
                           fromOffset: const Offset(100, 0),
                           fontSize: letterSize,
-                          textColor: _tealLight,
+                          textColor: _calmBlue,
                         ),
                       ],
                     ),
@@ -477,28 +451,29 @@ class _SplashScreenState extends State<SplashScreen>
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 24,
-                          vertical: 8,
+                          vertical: 10,
                         ),
                         decoration: BoxDecoration(
+                          color: AppColors.mintBg,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: _teal.withValues(alpha: 0.3),
+                            color: _gentleGreen.withValues(alpha: 0.4),
                             width: 1,
                           ),
-                          gradient: LinearGradient(
-                            colors: [
-                              _teal.withValues(alpha: 0.08),
-                              _coral.withValues(alpha: 0.08),
-                            ],
-                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _gentleGreen.withValues(alpha: 0.1),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
                         child: Text(
-                          'Learn, Play & Grow!',
-                          style: GoogleFonts.nunito(
+                          'learn, play and grow!',
+                          style: AppTypography.body(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.85),
-                            letterSpacing: 2.0,
+                            color: AppColors.textBrown,
                           ),
                         ),
                       ),
@@ -520,10 +495,10 @@ class _SplashScreenState extends State<SplashScreen>
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _navyDark,
-            _navyMid,
-            _navyLight,
-            _navyMid,
+            _creamLight,
+            _creamMid,
+            _creamLight,
+            _creamDark,
           ],
           stops: [0.0, 0.3, 0.7, 1.0],
           begin: Alignment.topCenter,
@@ -565,8 +540,8 @@ class _SplashScreenState extends State<SplashScreen>
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  _teal.withValues(alpha: glowOpacity * 0.15),
-                  _coral.withValues(alpha: glowOpacity * 0.08),
+                  _warmAmber.withValues(alpha: glowOpacity * 0.35),
+                  _calmBlue.withValues(alpha: glowOpacity * 0.15),
                   Colors.transparent,
                 ],
                 stops: const [0.0, 0.5, 1.0],
@@ -644,22 +619,20 @@ class _ParticlePainter extends CustomPainter {
   bool shouldRepaint(covariant _ParticlePainter oldDelegate) => true;
 }
 
-// === GRID PATTERN PAINTER (subtle background detail) ===
+// === GRID PATTERN PAINTER (very subtle warm grey lines) ===
 class _GridPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.02)
+      ..color = const Color(0xFF3E3E3E).withValues(alpha: 0.03)
       ..strokeWidth = 0.5
       ..style = PaintingStyle.stroke;
 
     const spacing = 40.0;
 
-    // Vertical lines
     for (double x = 0; x < size.width; x += spacing) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
-    // Horizontal lines
     for (double y = 0; y < size.height; y += spacing) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }

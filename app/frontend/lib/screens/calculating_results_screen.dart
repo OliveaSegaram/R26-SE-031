@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
 
+/// Calculating Results Screen
+/// Dyslexia-accessible: crème bg, gentle green progress, dark grey text.
 class CalculatingResultsScreen extends StatefulWidget {
   final int score;
 
@@ -19,34 +20,40 @@ class _CalculatingResultsScreenState extends State<CalculatingResultsScreen> {
     // Simulate network/calculation delay
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
-        // TODO: Navigate to home screen or dashboard
-        // For now, we just show a dialog to demonstrate completion.
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
-            backgroundColor: AppColors.darkSlateLight,
+            backgroundColor: AppColors.cardSurface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
             title: Text(
-              'Analysis Complete',
-              style: GoogleFonts.fredoka(color: AppColors.textLight),
+              'analysis complete',
+              style: AppTypography.heading(
+                fontSize: 22,
+                color: AppColors.textPrimary,
+              ),
             ),
             content: Text(
-              'Your dyslexia screening score is: ${widget.score}\n\nThis is just a prototype calculation!',
-              style: GoogleFonts.nunito(color: AppColors.textLight),
+              'your dyslexia screening score is: ${widget.score}\n\nthis is just a prototype calculation!',
+              style: AppTypography.body(
+                fontSize: 16,
+                color: AppColors.textSecondary,
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () {
-                  // Pop dialog
                   Navigator.of(context).pop();
-                  // Go back to splash or home
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 },
                 child: Text(
-                  'FINISH',
-                  style: GoogleFonts.nunito(
-                    color: AppColors.orange,
-                    fontWeight: FontWeight.bold,
+                  'finish',
+                  style: AppTypography.button(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.calmBlue,
                   ),
                 ),
               ),
@@ -60,7 +67,7 @@ class _CalculatingResultsScreenState extends State<CalculatingResultsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkSlate,
+      backgroundColor: AppColors.cream,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -72,19 +79,19 @@ class _CalculatingResultsScreenState extends State<CalculatingResultsScreen> {
             ),
             const SizedBox(height: 32),
             Text(
-              'Analyzing Results...',
-              style: GoogleFonts.fredoka(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textLight,
+              'analyzing results...',
+              style: AppTypography.heading(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 16),
             const SizedBox(
               width: 200,
               child: LinearProgressIndicator(
-                color: AppColors.mint,
-                backgroundColor: AppColors.darkSlateLight,
+                color: AppColors.gentleGreen,
+                backgroundColor: AppColors.borderLight,
               ),
             ),
           ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Animated character widget that uses the actual character.png asset.
 /// Supports bounce, wave (tilt), excited, peek, and curious animations.
+/// Dyslexia-accessible: reduced bounce intensity for less visual distraction.
 class MonsterCharacter extends StatefulWidget {
   final double size;
   final MonsterAnimation animation;
@@ -36,13 +37,13 @@ class _MonsterCharacterState extends State<MonsterCharacter>
   void initState() {
     super.initState();
 
-    // Bounce/Float animation
+    // Bounce/Float animation — gentler for dyslexic users
     final bounceDuration = widget.animation == MonsterAnimation.excited
-        ? 600
-        : 2500; // Slower, elegant floating
+        ? 800        // Slower excited bounce (was 600)
+        : 3000;      // Very slow, elegant floating (was 2500)
     final bounceHeight = widget.animation == MonsterAnimation.excited
-        ? -16.0
-        : -8.0;
+        ? -10.0      // Less jarring (was -16)
+        : -6.0;      // Subtle float (was -8)
 
     _bounceController = AnimationController(
       duration: Duration(milliseconds: bounceDuration),
@@ -68,12 +69,12 @@ class _MonsterCharacterState extends State<MonsterCharacter>
     );
     _entranceController.forward();
 
-    // Tilt/breathing animation
+    // Tilt/breathing animation — gentler
     _tiltController = AnimationController(
-      duration: const Duration(milliseconds: 3000), // Very slow breathing
+      duration: const Duration(milliseconds: 3500), // Slower (was 3000)
       vsync: this,
     );
-    _tiltAnimation = Tween<double>(begin: -0.02, end: 0.02).animate(
+    _tiltAnimation = Tween<double>(begin: -0.015, end: 0.015).animate(
       CurvedAnimation(parent: _tiltController, curve: Curves.easeInOutSine),
     );
 
