@@ -82,7 +82,7 @@ def start_service(service):
         log_dir = BASE / "logs"
         log_path = log_dir / f"{service['path']}.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        log_file = open(log_path, "w", encoding="utf-8")
+        log_file = open(log_path, "w+", encoding="utf-8")
 
         p = subprocess.Popen(
             [sys.executable, str(main_py)],
