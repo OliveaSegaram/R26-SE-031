@@ -17,6 +17,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, status, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
 from email_validator import validate_email, EmailNotValidError
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -27,7 +28,7 @@ from slowapi.errors import RateLimitExceeded
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from shared.database import connect_to_mongo, close_mongo_connection, get_db
-from models import UserCreate, UserLogin, Token, UserResponse, TokenRefreshRequest, ChangePasswordRequest
+from models import UserCreate, UserLogin, Token, UserResponse, TokenRefreshRequest, ChangePasswordRequest, StudentCreate, StudentResponse, StudentUpdate
 from auth_utils import get_password_hash, verify_password, create_access_token, create_refresh_token, verify_token
 
 PORT = int(os.getenv("C5_PORT", "8015"))
@@ -195,6 +196,116 @@ async def change_password(request: ChangePasswordRequest, current_user: dict = D
     )
     
     return {"status": "success", "message": "Password changed successfully"}
+
+class VerifyPasswordRequest(BaseModel):
+    password: str
+
+@app.post("/api/v1/auth/verify-password")
+async def verify_user_password(request: VerifyPasswordRequest, current_user: dict = Depends(get_current_user)):
+    if not verify_password(request.password, current_user["hashed_password"]):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
+    return {"status": "success", "message": "Password is correct"}
+
+@app.post("/api/v1/auth/students", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)
+async def add_student(request: StudentCreate, current_user: dict = Depends(get_current_user)):
+    # 1. Verify parent password
+    if not verify_password(request.parent_password, current_user["hashed_password"]):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect parent password")
+    
+    db = get_db()
+    
+    # 2. Check if username is taken
+    existing = await db.students.find_one({"username": request.username.lower()})
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+    
+    # 3. Create student document
+    student_doc = {
+        "parent_id": current_user["_id"],
+        "first_name": request.first_name,
+        "last_name": request.last_name,
+        "username": request.username.lower(),
+        "grade": request.grade,
+        "daily_limit": request.daily_limit,
+        "assessment_results": request.assessment_results,
+        "avatar_url": request.avatar_url,
+    }
+    
+    result = await db.students.insert_one(student_doc)
+    
+    return StudentResponse(
+        id=str(result.inserted_id),
+        first_name=request.first_name,
+        last_name=request.last_name,
+        username=request.username,
+        grade=request.grade,
+        daily_limit=request.daily_limit,
+        avatar_url=request.avatar_url
+    )
+
+@app.get("/api/v1/auth/students", response_model=list[StudentResponse])
+async def list_students(current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    cursor = db.students.find({"parent_id": current_user["_id"]})
+    students = await cursor.to_list(length=100)
+    
+    result = []
+    for s in students:
+        result.append(StudentResponse(
+            id=str(s["_id"]),
+            first_name=s["first_name"],
+            last_name=s["last_name"],
+            username=s["username"],
+            grade=s["grade"],
+            daily_limit=s["daily_limit"],
+            avatar_url=s.get("avatar_url")
+        ))
+    
+    return result
+
+@app.put("/api/v1/auth/students/{student_id}", response_model=StudentResponse)
+async def update_student(student_id: str, request: StudentUpdate, current_user: dict = Depends(get_current_user)):
+    if not verify_password(request.parent_password, current_user["hashed_password"]):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect parent password")
+    
+    from bson.objectid import ObjectId
+    try:
+        obj_id = ObjectId(student_id)
+    except:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid student ID")
+
+    db = get_db()
+    
+    # Ensure student belongs to parent
+    existing_student = await db.students.find_one({"_id": obj_id, "parent_id": current_user["_id"]})
+    if not existing_student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
+    # Check username collision (allow same username for same student)
+    existing_username = await db.students.find_one({"username": request.username.lower(), "_id": {"$ne": obj_id}})
+    if existing_username:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+
+    update_doc = {
+        "first_name": request.first_name,
+        "last_name": request.last_name,
+        "username": request.username.lower(),
+        "grade": request.grade,
+        "daily_limit": request.daily_limit,
+        "avatar_url": request.avatar_url,
+    }
+
+    await db.students.update_one({"_id": obj_id}, {"$set": update_doc})
+
+    return StudentResponse(
+        id=str(obj_id),
+        first_name=request.first_name,
+        last_name=request.last_name,
+        username=request.username,
+        grade=request.grade,
+        daily_limit=request.daily_limit,
+        avatar_url=request.avatar_url
+    )
 
 if __name__ == "__main__":
     import uvicorn
