@@ -4,6 +4,7 @@ import '../../theme/app_theme.dart';
 import 'welcome_screen.dart'; // For logout routing
 import 'assessment_screen.dart';
 import 'add_student_screen.dart';
+import '../services/auth_service.dart';
 class ParentAccountScreen extends StatefulWidget {
   const ParentAccountScreen({super.key});
 
@@ -17,6 +18,32 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
   bool promotions = false;
   bool newsletters = false;
   bool periodicUpdates = true;
+
+  bool _isLoading = true;
+  String _userName = 'Loading...';
+  String _userEmail = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    final profile = await AuthService().getUserProfile();
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (profile != null) {
+          _userName = profile['name'] ?? 'Unknown';
+          _userEmail = profile['email'] ?? 'Unknown';
+        } else {
+          _userName = 'Error loading profile';
+          _userEmail = '';
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +67,10 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildSectionHeader('Account'),
-            _buildAccountCard(),
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator())
+            else
+              _buildAccountCard(),
             const SizedBox(height: 24),
             
             _buildSectionHeader('Manage Students'),
@@ -96,9 +126,9 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow('Owner Name', 'John Doe'),
+          _buildInfoRow('Owner Name', _userName),
           const Divider(color: Colors.white12, height: 24),
-          _buildInfoRow('Email', 'john.doe@example.com'),
+          _buildInfoRow('Email', _userEmail),
           const Divider(color: Colors.white12, height: 24),
           _buildInfoRow('Password', '********'),
           const SizedBox(height: 16),
@@ -106,7 +136,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: () {
-                _showComingSoon('Edit Password');
+                _showChangePasswordDialog();
               },
               icon: const Icon(Icons.edit, color: AppColors.orange, size: 18),
               label: Text(
@@ -366,6 +396,101 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
   void _showComingSoon(String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('$feature feature coming soon!')),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final oldPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    bool isLoading = false;
+    String? errorMessage;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: AppColors.darkSlate,
+              title: Text('Change Password', style: TextStyle(color: AppColors.mint)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(errorMessage!, style: const TextStyle(color: Colors.redAccent)),
+                    ),
+                  TextField(
+                    controller: oldPasswordController,
+                    obscureText: true,
+                    style: const TextStyle(color: AppColors.textLight),
+                    decoration: InputDecoration(
+                      labelText: 'Current Password',
+                      labelStyle: const TextStyle(color: AppColors.textMuted),
+                      enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                      focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: AppColors.mint)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: newPasswordController,
+                    obscureText: true,
+                    style: const TextStyle(color: AppColors.textLight),
+                    decoration: InputDecoration(
+                      labelText: 'New Password',
+                      labelStyle: const TextStyle(color: AppColors.textMuted),
+                      enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+                      focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: AppColors.mint)),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+                ),
+                ElevatedButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          setState(() {
+                            isLoading = true;
+                            errorMessage = null;
+                          });
+
+                          final error = await AuthService().changePassword(
+                            oldPasswordController.text,
+                            newPasswordController.text,
+                          );
+
+                          setState(() {
+                            isLoading = false;
+                          });
+
+                          if (error != null) {
+                            setState(() {
+                              errorMessage = error;
+                            });
+                          } else {
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Password changed successfully!'), backgroundColor: Colors.green),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.mint),
+                  child: isLoading
+                      ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Save', style: TextStyle(color: AppColors.darkSlate)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
