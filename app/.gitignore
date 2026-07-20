@@ -12,6 +12,7 @@
 .swiftpm/
 migrate_working_dir/
 
+#IDE
 # IntelliJ related
 *.iml
 *.ipr
@@ -26,7 +27,7 @@ migrate_working_dir/
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
-.dart_tool/
+frontend/.dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
