@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_theme.dart';
 import 'level_map_screen.dart';
 import 'select_student_screen.dart';
@@ -8,7 +9,7 @@ import 'parent_account_screen.dart';
 
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
-/// calm blue accents, 16pt+ Sinhala text.
+/// calm blue accents, 16pt+ text.
 class DashboardScreen extends StatefulWidget {
   final Map<String, dynamic>? studentData;
 
@@ -20,81 +21,83 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen>
     with TickerProviderStateMixin {
-  int _selectedTabIndex = 0;
+  
+  // Navigation State
+  int _navIndex = 0; // 0: Home, 1: Shop, 2: Progress, 3: Settings
 
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
-  final List<Map<String, dynamic>> _categories = [
-    {'label': 'all skills', 'icon': Icons.apps_rounded},
-    {'label': 'visual', 'icon': Icons.visibility_rounded},
-    {'label': 'auditory', 'icon': Icons.hearing_rounded},
-    {'label': 'reading', 'icon': Icons.menu_book_rounded},
-    {'label': 'writing', 'icon': Icons.edit_rounded},
+  final List<Map<String, dynamic>> _navItems = [
+    {'label': 'home', 'icon': FontAwesomeIcons.houseChimney, 'color': AppColors.calmBlue},
+    {'label': 'shop', 'icon': FontAwesomeIcons.store, 'color': AppColors.softCoral},
+    {'label': 'progress', 'icon': FontAwesomeIcons.trophy, 'color': AppColors.warmAmber},
+    {'label': 'settings', 'icon': FontAwesomeIcons.gear, 'color': AppColors.gentleGreen},
   ];
 
+  // The 10 Phonological Skills defined for early literacy
   final List<Map<String, dynamic>> _skills = [
     {
-      'title': 'හැඩ හඳුනාගැනීම',
-      'subtitle': 'shape recognition',
-      'icon': 'assets/images/category_visual.png',
-      'progress': 0.45,
-      'category': 'visual',
+      'title': 'Shape Recognition',
+      'icon': 'assets/images/skills/s0.png',
+      'progress': 0.85,
       'color': AppColors.calmBlue,
-      'isNew': true,
     },
     {
-      'title': 'වර්ණ වර්ගීකරණය',
-      'subtitle': 'color classification',
-      'icon': 'assets/images/category_reading.png',
+      'title': 'Vowel Identification',
+      'icon': 'assets/images/skills/s1.png',
       'progress': 0.70,
-      'category': 'visual',
       'color': AppColors.gentleGreen,
-      'isNew': false,
     },
     {
-      'title': 'ශබ්ද හඳුනාගැනීම',
-      'subtitle': 'sound recognition',
-      'icon': 'assets/images/category_auditory.png',
-      'progress': 0.30,
-      'category': 'auditory',
+      'title': 'Consonant Recognition',
+      'icon': 'assets/images/skills/s2.png',
+      'progress': 0.60,
       'color': AppColors.warmAmber,
-      'isNew': true,
     },
     {
-      'title': 'අකුරු කියවීම',
-      'subtitle': 'letter reading',
-      'icon': 'assets/images/category_reading.png',
-      'progress': 0.15,
-      'category': 'reading',
+      'title': 'Syllable Formation',
+      'icon': 'assets/images/skills/s3.png',
+      'progress': 0.40,
       'color': AppColors.softCoral,
-      'isNew': false,
     },
     {
-      'title': 'රටා ගැලපීම',
-      'subtitle': 'pattern matching',
-      'icon': 'assets/images/category_visual.png',
-      'progress': 0.55,
-      'category': 'visual',
+      'title': 'Simple Word Reading',
+      'icon': 'assets/images/skills/s4.png',
+      'progress': 0.20,
       'color': AppColors.calmBlue,
-      'isNew': false,
     },
     {
-      'title': 'වචන ලිවීම',
-      'subtitle': 'word writing',
-      'icon': 'assets/images/category_writing.png',
-      'progress': 0.0,
-      'category': 'writing',
+      'title': 'Reading "Hal" Letters',
+      'icon': 'assets/images/skills/s5.png',
+      'progress': 0.10,
       'color': AppColors.gentleGreen,
-      'isNew': true,
+    },
+    {
+      'title': 'Words with Modifiers',
+      'icon': 'assets/images/skills/s6.png',
+      'progress': 0.0,
+      'color': AppColors.warmAmber,
+    },
+    {
+      'title': 'Complex & Conjunct Words',
+      'icon': 'assets/images/skills/s7.png',
+      'progress': 0.0,
+      'color': AppColors.softCoral,
+    },
+    {
+      'title': 'Sentence Reading',
+      'icon': 'assets/images/skills/s8.png',
+      'progress': 0.0,
+      'color': AppColors.calmBlue,
+    },
+    {
+      'title': 'Reading Comprehension',
+      'icon': 'assets/images/skills/s9.png',
+      'progress': 0.0,
+      'color': AppColors.gentleGreen,
     },
   ];
-
-  List<Map<String, dynamic>> get _filteredSkills {
-    if (_selectedTabIndex == 0) return _skills;
-    final category = _categories[_selectedTabIndex]['label'] as String;
-    return _skills.where((s) => s['category'] == category).toList();
-  }
 
   @override
   void initState() {
@@ -129,43 +132,15 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Header (Avatar Profile + Welcome Message perfectly aligned)
               _buildHeader(studentName, avatarUrl),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
-              // Welcome message
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'hello, $studentName!',
-                      style: AppTypography.heading(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "let's continue learning today",
-                      style: AppTypography.body(
-                        fontSize: 16,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // Custom Top Navigation Bar (replaces the old category filters)
+              _buildTopNavBar(),
 
-              const SizedBox(height: 20),
-
-              // Category tabs
-              _buildCategoryTabs(),
-
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
               // Skill cards grid
               Expanded(
@@ -180,10 +155,35 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildHeader(String name, String avatarUrl) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Back to student select
+          // Left Side: Welcome Text
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'hello, $name!',
+                style: AppTypography.heading(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "let's continue learning today",
+                style: AppTypography.body(
+                  fontSize: 15,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          
+          // Right Side: Avatar Profile
           GestureDetector(
             onTap: () {
               Navigator.pushReplacement(
@@ -192,47 +192,16 @@ class _DashboardScreenState extends State<DashboardScreen>
               );
             },
             child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderLight),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: AppColors.textPrimary,
-                size: 22,
-              ),
-            ),
-          ),
-          const Spacer(),
-          // Avatar
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ParentAccountScreen()),
-              );
-            },
-            child: Container(
-              width: 48,
-              height: 48,
+              width: 54,
+              height: 54,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.calmBlue, width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.calmBlue.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: AppColors.calmBlue.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -246,53 +215,85 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildCategoryTabs() {
-    return SizedBox(
-      height: 44,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _categories.length,
-        itemBuilder: (context, index) {
-          final isSelected = _selectedTabIndex == index;
-          final category = _categories[index];
+  Widget _buildTopNavBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: List.generate(_navItems.length, (index) {
+          final item = _navItems[index];
+          final isSelected = _navIndex == index;
+          final color = item['color'] as Color;
 
           return GestureDetector(
-            onTap: () => setState(() => _selectedTabIndex = index),
+            onTap: () {
+              setState(() => _navIndex = index);
+              
+              // Handle Navigation Actions
+              Future.delayed(const Duration(milliseconds: 200), () {
+                if (!mounted) return;
+                
+                if (index == 3) { // Settings routes to Parent Screen
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ParentAccountScreen()));
+                  setState(() => _navIndex = 0);
+                } else if (index != 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${item['label']} coming soon!'),
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                  setState(() => _navIndex = 0);
+                }
+              });
+            },
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutBack,
+              width: 78,
+              height: 84,
+              margin: EdgeInsets.only(
+                top: isSelected ? 4 : 8,
+                bottom: isSelected ? 12 : 8,
+              ),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.calmBlue : AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(22),
+                color: isSelected ? color : AppColors.cardSurface,
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: isSelected ? AppColors.calmBlue : AppColors.borderLight,
+                  color: isSelected ? color : AppColors.borderLight,
+                  width: 2,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: AppColors.calmBlue.withValues(alpha: 0.2),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+                          color: color.withValues(alpha: 0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 8),
                         ),
                       ]
-                    : null,
+                    : [
+                        BoxShadow(
+                          color: AppColors.shadow,
+                          blurRadius: 4,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    category['icon'] as IconData,
-                    size: 18,
-                    color: isSelected ? Colors.white : AppColors.textSecondary,
+                  FaIcon(
+                    item['icon'],
+                    size: 28,
+                    color: isSelected ? Colors.white : color.withValues(alpha: 0.8),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(height: 8),
                   Text(
-                    category['label'] as String,
+                    item['label'] as String,
                     style: AppTypography.caption(
-                      fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
                       color: isSelected ? Colors.white : AppColors.textSecondary,
                     ),
                   ),
@@ -300,34 +301,32 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
             ),
           );
-        },
+        }),
       ),
     );
   }
 
   Widget _buildSkillsGrid() {
-    final skills = _filteredSkills;
-
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-        childAspectRatio: 0.78,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.82,
       ),
-      itemCount: skills.length,
+      itemCount: _skills.length,
       itemBuilder: (context, index) {
-        final skill = skills[index];
-        return _buildSkillCard(skill);
+        final skill = _skills[index];
+        return _buildHeroSkillCard(skill);
       },
     );
   }
 
-  Widget _buildSkillCard(Map<String, dynamic> skill) {
+  // Highly visual "Hero Image" card layout
+  Widget _buildHeroSkillCard(Map<String, dynamic> skill) {
     final color = skill['color'] as Color;
     final progress = skill['progress'] as double;
-    final isNew = skill['isNew'] as bool;
 
     return GestureDetector(
       onTap: () {
@@ -341,121 +340,98 @@ class _DashboardScreenState extends State<DashboardScreen>
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.borderLight),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.borderLight, width: 2),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
-              blurRadius: 8,
+              blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Icon
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        skill['icon'] as String,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.auto_awesome_rounded,
-                          color: color,
-                          size: 28,
-                        ),
+            // Top Half: Custom Hero Image
+            Expanded(
+              flex: 5,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                child: Image.asset(
+                  skill['icon'] as String,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: color.withValues(alpha: 0.1),
+                    child: Icon(Icons.auto_awesome_rounded, color: color, size: 40),
+                  ),
+                ),
+              ),
+            ),
+            
+            // Bottom Half: English Title and Progress Bar
+            Expanded(
+              flex: 5,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Title
+                    Text(
+                      skill['title'] as String,
+                      style: AppTypography.heading(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        height: 1.2,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Sinhala title
-                  Text(
-                    skill['title'] as String,
-                    style: AppTypography.sinhala(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // English subtitle
-                  Text(
-                    skill['subtitle'] as String,
-                    style: AppTypography.caption(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  // Progress bar
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
+                    
+                    // Progress Indicator
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'progress',
+                              style: AppTypography.caption(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              '${(progress * 100).round()}%',
+                              style: AppTypography.caption(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: color,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
                           child: LinearProgressIndicator(
                             value: progress,
                             backgroundColor: AppColors.borderLight,
                             color: color,
-                            minHeight: 6,
+                            minHeight: 8,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${(progress * 100).round()}%',
-                        style: AppTypography.caption(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: color,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // "new" badge
-            if (isNew)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.warmAmber,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    'new',
-                    style: AppTypography.caption(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      ],
                     ),
-                  ),
+                  ],
                 ),
               ),
+            ),
           ],
         ),
       ),
