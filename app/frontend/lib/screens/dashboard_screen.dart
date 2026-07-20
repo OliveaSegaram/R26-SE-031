@@ -8,7 +8,7 @@ import 'parent_account_screen.dart';
 
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
-/// calm blue accents, 16pt+ Sinhala text.
+/// calm blue accents, 16pt+ text.
 class DashboardScreen extends StatefulWidget {
   final Map<String, dynamic>? studentData;
 
@@ -33,60 +33,77 @@ class _DashboardScreenState extends State<DashboardScreen>
     {'label': 'writing', 'icon': Icons.edit_rounded},
   ];
 
+  // The 10 Phonological Skills defined for early literacy
   final List<Map<String, dynamic>> _skills = [
     {
-      'title': 'හැඩ හඳුනාගැනීම',
-      'subtitle': 'shape recognition',
-      'icon': 'assets/images/category_visual.png',
-      'progress': 0.45,
+      'title': 'Shape Recognition',
+      'icon': 'assets/images/skills/s0.png',
+      'progress': 0.85,
       'category': 'visual',
       'color': AppColors.calmBlue,
-      'isNew': true,
     },
     {
-      'title': 'වර්ණ වර්ගීකරණය',
-      'subtitle': 'color classification',
-      'icon': 'assets/images/category_reading.png',
+      'title': 'Vowel Identification',
+      'icon': 'assets/images/skills/s1.png',
       'progress': 0.70,
       'category': 'visual',
       'color': AppColors.gentleGreen,
-      'isNew': false,
     },
     {
-      'title': 'ශබ්ද හඳුනාගැනීම',
-      'subtitle': 'sound recognition',
-      'icon': 'assets/images/category_auditory.png',
-      'progress': 0.30,
-      'category': 'auditory',
+      'title': 'Consonant Recognition',
+      'icon': 'assets/images/skills/s2.png',
+      'progress': 0.60,
+      'category': 'visual',
       'color': AppColors.warmAmber,
-      'isNew': true,
     },
     {
-      'title': 'අකුරු කියවීම',
-      'subtitle': 'letter reading',
-      'icon': 'assets/images/category_reading.png',
-      'progress': 0.15,
+      'title': 'Syllable Formation',
+      'icon': 'assets/images/skills/s3.png',
+      'progress': 0.40,
+      'category': 'visual',
+      'color': AppColors.softCoral,
+    },
+    {
+      'title': 'Simple Word Reading',
+      'icon': 'assets/images/skills/s4.png',
+      'progress': 0.20,
+      'category': 'reading',
+      'color': AppColors.calmBlue,
+    },
+    {
+      'title': 'Reading "Hal" Letters',
+      'icon': 'assets/images/skills/s5.png',
+      'progress': 0.10,
+      'category': 'reading',
+      'color': AppColors.gentleGreen,
+    },
+    {
+      'title': 'Words with Modifiers',
+      'icon': 'assets/images/skills/s6.png',
+      'progress': 0.0,
+      'category': 'reading',
+      'color': AppColors.warmAmber,
+    },
+    {
+      'title': 'Complex & Conjunct Words',
+      'icon': 'assets/images/skills/s7.png',
+      'progress': 0.0,
       'category': 'reading',
       'color': AppColors.softCoral,
-      'isNew': false,
     },
     {
-      'title': 'රටා ගැලපීම',
-      'subtitle': 'pattern matching',
-      'icon': 'assets/images/category_visual.png',
-      'progress': 0.55,
-      'category': 'visual',
-      'color': AppColors.calmBlue,
-      'isNew': false,
-    },
-    {
-      'title': 'වචන ලිවීම',
-      'subtitle': 'word writing',
-      'icon': 'assets/images/category_writing.png',
+      'title': 'Sentence Reading',
+      'icon': 'assets/images/skills/s8.png',
       'progress': 0.0,
-      'category': 'writing',
+      'category': 'reading',
+      'color': AppColors.calmBlue,
+    },
+    {
+      'title': 'Reading Comprehension',
+      'icon': 'assets/images/skills/s9.png',
+      'progress': 0.0,
+      'category': 'reading',
       'color': AppColors.gentleGreen,
-      'isNew': true,
     },
   ];
 
@@ -312,22 +329,22 @@ class _DashboardScreenState extends State<DashboardScreen>
       padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-        childAspectRatio: 0.78,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.82, // Optimized ratio for hero-image style cards
       ),
       itemCount: skills.length,
       itemBuilder: (context, index) {
         final skill = skills[index];
-        return _buildSkillCard(skill);
+        return _buildHeroSkillCard(skill);
       },
     );
   }
 
-  Widget _buildSkillCard(Map<String, dynamic> skill) {
+  // New highly visual "Hero Image" card layout
+  Widget _buildHeroSkillCard(Map<String, dynamic> skill) {
     final color = skill['color'] as Color;
     final progress = skill['progress'] as double;
-    final isNew = skill['isNew'] as bool;
 
     return GestureDetector(
       onTap: () {
@@ -341,121 +358,98 @@ class _DashboardScreenState extends State<DashboardScreen>
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.borderLight),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.borderLight, width: 2),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
-              blurRadius: 8,
+              blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Icon
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        skill['icon'] as String,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.auto_awesome_rounded,
-                          color: color,
-                          size: 28,
-                        ),
+            // Top Half: Custom Hero Image
+            Expanded(
+              flex: 5,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                child: Image.asset(
+                  skill['icon'] as String,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: color.withValues(alpha: 0.1),
+                    child: Icon(Icons.auto_awesome_rounded, color: color, size: 40),
+                  ),
+                ),
+              ),
+            ),
+            
+            // Bottom Half: English Title and Progress Bar
+            Expanded(
+              flex: 5,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Title
+                    Text(
+                      skill['title'] as String,
+                      style: AppTypography.heading(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        height: 1.2,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Sinhala title
-                  Text(
-                    skill['title'] as String,
-                    style: AppTypography.sinhala(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // English subtitle
-                  Text(
-                    skill['subtitle'] as String,
-                    style: AppTypography.caption(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  // Progress bar
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
+                    
+                    // Progress Indicator
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'progress',
+                              style: AppTypography.caption(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              '${(progress * 100).round()}%',
+                              style: AppTypography.caption(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: color,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
                           child: LinearProgressIndicator(
                             value: progress,
                             backgroundColor: AppColors.borderLight,
                             color: color,
-                            minHeight: 6,
+                            minHeight: 8,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${(progress * 100).round()}%',
-                        style: AppTypography.caption(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: color,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // "new" badge
-            if (isNew)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.warmAmber,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    'new',
-                    style: AppTypography.caption(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      ],
                     ),
-                  ),
+                  ],
                 ),
               ),
+            ),
           ],
         ),
       ),
