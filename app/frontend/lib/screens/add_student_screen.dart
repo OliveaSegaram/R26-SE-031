@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import 'assessment_screen.dart';
+import 'consent_screen.dart';
 import '../services/auth_service.dart';
+import '../services/student_service.dart';
 import 'parent_account_screen.dart';
 
 /// Add Student Screen
@@ -24,7 +25,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  String? _selectedGrade;
+  String? _selectedGrade = 'Grade 1';
   String? _selectedDailyLimit = 'No Limit';
   String _selectedAvatarUrl = 'assets/images/solo_blue.png';
 
@@ -35,7 +36,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     'assets/images/solo_yellow.png',
   ];
 
-  final List<String> _grades = ['Pre-K', 'Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade', '6th Grade', '7th Grade', '8th Grade'];
   final List<String> _limits = ['No Limit', '15 minutes', '30 minutes', '45 minutes', '1 hour', '1.5 hours', '2 hours'];
 
   bool _isLoading = false;
@@ -221,21 +221,44 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    DropdownButtonFormField<String>(
-                      value: _selectedGrade,
-                      hint: Text('student grade', style: AppTypography.body(fontSize: 16, color: AppColors.textHint)),
-                      decoration: const InputDecoration(),
-                      dropdownColor: AppColors.cardSurface,
-                      style: AppTypography.body(fontSize: 16),
-                      items: _grades.map((grade) {
-                        return DropdownMenuItem(
-                          value: grade,
-                          child: Text(grade),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        setState(() => _selectedGrade = val);
-                      },
+                    // Grade — locked to Grade 1
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.mintBg,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.gentleGreen.withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.school_rounded, color: AppColors.gentleGreen, size: 20),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Grade 1',
+                            style: AppTypography.body(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.gentleGreen.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'auto-set',
+                              style: AppTypography.caption(
+                                fontSize: 12,
+                                color: AppColors.gentleGreen,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                     
@@ -301,12 +324,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AssessmentScreen(studentData: studentData),
+                            builder: (context) => ConsentScreen(studentData: studentData),
                           ),
                         );
                       } else {
                         setState(() { _isLoading = true; });
-                        final error = await AuthService().updateStudent(
+                        final error = await StudentService().updateStudent(
                           widget.editStudentData!['id'], 
                           studentData
                         );
@@ -326,7 +349,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       }
                     } else if (_selectedGrade == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('please select a grade')),
+                        const SnackBar(content: Text('grade is set to Grade 1')),
                       );
                     }
                   },

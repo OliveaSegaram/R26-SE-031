@@ -6,7 +6,7 @@ import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/flip_card_question.dart';
 import '../widgets/pressable_game_button.dart';
-import '../services/auth_service.dart';
+import '../services/student_service.dart';
 import 'parent_account_screen.dart';
 
 /// Assessment Screen
@@ -79,7 +79,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     final data = Map<String, dynamic>.from(widget.studentData!);
     data['assessment_results'] = _answers;
 
-    final error = await AuthService().addStudent(data);
+    final error = await StudentService().addStudent(data);
     
     if (!mounted) return;
 
