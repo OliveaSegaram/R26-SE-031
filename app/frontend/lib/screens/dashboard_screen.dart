@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import 'level_map_screen.dart';
 import 'select_student_screen.dart';
 import 'parent_account_screen.dart';
+import 'character_shop_screen.dart';
 
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
@@ -235,6 +236,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                 
                 if (index == 3) { // Settings routes to Parent Screen
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const ParentAccountScreen()));
+                  setState(() => _navIndex = 0);
+                } else if (index == 1) { // Shop routes to Character Shop
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CharacterShopScreen()));
                   setState(() => _navIndex = 0);
                 } else if (index != 0) {
                   ScaffoldMessenger.of(context).showSnackBar(
