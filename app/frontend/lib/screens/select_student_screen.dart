@@ -71,14 +71,11 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
           Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               image: DecorationImage(
-                image: const AssetImage('assets/images/backgrounds/bg2.png'),
+                image: AssetImage('assets/images/backgrounds/map_bg.png'),
                 fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  AppColors.cream.withValues(alpha: 0.85),
-                  BlendMode.srcOver,
-                ),
+                opacity: 0.9,
               ),
             ),
             child: BackdropFilter(
