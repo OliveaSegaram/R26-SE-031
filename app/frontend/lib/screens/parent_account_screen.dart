@@ -5,6 +5,7 @@ import 'assessment_screen.dart';
 import 'add_student_screen.dart';
 import 'dashboard_screen.dart';
 import '../services/auth_service.dart';
+import '../services/student_service.dart';
 
 /// Parent Account Screen
 /// Dyslexia-accessible: crème bg, warm white cards, calm blue section headers,
@@ -35,7 +36,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
 
   Future<void> _loadUserProfile() async {
     final profile = await AuthService().getUserProfile();
-    final students = await AuthService().getStudents();
+    final students = await StudentService().getStudents();
     
     if (mounted) {
       setState(() {
@@ -396,7 +397,9 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {
+              onPressed: () async {
+                await AuthService().logout();
+                if (!context.mounted) return;
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const WelcomeScreen()),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
-import '../services/auth_service.dart';
+import '../services/student_service.dart';
 import 'dashboard_screen.dart';
 import 'add_student_screen.dart';
 import 'parent_account_screen.dart';
@@ -45,7 +45,7 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
   }
 
   Future<void> _loadStudents() async {
-    final students = await AuthService().getStudents();
+    final students = await StudentService().getStudents();
     if (mounted) {
       setState(() {
         _isLoading = false;
