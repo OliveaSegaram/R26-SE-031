@@ -27,13 +27,19 @@ class LevelMapScreen extends StatefulWidget {
 }
 
 class _LevelMapScreenState extends State<LevelMapScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _pulseController;
+  late AnimationController _unlockController;
   final ScrollController _scrollController = ScrollController();
+
+  late Animation<double> _pathAnim;
+  late Animation<double> _nodeScaleAnim;
+  late Animation<double> _avatarMoveAnim;
 
   // Current progress (0-indexed)
   int currentLevel = 0;
   bool _isNavigating = false;
+  int _animatingFromLevel = -1; // Tracks the level we are animating from
 
   // Level data - 10 Visual Skills Tasks
   final List<Map<String, dynamic>> levels = [
@@ -52,10 +58,36 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   @override
   void initState() {
     super.initState();
+    
+    // Pulse animation for the current active node
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..repeat(reverse: true);
+
+    // Master unlock sequence controller
+    _unlockController = AnimationController(
+      duration: const Duration(milliseconds: 2500),
+      vsync: this,
+    );
+
+    // 0.0 -> 0.4: Draw the path
+    _pathAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _unlockController, curve: const Interval(0.0, 0.4, curve: Curves.easeInOut)),
+    );
+
+    // 0.4 -> 0.7: Pop the node
+    _nodeScaleAnim = TweenSequence([
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.3).chain(CurveTween(curve: Curves.easeOut)), weight: 40),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.3, end: 1.0).chain(CurveTween(curve: Curves.bounceOut)), weight: 60),
+    ]).animate(
+      CurvedAnimation(parent: _unlockController, curve: const Interval(0.4, 0.7)),
+    );
+
+    // 0.6 -> 1.0: Glide the avatar (starts slightly before node finishes popping)
+    _avatarMoveAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _unlockController, curve: const Interval(0.6, 1.0, curve: Curves.easeInOutCubic)),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToCurrentLevel();
@@ -91,6 +123,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   @override
   void dispose() {
     _pulseController.dispose();
+    _unlockController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -134,41 +167,31 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                     padding: const EdgeInsets.only(top: 120, bottom: 40),
                     child: Stack(
                       children: [
-                        // Path
-                        CustomPaint(
-                          size: Size(screenWidth, levels.length * 120.0),
-                          painter: PathPainter(
-                            levels: levels,
-                            currentLevel: currentLevel,
-                            getNodeX: (i) => _getNodeX(i, screenWidth),
-                            nodeSpacing: 120.0,
-                          ),
+                        // Animated Path
+                        AnimatedBuilder(
+                          animation: _unlockController,
+                          builder: (context, child) {
+                            return CustomPaint(
+                              size: Size(screenWidth, levels.length * 120.0),
+                              painter: PathPainter(
+                                levels: levels,
+                                currentLevel: currentLevel,
+                                getNodeX: (i) => _getNodeX(i, screenWidth),
+                                nodeSpacing: 120.0,
+                                animatingFromLevel: _animatingFromLevel,
+                                pathAnimationProgress: _pathAnim.value,
+                              ),
+                            );
+                          }
                         ),
 
                         // Level nodes
                         ...List.generate(levels.length, (index) {
-                          final level = levels[index];
-                          final nodeX = _getNodeX(index, screenWidth);
-                          final nodeY = index * 120.0 + 20;
-                          final isCompleted = level['completed'] as bool;
-                          final isCurrent = index == currentLevel;
-                          final isLocked = index > currentLevel;
-
-                          return Positioned(
-                            left: nodeX - 32,
-                            top: nodeY,
-                            child: _buildNode(
-                              level: level,
-                              index: index,
-                              isCompleted: isCompleted,
-                              isCurrent: isCurrent,
-                              isLocked: isLocked,
-                            ),
-                          );
+                          return _buildAnimatedNodePositioned(index, screenWidth);
                         }),
 
                         // Player character avatar
-                        _buildPlayerCharacter(screenWidth),
+                        _buildAnimatedPlayerCharacter(screenWidth),
                       ],
                     ),
                   ),
@@ -262,7 +285,54 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     );
   }
 
-  Widget _buildNode({
+  Widget _buildAnimatedNodePositioned(int index, double screenWidth) {
+    return AnimatedBuilder(
+      animation: _unlockController,
+      builder: (context, child) {
+        final level = levels[index];
+        final nodeX = _getNodeX(index, screenWidth);
+        final nodeY = index * 120.0 + 20;
+
+        bool isCompleted = level['completed'] as bool;
+        bool isCurrent = index == currentLevel;
+        bool isLocked = index > currentLevel;
+        double additionalScale = 1.0;
+
+        // If this is the node currently being unlocked
+        if (_animatingFromLevel != -1 && index == currentLevel) {
+          if (_unlockController.value < 0.4) {
+            // Keep it looking locked while path draws
+            isCompleted = false;
+            isCurrent = false;
+            isLocked = true;
+          } else {
+            // Path reached it, trigger scale pop
+            isCompleted = false;
+            isCurrent = true;
+            isLocked = false;
+            additionalScale = _nodeScaleAnim.value;
+          }
+        }
+
+        return Positioned(
+          left: nodeX - 32,
+          top: nodeY,
+          child: Transform.scale(
+            scale: additionalScale,
+            child: _buildNodeCore(
+              level: level,
+              index: index,
+              isCompleted: isCompleted,
+              isCurrent: isCurrent,
+              isLocked: isLocked,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNodeCore({
     required Map<String, dynamic> level,
     required int index,
     required bool isCompleted,
@@ -299,7 +369,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
     return GestureDetector(
       onTap: () {
-        if (!isLocked) {
+        if (!isLocked && _animatingFromLevel == -1) {
           _navigateToLevel(index);
         }
       },
@@ -312,7 +382,8 @@ class _LevelMapScreenState extends State<LevelMapScreen>
             AnimatedBuilder(
               animation: _pulseController,
               builder: (context, child) {
-                final scale = isCurrent
+                // Only pulse if it's current and we aren't in the middle of unlocking it
+                final scale = (isCurrent && _animatingFromLevel == -1)
                     ? 1.0 + (_pulseController.value * 0.08)
                     : 1.0;
                 return Transform.scale(scale: scale, child: child);
@@ -361,39 +432,53 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     );
   }
 
-  Widget _buildPlayerCharacter(double screenWidth) {
-    final nodeX = _getNodeX(currentLevel, screenWidth);
-    final nodeY = currentLevel * 120.0 + 20;
+  Widget _buildAnimatedPlayerCharacter(double screenWidth) {
+    return AnimatedBuilder(
+      animation: _unlockController,
+      builder: (context, child) {
+        final targetX = _getNodeX(currentLevel, screenWidth);
+        final targetY = currentLevel * 120.0 + 20;
 
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.easeInOutCubic,
-      left: nodeX - 30,
-      top: nodeY + 2,
-      child: IgnorePointer(
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage(widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png'),
-              fit: BoxFit.contain,
+        double x = targetX;
+        double y = targetY;
+
+        if (_animatingFromLevel != -1) {
+          final startX = _getNodeX(_animatingFromLevel, screenWidth);
+          final startY = _animatingFromLevel * 120.0 + 20;
+
+          x = startX + (targetX - startX) * _avatarMoveAnim.value;
+          y = startY + (targetY - startY) * _avatarMoveAnim.value;
+        }
+
+        return Positioned(
+          left: x - 30,
+          top: y + 2,
+          child: IgnorePointer(
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png'),
+                  fit: BoxFit.contain,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    offset: const Offset(0, 8),
+                    blurRadius: 10,
+                  )
+                ],
+              ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                offset: const Offset(0, 8),
-                blurRadius: 10,
-              )
-            ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Future<void> _navigateToLevel(int index) async {
-    if (_isNavigating) return;
+    if (_isNavigating || _animatingFromLevel != -1) return;
     _isNavigating = true;
 
     try {
@@ -439,19 +524,35 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       );
 
       if (result == true && index == currentLevel) {
-        setState(() {
-          levels[currentLevel]['completed'] = true;
-          if (currentLevel < levels.length - 1) {
+        if (currentLevel < levels.length - 1) {
+          setState(() {
+            _animatingFromLevel = currentLevel;
             currentLevel++;
-          }
-        });
-        _scrollToCurrentLevel();
-        
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted && currentLevel == index + 1 && !_isNavigating) {
-            _navigateToLevel(currentLevel);
-          }
-        });
+            levels[_animatingFromLevel]['completed'] = true;
+          });
+          
+          // Start sequence
+          _unlockController.forward(from: 0.0).then((_) {
+            if (mounted) {
+              setState(() {
+                _animatingFromLevel = -1;
+              });
+              
+              // Delay before auto-starting next level if needed
+              Future.delayed(const Duration(seconds: 1), () {
+                if (mounted && !_isNavigating && _animatingFromLevel == -1) {
+                  _navigateToLevel(currentLevel);
+                }
+              });
+            }
+          });
+          
+          _scrollToCurrentLevel();
+        } else {
+          setState(() {
+            levels[currentLevel]['completed'] = true;
+          });
+        }
       }
     } finally {
       _isNavigating = false;
@@ -466,12 +567,18 @@ class PathPainter extends CustomPainter {
   final int currentLevel;
   final double Function(int) getNodeX;
   final double nodeSpacing;
+  
+  // Animation props
+  final int animatingFromLevel;
+  final double pathAnimationProgress;
 
   PathPainter({
     required this.levels,
     required this.currentLevel,
     required this.getNodeX,
     required this.nodeSpacing,
+    required this.animatingFromLevel,
+    required this.pathAnimationProgress,
   });
 
   @override
@@ -510,7 +617,6 @@ class PathPainter extends CustomPainter {
         mainPath.moveTo(fromX, fromY);
       }
       
-      // Control points for a natural curve
       final controlX1 = fromX;
       final controlY1 = fromY + (nodeSpacing * 0.5);
       final controlX2 = toX;
@@ -529,9 +635,9 @@ class PathPainter extends CustomPainter {
       final toX = getNodeX(i + 1);
       final toY = (i + 1) * nodeSpacing + 20 + 32;
 
-      final isCompletedPath = (i + 1) <= currentLevel;
-      final paint = isCompletedPath ? completedPaint : lockedPaint;
-
+      final isAnimatingSegment = (animatingFromLevel != -1 && i == animatingFromLevel);
+      final isCompletedPath = !isAnimatingSegment && ((i + 1) <= currentLevel);
+      
       final segmentPath = Path();
       segmentPath.moveTo(fromX, fromY);
       
@@ -541,23 +647,43 @@ class PathPainter extends CustomPainter {
       final controlY2 = toY - (nodeSpacing * 0.5);
       
       segmentPath.cubicTo(controlX1, controlY1, controlX2, controlY2, toX, toY);
-      
-      canvas.drawPath(segmentPath, paint);
-      
-      // Draw internal dash lines for a textured road effect
-      if (isCompletedPath) {
-        final dashPaint = Paint()
-          ..color = AppColors.warmAmber
-          ..strokeWidth = 6
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round;
-        _drawDashedCurve(canvas, segmentPath, dashPaint);
+
+      if (isAnimatingSegment) {
+        // Draw the locked background layer
+        canvas.drawPath(segmentPath, lockedPaint);
+
+        // Draw the animating amber layer on top
+        if (pathAnimationProgress > 0) {
+          for (ui.PathMetric metric in segmentPath.computeMetrics()) {
+            final extractLen = metric.length * pathAnimationProgress;
+            final partialPath = metric.extractPath(0.0, extractLen);
+            canvas.drawPath(partialPath, completedPaint);
+            
+            final dashPaint = Paint()
+              ..color = AppColors.warmAmber
+              ..strokeWidth = 6
+              ..style = PaintingStyle.stroke
+              ..strokeCap = StrokeCap.round;
+            _drawDashedCurve(canvas, partialPath, dashPaint);
+          }
+        }
+      } else {
+        final paint = isCompletedPath ? completedPaint : lockedPaint;
+        canvas.drawPath(segmentPath, paint);
+        
+        if (isCompletedPath) {
+          final dashPaint = Paint()
+            ..color = AppColors.warmAmber
+            ..strokeWidth = 6
+            ..style = PaintingStyle.stroke
+            ..strokeCap = StrokeCap.round;
+          _drawDashedCurve(canvas, segmentPath, dashPaint);
+        }
       }
     }
   }
 
   void _drawDashedCurve(Canvas canvas, Path path, Paint paint) {
-    // A simplified approach for dashed curves using PathMetrics
     for (ui.PathMetric metric in path.computeMetrics()) {
       double distance = 0.0;
       bool draw = true;
@@ -573,5 +699,9 @@ class PathPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant PathPainter oldDelegate) {
+    return oldDelegate.currentLevel != currentLevel ||
+           oldDelegate.animatingFromLevel != animatingFromLevel ||
+           oldDelegate.pathAnimationProgress != pathAnimationProgress;
+  }
 }
