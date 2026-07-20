@@ -78,6 +78,8 @@ DerivedData/
 **/doc/api/
 app.*.symbols
 app.*.map.json
+**/linux/
+**/windows/
 
 # =========================
 # IDEs & Editor Configs
