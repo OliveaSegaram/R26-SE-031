@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
@@ -46,14 +47,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     {'label': '8', 'title': 'position', 'type': 'lesson', 'completed': false},
     {'label': '9', 'title': 'sequence', 'type': 'lesson', 'completed': false},
     {'label': '🏆', 'title': 'complete!', 'type': 'trophy', 'completed': false},
-  ];
-
-  // Decorative characters
-  final List<Map<String, dynamic>> _decorCharacters = [
-    {'asset': 'assets/images/solo_pink.png', 'atLevel': 1, 'side': 'right'},
-    {'asset': 'assets/images/solo_green.png', 'atLevel': 4, 'side': 'left'},
-    {'asset': 'assets/images/solo_yellow.png', 'atLevel': 7, 'side': 'right'},
-    {'asset': 'assets/images/solo_teal.png', 'atLevel': 9, 'side': 'left'},
   ];
 
   @override
@@ -114,6 +107,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
+      backgroundColor: AppColors.cream,
       body: Stack(
         children: [
           // Scrollable Map Path
@@ -125,40 +119,13 @@ class _LevelMapScreenState extends State<LevelMapScreen>
               height: levels.length * 120.0 + 160,
               child: Stack(
                 children: [
-                  // GREYSCALE background (locked)
+                  // Full Background Image
                   Positioned.fill(
-                    child: ColorFiltered(
-                      colorFilter: const ColorFilter.matrix(<double>[
-                        0.2126, 0.7152, 0.0722, 0, 0,
-                        0.2126, 0.7152, 0.0722, 0, 0,
-                        0.2126, 0.7152, 0.0722, 0, 0,
-                        0,      0,      0,      1, 0,
-                      ]),
-                      child: Image.asset(
-                        'assets/images/backgrounds/story_bg.png',
-                        fit: BoxFit.cover,
-                        width: screenWidth,
-                        height: levels.length * 120.0 + 160,
-                      ),
-                    ),
-                  ),
-
-                  // COLORED background revealed for completed
-                  Positioned.fill(
-                    child: ClipPath(
-                      clipper: CompletedZoneClipper(
-                        levels: levels,
-                        currentLevel: currentLevel,
-                        getNodeX: (i) => _getNodeX(i, screenWidth),
-                        nodeSpacing: 120.0,
-                        topPadding: 120.0,
-                      ),
-                      child: Image.asset(
-                        'assets/images/backgrounds/story_bg.png',
-                        fit: BoxFit.cover,
-                        width: screenWidth,
-                        height: levels.length * 120.0 + 160,
-                      ),
+                    child: Image.asset(
+                      'assets/images/backgrounds/map_bg.png',
+                      fit: BoxFit.cover,
+                      width: screenWidth,
+                      height: levels.length * 120.0 + 160,
                     ),
                   ),
 
@@ -177,9 +144,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                             nodeSpacing: 120.0,
                           ),
                         ),
-
-                        // Decorative characters
-                        ..._buildDecoCharacters(screenWidth),
 
                         // Level nodes
                         ...List.generate(levels.length, (index) {
@@ -203,7 +167,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                           );
                         }),
 
-                        // Player character
+                        // Player character avatar
                         _buildPlayerCharacter(screenWidth),
                       ],
                     ),
@@ -310,7 +274,9 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
     Color bgColor;
     Color borderColor;
+    Color contentColor = Colors.white;
     double size = 64;
+    double borderWidth = 3;
 
     if (isCompleted) {
       bgColor = AppColors.gentleGreen;
@@ -319,8 +285,10 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       bgColor = AppColors.warmAmber;
       borderColor = AppColors.orangeDark;
     } else {
-      bgColor = Colors.grey.shade300;
-      borderColor = Colors.grey.shade400;
+      bgColor = Colors.white;
+      borderColor = AppColors.borderLight;
+      contentColor = AppColors.textSecondary;
+      borderWidth = 2;
     }
 
     if (type == 'star') {
@@ -355,33 +323,34 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                 decoration: BoxDecoration(
                   color: bgColor,
                   shape: BoxShape.circle,
-                  border: Border.all(color: borderColor, width: 3),
+                  border: Border.all(color: borderColor, width: borderWidth),
                   boxShadow: [
                     BoxShadow(
-                      color: borderColor.withValues(alpha: 0.4),
-                      offset: const Offset(0, 4),
-                      blurRadius: 0,
+                      color: Colors.black.withValues(alpha: 0.15),
+                      offset: const Offset(0, 6),
+                      blurRadius: 8,
                     ),
                     if (isCurrent)
                       BoxShadow(
-                        color: AppColors.warmAmber.withValues(alpha: 0.3),
-                        blurRadius: 16,
+                        color: AppColors.warmAmber.withValues(alpha: 0.4),
+                        blurRadius: 20,
                         spreadRadius: 4,
                       ),
                   ],
                 ),
                 child: Center(
                   child: isLocked
-                      ? Icon(Icons.lock_rounded,
-                          color: Colors.grey.shade500, size: 24)
-                      : Text(
-                          type == 'trophy' ? '🏆' : label,
-                          style: AppTypography.button(
-                            fontSize: type == 'star' || type == 'trophy'
-                                ? 22
-                                : 20,
-                          ),
-                        ),
+                      ? Icon(Icons.lock_rounded, color: AppColors.borderLight, size: 24)
+                      : (isCompleted && type != 'trophy'
+                          ? const Icon(Icons.check_rounded, color: Colors.white, size: 28)
+                          : Text(
+                              type == 'trophy' ? '🏆' : label,
+                              style: AppTypography.button(
+                                fontSize: type == 'star' || type == 'trophy' ? 22 : 24,
+                                color: contentColor,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            )),
                 ),
               ),
             ),
@@ -410,57 +379,17 @@ class _LevelMapScreenState extends State<LevelMapScreen>
               image: AssetImage(widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png'),
               fit: BoxFit.contain,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                offset: const Offset(0, 8),
+                blurRadius: 10,
+              )
+            ],
           ),
         ),
       ),
     );
-  }
-
-  List<Widget> _buildDecoCharacters(double screenWidth) {
-    return _decorCharacters.map((deco) {
-      final atLevel = deco['atLevel'] as int;
-      final side = deco['side'] as String;
-      final asset = deco['asset'] as String;
-      
-      final nodeY = atLevel * 120.0 - 15;
-      final nodeX = _getNodeX(atLevel, screenWidth);
-
-      double xPos;
-      if (side == 'left') {
-        xPos = nodeX - 130;
-      } else {
-        xPos = nodeX + 70;
-      }
-
-      xPos = xPos.clamp(4.0, screenWidth - 104.0);
-
-      final isReached = atLevel <= currentLevel;
-
-      Widget characterImage = Image.asset(
-        asset,
-        width: 100,
-        height: 100,
-        fit: BoxFit.contain,
-      );
-
-      if (!isReached) {
-        characterImage = ColorFiltered(
-          colorFilter: const ColorFilter.matrix(<double>[
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0.2126, 0.7152, 0.0722, 0, 0,
-            0,      0,      0,      1, 0,
-          ]),
-          child: Opacity(opacity: 0.5, child: characterImage),
-        );
-      }
-
-      return Positioned(
-        left: xPos,
-        top: nodeY,
-        child: IgnorePointer(child: characterImage),
-      );
-    }).toList();
   }
 
   Future<void> _navigateToLevel(int index) async {
@@ -531,7 +460,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 }
 
 
-// Path Painter (dotted trail)
+// Path Painter (solid dirt trail)
 class PathPainter extends CustomPainter {
   final List<Map<String, dynamic>> levels;
   final int currentLevel;
@@ -547,18 +476,53 @@ class PathPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final completedPaint = Paint()
-      ..color = AppColors.warmAmber
-      ..strokeWidth = 6
+    // We draw a solid thick path, with a darker outline/shadow underneath for depth
+    final pathOutlinePaint = Paint()
+      ..color = AppColors.textBrown.withValues(alpha: 0.15)
+      ..strokeWidth = 24
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+      
+    final completedPaint = Paint()
+      ..color = AppColors.warmAmberLight
+      ..strokeWidth = 18
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     final lockedPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.6)
-      ..strokeWidth = 6
+      ..color = Colors.white.withValues(alpha: 0.8)
+      ..strokeWidth = 18
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
+    // Draw the continuous path shadows and backgrounds first
+    final mainPath = Path();
+    for (int i = 0; i < levels.length - 1; i++) {
+      final fromX = getNodeX(i);
+      final fromY = i * nodeSpacing + 20 + 32;
+      final toX = getNodeX(i + 1);
+      final toY = (i + 1) * nodeSpacing + 20 + 32;
+
+      if (i == 0) {
+        mainPath.moveTo(fromX, fromY);
+      }
+      
+      // Control points for a natural curve
+      final controlX1 = fromX;
+      final controlY1 = fromY + (nodeSpacing * 0.5);
+      final controlX2 = toX;
+      final controlY2 = toY - (nodeSpacing * 0.5);
+      
+      mainPath.cubicTo(controlX1, controlY1, controlX2, controlY2, toX, toY);
+    }
+
+    // 1. Draw the outline/shadow
+    canvas.drawPath(mainPath, pathOutlinePaint);
+
+    // 2. Draw the path segments
     for (int i = 0; i < levels.length - 1; i++) {
       final fromX = getNodeX(i);
       final fromY = i * nodeSpacing + 20 + 32;
@@ -568,65 +532,46 @@ class PathPainter extends CustomPainter {
       final isCompletedPath = (i + 1) <= currentLevel;
       final paint = isCompletedPath ? completedPaint : lockedPaint;
 
-      _drawDashedLine(canvas, Offset(fromX, fromY), Offset(toX, toY), paint);
+      final segmentPath = Path();
+      segmentPath.moveTo(fromX, fromY);
+      
+      final controlX1 = fromX;
+      final controlY1 = fromY + (nodeSpacing * 0.5);
+      final controlX2 = toX;
+      final controlY2 = toY - (nodeSpacing * 0.5);
+      
+      segmentPath.cubicTo(controlX1, controlY1, controlX2, controlY2, toX, toY);
+      
+      canvas.drawPath(segmentPath, paint);
+      
+      // Draw internal dash lines for a textured road effect
+      if (isCompletedPath) {
+        final dashPaint = Paint()
+          ..color = AppColors.warmAmber
+          ..strokeWidth = 6
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
+        _drawDashedCurve(canvas, segmentPath, dashPaint);
+      }
     }
   }
 
-  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
-    final dx = end.dx - start.dx;
-    final dy = end.dy - start.dy;
-    final distance = sqrt(dx * dx + dy * dy);
-    final dashLength = 8.0;
-    final gapLength = 6.0;
-    final steps = distance / (dashLength + gapLength);
-
-    for (int i = 0; i < steps; i++) {
-      final t1 = i * (dashLength + gapLength) / distance;
-      final t2 = (i * (dashLength + gapLength) + dashLength) / distance;
-      if (t2 > 1) break;
-
-      canvas.drawLine(
-        Offset(start.dx + dx * t1, start.dy + dy * t1),
-        Offset(start.dx + dx * t2, start.dy + dy * t2),
-        paint,
-      );
+  void _drawDashedCurve(Canvas canvas, Path path, Paint paint) {
+    // A simplified approach for dashed curves using PathMetrics
+    for (ui.PathMetric metric in path.computeMetrics()) {
+      double distance = 0.0;
+      bool draw = true;
+      while (distance < metric.length) {
+        final len = draw ? 15.0 : 20.0;
+        if (draw) {
+          canvas.drawPath(metric.extractPath(distance, distance + len), paint);
+        }
+        distance += len;
+        draw = !draw;
+      }
     }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
-// Completed Zone Clipper
-class CompletedZoneClipper extends CustomClipper<Path> {
-  final List<Map<String, dynamic>> levels;
-  final int currentLevel;
-  final double Function(int) getNodeX;
-  final double nodeSpacing;
-  final double topPadding;
-
-  CompletedZoneClipper({
-    required this.levels,
-    required this.currentLevel,
-    required this.getNodeX,
-    required this.nodeSpacing,
-    required this.topPadding,
-  });
-
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    final isLastLevel = currentLevel >= levels.length - 1;
-    final revealHeight = isLastLevel
-        ? size.height
-        : topPadding + currentLevel * nodeSpacing + 20 + 32;
-
-    path.addRect(Rect.fromLTWH(0, 0, size.width, revealHeight));
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CompletedZoneClipper oldClipper) {
-    return oldClipper.currentLevel != currentLevel;
-  }
 }

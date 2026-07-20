@@ -10,7 +10,7 @@ class AuthService {
   static String get _baseUrl {
     if (kIsWeb) return 'http://127.0.0.1:8015/api/v1/auth';
     if (Platform.isAndroid) return 'http://10.0.2.2:8015/api/v1/auth';
-    if (Platform.isIOS) return 'https://uhezt-2402-d000-8130-9a35-e892-f7e9-99ba-92a2.free.pinggy.net/api/v1/auth'; // Pinggy Public Tunnel
+    if (Platform.isIOS) return 'https://rrgoz-2402-d000-8130-9a35-e892-f7e9-99ba-92a2.free.pinggy.net/api/v1/auth'; // Pinggy Public Tunnel
     return 'http://127.0.0.1:8015/api/v1/auth';
   }
 
