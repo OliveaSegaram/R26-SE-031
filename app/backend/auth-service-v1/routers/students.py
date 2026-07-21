@@ -21,9 +21,10 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Students"])
 @router.post("/students", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)
 async def add_student(request: StudentCreate, current_user: dict = Depends(get_current_user)):
     """Add a new student under the authenticated parent's account."""
-    # 1. Verify parent password
-    is_google_user = verify_password("google-oauth-placeholder-password", current_user["hashed_password"])
-    if not is_google_user:
+    # 1. Verify parent password if local account
+    provider = current_user.get("auth_provider", "local")
+    is_social = provider in ["google", "microsoft"] or not current_user.get("hashed_password")
+    if not is_social:
         if not verify_password(request.parent_password, current_user["hashed_password"]):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect parent password")
 
@@ -95,8 +96,9 @@ async def list_students(current_user: dict = Depends(get_current_user)):
 @router.put("/students/{student_id}", response_model=StudentResponse)
 async def update_student(student_id: str, request: StudentUpdate, current_user: dict = Depends(get_current_user)):
     """Update a student's details. Only the owning parent can update."""
-    is_google_user = verify_password("google-oauth-placeholder-password", current_user["hashed_password"])
-    if not is_google_user:
+    provider = current_user.get("auth_provider", "local")
+    is_social = provider in ["google", "microsoft"] or not current_user.get("hashed_password")
+    if not is_social:
         if not verify_password(request.parent_password, current_user["hashed_password"]):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect parent password")
 
