@@ -187,8 +187,8 @@ class AuthService {
       );
 
       if (response.statusCode == 201) {
-        // Automatically log the user in to get tokens and override any previous session
-        return await login(email, password);
+        // Success: Account created, but needs email verification OTP
+        return null;
       } else {
         final data = jsonDecode(response.body);
         
@@ -203,6 +203,44 @@ class AuthService {
       }
     } catch (e) {
       print('SIGNUP ERROR: $e');
+      return 'Network Error: $e';
+    }
+  }
+
+  /// Verify Email via OTP during Signup
+  Future<String?> verifyEmail(String email, String otp) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/verify-email'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email.trim(),
+          'otp': otp.trim()
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String jwtAccessToken = data['access_token'];
+        String jwtRefreshToken = data['refresh_token'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', jwtAccessToken);
+        await prefs.setString('refresh_token', jwtRefreshToken);
+        await prefs.setString('auth_provider', 'local');
+        
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        } else if (data['detail'] is List) {
+          final err = data['detail'][0];
+          return err['msg'] ?? 'Validation error';
+        }
+        return 'Failed to verify email.';
+      }
+    } catch (e) {
       return 'Network Error: $e';
     }
   }
@@ -275,6 +313,56 @@ class AuthService {
       }
     } catch (e) {
       return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Request Password Reset
+  Future<String?> requestPasswordReset(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email.trim()}),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Failed to send reset code.';
+      }
+    } catch (e) {
+      return 'Network Error: $e';
+    }
+  }
+
+  /// Reset Password
+  Future<String?> resetPassword(String email, String otp, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email.trim(),
+          'otp': otp.trim(),
+          'new_password': newPassword
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        } else if (data['detail'] is List) {
+          final err = data['detail'][0];
+          return err['msg'] ?? 'Validation error';
+        }
+        return 'Failed to reset password.';
+      }
+    } catch (e) {
+      return 'Network Error: $e';
     }
   }
 

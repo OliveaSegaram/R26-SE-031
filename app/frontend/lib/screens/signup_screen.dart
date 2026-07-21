@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'signin_screen.dart';
 import 'character_intro_screen.dart';
+import 'otp_screen.dart';
 
 /// Sign-Up Screen
 /// Dyslexia-accessible: crème background, warm white inputs, 18pt+ text,
@@ -67,7 +68,12 @@ class _SignUpScreenState extends State<SignUpScreen>
       );
     } else {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const CharacterIntroScreen()),
+        MaterialPageRoute(
+          builder: (context) => OtpScreen(
+            email: _emailController.text.trim(),
+            isSignup: true,
+          ),
+        ),
       );
     }
   }
