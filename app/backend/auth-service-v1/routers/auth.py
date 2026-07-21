@@ -24,9 +24,9 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 limiter = Limiter(key_func=get_remote_address)
 
 
-@router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/signup", status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-async def signup(request: Request, user: UserCreate):
+async def register_user(request: Request, user: UserCreate):
     """Register a new parent account."""
     db = get_db()
 
@@ -39,7 +39,7 @@ async def signup(request: Request, user: UserCreate):
             detail=str(e),
         )
 
-    # Check if user already exists
+    # Check if user already exists in the MAIN database
     existing_user = await db.users.find_one({"email": email.lower()})
     if existing_user:
         raise HTTPException(
@@ -47,23 +47,98 @@ async def signup(request: Request, user: UserCreate):
             detail="User with this email already exists.",
         )
 
-    # Hash password and save
+    # We do NOT insert into db.users yet. We only generate OTP and store pending data.
     hashed_password = get_password_hash(user.password)
-    user_doc = {
+    
+    from services.auth_utils import generate_otp, send_otp_email
+    otp = generate_otp()
+    
+    from datetime import datetime, timedelta
+    
+    pending_user = {
         "name": user.name,
-        "email": email.lower(),
         "hashed_password": hashed_password,
-        "role": user.role or "parent",
+        "role": user.role or "parent"
     }
-
-    result = await db.users.insert_one(user_doc)
-
-    return UserResponse(
-        id=str(result.inserted_id),
-        name=user_doc["name"],
-        email=user_doc["email"],
-        role=user_doc["role"],
+    
+    await db.otps.update_one(
+        {"email": email.lower()},
+        {"$set": {
+            "otp": otp, 
+            "expires_at": datetime.utcnow() + timedelta(minutes=10),
+            "pending_user": pending_user
+        }},
+        upsert=True
     )
+    
+    # Send email
+    send_otp_email(email.lower(), otp)
+
+    # We return a message instead of tokens, because they need to verify first
+    return {"message": "OTP sent. Please verify your email to complete registration."}
+
+from schemas.auth import VerifyEmailRequest
+
+@router.post("/verify-email", response_model=Token)
+@limiter.limit("5/minute")
+async def verify_email(request: Request, req: VerifyEmailRequest):
+    """Verify email via OTP and return JWT tokens on success."""
+    db = get_db()
+    email = req.email.lower()
+    
+    # Find OTP
+    otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
+    if not otp_record:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP.")
+        
+    from datetime import datetime
+    if datetime.utcnow() > otp_record["expires_at"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired.")
+        
+    # Check if this OTP contains pending user data (meaning it's a Signup Verification)
+    pending = otp_record.get("pending_user")
+    
+    if pending:
+        # Create the user permanently in the DB now that they verified!
+        user_doc = {
+            "name": pending["name"],
+            "email": email,
+            "hashed_password": pending["hashed_password"],
+            "role": pending["role"],
+            "is_verified": True
+        }
+        
+        # Upsert just in case they were somehow inserted but unverified before we changed architecture
+        await db.users.update_one(
+            {"email": email},
+            {"$set": user_doc},
+            upsert=True
+        )
+        user_doc = await db.users.find_one({"email": email})
+    else:
+        # Fallback for old unverified accounts doing a standard verify
+        user_doc = await db.users.find_one_and_update(
+            {"email": email},
+            {"$set": {"is_verified": True}},
+            return_document=True
+        )
+    
+    if not user_doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+        
+    # Delete OTP
+    await db.otps.delete_one({"email": email})
+    
+    # Issue Tokens
+    token_data = {
+        "sub": user_doc["email"],
+        "role": user_doc.get("role", "parent"),
+        "id": str(user_doc["_id"]),
+    }
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(data=token_data)
+
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 @router.post("/login", response_model=Token)
@@ -85,6 +160,12 @@ async def login(request: Request, user: UserLogin):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    if user_doc.get("is_verified") == False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email address before logging in.",
         )
 
     token_data = {
@@ -260,3 +341,74 @@ async def verify_user_password(request: VerifyPasswordRequest, current_user: dic
         if not verify_password(request.password, current_user["hashed_password"]):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
     return {"status": "success", "message": "Password is correct"}
+
+from datetime import datetime, timedelta
+from schemas.auth import ForgotPasswordRequest, ResetPasswordRequest
+
+@router.post("/forgot-password")
+@limiter.limit("3/minute")
+async def forgot_password(request: Request, req: ForgotPasswordRequest):
+    """Initiate password reset process."""
+    db = get_db()
+    email = req.email.lower()
+    
+    user = await db.users.find_one({"email": email})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account found with this email address."
+        )
+    # Check if this is an OAuth account
+    hashed_pwd = user.get("hashed_password", "")
+    if verify_password("google-oauth-placeholder-password", hashed_pwd) or "google-oauth" in hashed_pwd:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You signed up using a social account (Google/Microsoft). Please log in using that button.",
+        )
+        
+    # Generate OTP
+    from services.auth_utils import generate_otp, send_otp_email
+    otp = generate_otp()
+    
+    # Store OTP in DB with 10 min expiration
+    await db.otps.update_one(
+        {"email": email},
+        {"$set": {"otp": otp, "expires_at": datetime.utcnow() + timedelta(minutes=10)}},
+        upsert=True
+    )
+    
+    # Send email (prints to console currently)
+    send_otp_email(email, otp)
+    
+    return {"message": "If that email exists, an OTP has been sent."}
+
+
+@router.post("/reset-password")
+@limiter.limit("5/minute")
+async def reset_password(request: Request, req: ResetPasswordRequest):
+    """Reset the password using the OTP."""
+    db = get_db()
+    email = req.email.lower()
+    
+    # Find OTP
+    otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
+    if not otp_record:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP.")
+        
+    if datetime.utcnow() > otp_record["expires_at"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired.")
+        
+    # Update Password and mark as verified (since they proved ownership via OTP)
+    new_hashed = get_password_hash(req.new_password)
+    await db.users.update_one(
+        {"email": email},
+        {"$set": {
+            "hashed_password": new_hashed,
+            "is_verified": True
+        }}
+    )
+    
+    # Delete OTP so it can't be reused
+    await db.otps.delete_one({"email": email})
+    
+    return {"message": "Password successfully reset."}
