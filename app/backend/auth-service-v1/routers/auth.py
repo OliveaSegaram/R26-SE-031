@@ -54,6 +54,7 @@ async def signup(request: Request, user: UserCreate):
         "email": email.lower(),
         "hashed_password": hashed_password,
         "role": user.role or "parent",
+        "auth_provider": "local",
     }
 
     result = await db.users.insert_one(user_doc)
@@ -78,6 +79,12 @@ async def login(request: Request, user: UserLogin):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if user_doc.get("auth_provider", "local") != "local" or not user_doc.get("hashed_password"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This account uses social login (Google/Microsoft). Please sign in using your OAuth provider.",
         )
 
     if not verify_password(user.password, user_doc["hashed_password"]):
@@ -129,8 +136,9 @@ async def google_login(request: Request, login_req: GoogleLoginRequest):
         user_doc = {
             "name": name,
             "email": email,
-            "hashed_password": get_password_hash("google-oauth-placeholder-password"),
+            "hashed_password": None,
             "role": "parent",
+            "auth_provider": "google",
         }
         result = await db.users.insert_one(user_doc)
         user_id = str(result.inserted_id)
@@ -180,8 +188,9 @@ async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest):
         user_doc = {
             "name": name,
             "email": email,
-            "hashed_password": get_password_hash("microsoft-oauth-placeholder-password"),
+            "hashed_password": None,
             "role": "parent",
+            "auth_provider": "microsoft",
         }
         result = await db.users.insert_one(user_doc)
         user_id = str(result.inserted_id)
@@ -255,8 +264,10 @@ async def change_password(request: ChangePasswordRequest, current_user: dict = D
 @router.post("/verify-password")
 async def verify_user_password(request: VerifyPasswordRequest, current_user: dict = Depends(get_current_user)):
     """Verify the authenticated user's password (e.g. before sensitive actions)."""
-    is_google_user = verify_password("google-oauth-placeholder-password", current_user["hashed_password"])
-    if not is_google_user:
-        if not verify_password(request.password, current_user["hashed_password"]):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
+    provider = current_user.get("auth_provider", "local")
+    if provider in ["google", "microsoft"] or not current_user.get("hashed_password"):
+        return {"status": "success", "message": "Social user authenticated"}
+
+    if not verify_password(request.password, current_user["hashed_password"]):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
     return {"status": "success", "message": "Password is correct"}
