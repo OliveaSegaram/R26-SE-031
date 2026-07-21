@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/monster_character.dart';
 import '../services/auth_service.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'signin_screen.dart';
 import 'character_intro_screen.dart';
 
@@ -88,6 +89,27 @@ class _SignUpScreenState extends State<SignUpScreen>
     } else {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const CharacterIntroScreen()),
+      );
+    }
+  }
+
+  Future<void> _onMicrosoftSignIn() async {
+    setState(() => _isLoading = true);
+    
+    final error = await AuthService().loginWithMicrosoft();
+    
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    
+    if (error == 'CANCELED') {
+      return;
+    } else if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const CharacterIntroScreen()),
       );
     }
   }
@@ -267,7 +289,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                     children: [
                       Expanded(
                         child: _buildSocialButton(
-                          Icons.g_mobiledata_rounded, 
+                          const Icon(Icons.g_mobiledata_rounded, size: 28, color: AppColors.textPrimary), 
                           'google',
                           onTap: _isLoading ? null : _onGoogleSignIn,
                         ),
@@ -275,8 +297,9 @@ class _SignUpScreenState extends State<SignUpScreen>
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildSocialButton(
-                          Icons.apple_rounded, 
-                          'apple',
+                          const FaIcon(FontAwesomeIcons.microsoft, size: 24, color: AppColors.textPrimary), 
+                          'microsoft',
+                          onTap: _isLoading ? null : _onMicrosoftSignIn,
                         ),
                       ),
                     ],
@@ -325,7 +348,7 @@ class _SignUpScreenState extends State<SignUpScreen>
     );
   }
 
-  Widget _buildSocialButton(IconData icon, String label, {VoidCallback? onTap}) {
+  Widget _buildSocialButton(Widget iconWidget, String label, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -346,7 +369,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 28, color: AppColors.textPrimary),
+          iconWidget,
           const SizedBox(width: 8),
           Text(
             label,
