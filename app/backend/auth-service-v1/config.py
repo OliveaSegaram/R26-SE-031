@@ -5,6 +5,9 @@ Application configuration and constants.
 """
 
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # JWT Configuration
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super-secret-key-for-development-only")

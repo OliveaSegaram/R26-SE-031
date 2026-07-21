@@ -43,7 +43,14 @@ class AuthService {
         return null;
       } else {
         final data = jsonDecode(response.body);
-        return data['detail'] ?? 'Incorrect email or password.';
+        if (data['detail'] is String) {
+          return data['detail'];
+        } else if (data['detail'] is List) {
+          final err = data['detail'][0];
+          final field = err['loc']?.last?.toString() ?? 'Field';
+          return '$field: ${err['msg']}';
+        }
+        return 'Incorrect email or password.';
       }
     } catch (e) {
       return 'Network Error: $e';
