@@ -55,8 +55,17 @@ def verify_token(token: str) -> dict:
 def verify_google_token(token: str) -> dict:
     """Verify a Google ID token and return user info."""
     try:
-        # Enforce security by checking the token was meant for this backend Web Client ID
-        idinfo = id_token.verify_oauth2_token(token, requests.Request(), audience="733315696908-tpau04bmsk824olg6m0a3coanojl147v.apps.googleusercontent.com")
+        # Accept tokens generated for any of our 3 clients (Web, iOS, Android)
+        idinfo = id_token.verify_oauth2_token(
+            token, 
+            requests.Request(), 
+            audience=[
+                "733315696908-tpau04bmsk824olg6m0a3coanojl147v.apps.googleusercontent.com", # Web
+                "733315696908-p1b7u8vgcdkfj08kss6r9u0b5mgvt1uo.apps.googleusercontent.com", # iOS
+                "733315696908-le4r1kebs5o83a31d17ngbm4ve0vee4m.apps.googleusercontent.com", # Android
+            ]
+        )
         return idinfo
-    except ValueError:
+    except ValueError as e:
+        print(f"Google Token Verification Error: {e}")
         return None
