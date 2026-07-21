@@ -2,12 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
+import 'dart:math';
 
 class Activity2Pattern extends StatefulWidget {
-  const Activity2Pattern({super.key});
+  final ActivityNode activityNode;
+  const Activity2Pattern({super.key, required this.activityNode});
 
   @override
   State<Activity2Pattern> createState() => _Activity2PatternState();
+}
+
+class PatternRound {
+  final List<String> pattern;
+  final List<String> options;
+  final int correctOptionIndex;
+  PatternRound({required this.pattern, required this.options, required this.correctOptionIndex});
 }
 
 class _Activity2PatternState extends State<Activity2Pattern> {
@@ -15,9 +26,29 @@ class _Activity2PatternState extends State<Activity2Pattern> {
   int? _selectedIndex;
   bool _isCorrect = false;
 
-  final List<String> _pattern = ['🔴', '🟢', '🔵', '🔴', '🟢', '🔵', '🔴', '🟢'];
-  final List<String> _options = ['🔴', '🔵', '🟢', '🟡'];
-  final int _correctOptionIndex = 1; // '🔵'
+  int _currentRoundIndex = 0;
+  late List<PatternRound> _rounds;
+
+  @override
+  void initState() {
+    super.initState();
+    _rounds = widget.activityNode.rounds.map((roundData) {
+      final pattern = List<String>.from(roundData['pattern'] ?? []);
+      List<String> options = List<String>.from(roundData['options'] ?? []);
+      int correctOptionIndex = roundData['correct_option_index'] ?? 0;
+      
+      // Shuffle options and fix correct index
+      final correctOption = options[correctOptionIndex];
+      options.shuffle();
+      correctOptionIndex = options.indexOf(correctOption);
+
+      return PatternRound(
+        pattern: pattern,
+        options: options,
+        correctOptionIndex: correctOptionIndex,
+      );
+    }).toList();
+  }
 
   void _checkAnswer(int index) async {
     if (_isCorrect) return;
@@ -25,14 +56,30 @@ class _Activity2PatternState extends State<Activity2Pattern> {
     setState(() {
       _selectedIndex = index;
     });
+    
+    final currentRound = _rounds[_currentRoundIndex];
+    int score = (index == currentRound.correctOptionIndex) ? 100 : 0;
+    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
 
-    if (index == _correctOptionIndex) {
+
+    if (index == currentRound.correctOptionIndex) {
       setState(() {
         _isCorrect = true;
       });
       await _audioPlayer.play(AssetSource('audio/correct.mp3'));
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) Navigator.pop(context, true);
+      
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        
+        if (_currentRoundIndex < _rounds.length - 1) {
+          setState(() {
+            _currentRoundIndex++;
+            _selectedIndex = null;
+            _isCorrect = false;
+          });
+        } else {
+          Navigator.pop(context, true);
+        }
       });
     } else {
       await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
@@ -47,12 +94,14 @@ class _Activity2PatternState extends State<Activity2Pattern> {
 
   @override
   Widget build(BuildContext context) {
+    final currentRound = _rounds[_currentRoundIndex];
+    
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
           'රටාව සම්පූර්ණ කරන්න',
-          style: GoogleFonts.notoSansSinhala(fontWeight: FontWeight.w700),
+          style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -63,13 +112,29 @@ class _Activity2PatternState extends State<Activity2Pattern> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Progression Indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'වටය ${_currentRoundIndex + 1} / ${_rounds.length}',
+                    style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: (_currentRoundIndex + 1) / _rounds.length,
+                backgroundColor: AppColors.borderLight,
+                color: AppColors.gentleGreen,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const Spacer(),
+              
               Text(
                 'මීලඟට එන්නේ කුමක්ද?',
-                style: GoogleFonts.notoSansSinhala(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryDark,
-                ),
+                style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
@@ -80,7 +145,7 @@ class _Activity2PatternState extends State<Activity2Pattern> {
                 runSpacing: 8,
                 alignment: WrapAlignment.center,
                 children: [
-                  ..._pattern.map((item) => Text(item, style: const TextStyle(fontSize: 40))),
+                  ...currentRound.pattern.map((item) => Text(item, style: const TextStyle(fontSize: 40))),
                   // Missing spot
                   Container(
                     width: 50,
@@ -91,7 +156,7 @@ class _Activity2PatternState extends State<Activity2Pattern> {
                     ),
                     child: Center(
                       child: _isCorrect 
-                        ? Text(_options[_correctOptionIndex], style: const TextStyle(fontSize: 40)) 
+                        ? Text(currentRound.options[currentRound.correctOptionIndex], style: const TextStyle(fontSize: 40)) 
                         : Text('?', style: GoogleFonts.fredoka(fontSize: 30, color: Colors.grey)),
                     ),
                   ),
@@ -103,10 +168,10 @@ class _Activity2PatternState extends State<Activity2Pattern> {
               // The Options
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_options.length, (index) {
+                children: List.generate(currentRound.options.length, (index) {
                   final isSelected = _selectedIndex == index;
-                  final isCorrectSelection = isSelected && index == _correctOptionIndex;
-                  final isWrongSelection = isSelected && index != _correctOptionIndex;
+                  final isCorrectSelection = isSelected && index == currentRound.correctOptionIndex;
+                  final isWrongSelection = isSelected && index != currentRound.correctOptionIndex;
 
                   return GestureDetector(
                     onTap: () => _checkAnswer(index),
@@ -115,17 +180,17 @@ class _Activity2PatternState extends State<Activity2Pattern> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: isCorrectSelection
-                            ? AppColors.mint.withValues(alpha: 0.3)
+                            ? AppColors.gentleGreen.withValues(alpha: 0.3)
                             : isWrongSelection
-                                ? Colors.red.withValues(alpha: 0.3)
+                                ? AppColors.softCoral.withValues(alpha: 0.3)
                                 : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isCorrectSelection
-                              ? AppColors.mint
+                              ? AppColors.gentleGreen
                               : isWrongSelection
-                                  ? Colors.red
-                                  : AppColors.primaryLight,
+                                  ? AppColors.softCoral
+                                  : AppColors.borderLight,
                           width: 4,
                         ),
                         boxShadow: [
@@ -137,19 +202,19 @@ class _Activity2PatternState extends State<Activity2Pattern> {
                         ],
                       ),
                       child: Text(
-                        _options[index],
+                        currentRound.options[index],
                         style: const TextStyle(fontSize: 50),
                       ),
                     ),
                   );
                 }),
               ),
-              const SizedBox(height: 48),
+              const Spacer(),
               if (_isCorrect)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.mint,
+                    color: AppColors.gentleGreen,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -159,15 +224,13 @@ class _Activity2PatternState extends State<Activity2Pattern> {
                       const SizedBox(width: 8),
                       Text(
                         'විශිෂ්ටයි!',
-                        style: GoogleFonts.notoSansSinhala(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                        style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                     ],
                   ),
-                ),
+                )
+              else 
+                const SizedBox(height: 64),
             ],
           ),
         ),

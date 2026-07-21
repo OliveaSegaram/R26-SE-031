@@ -3,10 +3,11 @@ import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 
-final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
-
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize ProgressService (no longer bypassing student ID)
+  await ProgressService().init();
 
   // Set status bar style for light backgrounds (dark icons)
   SystemChrome.setSystemUIOverlayStyle(

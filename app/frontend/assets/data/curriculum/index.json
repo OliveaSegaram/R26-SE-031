@@ -1,0 +1,82 @@
+[
+  {
+    "id": "skill_1",
+    "title": "Shape Recognition (Visual Skills)",
+    "description": "Dynamic curriculum generated from contents.md",
+    "file_path": "skill_1.json",
+    "total_activities": 9,
+    "is_locked": false
+  },
+  {
+    "id": "skill_2",
+    "title": "Vowel Identification (ස්වර)",
+    "description": "Dynamic curriculum generated from contents.md",
+    "file_path": "skill_2.json",
+    "total_activities": 9,
+    "is_locked": true
+  },
+  {
+    "id": "skill_3",
+    "title": "Consonant Recognition (ව්‍යංජන)",
+    "description": "Dynamic curriculum generated from contents.md",
+    "file_path": "skill_3.json",
+    "total_activities": 9,
+    "is_locked": true
+  },
+  {
+    "id": "skill_4",
+    "title": "Syllable Formation (පිල්ලම්)",
+    "description": "Dynamic curriculum generated from contents.md",
+    "file_path": "skill_4.json",
+    "total_activities": 9,
+    "is_locked": true
+  },
+  {
+    "id": "skill_5",
+    "title": "Simple Word Reading",
+    "description": "Dynamic curriculum generated from contents.md",
+    "file_path": "skill_5.json",
+    "total_activities": 9,
+    "is_locked": true
+  },
+  {
+    "id": "skill_6",
+    "title": "Reading \"Hal\" Letters",
+    "description": "Dynamic curriculum generated from contents.md",
+    "file_path": "skill_6.json",
+    "total_activities": 9,
+    "is_locked": true
+  },
+  {
+    "id": "skill_7",
+    "title": "Words with Modifiers",
+    "description": "Dynamic curriculum generated from contents.md",
+    "file_path": "skill_7.json",
+    "total_activities": 9,
+    "is_locked": true
+  },
+  {
+    "id": "skill_8",
+    "title": "Complex & Conjunct Words",
+    "description": "Dynamic curriculum generated from contents.md",
+    "file_path": "skill_8.json",
+    "total_activities": 9,
+    "is_locked": true
+  },
+  {
+    "id": "skill_9",
+    "title": "Sentence Reading",
+    "description": "Dynamic curriculum generated from contents.md",
+    "file_path": "skill_9.json",
+    "total_activities": 9,
+    "is_locked": true
+  },
+  {
+    "id": "skill_10",
+    "title": "Reading Comprehension",
+    "description": "Dynamic curriculum generated from contents.md",
+    "file_path": "skill_10.json",
+    "total_activities": 9,
+    "is_locked": true
+  }
+]

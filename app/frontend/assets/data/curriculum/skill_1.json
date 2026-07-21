@@ -1,0 +1,966 @@
+[
+  {
+    "id": "skill_1",
+    "title": "Shape Recognition (Visual Skills)",
+    "description": "Dynamic curriculum generated from contents.md",
+    "activities": [
+      {
+        "id": "act_1",
+        "title": "Hidden Picture Search",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "hidden_picture_game",
+        "rounds": [
+          {
+            "raw_text": "Find 1 🌸 among 2 🌳.",
+            "target_count": 1,
+            "target": "🌸",
+            "distractor_count": 2,
+            "distractors": [
+              "🌳"
+            ],
+            "correct_index": 0
+          },
+          {
+            "raw_text": "Find 1 🌸 among 4 🌳.",
+            "target_count": 1,
+            "target": "🌸",
+            "distractor_count": 4,
+            "distractors": [
+              "🌳"
+            ],
+            "correct_index": 0
+          },
+          {
+            "raw_text": "Find 2 🌸 among 6 🌳.",
+            "target_count": 2,
+            "target": "🌸",
+            "distractor_count": 6,
+            "distractors": [
+              "🌳"
+            ],
+            "correct_index": 0
+          },
+          {
+            "raw_text": "Find 2 🌸 among 8 mixed distractors (🌳, 🍎).",
+            "target_count": 2,
+            "target": "🌸",
+            "distractor_count": 8,
+            "distractors": [
+              "mixed",
+              "distractors",
+              "(🌳,",
+              "🍎)"
+            ],
+            "correct_index": 0
+          },
+          {
+            "raw_text": "Find 3 🌸 among 10 mixed distractors.",
+            "target_count": 3,
+            "target": "🌸",
+            "distractor_count": 10,
+            "distractors": [
+              "mixed",
+              "distractors"
+            ],
+            "correct_index": 0
+          },
+          {
+            "raw_text": "Find 3 🌸 among 12 mixed distractors.",
+            "target_count": 3,
+            "target": "🌸",
+            "distractor_count": 12,
+            "distractors": [
+              "mixed",
+              "distractors"
+            ],
+            "correct_index": 0
+          },
+          {
+            "raw_text": "Find 4 🌸 among 15 visually similar distractors.",
+            "target_count": 4,
+            "target": "🌸",
+            "distractor_count": 15,
+            "distractors": [
+              "visually",
+              "similar",
+              "distractors"
+            ],
+            "correct_index": 0
+          },
+          {
+            "raw_text": "Find 4 🌸 among 18 complex distractors.",
+            "target_count": 4,
+            "target": "🌸",
+            "distractor_count": 18,
+            "distractors": [
+              "complex",
+              "distractors"
+            ],
+            "correct_index": 0
+          },
+          {
+            "raw_text": "Find 5 🌸 among 20 complex distractors.",
+            "target_count": 5,
+            "target": "🌸",
+            "distractor_count": 20,
+            "distractors": [
+              "complex",
+              "distractors"
+            ],
+            "correct_index": 0
+          },
+          {
+            "raw_text": "Find 5 🌸 among 25 densely packed distractors.",
+            "target_count": 5,
+            "target": "🌸",
+            "distractor_count": 25,
+            "distractors": [
+              "densely",
+              "packed",
+              "distractors"
+            ],
+            "correct_index": 0
+          }
+        ]
+      },
+      {
+        "id": "act_2",
+        "title": "Complete the Pattern",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "pattern_game",
+        "rounds": [
+          {
+            "raw_text": "🔴 🔵 🔴 ? (Options: 🔴, 🔵)",
+            "options": [
+              "🔴",
+              "🔵"
+            ],
+            "question": "🔴 🔵 🔴 ?",
+            "pattern": [
+              "🔴",
+              "🔵",
+              "🔴"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🟢 ⭐ 🟢 ? (Options: 🟢, ⭐)",
+            "options": [
+              "🟢",
+              "⭐"
+            ],
+            "question": "🟢 ⭐ 🟢 ?",
+            "pattern": [
+              "🟢",
+              "⭐",
+              "🟢"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🔴 🔵 🟢 🔴 🔵 ? (Options: 🔴, 🔵, 🟢)",
+            "options": [
+              "🔴",
+              "🔵",
+              "🟢"
+            ],
+            "question": "🔴 🔵 🟢 🔴 🔵 ?",
+            "pattern": [
+              "🔴",
+              "🔵",
+              "🟢",
+              "🔴",
+              "🔵"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🔴 🔴 🔵 🔴 🔴 ? (Options: 🔴, 🔵)",
+            "options": [
+              "🔴",
+              "🔵"
+            ],
+            "question": "🔴 🔴 🔵 🔴 🔴 ?",
+            "pattern": [
+              "🔴",
+              "🔴",
+              "🔵",
+              "🔴",
+              "🔴"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "⭐ 🌙 ⭐ 🌙 ⭐ ? (Options: ⭐, 🌙, ☀️)",
+            "options": [
+              "⭐",
+              "🌙",
+              "☀️"
+            ],
+            "question": "⭐ 🌙 ⭐ 🌙 ⭐ ?",
+            "pattern": [
+              "⭐",
+              "🌙",
+              "⭐",
+              "🌙",
+              "⭐"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🌸 🌳 🌸 🌳 🌸 ? (Options: 🌸, 🌳, 🍎)",
+            "options": [
+              "🌸",
+              "🌳",
+              "🍎"
+            ],
+            "question": "🌸 🌳 🌸 🌳 🌸 ?",
+            "pattern": [
+              "🌸",
+              "🌳",
+              "🌸",
+              "🌳",
+              "🌸"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🔴 🔵 🟢 ⭐ 🔴 🔵 🟢 ? (Options: 🔴, 🔵, 🟢, ⭐)",
+            "options": [
+              "🔴",
+              "🔵",
+              "🟢",
+              "⭐"
+            ],
+            "question": "🔴 🔵 🟢 ⭐ 🔴 🔵 🟢 ?",
+            "pattern": [
+              "🔴",
+              "🔵",
+              "🟢",
+              "⭐",
+              "🔴",
+              "🔵",
+              "🟢"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🐟 🐟 🐦 🐟 🐟 ? (Options: 🐟, 🐦)",
+            "options": [
+              "🐟",
+              "🐦"
+            ],
+            "question": "🐟 🐟 🐦 🐟 🐟 ?",
+            "pattern": [
+              "🐟",
+              "🐟",
+              "🐦",
+              "🐟",
+              "🐟"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "△ □ ○ △ □ ? (Options: △, □, ○)",
+            "options": [
+              "△",
+              "□",
+              "○"
+            ],
+            "question": "△ □ ○ △ □ ?",
+            "pattern": [
+              "△",
+              "□",
+              "○",
+              "△",
+              "□"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "☀️ 🌙 ⭐ ☀️ 🌙 ? (Options: ☀️, 🌙, ⭐, ☁️)",
+            "options": [
+              "☀️",
+              "🌙",
+              "⭐",
+              "☁️"
+            ],
+            "question": "☀️ 🌙 ⭐ ☀️ 🌙 ?",
+            "pattern": [
+              "☀️",
+              "🌙",
+              "⭐",
+              "☀️",
+              "🌙"
+            ],
+            "correct_option_index": 0
+          }
+        ]
+      },
+      {
+        "id": "act_3",
+        "title": "Spot the Difference",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "hidden_picture_game",
+        "rounds": [
+          {
+            "raw_text": "1 difference between 2 simple shapes.",
+            "target": "1",
+            "target_count": 1,
+            "distractors": [
+              "?"
+            ],
+            "distractor_count": 4,
+            "correct_index": 0
+          },
+          {
+            "raw_text": "2 differences between 2 simple shapes.",
+            "target": "2",
+            "target_count": 1,
+            "distractors": [
+              "?"
+            ],
+            "distractor_count": 4,
+            "correct_index": 0
+          },
+          {
+            "raw_text": "2 differences between 3 objects.",
+            "target": "2",
+            "target_count": 1,
+            "distractors": [
+              "?"
+            ],
+            "distractor_count": 4,
+            "correct_index": 0
+          },
+          {
+            "raw_text": "3 differences in a basic scene.",
+            "target": "3",
+            "target_count": 1,
+            "distractors": [
+              "?"
+            ],
+            "distractor_count": 4,
+            "correct_index": 0
+          },
+          {
+            "raw_text": "4 differences in a basic scene.",
+            "target": "4",
+            "target_count": 1,
+            "distractors": [
+              "?"
+            ],
+            "distractor_count": 4,
+            "correct_index": 0
+          },
+          {
+            "raw_text": "5 differences in a moderately complex scene.",
+            "target": "5",
+            "target_count": 1,
+            "distractors": [
+              "?"
+            ],
+            "distractor_count": 4,
+            "correct_index": 0
+          },
+          {
+            "raw_text": "6 differences in a moderately complex scene.",
+            "target": "6",
+            "target_count": 1,
+            "distractors": [
+              "?"
+            ],
+            "distractor_count": 4,
+            "correct_index": 0
+          },
+          {
+            "raw_text": "7 differences in a detailed scene.",
+            "target": "7",
+            "target_count": 1,
+            "distractors": [
+              "?"
+            ],
+            "distractor_count": 4,
+            "correct_index": 0
+          },
+          {
+            "raw_text": "8 differences in a detailed scene.",
+            "target": "8",
+            "target_count": 1,
+            "distractors": [
+              "?"
+            ],
+            "distractor_count": 4,
+            "correct_index": 0
+          },
+          {
+            "raw_text": "10 differences in a highly complex scene.",
+            "target": "10",
+            "target_count": 1,
+            "distractors": [
+              "?"
+            ],
+            "distractor_count": 4,
+            "correct_index": 0
+          }
+        ]
+      },
+      {
+        "id": "act_4",
+        "title": "Find the Missing Picture",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "missing_picture_game",
+        "rounds": [
+          {
+            "raw_text": "🌸 🌳 ____ 🏫 (Missing: 🐟 from 2 options)",
+            "sequence": [
+              "🌸",
+              "🌳",
+              null,
+              "🏫"
+            ],
+            "options": [
+              "🐟",
+              "❓",
+              "❌"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🍎 🚌 ____ 🐦 (Missing: 🌸 from 3 options)",
+            "sequence": [
+              "🍎",
+              "🚌",
+              null,
+              "🐦"
+            ],
+            "options": [
+              "🌸",
+              "❓",
+              "❌"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🐕 🌳 🌸 ____ (Missing: 🍎 from 3 options)",
+            "sequence": [
+              "🐕",
+              "🌳",
+              "🌸",
+              null
+            ],
+            "options": [
+              "🍎",
+              "❓",
+              "❌"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "📖 ❤️ ⭐ ____ 🐟 (Missing: 🌙 from 4 options)",
+            "sequence": [
+              "📖",
+              "❤️",
+              "⭐",
+              null,
+              "🐟"
+            ],
+            "options": [
+              "🌙",
+              "❓",
+              "❌"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "☀️ ☁️ ____ 🌧️ ❄️ (Missing: ⚡ from 4 options)",
+            "sequence": [
+              "☀️",
+              "☁️",
+              null,
+              "🌧️",
+              "❄️"
+            ],
+            "options": [
+              "⚡",
+              "❓",
+              "❌"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🚗 🚌 🚲 ____ ✈️ (Missing: 🚂 from 5 options)",
+            "sequence": [
+              "🚗",
+              "🚌",
+              "🚲",
+              null,
+              "✈️"
+            ],
+            "options": [
+              "🚂",
+              "❓",
+              "❌"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🍎 🍌 🍇 ____ 🍉 (Missing: 🍓 from 5 options)",
+            "sequence": [
+              "🍎",
+              "🍌",
+              "🍇",
+              null,
+              "🍉"
+            ],
+            "options": [
+              "🍓",
+              "❓",
+              "❌"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🐶 🐱 🐭 ____ 🐰 (Missing: 🦊 from 6 options)",
+            "sequence": [
+              "🐶",
+              "🐱",
+              "🐭",
+              null,
+              "🐰"
+            ],
+            "options": [
+              "🦊",
+              "❓",
+              "❌"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🌸 🌹 🌺 ____ 🌻 (Missing: 🌷 from 6 options)",
+            "sequence": [
+              "🌸",
+              "🌹",
+              "🌺",
+              null,
+              "🌻"
+            ],
+            "options": [
+              "🌷",
+              "❓",
+              "❌"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "🐟 🐠 🐡 ____ 🦈 🐳 (Missing: 🐙 from 8 options)",
+            "sequence": [
+              "🐟",
+              "🐠",
+              "🐡",
+              null,
+              "🦈",
+              "🐳"
+            ],
+            "options": [
+              "🐙",
+              "❓",
+              "❌"
+            ],
+            "correct_option_index": 0
+          }
+        ]
+      },
+      {
+        "id": "act_5",
+        "title": "Visual Memory Challenge",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "memory_game",
+        "rounds": [
+          {
+            "raw_text": "Show 2 objects for 5s. Recall 2."
+          },
+          {
+            "raw_text": "Show 3 objects for 5s. Recall 3."
+          },
+          {
+            "raw_text": "Show 4 objects for 8s. Recall 4."
+          },
+          {
+            "raw_text": "Show 4 objects for 6s. Recall 4."
+          },
+          {
+            "raw_text": "Show 5 objects for 8s. Recall 5."
+          },
+          {
+            "raw_text": "Show 5 objects for 6s. Recall 5."
+          },
+          {
+            "raw_text": "Show 6 objects for 10s. Recall 6."
+          },
+          {
+            "raw_text": "Show 7 objects for 10s. Recall 7."
+          },
+          {
+            "raw_text": "Show 8 objects for 12s. Recall 8."
+          },
+          {
+            "raw_text": "Show 10 objects for 15s. Recall 10."
+          }
+        ]
+      },
+      {
+        "id": "act_6",
+        "title": "Category Classification",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "sorting_game",
+        "rounds": [
+          {
+            "raw_text": "Sort 2 Animals vs 2 Plants."
+          },
+          {
+            "raw_text": "Sort 3 Animals vs 3 Plants."
+          },
+          {
+            "raw_text": "Sort 4 Fruits vs 4 Vehicles."
+          },
+          {
+            "raw_text": "Sort 3 Animals, 3 Plants, 3 Fruits."
+          },
+          {
+            "raw_text": "Sort 4 Animals, 4 Places, 4 Objects."
+          },
+          {
+            "raw_text": "Sort 5 items into 3 categories."
+          },
+          {
+            "raw_text": "Sort 6 items into 3 categories."
+          },
+          {
+            "raw_text": "Sort 8 items into 4 categories."
+          },
+          {
+            "raw_text": "Sort 10 items into 4 categories."
+          },
+          {
+            "raw_text": "Sort 15 items into 5 categories (Animals, Plants, Fruits, Places, Vehicles)."
+          }
+        ]
+      },
+      {
+        "id": "act_7",
+        "title": "Sequence the Life Cycle",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "pattern_game",
+        "rounds": [
+          {
+            "raw_text": "2 steps: Seed 🌱 -> Tree 🌳.",
+            "pattern": [
+              "2",
+              "steps:",
+              "Seed",
+              "🌱",
+              "->",
+              "Tree",
+              "🌳."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "2 steps: Egg 🥚 -> Bird 🐦.",
+            "pattern": [
+              "2",
+              "steps:",
+              "Egg",
+              "🥚",
+              "->",
+              "Bird",
+              "🐦."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "3 steps: Seed 🌱 -> Sapling 🌿 -> Tree 🌳.",
+            "pattern": [
+              "3",
+              "steps:",
+              "Seed",
+              "🌱",
+              "->",
+              "Sapling",
+              "🌿",
+              "->",
+              "Tree",
+              "🌳."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "3 steps: Caterpillar 🐛 -> Cocoon -> Butterfly 🦋.",
+            "pattern": [
+              "3",
+              "steps:",
+              "Caterpillar",
+              "🐛",
+              "->",
+              "Cocoon",
+              "->",
+              "Butterfly",
+              "🦋."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "4 steps: Seed 🌱 -> Sapling 🌿 -> Tree 🌳 -> Apple 🍎.",
+            "pattern": [
+              "4",
+              "steps:",
+              "Seed",
+              "🌱",
+              "->",
+              "Sapling",
+              "🌿",
+              "->",
+              "Tree",
+              "🌳",
+              "->",
+              "Apple",
+              "🍎."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "4 steps: Egg 🥚 -> Chick 🐣 -> Chicken 🐔 -> Food 🍗.",
+            "pattern": [
+              "4",
+              "steps:",
+              "Egg",
+              "🥚",
+              "->",
+              "Chick",
+              "🐣",
+              "->",
+              "Chicken",
+              "🐔",
+              "->",
+              "Food",
+              "🍗."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "5 steps: Morning 🌅 -> Noon ☀️ -> Afternoon -> Evening 🌇 -> Night 🌙.",
+            "pattern": [
+              "5",
+              "steps:",
+              "Morning",
+              "🌅",
+              "->",
+              "Noon",
+              "☀️",
+              "->",
+              "Afternoon",
+              "->",
+              "Evening",
+              "🌇",
+              "->",
+              "Night",
+              "🌙."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "5 steps: Baby 👶 -> Toddler -> Child 🧒 -> Adult 🧑 -> Elder 🧓.",
+            "pattern": [
+              "5",
+              "steps:",
+              "Baby",
+              "👶",
+              "->",
+              "Toddler",
+              "->",
+              "Child",
+              "🧒",
+              "->",
+              "Adult",
+              "🧑",
+              "->",
+              "Elder",
+              "🧓."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "6 steps: Complex plant growth cycle.",
+            "pattern": [
+              "6",
+              "steps:",
+              "Complex",
+              "plant",
+              "growth",
+              "cycle."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "6 steps: Complex butterfly life cycle with distractors.",
+            "pattern": [
+              "6",
+              "steps:",
+              "Complex",
+              "butterfly",
+              "life",
+              "cycle",
+              "with",
+              "distractors."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          }
+        ]
+      },
+      {
+        "id": "act_8",
+        "title": "Position Concepts",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "Tap the object \"Left\" of the tree (2 objects)."
+          },
+          {
+            "raw_text": "Tap the object \"Right\" of the house (2 objects)."
+          },
+          {
+            "raw_text": "Tap the object \"Above\" the bird (3 objects)."
+          },
+          {
+            "raw_text": "Tap the object \"Below\" the fish (3 objects)."
+          },
+          {
+            "raw_text": "Tap the object \"Between\" two flowers (3 objects)."
+          },
+          {
+            "raw_text": "Tap the object \"Next to\" the apple (4 objects)."
+          },
+          {
+            "raw_text": "Tap the object \"Inside\" the box (4 objects)."
+          },
+          {
+            "raw_text": "Tap the object \"Outside\" the house (5 objects)."
+          },
+          {
+            "raw_text": "Tap the object \"Far from\" the school (5 objects)."
+          },
+          {
+            "raw_text": "Tap the object \"Closest to\" the dog (6 objects)."
+          }
+        ]
+      },
+      {
+        "id": "act_9",
+        "title": "Visual Tracking / Maze",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "maze_game",
+        "rounds": [
+          {
+            "raw_text": "Follow a straight line from Home to School."
+          },
+          {
+            "raw_text": "Follow a curved line from Dog to Bone."
+          },
+          {
+            "raw_text": "Follow a zigzag line from Bee to Flower."
+          },
+          {
+            "raw_text": "Simple maze (1 junction)."
+          },
+          {
+            "raw_text": "Simple maze (2 junctions)."
+          },
+          {
+            "raw_text": "Medium maze (3 junctions)."
+          },
+          {
+            "raw_text": "Medium maze (4 junctions)."
+          },
+          {
+            "raw_text": "Hard maze (intersecting lines)."
+          },
+          {
+            "raw_text": "Hard maze (dead ends)."
+          },
+          {
+            "raw_text": "Expert maze (complex paths)."
+          }
+        ]
+      }
+    ]
+  }
+]

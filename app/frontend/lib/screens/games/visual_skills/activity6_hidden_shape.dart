@@ -2,40 +2,106 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
+import 'dart:math';
 
 class Activity6HiddenShape extends StatefulWidget {
-  const Activity6HiddenShape({super.key});
+  final ActivityNode activityNode;
+  const Activity6HiddenShape({super.key, required this.activityNode});
 
   @override
   State<Activity6HiddenShape> createState() => _Activity6HiddenShapeState();
 }
 
+class HiddenShapeRound {
+  final String instruction;
+  final List<String> shapes;
+  final List<int> targetIndices;
+  HiddenShapeRound({required this.instruction, required this.shapes, required this.targetIndices});
+}
+
 class _Activity6HiddenShapeState extends State<Activity6HiddenShape> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   
-  // △ □ ○ ☆
-  final List<String> _shapes = ['△', '□', '○', '☆', '△', '□', '○', '△', '☆', '△', '□', '○'];
-  final Set<int> _foundTriangles = {};
-  
-  // Indices of triangles in the list
-  final List<int> _targetIndices = [0, 4, 7, 9];
+  int _currentRoundIndex = 0;
+  late List<HiddenShapeRound> _rounds;
+
+  Set<int> _foundShapes = {};
   bool _isComplete = false;
 
-  void _checkShape(int index) async {
-    if (_isComplete || _foundTriangles.contains(index)) return;
+  @override
+  void initState() {
+    super.initState();
+    _initRounds();
+  }
 
-    if (_targetIndices.contains(index)) {
+  void _initRounds() {
+    final random = Random();
+    
+    _rounds = widget.activityNode.rounds.map((roundData) {
+      String instruction = roundData['raw_text'] ?? 'හැඩය සොයන්න';
+      String target = roundData['target'] ?? '⭐';
+      int targetCount = roundData['target_count'] ?? 3;
+      List<String> distractors = List<String>.from(roundData['distractors'] ?? ['○', '□']);
+      
+      List<String> shapes = [];
+      for (int i = 0; i < targetCount; i++) shapes.add(target);
+      
+      int totalShapes = 12;
+      for (int i = shapes.length; i < totalShapes; i++) {
+        shapes.add(distractors[random.nextInt(distractors.length)]);
+      }
+      
+      shapes.shuffle();
+      
+      List<int> targetIndices = [];
+      for (int i = 0; i < shapes.length; i++) {
+        if (shapes[i] == target) targetIndices.add(i);
+      }
+      
+      return HiddenShapeRound(
+        instruction: instruction, 
+        shapes: shapes, 
+        targetIndices: targetIndices
+      );
+    }).toList();
+  }
+
+  void _checkShape(int index) async {
+    if (_isComplete || _foundShapes.contains(index)) return;
+
+    final currentRound = _rounds[_currentRoundIndex];
+    bool isCorrect = currentRound.targetIndices.contains(index);
+
+    // Telemetry logged upon completion of the round
+    // We only send telemetry when all items are found
+
+
+    if (isCorrect) {
       setState(() {
-        _foundTriangles.add(index);
+        _foundShapes.add(index);
       });
       await _audioPlayer.play(AssetSource('audio/correct.mp3'));
       
-      if (_foundTriangles.length == _targetIndices.length) {
+      if (_foundShapes.length == currentRound.targetIndices.length) {
         setState(() {
           _isComplete = true;
         });
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.pop(context, true);
+        
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(100);
+
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (!mounted) return;
+          if (_currentRoundIndex < _rounds.length - 1) {
+            setState(() {
+              _currentRoundIndex++;
+              _foundShapes.clear();
+              _isComplete = false;
+            });
+          } else {
+            Navigator.pop(context, true);
+          }
         });
       }
     } else {
@@ -51,12 +117,14 @@ class _Activity6HiddenShapeState extends State<Activity6HiddenShape> {
 
   @override
   Widget build(BuildContext context) {
+    final currentRound = _rounds[_currentRoundIndex];
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
           'සැඟවුණු හැඩය සොයන්න',
-          style: GoogleFonts.notoSansSinhala(fontWeight: FontWeight.w700),
+          style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -66,18 +134,34 @@ class _Activity6HiddenShapeState extends State<Activity6HiddenShape> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
+              // Progression Indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'වටය ${_currentRoundIndex + 1} / ${_rounds.length}',
+                    style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: (_currentRoundIndex + 1) / _rounds.length,
+                backgroundColor: AppColors.borderLight,
+                color: AppColors.gentleGreen,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const SizedBox(height: 24),
+
               Text(
-                'සියලුම ත්‍රිකෝණ (△) සොයන්න',
-                style: GoogleFonts.notoSansSinhala(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryDark,
-                ),
+                currentRound.instruction,
+                style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
-                'හමුවූ ත්‍රිකෝණ: ${_foundTriangles.length} / ${_targetIndices.length}',
+                'හමුවූ ගණන: ${_foundShapes.length} / ${currentRound.targetIndices.length}',
                 style: GoogleFonts.notoSansSinhala(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -92,19 +176,19 @@ class _Activity6HiddenShapeState extends State<Activity6HiddenShape> {
                     crossAxisSpacing: 24,
                     mainAxisSpacing: 24,
                   ),
-                  itemCount: _shapes.length,
+                  itemCount: currentRound.shapes.length,
                   itemBuilder: (context, index) {
-                    final isFound = _foundTriangles.contains(index);
+                    final isFound = _foundShapes.contains(index);
                     
                     return GestureDetector(
                       onTap: () => _checkShape(index),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         decoration: BoxDecoration(
-                          color: isFound ? AppColors.mint.withValues(alpha: 0.3) : Colors.white,
+                          color: isFound ? AppColors.gentleGreen.withValues(alpha: 0.3) : Colors.white,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isFound ? AppColors.mint : AppColors.primaryLight.withValues(alpha: 0.5),
+                            color: isFound ? AppColors.gentleGreen : AppColors.borderLight.withValues(alpha: 0.5),
                             width: isFound ? 4 : 2,
                           ),
                           boxShadow: [
@@ -118,10 +202,10 @@ class _Activity6HiddenShapeState extends State<Activity6HiddenShape> {
                         ),
                         child: Center(
                           child: Text(
-                            _shapes[index],
+                            currentRound.shapes[index],
                             style: TextStyle(
                               fontSize: 50,
-                              color: isFound ? AppColors.mint : Colors.black87,
+                              color: isFound ? AppColors.gentleGreen : Colors.black87,
                             ),
                           ),
                         ),
@@ -135,7 +219,7 @@ class _Activity6HiddenShapeState extends State<Activity6HiddenShape> {
                   margin: const EdgeInsets.only(top: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.mint,
+                    color: AppColors.gentleGreen,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -145,11 +229,7 @@ class _Activity6HiddenShapeState extends State<Activity6HiddenShape> {
                       const SizedBox(width: 8),
                       Text(
                         'විශිෂ්ටයි!',
-                        style: GoogleFonts.notoSansSinhala(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                        style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                     ],
                   ),

@@ -2,12 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
+import 'dart:math';
 
 class Activity3MissingPicture extends StatefulWidget {
-  const Activity3MissingPicture({super.key});
+  final ActivityNode activityNode;
+  const Activity3MissingPicture({super.key, required this.activityNode});
 
   @override
   State<Activity3MissingPicture> createState() => _Activity3MissingPictureState();
+}
+
+class MissingPictureRound {
+  final List<String?> sequence;
+  final List<String> options;
+  final int correctOptionIndex;
+  MissingPictureRound({required this.sequence, required this.options, required this.correctOptionIndex});
 }
 
 class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
@@ -15,10 +26,29 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
   int? _selectedIndex;
   bool _isCorrect = false;
 
-  // 🌸 🌳 🐟 ____ 🚌
-  final List<String?> _sequence = ['🌸', '🌳', '🐟', null, '🚌'];
-  final List<String> _options = ['🏫', '🍎', '🐦']; // '🐦' is just a wrong option
-  final int _correctOptionIndex = 1; // Let's say '🍎' is the intended answer for the gap in the prompt
+  int _currentRoundIndex = 0;
+  late List<MissingPictureRound> _rounds;
+
+  @override
+  void initState() {
+    super.initState();
+    _rounds = widget.activityNode.rounds.map((roundData) {
+      final sequence = List<String?>.from(roundData['sequence'] ?? []);
+      List<String> options = List<String>.from(roundData['options'] ?? []);
+      int correctOptionIndex = roundData['correct_option_index'] ?? 0;
+      
+      // Ensure the correct option is indeed at the correct index
+      final correctOption = options[correctOptionIndex];
+      options.shuffle();
+      correctOptionIndex = options.indexOf(correctOption);
+
+      return MissingPictureRound(
+        sequence: sequence,
+        options: options,
+        correctOptionIndex: correctOptionIndex,
+      );
+    }).toList();
+  }
 
   void _checkAnswer(int index) async {
     if (_isCorrect) return;
@@ -26,14 +56,27 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
     setState(() {
       _selectedIndex = index;
     });
+    final currentRound = _rounds[_currentRoundIndex];
+    
+    int score = (index == currentRound.correctOptionIndex) ? 100 : 0;
+    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
 
-    if (index == _correctOptionIndex) {
+    if (index == currentRound.correctOptionIndex) {
       setState(() {
         _isCorrect = true;
       });
       await _audioPlayer.play(AssetSource('audio/correct.mp3'));
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) Navigator.pop(context, true);
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        if (_currentRoundIndex < _rounds.length - 1) {
+          setState(() {
+            _currentRoundIndex++;
+            _selectedIndex = null;
+            _isCorrect = false;
+          });
+        } else {
+          Navigator.pop(context, true);
+        }
       });
     } else {
       await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
@@ -48,12 +91,14 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
 
   @override
   Widget build(BuildContext context) {
+    final currentRound = _rounds[_currentRoundIndex];
+    
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
           'අඩු රූපය සොයන්න',
-          style: GoogleFonts.notoSansSinhala(fontWeight: FontWeight.w700),
+          style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -64,13 +109,29 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Progression Indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'වටය ${_currentRoundIndex + 1} / ${_rounds.length}',
+                    style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: (_currentRoundIndex + 1) / _rounds.length,
+                backgroundColor: AppColors.borderLight,
+                color: AppColors.gentleGreen,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const Spacer(),
+
               Text(
                 'හිස්තැනට සුදුසු රූපය තෝරන්න',
-                style: GoogleFonts.notoSansSinhala(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryDark,
-                ),
+                style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
@@ -78,7 +139,7 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
               // Sequence
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: _sequence.map((item) {
+                children: currentRound.sequence.map((item) {
                   if (item == null) {
                     return Container(
                       width: 60,
@@ -90,7 +151,7 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
                       ),
                       child: Center(
                         child: _isCorrect 
-                          ? Text(_options[_correctOptionIndex], style: const TextStyle(fontSize: 40)) 
+                          ? Text(currentRound.options[currentRound.correctOptionIndex], style: const TextStyle(fontSize: 40)) 
                           : Text('?', style: GoogleFonts.fredoka(fontSize: 30, color: Colors.grey)),
                       ),
                     );
@@ -107,10 +168,10 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
               // Options
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_options.length, (index) {
+                children: List.generate(currentRound.options.length, (index) {
                   final isSelected = _selectedIndex == index;
-                  final isCorrectSelection = isSelected && index == _correctOptionIndex;
-                  final isWrongSelection = isSelected && index != _correctOptionIndex;
+                  final isCorrectSelection = isSelected && index == currentRound.correctOptionIndex;
+                  final isWrongSelection = isSelected && index != currentRound.correctOptionIndex;
 
                   return GestureDetector(
                     onTap: () => _checkAnswer(index),
@@ -119,17 +180,17 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: isCorrectSelection
-                            ? AppColors.mint.withValues(alpha: 0.3)
+                            ? AppColors.gentleGreen.withValues(alpha: 0.3)
                             : isWrongSelection
-                                ? Colors.red.withValues(alpha: 0.3)
+                                ? AppColors.softCoral.withValues(alpha: 0.3)
                                 : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isCorrectSelection
-                              ? AppColors.mint
+                              ? AppColors.gentleGreen
                               : isWrongSelection
-                                  ? Colors.red
-                                  : AppColors.primaryLight,
+                                  ? AppColors.softCoral
+                                  : AppColors.borderLight,
                           width: 4,
                         ),
                         boxShadow: [
@@ -141,19 +202,19 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
                         ],
                       ),
                       child: Text(
-                        _options[index],
+                        currentRound.options[index],
                         style: const TextStyle(fontSize: 50),
                       ),
                     ),
                   );
                 }),
               ),
-              const SizedBox(height: 48),
+              const Spacer(),
               if (_isCorrect)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.mint,
+                    color: AppColors.gentleGreen,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -163,15 +224,13 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
                       const SizedBox(width: 8),
                       Text(
                         'විශිෂ්ටයි!',
-                        style: GoogleFonts.notoSansSinhala(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                        style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                     ],
                   ),
-                ),
+                )
+              else
+                const SizedBox(height: 64),
             ],
           ),
         ),

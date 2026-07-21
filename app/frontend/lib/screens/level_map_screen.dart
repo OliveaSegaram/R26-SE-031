@@ -3,24 +3,18 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
-import 'games/visual_skills/activity1_spot_difference.dart';
-import 'games/visual_skills/activity2_pattern.dart';
-import 'games/visual_skills/activity3_missing_picture.dart';
-import 'games/visual_skills/activity4_visual_memory.dart';
-import 'games/visual_skills/activity5_category_sorting.dart';
-import 'games/visual_skills/activity6_hidden_shape.dart';
-import 'games/visual_skills/activity7_size_ordering.dart';
-import 'games/visual_skills/activity8_position.dart';
-import 'games/visual_skills/activity9_sequence.dart';
-import 'games/visual_skills/activity10_shadow_match.dart';
+import '../models/curriculum_models.dart';
+import '../services/progress_service.dart';
+import 'games/game_factory.dart';
 
 /// Level Map Screen
 /// Dyslexia-accessible: calm blue header, gentle green/warm amber nodes,
 /// crème-tinted background, dark grey text.
 class LevelMapScreen extends StatefulWidget {
+  final SkillDetail skillMap;
   final Map<String, dynamic>? studentData;
 
-  const LevelMapScreen({super.key, this.studentData});
+  const LevelMapScreen({super.key, required this.skillMap, this.studentData});
 
   @override
   State<LevelMapScreen> createState() => _LevelMapScreenState();
@@ -41,23 +35,22 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   bool _isNavigating = false;
   int _animatingFromLevel = -1; // Tracks the level we are animating from
 
-  // Level data - 10 Visual Skills Tasks
-  final List<Map<String, dynamic>> levels = [
-    {'label': '1', 'title': 'spot diff', 'type': 'lesson', 'completed': false},
-    {'label': '2', 'title': 'pattern', 'type': 'lesson', 'completed': false},
-    {'label': '3', 'title': 'missing', 'type': 'lesson', 'completed': false},
-    {'label': '4', 'title': 'memory', 'type': 'lesson', 'completed': false},
-    {'label': '5', 'title': 'category', 'type': 'lesson', 'completed': false},
-    {'label': '6', 'title': 'hidden', 'type': 'lesson', 'completed': false},
-    {'label': '7', 'title': 'size', 'type': 'lesson', 'completed': false},
-    {'label': '8', 'title': 'position', 'type': 'lesson', 'completed': false},
-    {'label': '9', 'title': 'sequence', 'type': 'lesson', 'completed': false},
-    {'label': '🏆', 'title': 'complete!', 'type': 'trophy', 'completed': false},
-  ];
+  List<ActivityNode> get levels => widget.skillMap.activities;
 
   @override
   void initState() {
     super.initState();
+    
+    // Calculate currentLevel from persistent storage
+    final progress = ProgressService();
+    currentLevel = 0;
+    for (int i = 0; i < levels.length; i++) {
+      if (progress.isActivityCompleted(widget.skillMap.id, levels[i].id)) {
+        currentLevel = i + 1; // Unlocks the next one
+      }
+    }
+    // Cap it
+    if (currentLevel >= levels.length) currentLevel = levels.length - 1;
     
     // Pulse animation for the current active node
     _pulseController = AnimationController(
@@ -96,7 +89,8 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   }
 
   void _autoStartFirstLevel() {
-    if (currentLevel == 0 && !(levels[0]['completed'] as bool)) {
+    bool firstCompleted = ProgressService().isActivityCompleted(widget.skillMap.id, levels[0].id);
+    if (currentLevel == 0 && !firstCompleted) {
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted && currentLevel == 0 && !_isNavigating) {
           _navigateToLevel(0);
@@ -252,7 +246,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           // Title
           Expanded(
             child: Text(
-              'හැඩ හඳුනාගැනීම',
+              widget.skillMap.title,
               style: AppTypography.sinhala(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -293,7 +287,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         final nodeX = _getNodeX(index, screenWidth);
         final nodeY = index * 120.0 + 20;
 
-        bool isCompleted = level['completed'] as bool;
+        bool isCompleted = ProgressService().isActivityCompleted(widget.skillMap.id, level.id);
         bool isCurrent = index == currentLevel;
         bool isLocked = index > currentLevel;
         double additionalScale = 1.0;
@@ -333,14 +327,14 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   }
 
   Widget _buildNodeCore({
-    required Map<String, dynamic> level,
+    required ActivityNode level,
     required int index,
     required bool isCompleted,
     required bool isCurrent,
     required bool isLocked,
   }) {
-    final type = level['type'] as String;
-    final label = level['label'] as String;
+    final type = index == levels.length - 1 ? 'trophy' : 'star';
+    final label = (index + 1).toString();
 
     Color bgColor;
     Color borderColor;
@@ -482,41 +476,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     _isNavigating = true;
 
     try {
-      Widget nextScreen;
-      switch (index) {
-        case 0:
-          nextScreen = const Activity1SpotDifference();
-          break;
-        case 1:
-          nextScreen = const Activity2Pattern();
-          break;
-        case 2:
-          nextScreen = const Activity3MissingPicture();
-          break;
-        case 3:
-          nextScreen = const Activity4VisualMemory();
-          break;
-        case 4:
-          nextScreen = const Activity5CategorySorting();
-          break;
-        case 5:
-          nextScreen = const Activity6HiddenShape();
-          break;
-        case 6:
-          nextScreen = const Activity7SizeOrdering();
-          break;
-        case 7:
-          nextScreen = const Activity8Position();
-          break;
-        case 8:
-          nextScreen = const Activity9Sequence();
-          break;
-        case 9:
-          nextScreen = const Activity10ShadowMatch();
-          break;
-        default:
-          nextScreen = const Activity1SpotDifference();
-      }
+      Widget nextScreen = GameFactory.buildGame(levels[index]);
 
       final result = await Navigator.push(
         context,
@@ -524,11 +484,13 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       );
 
       if (result == true && index == currentLevel) {
+        // Mark as completed persistently
+        await ProgressService().markActivityCompleted(widget.skillMap.id, levels[index].id);
+        
         if (currentLevel < levels.length - 1) {
           setState(() {
             _animatingFromLevel = currentLevel;
             currentLevel++;
-            levels[_animatingFromLevel]['completed'] = true;
           });
           
           // Start sequence
@@ -550,7 +512,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           _scrollToCurrentLevel();
         } else {
           setState(() {
-            levels[currentLevel]['completed'] = true;
+            // Re-render to show completion state
           });
         }
       }
@@ -563,7 +525,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
 // Path Painter (solid dirt trail)
 class PathPainter extends CustomPainter {
-  final List<Map<String, dynamic>> levels;
+  final List<ActivityNode> levels;
   final int currentLevel;
   final double Function(int) getNodeX;
   final double nodeSpacing;

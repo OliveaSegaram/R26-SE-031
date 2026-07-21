@@ -1,0 +1,599 @@
+[
+  {
+    "id": "skill_9",
+    "title": "Sentence Reading",
+    "description": "Dynamic curriculum generated from contents.md",
+    "activities": [
+      {
+        "id": "act_1",
+        "title": "Picture to Sentence Matching",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "matching_game",
+        "rounds": [
+          {
+            "raw_text": "🌳 -> Match: \"ඒ ගස උසයි.\" vs \"ඒ මල ලස්සනයි.\""
+          },
+          {
+            "raw_text": "🐟 -> Match: \"මාළු ජලයේ ඉනී.\" vs \"කුරුල්ලා පියාසර කරයි.\""
+          },
+          {
+            "raw_text": "🚌 -> Match: \"බසය පාරේ යයි.\" vs \"බෝට්ටුව ජලයේ යයි.\""
+          },
+          {
+            "raw_text": "🌸 -> Match: \"මල සුවඳයි.\" vs \"ගස උසයි.\""
+          },
+          {
+            "raw_text": "🍎 -> Match: \"ජම්බු රසයි.\" vs \"අඹ ඇඹුල්ය.\""
+          },
+          {
+            "raw_text": "🐿️ -> Match: \"ලේනා ගසට නගියි.\" vs \"බල්ලා පාරේ දුවයි.\""
+          },
+          {
+            "raw_text": "📖 -> Match: \"ළමයා පොත කියවයි.\" vs \"ළමයා බත් කයි.\""
+          },
+          {
+            "raw_text": "Match 3 pictures to 3 sentences."
+          },
+          {
+            "raw_text": "Match 4 pictures to 4 sentences."
+          },
+          {
+            "raw_text": "Match 5 pictures to 5 sentences."
+          }
+        ]
+      },
+      {
+        "id": "act_2",
+        "title": "Complete the Sentence",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "\"අම්මා ______ උයයි.\" (Options: කෑම, පොත, මල)",
+            "options": [
+              "කෑම",
+              "පොත",
+              "මල"
+            ],
+            "question": "\"අම්මා ______ උයයි.\""
+          },
+          {
+            "raw_text": "\"දරුවා ______ කියවයි.\" (Options: පොත, ගස, ජලය)",
+            "options": [
+              "පොත",
+              "ගස",
+              "ජලය"
+            ],
+            "question": "\"දරුවා ______ කියවයි.\""
+          },
+          {
+            "raw_text": "\"බල්ලා ______ දුවයි.\" (Options: ඉක්මනින්, ජලයේ, පාසලේ)",
+            "options": [
+              "ඉක්මනින්",
+              "ජලයේ",
+              "පාසලේ"
+            ],
+            "question": "\"බල්ලා ______ දුවයි.\""
+          },
+          {
+            "raw_text": "\"ගුරුතුමිය ______ උගන්වයි.\" (Options: ළමයින්ට, මාළුවාට, ගසට)",
+            "options": [
+              "ළමයින්ට",
+              "මාළුවාට",
+              "ගසට"
+            ],
+            "question": "\"ගුරුතුමිය ______ උගන්වයි.\""
+          },
+          {
+            "raw_text": "\"ලේනා ______ කයි.\" (Options: ජම්බු, පොත, බසය)",
+            "options": [
+              "ජම්බු",
+              "පොත",
+              "බසය"
+            ],
+            "question": "\"ලේනා ______ කයි.\""
+          },
+          {
+            "raw_text": "\"මාළු ______ පීනයි.\" (Options: ජලයේ, ගසේ, අහසේ)",
+            "options": [
+              "ජලයේ",
+              "ගසේ",
+              "අහසේ"
+            ],
+            "question": "\"මාළු ______ පීනයි.\""
+          },
+          {
+            "raw_text": "\"කුරුල්ලා ______ පියාසර කරයි.\" (Options: අහසේ, ජලයේ, පොළවේ)",
+            "options": [
+              "අහසේ",
+              "ජලයේ",
+              "පොළවේ"
+            ],
+            "question": "\"කුරුල්ලා ______ පියාසර කරයි.\""
+          },
+          {
+            "raw_text": "\"තාත්තා ______ යයි.\" (Options: වැඩට, ගසට, ජලයට)",
+            "options": [
+              "වැඩට",
+              "ගසට",
+              "ජලයට"
+            ],
+            "question": "\"තාත්තා ______ යයි.\""
+          },
+          {
+            "raw_text": "\"ළමයා ______ ලියයි.\" (Options: අකුරු, බත්, වතුර)",
+            "options": [
+              "අකුරු",
+              "බත්",
+              "වතුර"
+            ],
+            "question": "\"ළමයා ______ ලියයි.\""
+          },
+          {
+            "raw_text": "\"වෙළෙන්දා ______ විකුණයි.\" (Options: එළවළු, අහස, ගස්)",
+            "options": [
+              "එළවළු",
+              "අහස",
+              "ගස්"
+            ],
+            "question": "\"වෙළෙන්දා ______ විකුණයි.\""
+          }
+        ]
+      },
+      {
+        "id": "act_3",
+        "title": "Arrange the Sentence",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "`උසයි / ගස / ඒ` -> ඒ ගස උසයි."
+          },
+          {
+            "raw_text": "`පාරේ / බසය / යයි` -> බසය පාරේ යයි."
+          },
+          {
+            "raw_text": "`රසයි / ජම්බු / ඒ` -> ඒ ජම්බු රසයි."
+          },
+          {
+            "raw_text": "`කියවයි / පොත / ළමයා` -> ළමයා පොත කියවයි."
+          },
+          {
+            "raw_text": "`කයි / ජම්බු / ලේනා` -> ලේනා ජම්බු කයි."
+          },
+          {
+            "raw_text": "`උයයි / කෑම / අම්මා` -> අම්මා කෑම උයයි."
+          },
+          {
+            "raw_text": "`ඉනී / ජලයේ / මාළු` -> මාළු ජලයේ ඉනී."
+          },
+          {
+            "raw_text": "`කරයි / පියාසර / කුරුල්ලා` -> කුරුල්ලා පියාසර කරයි."
+          },
+          {
+            "raw_text": "`උගන්වයි / ළමයින්ට / ගුරුතුමිය` -> ගුරුතුමිය ළමයින්ට උගන්වයි."
+          },
+          {
+            "raw_text": "`යයි / වැඩට / තාත්තා` -> තාත්තා වැඩට යයි."
+          }
+        ]
+      },
+      {
+        "id": "act_4",
+        "title": "Choose the Correct Sentence",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "Picture of Dog running. Options: \"බල්ලා දුවයි\", \"බල්ලා නිදාගනී\"."
+          },
+          {
+            "raw_text": "Picture of Cat sleeping. Options: \"පූසා නිදාගනී\", \"පූසා දුවයි\"."
+          },
+          {
+            "raw_text": "Picture of Boy reading. Options: \"ළමයා පොත කියවයි\", \"ළමයා සෙල්ලම් කරයි\"."
+          },
+          {
+            "raw_text": "Picture of Girl writing. Options: \"ළමයා අකුරු ලියයි\", \"ළමයා බත් කයි\"."
+          },
+          {
+            "raw_text": "Picture of Sun shining. Options: \"ඉර පායයි\", \"වැස්ස වසී\"."
+          },
+          {
+            "raw_text": "Picture of Rain. Options: \"වැස්ස වසී\", \"ඉර පායයි\"."
+          },
+          {
+            "raw_text": "Picture of Bird flying. Options: \"කුරුල්ලා පියාසර කරයි\", \"කුරුල්ලා ජලයේ පීනයි\"."
+          },
+          {
+            "raw_text": "Picture of Fish swimming. Options: \"මාළු ජලයේ පීනයි\", \"මාළු අහසේ පියාසර කරයි\"."
+          },
+          {
+            "raw_text": "Picture of Teacher teaching. Options: \"ගුරුතුමිය උගන්වයි\", \"ගුරුතුමිය නිදාගනී\"."
+          },
+          {
+            "raw_text": "Picture of Farmer farming. Options: \"ගොවියා කුඹුරේ වැඩ කරයි\", \"ගොවියා පාසල් යයි\"."
+          }
+        ]
+      },
+      {
+        "id": "act_5",
+        "title": "Correct the Sentence (Logic)",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "\"ගස ජලයේ පීනයි.\" -> Tree swims in water (False logic). Correct option: \"මාළු ජලයේ පීනයි.\""
+          },
+          {
+            "raw_text": "\"මාළු ගසට නගියි.\" -> Fish climbs tree. Correct option: \"ලේනා ගසට නගියි.\""
+          },
+          {
+            "raw_text": "\"අම්මා පොත උයයි.\" -> Mother cooks book. Correct option: \"අම්මා කෑම උයයි.\""
+          },
+          {
+            "raw_text": "\"බසය ගසට නගියි.\" -> Bus climbs tree. Correct option: \"ලේනා ගසට නගියි.\""
+          },
+          {
+            "raw_text": "\"කුරුල්ලා ජලයේ පීනයි.\" -> Bird swims in water. Correct option: \"මාළු ජලයේ පීනයි.\""
+          },
+          {
+            "raw_text": "\"බල්ලා අහසේ පියාසර කරයි.\" -> Dog flies in sky. Correct option: \"කුරුල්ලා අහසේ පියාසර කරයි.\""
+          },
+          {
+            "raw_text": "\"ගොවියා පාසලේ උගන්වයි.\" -> Farmer teaches in school. Correct option: \"ගුරුතුමිය පාසලේ උගන්වයි.\""
+          },
+          {
+            "raw_text": "\"ළමයා අහසේ යයි.\" -> Child goes in sky. Correct option: \"ළමයා පාරේ යයි.\""
+          },
+          {
+            "raw_text": "\"ඉර රාත්‍රියේ පායයි.\" -> Sun shines at night. Correct option: \"ඉර දහවල් පායයි.\""
+          },
+          {
+            "raw_text": "\"වැස්ස වසින විට ඉර පායයි.\" -> Sun shines when it rains (Usually false). Correct option: \"වැස්ස වසින විට අහස කළු වෙයි.\""
+          }
+        ]
+      },
+      {
+        "id": "act_6",
+        "title": "True or False",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "\"කුරුල්ලා පියාසර කරයි.\" -> True."
+          },
+          {
+            "raw_text": "\"මාළු ජලයේ ඉනී.\" -> True."
+          },
+          {
+            "raw_text": "\"ගස දුවයි.\" -> False."
+          },
+          {
+            "raw_text": "\"ළමයා පාසලට යයි.\" -> True."
+          },
+          {
+            "raw_text": "\"අම්මා කෑම උයයි.\" -> True."
+          },
+          {
+            "raw_text": "\"ලේනා ජම්බු කයි.\" -> True."
+          },
+          {
+            "raw_text": "\"බසය ජලයේ පීනයි.\" -> False."
+          },
+          {
+            "raw_text": "\"ගුරුතුමිය කුඹුරේ වැඩ කරයි.\" -> False."
+          },
+          {
+            "raw_text": "\"පොත අපිට කියවන්න පුළුවන්.\" -> True."
+          },
+          {
+            "raw_text": "\"ඉර රාත්‍රියේ පායයි.\" -> False."
+          }
+        ]
+      },
+      {
+        "id": "act_7",
+        "title": "Match the Sentence Halves",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "\"අම්මා\" -> \"කෑම උයයි.\""
+          },
+          {
+            "raw_text": "\"තාත්තා\" -> \"වැඩට යයි.\""
+          },
+          {
+            "raw_text": "\"දරුවා\" -> \"පොත කියවයි.\""
+          },
+          {
+            "raw_text": "\"ලේනා\" -> \"ජම්බු කයි.\""
+          },
+          {
+            "raw_text": "\"කුරුල්ලා\" -> \"පියාසර කරයි.\""
+          },
+          {
+            "raw_text": "\"මාළු\" -> \"ජලයේ පීනයි.\""
+          },
+          {
+            "raw_text": "\"ගුරුතුමිය\" -> \"උගන්වයි.\""
+          },
+          {
+            "raw_text": "\"ගොවියා\" -> \"කුඹුරේ වැඩ කරයි.\""
+          },
+          {
+            "raw_text": "\"බසය\" -> \"පාරේ යයි.\""
+          },
+          {
+            "raw_text": "\"ඉර\" -> \"උදේට පායයි.\""
+          }
+        ]
+      },
+      {
+        "id": "act_8",
+        "title": "Missing Word Hunt (Flying Bubbles)",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "missing_picture_game",
+        "rounds": [
+          {
+            "raw_text": "\"අම්මා ______ උයයි.\" -> Pop the bubble with `කෑම`.",
+            "sequence": [
+              "\"අම්මා",
+              "______",
+              "උයයි.\"",
+              "->",
+              "Pop",
+              "the",
+              "bubble",
+              "with",
+              "`කෑම`."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "\"දරුවා ______ කියවයි.\" -> Pop the bubble with `පොත`.",
+            "sequence": [
+              "\"දරුවා",
+              "______",
+              "කියවයි.\"",
+              "->",
+              "Pop",
+              "the",
+              "bubble",
+              "with",
+              "`පොත`."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "\"බල්ලා ______ දුවයි.\" -> Pop the bubble with `ඉක්මනින්`.",
+            "sequence": [
+              "\"බල්ලා",
+              "______",
+              "දුවයි.\"",
+              "->",
+              "Pop",
+              "the",
+              "bubble",
+              "with",
+              "`ඉක්මනින්`."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "\"ගුරුතුමිය ______ උගන්වයි.\" -> Pop the bubble with `ළමයින්ට`.",
+            "sequence": [
+              "\"ගුරුතුමිය",
+              "______",
+              "උගන්වයි.\"",
+              "->",
+              "Pop",
+              "the",
+              "bubble",
+              "with",
+              "`ළමයින්ට`."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "\"ලේනා ______ කයි.\" -> Pop the bubble with `ජම්බු`.",
+            "sequence": [
+              "\"ලේනා",
+              "______",
+              "කයි.\"",
+              "->",
+              "Pop",
+              "the",
+              "bubble",
+              "with",
+              "`ජම්බු`."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "\"මාළු ______ පීනයි.\" -> Pop the bubble with `ජලයේ`.",
+            "sequence": [
+              "\"මාළු",
+              "______",
+              "පීනයි.\"",
+              "->",
+              "Pop",
+              "the",
+              "bubble",
+              "with",
+              "`ජලයේ`."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "\"කුරුල්ලා ______ පියාසර කරයි.\" -> Pop the bubble with `අහසේ`.",
+            "sequence": [
+              "\"කුරුල්ලා",
+              "______",
+              "පියාසර",
+              "කරයි.\"",
+              "->",
+              "Pop",
+              "the",
+              "bubble",
+              "with",
+              "`අහසේ`."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "\"තාත්තා ______ යයි.\" -> Pop the bubble with `වැඩට`.",
+            "sequence": [
+              "\"තාත්තා",
+              "______",
+              "යයි.\"",
+              "->",
+              "Pop",
+              "the",
+              "bubble",
+              "with",
+              "`වැඩට`."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "\"ළමයා ______ ලියයි.\" -> Pop the bubble with `අකුරු`.",
+            "sequence": [
+              "\"ළමයා",
+              "______",
+              "ලියයි.\"",
+              "->",
+              "Pop",
+              "the",
+              "bubble",
+              "with",
+              "`අකුරු`."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          },
+          {
+            "raw_text": "\"වෙළෙන්දා ______ විකුණයි.\" -> Pop the bubble with `එළවළු`.",
+            "sequence": [
+              "\"වෙළෙන්දා",
+              "______",
+              "විකුණයි.\"",
+              "->",
+              "Pop",
+              "the",
+              "bubble",
+              "with",
+              "`එළවළු`."
+            ],
+            "options": [
+              "?",
+              "!"
+            ],
+            "correct_option_index": 0
+          }
+        ]
+      },
+      {
+        "id": "act_9",
+        "title": "Sentence Memory",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "memory_game",
+        "rounds": [
+          {
+            "raw_text": "Read \"ඒ ගස උසයි.\" for 4s. Reconstruct."
+          },
+          {
+            "raw_text": "Read \"මාළු ජලයේ ඉනී.\" for 4s. Reconstruct."
+          },
+          {
+            "raw_text": "Read \"බසය පාරේ යයි.\" for 5s. Reconstruct."
+          },
+          {
+            "raw_text": "Read \"අම්මා කෑම උයයි.\" for 5s. Reconstruct."
+          },
+          {
+            "raw_text": "Read \"ලේනා ජම්බු කයි.\" for 6s. Reconstruct."
+          },
+          {
+            "raw_text": "Read \"ගුරුතුමිය ළමයින්ට උගන්වයි.\" for 7s. Reconstruct."
+          },
+          {
+            "raw_text": "Read \"කුරුල්ලා අහසේ පියාසර කරයි.\" for 8s. Reconstruct."
+          },
+          {
+            "raw_text": "Read \"ගොවියා කුඹුරේ වැඩ කරයි.\" for 8s. Reconstruct."
+          },
+          {
+            "raw_text": "Read \"ළමයා පාසලේදී පොත් කියවයි.\" for 10s. Reconstruct."
+          },
+          {
+            "raw_text": "Read a 5-word sentence for 8s. Reconstruct perfectly."
+          }
+        ]
+      }
+    ]
+  }
+]
