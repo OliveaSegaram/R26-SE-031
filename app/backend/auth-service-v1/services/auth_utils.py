@@ -7,6 +7,8 @@ Password hashing, JWT creation and verification utilities.
 import bcrypt
 import jwt
 from datetime import datetime, timedelta
+from google.oauth2 import id_token
+from google.auth.transport import requests
 from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES
 
 
@@ -48,4 +50,13 @@ def verify_token(token: str) -> dict:
     except jwt.ExpiredSignatureError:
         return None
     except jwt.InvalidTokenError:
+        return None
+
+def verify_google_token(token: str) -> dict:
+    """Verify a Google ID token and return user info."""
+    try:
+        # Enforce security by checking the token was meant for this backend Web Client ID
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), audience="733315696908-tpau04bmsk824olg6m0a3coanojl147v.apps.googleusercontent.com")
+        return idinfo
+    except ValueError:
         return None
