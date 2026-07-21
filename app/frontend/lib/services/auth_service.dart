@@ -11,7 +11,7 @@ class AuthService {
   static String get _baseUrl {
     if (kIsWeb) return 'http://127.0.0.1:8015/api/v1/auth';
     if (Platform.isAndroid) return 'http://10.0.2.2:8015/api/v1/auth';
-    if (Platform.isIOS) return 'https://pxgvz-112-134-193-235.free.pinggy.net/api/v1/auth'; // Pinggy Public Tunnel
+    if (Platform.isIOS) return 'http://192.168.1.4:8015/api/v1/auth'; // Connect via Local IP
     return 'http://127.0.0.1:8015/api/v1/auth';
   }
 
@@ -35,6 +35,7 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', accessToken);
         await prefs.setString('refresh_token', refreshToken);
+        await prefs.setString('auth_provider', 'local');
         
         return null;
       } else {
@@ -79,6 +80,7 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', accessToken);
         await prefs.setString('refresh_token', refreshToken);
+        await prefs.setString('auth_provider', 'google');
         
         return null; // Success
       } else {
@@ -133,6 +135,12 @@ class AuthService {
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('access_token');
+  }
+
+  /// Helper to get the auth provider
+  Future<String> getAuthProvider() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_provider') ?? 'local';
   }
 
   /// Get current user profile

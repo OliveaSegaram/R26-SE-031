@@ -39,6 +39,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   final List<String> _limits = ['No Limit', '15 minutes', '30 minutes', '45 minutes', '1 hour', '1.5 hours', '2 hours'];
 
   bool _isLoading = false;
+  bool _isGoogleUser = false;
 
   @override
   void initState() {
@@ -50,6 +51,17 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       _selectedGrade = widget.editStudentData!['grade'];
       _selectedDailyLimit = widget.editStudentData!['daily_limit'] ?? 'No Limit';
       _selectedAvatarUrl = widget.editStudentData!['avatar_url'] ?? 'assets/images/solo_blue.png';
+    }
+    
+    _checkGoogleUser();
+  }
+  
+  Future<void> _checkGoogleUser() async {
+    final provider = await AuthService().getAuthProvider();
+    if (mounted) {
+      setState(() {
+        _isGoogleUser = provider == 'google';
+      });
     }
   }
 
@@ -279,15 +291,16 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        hintText: 'parent account password',
+                    if (!_isGoogleUser)
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          hintText: 'parent account password',
+                        ),
+                        style: AppTypography.body(fontSize: 16),
+                        validator: (val) => val == null || val.isEmpty ? 'required' : null,
                       ),
-                      style: AppTypography.body(fontSize: 16),
-                      validator: (val) => val == null || val.isEmpty ? 'required' : null,
-                    ),
                   ],
                 ),
               ),
@@ -306,13 +319,13 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                         'username': _usernameController.text.trim(),
                         'grade': _selectedGrade,
                         'daily_limit': _selectedDailyLimit,
-                        'parent_password': _passwordController.text,
+                        'parent_password': _isGoogleUser ? '' : _passwordController.text,
                         'avatar_url': _selectedAvatarUrl,
                       };
 
                       if (widget.editStudentData == null) {
                         setState(() { _isLoading = true; });
-                        final pwdError = await AuthService().verifyPassword(_passwordController.text);
+                        final pwdError = await AuthService().verifyPassword(_isGoogleUser ? '' : _passwordController.text);
                         if (!mounted) return;
                         setState(() { _isLoading = false; });
                         

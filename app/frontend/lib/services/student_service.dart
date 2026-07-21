@@ -10,7 +10,7 @@ class StudentService {
   static String get _baseUrl {
     if (kIsWeb) return 'http://127.0.0.1:8015/api/v1/auth';
     if (Platform.isAndroid) return 'http://10.0.2.2:8015/api/v1/auth';
-    if (Platform.isIOS) return 'https://pxgvz-112-134-193-235.free.pinggy.net/api/v1/auth'; // Pinggy Public Tunnel
+    if (Platform.isIOS) return 'http://192.168.1.4:8015/api/v1/auth'; // Connect via Local IP
     return 'http://127.0.0.1:8015/api/v1/auth';
   }
 
