@@ -47,3 +47,6 @@ class VerifyPasswordRequest(BaseModel):
 
 class GoogleLoginRequest(BaseModel):
     id_token: str
+
+class MicrosoftLoginRequest(BaseModel):
+    access_token: str
