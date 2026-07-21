@@ -7,7 +7,7 @@ import 'level_map_screen.dart';
 import 'select_student_screen.dart';
 import 'parent_account_screen.dart';
 import 'character_shop_screen.dart';
-
+import '../models/curriculum_models.dart';
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
 /// calm blue accents, 16pt+ text.
@@ -36,69 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     {'label': 'settings', 'icon': FontAwesomeIcons.gear, 'color': AppColors.gentleGreen},
   ];
 
-  // The 10 Phonological Skills defined for early literacy
-  final List<Map<String, dynamic>> _skills = [
-    {
-      'title': 'Shape Recognition',
-      'icon': 'assets/images/skills/s0.png',
-      'progress': 0.85,
-      'color': AppColors.calmBlue,
-    },
-    {
-      'title': 'Vowel Identification',
-      'icon': 'assets/images/skills/s1.png',
-      'progress': 0.70,
-      'color': AppColors.gentleGreen,
-    },
-    {
-      'title': 'Consonant Recognition',
-      'icon': 'assets/images/skills/s2.png',
-      'progress': 0.60,
-      'color': AppColors.warmAmber,
-    },
-    {
-      'title': 'Syllable Formation',
-      'icon': 'assets/images/skills/s3.png',
-      'progress': 0.40,
-      'color': AppColors.softCoral,
-    },
-    {
-      'title': 'Simple Word Reading',
-      'icon': 'assets/images/skills/s4.png',
-      'progress': 0.20,
-      'color': AppColors.calmBlue,
-    },
-    {
-      'title': 'Reading "Hal" Letters',
-      'icon': 'assets/images/skills/s5.png',
-      'progress': 0.10,
-      'color': AppColors.gentleGreen,
-    },
-    {
-      'title': 'Words with Modifiers',
-      'icon': 'assets/images/skills/s6.png',
-      'progress': 0.0,
-      'color': AppColors.warmAmber,
-    },
-    {
-      'title': 'Complex & Conjunct Words',
-      'icon': 'assets/images/skills/s7.png',
-      'progress': 0.0,
-      'color': AppColors.softCoral,
-    },
-    {
-      'title': 'Sentence Reading',
-      'icon': 'assets/images/skills/s8.png',
-      'progress': 0.0,
-      'color': AppColors.calmBlue,
-    },
-    {
-      'title': 'Reading Comprehension',
-      'icon': 'assets/images/skills/s9.png',
-      'progress': 0.0,
-      'color': AppColors.gentleGreen,
-    },
-  ];
+  CurriculumIndex? _curriculum;
 
   @override
   void initState() {
@@ -112,6 +50,16 @@ class _DashboardScreenState extends State<DashboardScreen>
       curve: Curves.easeOut,
     );
     _fadeController.forward();
+    _loadCurriculum();
+  }
+
+  Future<void> _loadCurriculum() async {
+    try {
+      final data = await CurriculumIndex.load();
+      if (mounted) setState(() => _curriculum = data);
+    } catch (e) {
+      print('Error loading curriculum: $e');
+    }
   }
 
   @override
@@ -145,7 +93,9 @@ class _DashboardScreenState extends State<DashboardScreen>
 
               // Skill cards grid
               Expanded(
-                child: _buildSkillsGrid(),
+                child: _curriculum == null 
+                  ? const Center(child: CircularProgressIndicator())
+                  : _buildSkillsGrid(),
               ),
             ],
           ),
@@ -319,27 +269,38 @@ class _DashboardScreenState extends State<DashboardScreen>
         mainAxisSpacing: 16,
         childAspectRatio: 0.82,
       ),
-      itemCount: _skills.length,
+      itemCount: _curriculum!.skills.length,
       itemBuilder: (context, index) {
-        final skill = _skills[index];
-        return _buildHeroSkillCard(skill);
+        final skill = _curriculum!.skills[index];
+        // Cycle colors for MVP aesthetics
+        final colors = [AppColors.calmBlue, AppColors.gentleGreen, AppColors.warmAmber, AppColors.softCoral];
+        return _buildHeroSkillCard(skill, colors[index % colors.length]);
       },
     );
   }
 
   // Highly visual "Hero Image" card layout
-  Widget _buildHeroSkillCard(Map<String, dynamic> skill) {
-    final color = skill['color'] as Color;
-    final progress = skill['progress'] as double;
+  Widget _buildHeroSkillCard(SkillSummary skill, Color color) {
+    // Dummy progress for now
+    final progress = 0.5;
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => LevelMapScreen(studentData: widget.studentData),
-          ),
-        );
+      onTap: () async {
+        try {
+          final skillDetail = await SkillDetail.load(skill.file);
+          if (!mounted) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LevelMapScreen(
+                skillMap: skillDetail,
+                studentData: widget.studentData,
+              ),
+            ),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load ${skill.title}: $e')));
+        }
       },
       child: Container(
         decoration: BoxDecoration(
@@ -363,7 +324,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
                 child: Image.asset(
-                  skill['icon'] as String,
+                  'assets/images/skills/s0.png', // Hardcoded fallback for now
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: color.withValues(alpha: 0.1),
@@ -384,7 +345,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   children: [
                     // Title
                     Text(
-                      skill['title'] as String,
+                      skill.title,
                       style: AppTypography.heading(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,

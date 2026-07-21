@@ -1,0 +1,431 @@
+[
+  {
+    "id": "skill_4",
+    "title": "Syllable Formation (පිල්ලම්)",
+    "description": "Dynamic curriculum generated from contents.md",
+    "activities": [
+      {
+        "id": "act_1",
+        "title": "Syllable Identification (Long A - ා)",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "Tap `කා` (among `ක`)."
+          },
+          {
+            "raw_text": "Tap `ගා` (among `ග`)."
+          },
+          {
+            "raw_text": "Tap `ටා` (among `ට`)."
+          },
+          {
+            "raw_text": "Tap `ඩා` (among `ඩ`)."
+          },
+          {
+            "raw_text": "Tap `පා` (among `ප`)."
+          },
+          {
+            "raw_text": "Tap `බා` (among `බ`)."
+          },
+          {
+            "raw_text": "Tap `මා` (among `ම`)."
+          },
+          {
+            "raw_text": "Tap `යා` (among `ය`)."
+          },
+          {
+            "raw_text": "Tap `රා` (among `ර`)."
+          },
+          {
+            "raw_text": "Tap `ලා` (among `ල`)."
+          }
+        ]
+      },
+      {
+        "id": "act_2",
+        "title": "Syllable Identification (Short/Long I - ි/ී)",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "Tap `කි` (among `ක`, `කා`)."
+          },
+          {
+            "raw_text": "Tap `කී` (among `කි`, `ක`)."
+          },
+          {
+            "raw_text": "Tap `ගි` (among `ග`, `ගා`)."
+          },
+          {
+            "raw_text": "Tap `ගී` (among `ගි`, `ග`)."
+          },
+          {
+            "raw_text": "Tap `ටි` (among `ටී`, `ටා`)."
+          },
+          {
+            "raw_text": "Tap `ටී` (among `ටි`, `ට`)."
+          },
+          {
+            "raw_text": "Tap `පි` (among `පී`, `පා`)."
+          },
+          {
+            "raw_text": "Tap `පී` (among `පි`, `ප`)."
+          },
+          {
+            "raw_text": "Tap `මි` (among `මී`, `මා`)."
+          },
+          {
+            "raw_text": "Tap `මී` (among `මි`, `ම`)."
+          }
+        ]
+      },
+      {
+        "id": "act_3",
+        "title": "Visual Math Matching",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "matching_game",
+        "rounds": [
+          {
+            "raw_text": "`ක + ා = ?` (Options: `කා`, `කි`)",
+            "options": [
+              "`කා`",
+              "`කි`"
+            ],
+            "question": "`ක + ා = ?`"
+          },
+          {
+            "raw_text": "`ග + ි = ?` (Options: `ගි`, `ගා`)",
+            "options": [
+              "`ගි`",
+              "`ගා`"
+            ],
+            "question": "`ග + ි = ?`"
+          },
+          {
+            "raw_text": "`ට + ී = ?` (Options: `ටී`, `ටි`)",
+            "options": [
+              "`ටී`",
+              "`ටි`"
+            ],
+            "question": "`ට + ී = ?`"
+          },
+          {
+            "raw_text": "`ඩ + ු = ?` (Options: `ඩු`, `ඩා`)",
+            "options": [
+              "`ඩු`",
+              "`ඩා`"
+            ],
+            "question": "`ඩ + ු = ?`"
+          },
+          {
+            "raw_text": "`ප + ූ = ?` (Options: `පූ`, `පු`)",
+            "options": [
+              "`පූ`",
+              "`පු`"
+            ],
+            "question": "`ප + ූ = ?`"
+          },
+          {
+            "raw_text": "`බ + ෙ = ?` (Options: `බෙ`, `බේ`)",
+            "options": [
+              "`බෙ`",
+              "`බේ`"
+            ],
+            "question": "`බ + ෙ = ?`"
+          },
+          {
+            "raw_text": "`ම + ේ = ?` (Options: `මේ`, `මෙ`)",
+            "options": [
+              "`මේ`",
+              "`මෙ`"
+            ],
+            "question": "`ම + ේ = ?`"
+          },
+          {
+            "raw_text": "`ය + ො = ?` (Options: `යො`, `යෝ`)",
+            "options": [
+              "`යො`",
+              "`යෝ`"
+            ],
+            "question": "`ය + ො = ?`"
+          },
+          {
+            "raw_text": "`ර + ෝ = ?` (Options: `රෝ`, `රො`)",
+            "options": [
+              "`රෝ`",
+              "`රො`"
+            ],
+            "question": "`ර + ෝ = ?`"
+          },
+          {
+            "raw_text": "`ල + ෞ = ?` (Options: `ලෞ`, `ලෝ`)",
+            "options": [
+              "`ලෞ`",
+              "`ලෝ`"
+            ],
+            "question": "`ල + ෞ = ?`"
+          }
+        ]
+      },
+      {
+        "id": "act_4",
+        "title": "Auditory to Visual Match",
+        "description": "",
+        "telemetry_tags": [
+          "listening",
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "Listen \"Kaa\" -> Select `කා`."
+          },
+          {
+            "raw_text": "Listen \"Gi\" -> Select `ගි`."
+          },
+          {
+            "raw_text": "Listen \"Tee\" -> Select `ටී`."
+          },
+          {
+            "raw_text": "Listen \"Du\" -> Select `ඩු`."
+          },
+          {
+            "raw_text": "Listen \"Puu\" -> Select `පූ`."
+          },
+          {
+            "raw_text": "Listen \"Be\" -> Select `බෙ`."
+          },
+          {
+            "raw_text": "Listen \"Mae\" -> Select `මේ`."
+          },
+          {
+            "raw_text": "Listen \"Yo\" -> Select `යො`."
+          },
+          {
+            "raw_text": "Listen \"Roo\" -> Select `රෝ`."
+          },
+          {
+            "raw_text": "Listen \"Lau\" -> Select `ලෞ`."
+          }
+        ]
+      },
+      {
+        "id": "act_5",
+        "title": "Odd One Out (Syllables)",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "odd_one_out_game",
+        "rounds": [
+          {
+            "raw_text": "`කා කා කි කා කා` -> Find `කි`."
+          },
+          {
+            "raw_text": "`ගි ගි ගී ගි ගි` -> Find `ගී`."
+          },
+          {
+            "raw_text": "`ටු ටු ටූ ටු ටු` -> Find `ටූ`."
+          },
+          {
+            "raw_text": "`පෙ පෙ පේ පෙ පෙ` -> Find `පේ`."
+          },
+          {
+            "raw_text": "`මො මො මෝ මො මො` -> Find `මෝ`."
+          },
+          {
+            "raw_text": "`කී කී කි කී කී` -> Find `කි`."
+          },
+          {
+            "raw_text": "`ගූ ගූ ගු ගූ ගූ` -> Find `ගු`."
+          },
+          {
+            "raw_text": "`ටේ ටේ ටෙ ටේ ටේ` -> Find `ටෙ`."
+          },
+          {
+            "raw_text": "`පෝ පෝ පො පෝ පෝ` -> Find `පො`."
+          },
+          {
+            "raw_text": "`මෞ මෞ මෝ මෞ මෞ` -> Find `මෝ`."
+          }
+        ]
+      },
+      {
+        "id": "act_6",
+        "title": "Targeted Syllable Search",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "Find 3 `කා` in a grid."
+          },
+          {
+            "raw_text": "Find 4 `ගි` in a grid."
+          },
+          {
+            "raw_text": "Find 4 `ටී` in a grid."
+          },
+          {
+            "raw_text": "Find 5 `ඩු` in a grid."
+          },
+          {
+            "raw_text": "Find 5 `පූ` in a grid."
+          },
+          {
+            "raw_text": "Find 6 `බෙ` in a grid."
+          },
+          {
+            "raw_text": "Find 6 `මේ` in a grid."
+          },
+          {
+            "raw_text": "Find 7 `යො` in a grid."
+          },
+          {
+            "raw_text": "Find 8 `රෝ` in a grid."
+          },
+          {
+            "raw_text": "Find 10 `ලෞ` in a massive grid."
+          }
+        ]
+      },
+      {
+        "id": "act_7",
+        "title": "Syllable Building (Drag Modifier)",
+        "description": "",
+        "telemetry_tags": [
+          "recognizing"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "Build \"Kaa\": `ක` + drag `ා`."
+          },
+          {
+            "raw_text": "Build \"Gi\": `ග` + drag `ි`."
+          },
+          {
+            "raw_text": "Build \"Tee\": `ට` + drag `ී`."
+          },
+          {
+            "raw_text": "Build \"Du\": `ඩ` + drag `ු`."
+          },
+          {
+            "raw_text": "Build \"Puu\": `ප` + drag `ූ`."
+          },
+          {
+            "raw_text": "Build \"Be\": `බ` + drag `ෙ`."
+          },
+          {
+            "raw_text": "Build \"Mae\": `ම` + drag `ේ`."
+          },
+          {
+            "raw_text": "Build \"Yo\": `ය` + drag `ො`."
+          },
+          {
+            "raw_text": "Build \"Roo\": `ර` + drag `ෝ`."
+          },
+          {
+            "raw_text": "Build \"Lau\": `ල` + drag `ෞ`."
+          }
+        ]
+      },
+      {
+        "id": "act_8",
+        "title": "Rapid Syllable Reading",
+        "description": "",
+        "telemetry_tags": [
+          "speaking",
+          "recognizing"
+        ],
+        "template_type": "reading_game",
+        "rounds": [
+          {
+            "raw_text": "Read aloud 5 syllables (කා, ගි, ටු, පෙ, මො)."
+          },
+          {
+            "raw_text": "Read aloud 6 syllables."
+          },
+          {
+            "raw_text": "Read aloud 7 syllables."
+          },
+          {
+            "raw_text": "Read aloud 8 syllables."
+          },
+          {
+            "raw_text": "Read aloud 10 syllables."
+          },
+          {
+            "raw_text": "Read aloud 12 syllables (mix of long and short)."
+          },
+          {
+            "raw_text": "Read aloud 15 syllables."
+          },
+          {
+            "raw_text": "Read aloud 18 syllables."
+          },
+          {
+            "raw_text": "Read aloud 20 syllables."
+          },
+          {
+            "raw_text": "Read aloud 25 complex syllables."
+          }
+        ]
+      },
+      {
+        "id": "act_9",
+        "title": "Timed Reading Challenge",
+        "description": "",
+        "telemetry_tags": [
+          "speaking",
+          "recognizing"
+        ],
+        "template_type": "reading_game",
+        "rounds": [
+          {
+            "raw_text": "Read aloud 5 syllables in 10s."
+          },
+          {
+            "raw_text": "Read aloud 8 syllables in 15s."
+          },
+          {
+            "raw_text": "Read aloud 10 syllables in 15s."
+          },
+          {
+            "raw_text": "Read aloud 12 syllables in 20s."
+          },
+          {
+            "raw_text": "Read aloud 15 syllables in 20s."
+          },
+          {
+            "raw_text": "Read aloud 18 syllables in 25s."
+          },
+          {
+            "raw_text": "Read aloud 20 syllables in 25s."
+          },
+          {
+            "raw_text": "Read aloud 22 syllables in 30s."
+          },
+          {
+            "raw_text": "Read aloud 25 syllables in 30s."
+          },
+          {
+            "raw_text": "Read aloud 30 syllables in 40s."
+          }
+        ]
+      }
+    ]
+  }
+]
