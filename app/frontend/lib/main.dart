@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
+import 'services/progress_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize ProgressService (no longer bypassing student ID)
+  await ProgressService().init();
 
   // Set status bar style for light backgrounds (dark icons)
   SystemChrome.setSystemUIOverlayStyle(
