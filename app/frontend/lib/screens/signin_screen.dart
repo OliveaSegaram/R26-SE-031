@@ -23,45 +23,17 @@ class _SignInScreenState extends State<SignInScreen>
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
-  late AnimationController _slideController;
-  late Animation<Offset> _slideAnimation;
+
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOut,
-    );
-
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 900),
-      vsync: this,
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.15),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _fadeController.forward();
-    _slideController.forward();
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _fadeController.dispose();
-    _slideController.dispose();
     super.dispose();
   }
 
@@ -94,17 +66,34 @@ class _SignInScreenState extends State<SignInScreen>
     }
   }
 
+  Future<void> _onGoogleSignIn() async {
+    setState(() => _isLoading = true);
+
+    final error = await AuthService().loginWithGoogle();
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (error == 'CANCELED') {
+      return;
+    } else if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const SelectStudentScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -277,9 +266,20 @@ class _SignInScreenState extends State<SignInScreen>
                   // Social login
                   Row(
                     children: [
-                      Expanded(child: _buildSocialButton(Icons.g_mobiledata_rounded, 'google')),
+                      Expanded(
+                        child: _buildSocialButton(
+                          Icons.g_mobiledata_rounded, 
+                          'google',
+                          onTap: _isLoading ? null : _onGoogleSignIn,
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildSocialButton(Icons.apple_rounded, 'apple')),
+                      Expanded(
+                        child: _buildSocialButton(
+                          Icons.apple_rounded, 
+                          'apple',
+                        ),
+                      ),
                     ],
                   ),
 
@@ -322,14 +322,14 @@ class _SignInScreenState extends State<SignInScreen>
                 ],
               ),
             ),
-          ),
-        ),
       ),
     );
   }
 
-  Widget _buildSocialButton(IconData icon, String label) {
-    return Container(
+  Widget _buildSocialButton(IconData icon, String label, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       height: 56,
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
@@ -359,6 +359,7 @@ class _SignInScreenState extends State<SignInScreen>
           ),
         ],
       ),
+    ),
     );
   }
 }

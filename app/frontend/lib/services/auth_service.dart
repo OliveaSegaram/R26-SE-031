@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 /// Handles authentication-only API calls: login, signup, tokens, passwords.
 /// Student management is in StudentService.
@@ -42,6 +43,54 @@ class AuthService {
       }
     } catch (e) {
       return 'Network Error: $e';
+    }
+  }
+
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> loginWithGoogle() async {
+    try {
+      await GoogleSignIn.instance.initialize(
+        serverClientId: '733315696908-tpau04bmsk824olg6m0a3coanojl147v.apps.googleusercontent.com',
+      );
+
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        return 'Failed to get ID token from Google.';
+      }
+
+      // Send token to backend
+      final response = await http.post(
+        Uri.parse('$_baseUrl/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id_token': idToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String accessToken = data['access_token'];
+        String refreshToken = data['refresh_token'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', accessToken);
+        await prefs.setString('refresh_token', refreshToken);
+        
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Google login failed on server.';
+      }
+    } catch (e) {
+      print('GOOGLE SIGN IN ERROR: $e');
+      if (e.toString().contains('canceled') || e.toString().contains('Canceled')) {
+        return 'CANCELED';
+      }
+      return 'Google Sign In Error: $e';
     }
   }
 
