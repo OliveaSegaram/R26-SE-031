@@ -3,12 +3,22 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/gradient_button.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
+import 'dart:math';
 
 class Activity1SpotDifference extends StatefulWidget {
-  const Activity1SpotDifference({super.key});
+  final ActivityNode activityNode;
+  const Activity1SpotDifference({super.key, required this.activityNode});
 
   @override
   State<Activity1SpotDifference> createState() => _Activity1SpotDifferenceState();
+}
+
+class SpotDifferenceRound {
+  final List<String> items;
+  final int correctIndex;
+  SpotDifferenceRound({required this.items, required this.correctIndex});
 }
 
 class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
@@ -16,8 +26,25 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
   int? _selectedIndex;
   bool _isCorrect = false;
 
-  final List<String> _items = ['🐟', '🐟', '🐟', '🦆', '🐟'];
-  final int _correctIndex = 3;
+  int _currentRoundIndex = 0;
+  late List<SpotDifferenceRound> _rounds;
+
+  @override
+  void initState() {
+    super.initState();
+    _rounds = widget.activityNode.rounds.map((roundData) {
+      final target = roundData['target'] as String;
+      // Taking the first distractor for MVP, though the array can have multiple
+      final distractor = (roundData['distractors'] as List).first as String;
+      final totalCount = (roundData['target_count'] as int) + (roundData['distractor_count'] as int);
+      final correctIndex = roundData['correct_index'] as int;
+
+      List<String> items = List.filled(totalCount, distractor);
+      items[correctIndex] = target;
+
+      return SpotDifferenceRound(items: items, correctIndex: correctIndex);
+    }).toList();
+  }
 
   void _checkAnswer(int index) async {
     if (_isCorrect) return; // Prevent multiple clicks after success
@@ -25,15 +52,34 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
     setState(() {
       _selectedIndex = index;
     });
+    
+    final currentRound = _rounds[_currentRoundIndex];
+    
+    // Use the TelemetryWrapper to record score and round completion
+    int score = (index == currentRound.correctIndex) ? 100 : 0;
+    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
 
-    if (index == _correctIndex) {
+
+    if (index == currentRound.correctIndex) {
       setState(() {
         _isCorrect = true;
       });
-      // Play success sound if needed
+      // Play success sound
       await _audioPlayer.play(AssetSource('audio/correct.mp3'));
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) Navigator.pop(context, true);
+      
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        
+        if (_currentRoundIndex < _rounds.length - 1) {
+          setState(() {
+            _currentRoundIndex++;
+            _selectedIndex = null;
+            _isCorrect = false;
+          });
+        } else {
+          // Finished all rounds
+          Navigator.pop(context, true);
+        }
       });
     } else {
       await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
@@ -48,12 +94,14 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
 
   @override
   Widget build(BuildContext context) {
+    final currentRound = _rounds[_currentRoundIndex];
+    
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
           'වෙනස් රූපය සොයන්න',
-          style: GoogleFonts.notoSansSinhala(fontWeight: FontWeight.w700),
+          style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -64,13 +112,28 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Progression Indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'වටය ${_currentRoundIndex + 1} / ${_rounds.length}',
+                    style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: (_currentRoundIndex + 1) / _rounds.length,
+                backgroundColor: AppColors.borderLight,
+                color: AppColors.gentleGreen,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const Spacer(),
               Text(
                 'වෙනස් රූපය තෝරන්න',
-                style: GoogleFonts.notoSansSinhala(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryDark,
-                ),
+                style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
@@ -78,10 +141,10 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
                 spacing: 16,
                 runSpacing: 16,
                 alignment: WrapAlignment.center,
-                children: List.generate(_items.length, (index) {
+                children: List.generate(currentRound.items.length, (index) {
                   final isSelected = _selectedIndex == index;
-                  final isCorrectSelection = isSelected && index == _correctIndex;
-                  final isWrongSelection = isSelected && index != _correctIndex;
+                  final isCorrectSelection = isSelected && index == currentRound.correctIndex;
+                  final isWrongSelection = isSelected && index != currentRound.correctIndex;
 
                   return GestureDetector(
                     onTap: () => _checkAnswer(index),
@@ -90,17 +153,17 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: isCorrectSelection
-                            ? AppColors.mint.withValues(alpha: 0.3)
+                            ? AppColors.gentleGreen.withValues(alpha: 0.3)
                             : isWrongSelection
-                                ? Colors.red.withValues(alpha: 0.3)
+                                ? AppColors.softCoral.withValues(alpha: 0.3)
                                 : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isCorrectSelection
-                              ? AppColors.mint
+                              ? AppColors.gentleGreen
                               : isWrongSelection
-                                  ? Colors.red
-                                  : AppColors.primaryLight,
+                                  ? AppColors.softCoral
+                                  : AppColors.borderLight,
                           width: 4,
                         ),
                         boxShadow: [
@@ -112,19 +175,19 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
                         ],
                       ),
                       child: Text(
-                        _items[index],
+                        currentRound.items[index],
                         style: const TextStyle(fontSize: 60),
                       ),
                     ),
                   );
                 }),
               ),
-              const SizedBox(height: 48),
+              const Spacer(),
               if (_isCorrect)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.mint,
+                    color: AppColors.gentleGreen,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -134,15 +197,13 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
                       const SizedBox(width: 8),
                       Text(
                         'විශිෂ්ටයි!',
-                        style: GoogleFonts.notoSansSinhala(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                        style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                     ],
                   ),
-                ),
+                )
+              else 
+                const SizedBox(height: 64), // Placeholder to prevent jump
             ],
           ),
         ),

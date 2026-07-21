@@ -2,40 +2,82 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
 
 class Activity5CategorySorting extends StatefulWidget {
-  const Activity5CategorySorting({super.key});
+  final ActivityNode activityNode;
+  const Activity5CategorySorting({super.key, required this.activityNode});
 
   @override
   State<Activity5CategorySorting> createState() => _Activity5CategorySortingState();
 }
 
+class CategoryRound {
+  final List<String> initialItems;
+  final List<String> categoryNames;
+  final Map<String, String> correctMapping;
+  CategoryRound({required this.initialItems, required this.categoryNames, required this.correctMapping});
+}
+
 class _Activity5CategorySortingState extends State<Activity5CategorySorting> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   
-  // Initial items
-  final List<String> _draggableItems = ['🐟', '🌸', '🏫', '🍎', '🚌', '🐦'];
-  
-  final Map<String, List<String>> _categories = {
-    'සතුන්\n(Animals)': [],
-    'ශාක\n(Plants)': [],
-    'ස්ථාන\n(Places)': [],
-    'වාහන\n(Vehicles)': [],
-  };
+  int _currentRoundIndex = 0;
+  late List<CategoryRound> _rounds;
 
-  final Map<String, String> _correctMapping = {
-    '🐟': 'සතුන්\n(Animals)',
-    '🐦': 'සතුන්\n(Animals)',
-    '🌸': 'ශාක\n(Plants)',
-    '🍎': 'ශාක\n(Plants)',
-    '🏫': 'ස්ථාන\n(Places)',
-    '🚌': 'වාහන\n(Vehicles)',
-  };
-
+  List<String> _draggableItems = [];
+  Map<String, List<String>> _categories = {};
   bool _isComplete = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _initRounds();
+    _setupCurrentRound();
+  }
+
+  void _initRounds() {
+    _rounds = widget.activityNode.rounds.map((roundData) {
+      List<String> initialItems = List<String>.from(roundData['initialItems'] ?? []);
+      List<String> categoryNames = List<String>.from(roundData['categoryNames'] ?? []);
+      Map<String, String> correctMapping = {};
+      
+      if (roundData['correctMapping'] != null) {
+        correctMapping = Map<String, String>.from(roundData['correctMapping']);
+      }
+
+      // Fallback
+      if (initialItems.isEmpty || categoryNames.isEmpty) {
+        initialItems = ['🐟', '🌸', '🏫', '🍎', '🚌', '🐦'];
+        categoryNames = ['සතුන්\n(Animals)', 'ශාක\n(Plants)', 'ස්ථාන\n(Places)', 'වාහන\n(Vehicles)'];
+        correctMapping = {'🐟': 'සතුන්\n(Animals)', '🐦': 'සතුන්\n(Animals)', '🌸': 'ශාක\n(Plants)', '🍎': 'ශාක\n(Plants)', '🏫': 'ස්ථාන\n(Places)', '🚌': 'වාහන\n(Vehicles)'};
+      }
+      
+      return CategoryRound(initialItems: initialItems, categoryNames: categoryNames, correctMapping: correctMapping);
+    }).toList();
+  }
+
+  void _setupCurrentRound() {
+    final currentRound = _rounds[_currentRoundIndex];
+    _draggableItems = List.from(currentRound.initialItems);
+    _draggableItems.shuffle();
+    
+    _categories = {};
+    for (var name in currentRound.categoryNames) {
+      _categories[name] = [];
+    }
+    _isComplete = false;
+  }
+
   void _onAccept(String category, String item) async {
-    if (_correctMapping[item] == category) {
+    final currentRound = _rounds[_currentRoundIndex];
+    
+    // Telemetry wrapper will handle correct/incorrect reporting at the end of the round.
+    // For sorting, the user must get everything right to proceed, so we report when the grid is empty.
+    bool isCorrectPlacement = currentRound.correctMapping[item] == category;
+    
+    if (isCorrectPlacement) {
       setState(() {
         _draggableItems.remove(item);
         _categories[category]!.add(item);
@@ -46,8 +88,19 @@ class _Activity5CategorySortingState extends State<Activity5CategorySorting> {
         setState(() {
           _isComplete = true;
         });
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.pop(context, true);
+        
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(100);
+
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (!mounted) return;
+          if (_currentRoundIndex < _rounds.length - 1) {
+            setState(() {
+              _currentRoundIndex++;
+            });
+            _setupCurrentRound();
+          } else {
+            Navigator.pop(context, true);
+          }
         });
       }
     } else {
@@ -64,11 +117,11 @@ class _Activity5CategorySortingState extends State<Activity5CategorySorting> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
           'වර්ග කිරීම',
-          style: GoogleFonts.notoSansSinhala(fontWeight: FontWeight.w700),
+          style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -78,6 +131,26 @@ class _Activity5CategorySortingState extends State<Activity5CategorySorting> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
+              // Progression Indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'වටය ${_currentRoundIndex + 1} / ${_rounds.length}',
+                    style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: (_currentRoundIndex + 1) / _rounds.length,
+                backgroundColor: AppColors.borderLight,
+                color: AppColors.gentleGreen,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const SizedBox(height: 16),
+
               Text(
                 'රූප අදාල කොටුවට දමන්න',
                 style: GoogleFonts.notoSansSinhala(
@@ -134,10 +207,10 @@ class _Activity5CategorySortingState extends State<Activity5CategorySorting> {
                         final isHovered = candidateData.isNotEmpty;
                         return Container(
                           decoration: BoxDecoration(
-                            color: isHovered ? AppColors.mint.withValues(alpha: 0.2) : Colors.white,
+                            color: isHovered ? AppColors.gentleGreen.withValues(alpha: 0.2) : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isHovered ? AppColors.mint : AppColors.primaryLight,
+                              color: isHovered ? AppColors.gentleGreen : AppColors.borderLight,
                               width: 3,
                             ),
                           ),
@@ -147,7 +220,7 @@ class _Activity5CategorySortingState extends State<Activity5CategorySorting> {
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryLight.withValues(alpha: 0.3),
+                                  color: AppColors.borderLight.withValues(alpha: 0.3),
                                   borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
                                 ),
                                 child: Text(
@@ -186,7 +259,7 @@ class _Activity5CategorySortingState extends State<Activity5CategorySorting> {
                   margin: const EdgeInsets.only(top: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.mint,
+                    color: AppColors.gentleGreen,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -196,11 +269,7 @@ class _Activity5CategorySortingState extends State<Activity5CategorySorting> {
                       const SizedBox(width: 8),
                       Text(
                         'විශිෂ්ටයි!',
-                        style: GoogleFonts.notoSansSinhala(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                        style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                     ],
                   ),

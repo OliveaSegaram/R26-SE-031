@@ -2,59 +2,88 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
 
 class Activity8Position extends StatefulWidget {
-  const Activity8Position({super.key});
+  final ActivityNode activityNode;
+  const Activity8Position({super.key, required this.activityNode});
 
   @override
   State<Activity8Position> createState() => _Activity8PositionState();
 }
 
+class PositionRound {
+  final List<String> sceneItems;
+  final String question;
+  final List<String> options;
+  final String correctOption;
+  PositionRound({required this.sceneItems, required this.question, required this.options, required this.correctOption});
+}
+
 class _Activity8PositionState extends State<Activity8Position> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   
-  // Scene has Bird (top), Tree (middle), Cat (bottom)
-  
-  int _currentQuestionIndex = 0;
+  int _currentRoundIndex = 0;
+  late List<PositionRound> _rounds;
   bool _isComplete = false;
-  
-  final List<Map<String, dynamic>> _questions = [
-    {
-      'question': 'ගසට ඉහලින් ඇත්තේ කුමක්ද?', // Above the tree?
-      'options': ['🐦', '🐈', '🌸'],
-      'correct': '🐦',
-    },
-    {
-      'question': 'ගසට පහලින් ඇත්තේ කුමක්ද?', // Below the tree?
-      'options': ['🐦', '🐈', '🌸'],
-      'correct': '🐈',
-    },
-    {
-      'question': 'කුරුල්ලා සහ පූසා අතර ඇත්තේ කුමක්ද?', // Between bird and cat?
-      'options': ['🌳', '🚗', '🏠'],
-      'correct': '🌳',
-    },
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initRounds();
+  }
+
+  void _initRounds() {
+    _rounds = widget.activityNode.rounds.map((roundData) {
+      List<String> sceneItems = List<String>.from(roundData['sceneItems'] ?? []);
+      String question = roundData['question'] ?? roundData['raw_text'] ?? 'කොහෙද තියෙන්නේ?';
+      List<String> options = List<String>.from(roundData['options'] ?? []);
+      String correctOption = roundData['correctOption'] ?? '';
+      
+      if (sceneItems.isEmpty) {
+        sceneItems = ['🐦', '🌳', '🐈'];
+      }
+      if (options.isEmpty) {
+        options = ['🐦', '🐈', '🌸'];
+        correctOption = '🐦';
+      }
+      if (correctOption.isEmpty && options.isNotEmpty) {
+        correctOption = options[0];
+      }
+      
+      options.shuffle();
+      
+      return PositionRound(sceneItems: sceneItems, question: question, options: options, correctOption: correctOption);
+    }).toList();
+  }
 
   void _checkAnswer(String option) async {
-    final correct = _questions[_currentQuestionIndex]['correct'] as String;
+    if (_isComplete) return;
+
+    final currentRound = _rounds[_currentRoundIndex];
+    bool isCorrect = option == currentRound.correctOption;
+
+    int score = isCorrect ? 100 : 0;
+    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
     
-    if (option == correct) {
+    if (isCorrect) {
+      setState(() {
+        _isComplete = true;
+      });
       await _audioPlayer.play(AssetSource('audio/correct.mp3'));
       
-      setState(() {
-        if (_currentQuestionIndex < _questions.length - 1) {
-          _currentQuestionIndex++;
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!mounted) return;
+        if (_currentRoundIndex < _rounds.length - 1) {
+          setState(() {
+            _currentRoundIndex++;
+            _isComplete = false;
+          });
         } else {
-          _isComplete = true;
+          Navigator.pop(context, true);
         }
       });
-      
-      if (_isComplete) {
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.pop(context, true);
-        });
-      }
     } else {
       await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
     }
@@ -68,45 +97,14 @@ class _Activity8PositionState extends State<Activity8Position> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isComplete) {
-      return Scaffold(
-        backgroundColor: AppColors.backgroundLight,
-        body: Center(
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.mint,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.star, color: Colors.white, size: 48),
-                const SizedBox(width: 16),
-                Text(
-                  'විශිෂ්ටයි!',
-                  style: GoogleFonts.notoSansSinhala(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    final currentQ = _questions[_currentQuestionIndex];
-    final options = currentQ['options'] as List<String>;
+    final currentRound = _rounds[_currentRoundIndex];
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
           'පිහිටීම හඳුනාගැනීම',
-          style: GoogleFonts.notoSansSinhala(fontWeight: FontWeight.w700),
+          style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -116,6 +114,26 @@ class _Activity8PositionState extends State<Activity8Position> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
+              // Progression Indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'වටය ${_currentRoundIndex + 1} / ${_rounds.length}',
+                    style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: (_currentRoundIndex + 1) / _rounds.length,
+                backgroundColor: AppColors.borderLight,
+                color: AppColors.gentleGreen,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const SizedBox(height: 24),
+
               // Visual Scene
               Container(
                 width: 200,
@@ -127,11 +145,11 @@ class _Activity8PositionState extends State<Activity8Position> {
                 ),
                 child: Column(
                   children: [
-                    const Text('🐦', style: TextStyle(fontSize: 50)),
+                    Text(currentRound.sceneItems[0], style: const TextStyle(fontSize: 60)),
                     const SizedBox(height: 10),
-                    const Text('🌳', style: TextStyle(fontSize: 80)),
+                    Text(currentRound.sceneItems[1], style: const TextStyle(fontSize: 60)),
                     const SizedBox(height: 10),
-                    const Text('🐈', style: TextStyle(fontSize: 60)),
+                    Text(currentRound.sceneItems[2], style: const TextStyle(fontSize: 60)),
                   ],
                 ),
               ),
@@ -139,7 +157,7 @@ class _Activity8PositionState extends State<Activity8Position> {
               const SizedBox(height: 48),
               
               Text(
-                currentQ['question'] as String,
+                currentRound.question,
                 style: GoogleFonts.notoSansSinhala(
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
@@ -152,15 +170,22 @@ class _Activity8PositionState extends State<Activity8Position> {
               
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: options.map((opt) {
+                children: currentRound.options.map((opt) {
+                  final isCorrectSelection = _isComplete && opt == currentRound.correctOption;
+
                   return GestureDetector(
                     onTap: () => _checkAnswer(opt),
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: isCorrectSelection ? AppColors.gentleGreen.withValues(alpha: 0.3) : Colors.white,
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isCorrectSelection ? AppColors.gentleGreen : Colors.transparent,
+                          width: 4,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.1),
@@ -177,6 +202,26 @@ class _Activity8PositionState extends State<Activity8Position> {
                 }).toList(),
               ),
               const Spacer(),
+
+              if (_isComplete)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.gentleGreen,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star, color: Colors.white, size: 32),
+                      const SizedBox(width: 8),
+                      Text(
+                        'විශිෂ්ටයි!',
+                        style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

@@ -3,12 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
+import 'dart:math';
 
 class Activity4VisualMemory extends StatefulWidget {
-  const Activity4VisualMemory({super.key});
+  final ActivityNode activityNode;
+  const Activity4VisualMemory({super.key, required this.activityNode});
 
   @override
   State<Activity4VisualMemory> createState() => _Activity4VisualMemoryState();
+}
+
+class MemoryRound {
+  final List<String> targetItems;
+  final List<String> allOptions;
+  MemoryRound({required this.targetItems, required this.allOptions});
 }
 
 class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
@@ -18,22 +28,49 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
   int _timeLeft = 10;
   Timer? _timer;
 
-  final List<String> _targetItems = ['🌸', '🐟', '🏫', '🍎', '🌳', '🚌', '🐦'];
-  
-  // Mix target items with some distractors
-  final List<String> _allOptions = ['🌸', '🚗', '🐟', '🏫', '🍎', '🌳', '🚌', '🐦', '🐕', '🏠', '🦆', '🌲'];
-  
+  int _currentRoundIndex = 0;
+  late List<MemoryRound> _rounds;
+
   Set<String> _selectedItems = {};
   bool _isComplete = false;
 
   @override
   void initState() {
     super.initState();
-    _allOptions.shuffle(); // Randomize positions
+    _initRounds();
     _startTimer();
   }
 
+  void _initRounds() {
+    final random = Random();
+    const defaultEmojis = ['🌸', '🚗', '🐟', '🏫', '🍎', '🌳', '🚌', '🐦', '🐕', '🏠', '🦆', '🌲', '⚽', '🏀', '🍎', '🍌'];
+    
+    _rounds = widget.activityNode.rounds.map((roundData) {
+      List<String> targetItems = List<String>.from(roundData['targetItems'] ?? []);
+      List<String> allOptions = List<String>.from(roundData['allOptions'] ?? []);
+      
+      // Fallback if not provided in JSON
+      if (targetItems.isEmpty) {
+        final shuffled = List<String>.from(defaultEmojis)..shuffle();
+        targetItems = shuffled.take(3 + random.nextInt(3)).toList(); // 3 to 5 items
+        allOptions = List<String>.from(targetItems);
+        allOptions.addAll(shuffled.skip(targetItems.length).take(5)); // add distractors
+      }
+      
+      allOptions.shuffle();
+      return MemoryRound(targetItems: targetItems, allOptions: allOptions);
+    }).toList();
+  }
+
   void _startTimer() {
+    setState(() {
+      _showingMemoryGrid = true;
+      _timeLeft = 8; // Reset timer for each round
+      _selectedItems.clear();
+      _isComplete = false;
+    });
+
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
       setState(() {
@@ -50,13 +87,14 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
   void _toggleSelection(String item) async {
     if (_isComplete) return;
 
+    final currentRound = _rounds[_currentRoundIndex];
     bool reachedLimit = false;
 
     setState(() {
       if (_selectedItems.contains(item)) {
         _selectedItems.remove(item);
       } else {
-        if (_selectedItems.length < _targetItems.length) {
+        if (_selectedItems.length < currentRound.targetItems.length) {
           _selectedItems.add(item);
         } else {
           reachedLimit = true;
@@ -65,7 +103,6 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
     });
 
     if (reachedLimit) {
-      // User tried to select an 8th item, play error
       await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
     } else {
       _checkCompletion();
@@ -73,26 +110,38 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
   }
   
   void _checkCompletion() async {
-    // Check if selected items exactly match target items
-    if (_selectedItems.length == _targetItems.length) {
-      bool allCorrect = _selectedItems.every((item) => _targetItems.contains(item));
+    final currentRound = _rounds[_currentRoundIndex];
+
+    if (_selectedItems.length == currentRound.targetItems.length) {
+      bool allCorrect = _selectedItems.every((item) => currentRound.targetItems.contains(item));
+      
+      int score = allCorrect ? 100 : 0;
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
+
       if (allCorrect) {
         setState(() {
           _isComplete = true;
         });
         await _audioPlayer.play(AssetSource('audio/correct.mp3'));
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.pop(context, true);
+        
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (!mounted) return;
+          if (_currentRoundIndex < _rounds.length - 1) {
+            setState(() {
+              _currentRoundIndex++;
+            });
+            _startTimer();
+          } else {
+            Navigator.pop(context, true);
+          }
         });
       } else {
-        // Reached 7 items but they are not all correct
         await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
         
-        // Auto-deselect incorrect items after a short delay for visual feedback
         Future.delayed(const Duration(milliseconds: 800), () {
           if (mounted) {
             setState(() {
-              _selectedItems.removeWhere((item) => !_targetItems.contains(item));
+              _selectedItems.removeWhere((item) => !currentRound.targetItems.contains(item));
             });
           }
         });
@@ -109,12 +158,14 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
 
   @override
   Widget build(BuildContext context) {
+    final currentRound = _rounds[_currentRoundIndex];
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
           'මතක තබාගන්න',
-          style: GoogleFonts.notoSansSinhala(fontWeight: FontWeight.w700),
+          style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -124,14 +175,30 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
+              // Progression Indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'වටය ${_currentRoundIndex + 1} / ${_rounds.length}',
+                    style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: (_currentRoundIndex + 1) / _rounds.length,
+                backgroundColor: AppColors.borderLight,
+                color: AppColors.gentleGreen,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const SizedBox(height: 24),
+
               if (_showingMemoryGrid) ...[
                 Text(
                   'මෙම රූප හොඳින් මතක තබාගන්න',
-                  style: GoogleFonts.notoSansSinhala(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryDark,
-                  ),
+                  style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -157,7 +224,7 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
                       spacing: 16,
                       runSpacing: 16,
                       alignment: WrapAlignment.center,
-                      children: _targetItems.map((item) {
+                      children: currentRound.targetItems.map((item) {
                         return Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -179,12 +246,8 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
                 ),
               ] else ...[
                 Text(
-                  'ඔබට මතක රූප තෝරන්න\n(${_selectedItems.length} / ${_targetItems.length})',
-                  style: GoogleFonts.notoSansSinhala(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryDark,
-                  ),
+                  'ඔබට මතක රූප තෝරන්න\n(${_selectedItems.length} / ${currentRound.targetItems.length})',
+                  style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -195,9 +258,9 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),
-                    itemCount: _allOptions.length,
+                    itemCount: currentRound.allOptions.length,
                     itemBuilder: (context, index) {
-                      final item = _allOptions[index];
+                      final item = currentRound.allOptions[index];
                       final isSelected = _selectedItems.contains(item);
                       
                       return GestureDetector(
@@ -205,10 +268,10 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.mint.withValues(alpha: 0.3) : Colors.white,
+                            color: isSelected ? AppColors.gentleGreen.withValues(alpha: 0.3) : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isSelected ? AppColors.mint : AppColors.primaryLight,
+                              color: isSelected ? AppColors.gentleGreen : AppColors.borderLight,
                               width: isSelected ? 4 : 2,
                             ),
                           ),
@@ -225,7 +288,7 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
                     margin: const EdgeInsets.only(top: 16),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.mint,
+                      color: AppColors.gentleGreen,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -235,11 +298,7 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
                         const SizedBox(width: 8),
                         Text(
                           'විශිෂ්ටයි!',
-                          style: GoogleFonts.notoSansSinhala(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
+                          style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
                         ),
                       ],
                     ),

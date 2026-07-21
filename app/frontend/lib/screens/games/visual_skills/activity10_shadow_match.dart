@@ -2,32 +2,65 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
 
 class Activity10ShadowMatch extends StatefulWidget {
-  const Activity10ShadowMatch({super.key});
+  final ActivityNode activityNode;
+  const Activity10ShadowMatch({super.key, required this.activityNode});
 
   @override
   State<Activity10ShadowMatch> createState() => _Activity10ShadowMatchState();
 }
 
+class ShadowRound {
+  final List<String> items;
+  final List<String> shadows;
+  ShadowRound({required this.items, required this.shadows});
+}
+
 class _Activity10ShadowMatchState extends State<Activity10ShadowMatch> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   
-  final List<String> _items = ['🌳', '🐟', '🚌', '🏫'];
-  // We will shuffle the shadows
-  final List<String> _shadows = ['🏫', '🌳', '🐟', '🚌']; 
-  
-  final Map<String, bool> _matched = {
-    '🌳': false,
-    '🐟': false,
-    '🚌': false,
-    '🏫': false,
-  };
+  int _currentRoundIndex = 0;
+  late List<ShadowRound> _rounds;
 
+  Map<String, bool> _matched = {};
   bool _isComplete = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _initRounds();
+    _setupRound();
+  }
+
+  void _initRounds() {
+    _rounds = widget.activityNode.rounds.map((roundData) {
+      List<String> items = List<String>.from(roundData['items'] ?? []);
+      List<String> shadows = List<String>.from(roundData['shadows'] ?? []);
+      
+      if (items.isEmpty) {
+        items = ['🌳', '🐟', '🚌', '🏫'];
+        shadows = ['🏫', '🌳', '🐟', '🚌'];
+      }
+      
+      return ShadowRound(items: items, shadows: shadows);
+    }).toList();
+  }
+
+  void _setupRound() {
+    final currentRound = _rounds[_currentRoundIndex];
+    _matched = { for (var item in currentRound.items) item: false };
+    _isComplete = false;
+  }
+
   void _onAccept(String shadow, String draggedItem) async {
-    if (shadow == draggedItem) {
+    final currentRound = _rounds[_currentRoundIndex];
+    bool isCorrect = shadow == draggedItem;
+    // Telemetry happens at completion
+
+    if (isCorrect) {
       setState(() {
         _matched[draggedItem] = true;
       });
@@ -37,8 +70,19 @@ class _Activity10ShadowMatchState extends State<Activity10ShadowMatch> {
         setState(() {
           _isComplete = true;
         });
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) Navigator.pop(context, true);
+        
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(100);
+
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (!mounted) return;
+          if (_currentRoundIndex < _rounds.length - 1) {
+            setState(() {
+              _currentRoundIndex++;
+            });
+            _setupRound();
+          } else {
+            Navigator.pop(context, true);
+          }
         });
       }
     } else {
@@ -54,12 +98,14 @@ class _Activity10ShadowMatchState extends State<Activity10ShadowMatch> {
 
   @override
   Widget build(BuildContext context) {
+    final currentRound = _rounds[_currentRoundIndex];
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
           'සෙවනැල්ල ගලපන්න',
-          style: GoogleFonts.notoSansSinhala(fontWeight: FontWeight.w700),
+          style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -69,6 +115,26 @@ class _Activity10ShadowMatchState extends State<Activity10ShadowMatch> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
+              // Progression Indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'වටය ${_currentRoundIndex + 1} / ${_rounds.length}',
+                    style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: (_currentRoundIndex + 1) / _rounds.length,
+                backgroundColor: AppColors.borderLight,
+                color: AppColors.gentleGreen,
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const SizedBox(height: 24),
+
               Text(
                 'නිවැරදි සෙවනැල්ලට ගෙන යන්න',
                 style: GoogleFonts.notoSansSinhala(
@@ -87,8 +153,8 @@ class _Activity10ShadowMatchState extends State<Activity10ShadowMatch> {
                     // Draggable Items Column
                     Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: _items.map((item) {
-                        final isMatched = _matched[item]!;
+                      children: currentRound.items.map((item) {
+                        final isMatched = _matched[item] ?? false;
                         return isMatched
                             ? const SizedBox(width: 80, height: 80)
                             : Draggable<String>(
@@ -109,8 +175,8 @@ class _Activity10ShadowMatchState extends State<Activity10ShadowMatch> {
                     // Shadows Column (Targets)
                     Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: _shadows.map((shadow) {
-                        final isMatched = _matched[shadow]!;
+                      children: currentRound.shadows.map((shadow) {
+                        final isMatched = _matched[shadow] ?? false;
                         return DragTarget<String>(
                           onWillAcceptWithDetails: (details) => !isMatched,
                           onAcceptWithDetails: (details) => _onAccept(shadow, details.data),
@@ -142,7 +208,7 @@ class _Activity10ShadowMatchState extends State<Activity10ShadowMatch> {
                   margin: const EdgeInsets.only(top: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.mint,
+                    color: AppColors.gentleGreen,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Row(
@@ -152,11 +218,7 @@ class _Activity10ShadowMatchState extends State<Activity10ShadowMatch> {
                       const SizedBox(width: 8),
                       Text(
                         'විශිෂ්ටයි!',
-                        style: GoogleFonts.notoSansSinhala(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                        style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                     ],
                   ),
