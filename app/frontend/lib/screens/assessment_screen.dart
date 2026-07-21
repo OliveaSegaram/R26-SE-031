@@ -4,13 +4,12 @@ import '../theme/app_theme.dart';
 import '../models/assessment_question.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
-import '../widgets/flip_card_question.dart';
 import '../widgets/pressable_game_button.dart';
 import '../services/student_service.dart';
 import 'parent_account_screen.dart';
 
 /// Assessment Screen
-/// Dyslexia-accessible: crème bg, green progress bar, warm white question card.
+/// Redesigned to use a beautiful PageView, dynamic 3D characters, and glossy UI.
 class AssessmentScreen extends StatefulWidget {
   final Map<String, dynamic>? studentData;
 
@@ -21,52 +20,78 @@ class AssessmentScreen extends StatefulWidget {
 }
 
 class _AssessmentScreenState extends State<AssessmentScreen> {
-  // Tracking current question
+  late PageController _pageController;
   int _currentIndex = 0;
   bool _isLoading = false;
 
-  // Track the selected answer for the CURRENT page. 
-  // null = nothing selected, true = Yes, false = No.
-  bool? _currentSelection;
+  // Track all answers (null = unanswered, true = yes, false = no)
+  late List<bool?> _answers;
+  
+  // All 14 questions
+  final List<AssessmentQuestion> _questions = AssessmentQuestion.allQuestions;
 
-  // Track all answers
-  final List<bool> _answers = [];
+  // 8 cute 3D claymorphic characters to cycle through!
+  final List<String> _monsterImages = [
+    'assets/images/quiz_master.png',
+    'assets/images/monster_orange.png',
+    'assets/images/monster_blue.png',
+    'assets/images/monster_purple.png',
+    'assets/images/monster_pink.png',
+    'assets/images/monster_green.png',
+    'assets/images/monster_yellow.png',
+    'assets/images/monster_red.png',
+  ];
 
-  final List<AssessmentQuestion> _questions = AssessmentQuestion.allQuestions.take(10).toList();
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.9);
+    _answers = List.generate(_questions.length, (_) => null);
+  }
 
   @override
   void dispose() {
+    _pageController.dispose();
     super.dispose();
   }
 
-  void _onOptionSelected(bool isYes) {
+  void _onOptionSelected(int index, bool isYes) {
     setState(() {
-      _currentSelection = isYes;
+      _answers[index] = isYes;
     });
-  }
-
-  void _onContinue() {
-    if (_currentSelection == null) return;
-
-    if (_answers.length == _currentIndex) {
-      _answers.add(_currentSelection!);
-    } else {
-      _answers[_currentIndex] = _currentSelection!;
-    }
-
-    if (_currentIndex < _questions.length - 1) {
-      // Go to next question
-      setState(() {
-        _currentIndex++;
-        _currentSelection = _answers.length > _currentIndex ? _answers[_currentIndex] : null;
+    
+    // Automatically swipe to next question after a tiny delay for satisfaction
+    if (index < _questions.length - 1) {
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted && _pageController.hasClients) {
+          _pageController.nextPage(
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.fastOutSlowIn,
+          );
+        }
       });
-    } else {
-      // Finish assessment
-      _submitAssessment();
     }
   }
 
   Future<void> _submitAssessment() async {
+    // Ensure all questions are answered!
+    if (_answers.contains(null)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please answer all 14 questions!'), backgroundColor: AppColors.warmAmber),
+      );
+      
+      // Find first unanswered question
+      final firstUnanswered = _answers.indexOf(null);
+      if (firstUnanswered != -1 && _pageController.hasClients) {
+        _pageController.animateToPage(
+          firstUnanswered, 
+          duration: const Duration(milliseconds: 600), 
+          curve: Curves.easeOut,
+        );
+      }
+      return;
+    }
+
     if (widget.studentData == null) {
       _navigateToResults();
       return;
@@ -77,7 +102,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     });
 
     final data = Map<String, dynamic>.from(widget.studentData!);
-    data['assessment_results'] = _answers;
+    data['assessment_results'] = _answers.cast<bool>();
 
     final error = await StudentService().addStudent(data);
     
@@ -93,7 +118,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('student added successfully!'), backgroundColor: AppColors.gentleGreen),
+        const SnackBar(content: Text('student added successfully!'), backgroundColor: AppColors.gentleGreen),
       );
       _navigateToResults();
     }
@@ -119,36 +144,54 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           ? const Center(child: CircularProgressIndicator(color: AppColors.gentleGreen))
           : SafeArea(
               child: Column(
-          children: [
-            // Top Bar: Back button + Progress Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
                 children: [
-                  _buildBackButton(context),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Stack(
+                  // Top Bar: Back button + Progress Bar + Counter
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Row(
                       children: [
-                        Container(
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: AppColors.borderLight,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          height: 12,
-                          width: MediaQuery.of(context).size.width * 0.8 * progress,
-                          decoration: BoxDecoration(
-                            color: AppColors.gentleGreen,
-                            borderRadius: BorderRadius.circular(6),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.gentleGreen.withValues(alpha: 0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
+                        _buildBackButton(context),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'Question ${_currentIndex + 1} of ${_questions.length}',
+                                style: AppTypography.caption(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.calmBlue,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Stack(
+                                children: [
+                                  Container(
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.borderLight,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 400),
+                                    height: 12,
+                                    // Make sure it doesn't overflow
+                                    width: (MediaQuery.of(context).size.width - 100) * progress,
+                                    decoration: BoxDecoration(
+                                      gradient: AppColors.greenGradient,
+                                      borderRadius: BorderRadius.circular(6),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.gentleGreen.withValues(alpha: 0.4),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -156,84 +199,150 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                       ],
                     ),
                   ),
+
+                  // Swipeable Cards Area
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _pageController,
+                      physics: const BouncingScrollPhysics(), // Re-enabled swiping so they can go back!
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentIndex = index;
+                        });
+                      },
+                      itemCount: _questions.length,
+                      itemBuilder: (context, index) {
+                        return _buildQuestionCard(_questions[index], index);
+                      },
+                    ),
+                  ),
+
+                  // Sticky Bottom Continue/Finish Button
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: _answers[_currentIndex] == null ? 0.5 : 1.0,
+                      child: GradientButton(
+                        text: _currentIndex == _questions.length - 1 ? 'finish assessment' : 'next question',
+                        onPressed: _answers[_currentIndex] == null 
+                            ? () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('You must answer this question to proceed!'), 
+                                    backgroundColor: AppColors.warmAmber,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              } 
+                            : () {
+                                if (_currentIndex < _questions.length - 1) {
+                                  _pageController.nextPage(
+                                    duration: const Duration(milliseconds: 600),
+                                    curve: Curves.fastOutSlowIn,
+                                  );
+                                } else {
+                                  _submitAssessment();
+                                }
+                              },
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-
-            // Main 3D Card and Character Area
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 800),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return Flip3DTransition(animation: animation, child: child);
-                },
-                child: _buildQuestionPage(_questions[_currentIndex], _currentIndex),
-              ),
-            ),
-
-            // Sticky Bottom Continue Button
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: _currentSelection == null ? 0.5 : 1.0,
-                child: GradientButton(
-                  text: _currentIndex == _questions.length - 1 ? 'finish' : 'continue',
-                  onPressed: _currentSelection == null ? () {} : _onContinue,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildQuestionPage(AssessmentQuestion question, int index) {
-    return Padding(
-      key: ValueKey<int>(index),
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Quiz Master character
-            const MonsterCharacter(
-              size: 140,
-              animation: MonsterAnimation.idle,
-              imagePath: 'assets/images/quiz_master.png',
-            ),
-            
-            const SizedBox(height: 10),
-
-            // Question Card
-            FlipCardQuestion(
-              text: question.questionText,
-            ),
-          
-          const SizedBox(height: 40),
-
-          // YES Button
-          PressableGameButton(
-            text: 'yes',
-            icon: Icons.check_circle_outline_rounded,
-            isSelected: _currentSelection == true,
-            onTap: () => _onOptionSelected(true),
-            activeColor: AppColors.gentleGreen,
+  Widget _buildQuestionCard(AssessmentQuestion question, int index) {
+    // Smooth scaling effect for the adjacent cards
+    return AnimatedBuilder(
+      animation: _pageController,
+      builder: (context, child) {
+        double value = 1.0;
+        if (_pageController.position.haveDimensions) {
+          value = _pageController.page! - index;
+          value = (1 - (value.abs() * 0.15)).clamp(0.85, 1.0);
+        }
+        
+        return Center(
+          child: Transform.scale(
+            scale: value,
+            child: child,
           ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+        decoration: BoxDecoration(
+          color: AppColors.cardSurface,
+          borderRadius: BorderRadius.circular(36),
+          border: Border.all(color: AppColors.borderBlue, width: 2),
+          boxShadow: [
+            const BoxShadow(
+              color: AppColors.shadowMedium,
+              blurRadius: 24,
+              offset: Offset(0, 12),
+            ),
+            BoxShadow(
+              color: AppColors.calmBlue.withValues(alpha: 0.05),
+              blurRadius: 32,
+              spreadRadius: 8,
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Character Image
+              MonsterCharacter(
+                size: 160,
+                animation: MonsterAnimation.idle,
+                imagePath: _monsterImages[index % _monsterImages.length],
+              ),
+              
+              const SizedBox(height: 32),
 
-          const SizedBox(height: 20),
+              // Question Text
+              Expanded(
+                child: Center(
+                  child: Text(
+                    question.questionText,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.heading(
+                      fontSize: 26,
+                      color: AppColors.calmBlueDark,
+                    ),
+                  ),
+                ),
+              ),
 
-          // NO Button
-          PressableGameButton(
-            text: 'no',
-            icon: Icons.cancel_outlined,
-            isSelected: _currentSelection == false,
-            onTap: () => _onOptionSelected(false),
-            activeColor: AppColors.softCoral,
+              const SizedBox(height: 32),
+
+              // YES Button
+              PressableGameButton(
+                text: 'yes',
+                icon: Icons.check_circle_outline_rounded,
+                isSelected: _answers[index] == true,
+                onTap: () => _onOptionSelected(index, true),
+                activeColor: AppColors.gentleGreen,
+              ),
+
+              const SizedBox(height: 16),
+
+              // NO Button
+              PressableGameButton(
+                text: 'no',
+                icon: Icons.cancel_outlined,
+                isSelected: _answers[index] == false,
+                onTap: () => _onOptionSelected(index, false),
+                activeColor: AppColors.softCoral,
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
       ),
     );
   }
@@ -242,10 +351,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     return GestureDetector(
       onTap: () {
         if (_currentIndex > 0) {
-          setState(() {
-            _currentIndex--;
-            _currentSelection = null;
-          });
+          _pageController.previousPage(
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.fastOutSlowIn,
+          );
         } else {
           Navigator.of(context).pop();
         }

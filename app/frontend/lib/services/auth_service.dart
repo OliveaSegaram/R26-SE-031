@@ -3,6 +3,10 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:aad_oauth/aad_oauth.dart';
+import 'package:aad_oauth/model/config.dart';
+import '../main.dart'; // For globalNavigatorKey
 
 /// Handles authentication-only API calls: login, signup, tokens, passwords.
 /// Student management is in StudentService.
@@ -10,7 +14,7 @@ class AuthService {
   static String get _baseUrl {
     if (kIsWeb) return 'http://127.0.0.1:8015/api/v1/auth';
     if (Platform.isAndroid) return 'http://10.0.2.2:8015/api/v1/auth';
-    if (Platform.isIOS) return 'https://pxgvz-112-134-193-235.free.pinggy.net/api/v1/auth'; // Pinggy Public Tunnel
+    if (Platform.isIOS) return 'http://192.168.1.4:8015/api/v1/auth'; // Connect via Local IP
     return 'http://127.0.0.1:8015/api/v1/auth';
   }
 
@@ -34,6 +38,7 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', accessToken);
         await prefs.setString('refresh_token', refreshToken);
+        await prefs.setString('auth_provider', 'local');
         
         return null;
       } else {
@@ -49,6 +54,121 @@ class AuthService {
       }
     } catch (e) {
       return 'Network Error: $e';
+    }
+  }
+
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> loginWithGoogle() async {
+    try {
+      await GoogleSignIn.instance.initialize(
+        serverClientId: '733315696908-tpau04bmsk824olg6m0a3coanojl147v.apps.googleusercontent.com',
+      );
+
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        return 'Failed to get ID token from Google.';
+      }
+
+      // Send token to backend
+      final response = await http.post(
+        Uri.parse('$_baseUrl/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id_token': idToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String accessToken = data['access_token'];
+        String refreshToken = data['refresh_token'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', accessToken);
+        await prefs.setString('refresh_token', refreshToken);
+        await prefs.setString('auth_provider', 'google');
+        
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Google login failed on server.';
+      }
+    } catch (e) {
+      print('GOOGLE SIGN IN ERROR: $e');
+      if (e.toString().contains('canceled') || e.toString().contains('Canceled')) {
+        return 'CANCELED';
+      }
+      return 'Google Sign In Error: $e';
+    }
+  }
+
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> loginWithMicrosoft() async {
+    try {
+      final Config config = Config(
+        tenant: 'common', // We will keep 'common' so any Microsoft account can log in
+        clientId: 'a1a55b82-e464-4ac1-80fd-5ad23fcbef56', // Microsoft Client ID
+        scope: 'openid profile email User.Read',
+        redirectUri: 'https://login.live.com/oauth20_desktop.srf', // Standard URI for mobile webviews
+        navigatorKey: globalNavigatorKey,
+        customParameters: {'prompt': 'select_account'},
+        // webUseRedirect is ONLY for web. It breaks mobile authentication.
+      );
+
+      final AadOAuth oauth = AadOAuth(config);
+      final result = await oauth.login();
+      
+      final String? accessToken = await oauth.getAccessToken();
+
+      if (accessToken == null) {
+        String errMsg = 'Failed to get Access token from Microsoft.';
+        try {
+           result.fold((l) {
+             final errStr = l.toString().toLowerCase();
+             if (errStr.contains('canceled') || errStr.contains('accessdenied')) {
+               errMsg = 'CANCELED';
+             } else {
+               errMsg = 'Microsoft Auth Error: ${l.toString()}';
+             }
+           }, (r) => null);
+        } catch (_) {}
+        return errMsg;
+      }
+
+      // Send token to backend
+      final response = await http.post(
+        Uri.parse('$_baseUrl/microsoft'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'access_token': accessToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String jwtAccessToken = data['access_token'];
+        String jwtRefreshToken = data['refresh_token'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', jwtAccessToken);
+        await prefs.setString('refresh_token', jwtRefreshToken);
+        await prefs.setString('auth_provider', 'microsoft');
+        
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Microsoft login failed on server.';
+      }
+    } catch (e) {
+      print('MICROSOFT SIGN IN ERROR: $e');
+      if (e.toString().contains('canceled') || e.toString().contains('Canceled')) {
+        return 'CANCELED';
+      }
+      return 'Microsoft Sign In Error: $e';
     }
   }
 
@@ -91,6 +211,12 @@ class AuthService {
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('access_token');
+  }
+
+  /// Helper to get the auth provider
+  Future<String> getAuthProvider() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_provider') ?? 'local';
   }
 
   /// Get current user profile
@@ -184,7 +310,27 @@ class AuthService {
   /// Clear tokens (logout)
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
+    final provider = prefs.getString('auth_provider');
+    
+    if (provider == 'google') {
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (_) {}
+    } else if (provider == 'microsoft') {
+      try {
+        final Config config = Config(
+          tenant: 'common',
+          clientId: 'a1a55b82-e464-4ac1-80fd-5ad23fcbef56',
+          scope: 'openid profile email User.Read',
+          redirectUri: 'https://login.live.com/oauth20_desktop.srf',
+          navigatorKey: globalNavigatorKey,
+        );
+        await AadOAuth(config).logout();
+      } catch (_) {}
+    }
+
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
+    await prefs.remove('auth_provider');
   }
 }
