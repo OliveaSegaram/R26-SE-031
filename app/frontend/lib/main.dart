@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 
+final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -31,6 +33,7 @@ class AdaptedMindApp extends StatelessWidget {
     return MaterialApp(
       title: 'AdaptedMind',
       debugShowCheckedModeBanner: false,
+      navigatorKey: globalNavigatorKey,
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),
     );

@@ -89,16 +89,26 @@ class _PressableGameButtonState extends State<PressableGameButton>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
           decoration: BoxDecoration(
-            color: bgColor,
+            color: widget.isSelected ? null : AppColors.cardSurface,
+            gradient: widget.isSelected 
+                ? LinearGradient(
+                    colors: [
+                      widget.activeColor.withValues(alpha: 0.8),
+                      widget.activeColor,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: borderColor, width: 2),
             boxShadow: [
               BoxShadow(
                 color: widget.isSelected 
-                    ? widget.activeColor.withValues(alpha: 0.3) 
-                    : AppColors.shadow,
-                offset: widget.isSelected ? const Offset(0, 2) : const Offset(0, 4),
-                blurRadius: widget.isSelected ? 10 : 4,
+                    ? widget.activeColor.withValues(alpha: 0.4) 
+                    : AppColors.shadowMedium,
+                offset: widget.isSelected ? const Offset(0, 4) : const Offset(0, 6),
+                blurRadius: widget.isSelected ? 12 : 8,
               ),
             ],
           ),

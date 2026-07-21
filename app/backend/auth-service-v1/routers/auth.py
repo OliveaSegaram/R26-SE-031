@@ -12,11 +12,11 @@ from slowapi.util import get_remote_address
 from shared.database import get_db
 from schemas.auth import (
     UserCreate, UserLogin, Token, TokenRefreshRequest,
-    UserResponse, ChangePasswordRequest, VerifyPasswordRequest,
+    UserResponse, ChangePasswordRequest, VerifyPasswordRequest, GoogleLoginRequest, MicrosoftLoginRequest
 )
 from services.auth_utils import (
     get_password_hash, verify_password,
-    create_access_token, create_refresh_token, verify_token,
+    create_access_token, create_refresh_token, verify_token, verify_google_token, verify_microsoft_token
 )
 from dependencies import get_current_user
 
@@ -97,6 +97,107 @@ async def login(request: Request, user: UserLogin):
 
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
+@router.post("/google", response_model=Token)
+@limiter.limit("10/minute")
+async def google_login(request: Request, login_req: GoogleLoginRequest):
+    """Authenticate via Google ID token and return JWT tokens."""
+    db = get_db()
+
+    # Verify the token with Google
+    idinfo = verify_google_token(login_req.id_token)
+    if not idinfo:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    email = idinfo.get("email", "").lower()
+    name = idinfo.get("name", "User")
+    
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google token did not contain an email address",
+        )
+
+    # Check if user already exists
+    user_doc = await db.users.find_one({"email": email})
+    
+    if not user_doc:
+        # Implicitly sign up the user
+        user_doc = {
+            "name": name,
+            "email": email,
+            "hashed_password": get_password_hash("google-oauth-placeholder-password"),
+            "role": "parent",
+        }
+        result = await db.users.insert_one(user_doc)
+        user_id = str(result.inserted_id)
+    else:
+        user_id = str(user_doc["_id"])
+
+    token_data = {
+        "sub": email,
+        "role": user_doc.get("role", "parent"),
+        "id": user_id,
+    }
+    
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(data=token_data)
+
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+
+@router.post("/microsoft", response_model=Token)
+@limiter.limit("10/minute")
+async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest):
+    """Authenticate via Microsoft Access token and return JWT tokens."""
+    db = get_db()
+
+    # Verify the token with Microsoft Graph API
+    user_info = verify_microsoft_token(login_req.access_token)
+    if not user_info:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Microsoft token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    email = user_info.get("email", "").lower()
+    name = user_info.get("name", "User")
+    
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Microsoft token did not contain an email address",
+        )
+
+    # Check if user already exists
+    user_doc = await db.users.find_one({"email": email})
+    
+    if not user_doc:
+        # Implicitly sign up the user
+        user_doc = {
+            "name": name,
+            "email": email,
+            "hashed_password": get_password_hash("microsoft-oauth-placeholder-password"),
+            "role": "parent",
+        }
+        result = await db.users.insert_one(user_doc)
+        user_id = str(result.inserted_id)
+    else:
+        user_id = str(user_doc["_id"])
+
+    token_data = {
+        "sub": email,
+        "role": user_doc.get("role", "parent"),
+        "id": user_id,
+    }
+    
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(data=token_data)
+
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/refresh", response_model=Token)
 @limiter.limit("10/minute")
@@ -154,6 +255,8 @@ async def change_password(request: ChangePasswordRequest, current_user: dict = D
 @router.post("/verify-password")
 async def verify_user_password(request: VerifyPasswordRequest, current_user: dict = Depends(get_current_user)):
     """Verify the authenticated user's password (e.g. before sensitive actions)."""
-    if not verify_password(request.password, current_user["hashed_password"]):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
+    is_google_user = verify_password("google-oauth-placeholder-password", current_user["hashed_password"])
+    if not is_google_user:
+        if not verify_password(request.password, current_user["hashed_password"]):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
     return {"status": "success", "message": "Password is correct"}

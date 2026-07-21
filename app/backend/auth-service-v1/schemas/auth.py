@@ -44,3 +44,9 @@ class ChangePasswordRequest(BaseModel):
 
 class VerifyPasswordRequest(BaseModel):
     password: str
+
+class GoogleLoginRequest(BaseModel):
+    id_token: str
+
+class MicrosoftLoginRequest(BaseModel):
+    access_token: str
