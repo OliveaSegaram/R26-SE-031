@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'select_student_screen.dart';
 import 'signup_screen.dart';
+import 'forgot_password_screen.dart';
 
 /// Sign-In Screen
 /// Dyslexia-accessible: crème background, warm white inputs, 18pt+ text,
@@ -156,7 +157,7 @@ class _SignInScreenState extends State<SignInScreen>
                     child: MonsterCharacter(
                       size: 110,
                       animation: MonsterAnimation.wave,
-                      imagePath: 'assets/images/solo_yellow.png',
+                      imagePath: 'assets/images/mascot_blue_jumping.png',
                     ),
                   ),
 
@@ -246,7 +247,11 @@ class _SignInScreenState extends State<SignInScreen>
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
+                        );
+                      },
                       child: Text(
                         'forgot password?',
                         style: AppTypography.body(

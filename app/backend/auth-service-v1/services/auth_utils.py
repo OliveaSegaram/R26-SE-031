@@ -4,14 +4,16 @@ services/auth_utils.py
 Password hashing, JWT creation and verification utilities.
 """
 
-import bcrypt
-import jwt
 from datetime import datetime, timedelta
+import jwt
 from google.oauth2 import id_token
 from google.auth.transport import requests
-from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES, SMTP_EMAIL, SMTP_PASSWORD
+import smtplib
+from email.message import EmailMessage
 import urllib.request
 import json
+import bcrypt
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -92,3 +94,58 @@ def verify_microsoft_token(access_token: str) -> dict:
     except Exception as e:
         print(f"Microsoft Token Verification Error: {e}")
         return None
+
+import random
+import string
+
+def generate_otp(length: int = 6) -> str:
+    """Generate a random numeric OTP."""
+    return "".join(random.choices(string.digits, k=length))
+
+def send_otp_email(email_address: str, otp: str):
+    """
+    Send the OTP via email using SMTP. 
+    If SMTP credentials are not configured, fallback to console print.
+    """
+    # Always print to console for development visibility
+    print(f"========== OTP FOR {email_address} ==========")
+    print(f"Your password reset code is: {otp}")
+    print(f"=======================================")
+    
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        print("Warning: SMTP_EMAIL or SMTP_PASSWORD not found in environment. Email not sent.")
+        return
+        
+    try:
+        msg = EmailMessage()
+        msg['Subject'] = "Your AdaptedMind Security Code"
+        msg['From'] = SMTP_EMAIL
+        msg['To'] = email_address
+        
+        # HTML Content
+        html_content = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #4A90E2;">AdaptedMind Security Code</h2>
+                <p>Hello,</p>
+                <p>Please use the following 6-digit code to verify your account or reset your password.</p>
+                <div style="background-color: #F8F9FA; padding: 20px; text-align: center; border-radius: 8px; margin: 24px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2C3E50;">{otp}</span>
+                </div>
+                <p>This code will expire in 10 minutes.</p>
+                <p>If you didn't request this, you can safely ignore this email.</p>
+            </body>
+        </html>
+        """
+        
+        msg.add_alternative(html_content, subtype='html')
+        
+        # Send email using Gmail SMTP
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.send_message(msg)
+            
+        print(f"Successfully sent OTP email to {email_address}")
+        
+    except Exception as e:
+        print(f"Failed to send email to {email_address}: {e}")

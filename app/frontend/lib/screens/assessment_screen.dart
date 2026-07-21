@@ -291,8 +291,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -306,15 +306,14 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               const SizedBox(height: 32),
 
               // Question Text
-              Expanded(
-                child: Center(
-                  child: Text(
-                    question.questionText,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.heading(
-                      fontSize: 26,
-                      color: AppColors.calmBlueDark,
-                    ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Text(
+                  question.questionText,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.heading(
+                    fontSize: 24,
+                    color: AppColors.calmBlueDark,
                   ),
                 ),
               ),

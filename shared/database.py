@@ -7,9 +7,12 @@ class Database:
 db_instance = Database()
 
 async def connect_to_mongo():
-    mongo_url = os.getenv("MONGODB_URL", "mongodb://127.0.0.1:27017")
+    mongo_url = os.getenv("MONGODB_URL")
+    if not mongo_url:
+        raise ValueError("MONGODB_URL environment variable is not set!")
+    
     db_instance.client = AsyncIOMotorClient(mongo_url)
-    print(f"Connected to MongoDB at {mongo_url}")
+    print("Connected to MongoDB Cloud!")
 
 async def close_mongo_connection():
     if db_instance.client:
