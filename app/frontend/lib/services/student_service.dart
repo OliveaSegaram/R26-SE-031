@@ -10,7 +10,7 @@ class StudentService {
   static String get _baseUrl {
     if (kIsWeb) return 'http://127.0.0.1:8015/api/v1/auth';
     if (Platform.isAndroid) return 'http://10.0.2.2:8015/api/v1/auth';
-    if (Platform.isIOS) return 'http://192.168.1.4:8015/api/v1/auth'; // Connect via Local IP
+    if (Platform.isIOS) return 'http://192.168.1.3:8015/api/v1/auth'; // Connect via Local IP
     return 'http://127.0.0.1:8015/api/v1/auth';
   }
 
