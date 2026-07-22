@@ -1,0 +1,422 @@
+import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:aad_oauth/aad_oauth.dart';
+import 'package:aad_oauth/model/config.dart';
+import '../main.dart'; // For globalNavigatorKey
+
+/// Handles authentication-only API calls: login, signup, tokens, passwords.
+/// Student management is in StudentService.
+class AuthService {
+  static String get _baseUrl {
+    // Connect directly to the Cloud Server!
+    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
+  }
+
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> login(String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email.trim(),
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String accessToken = data['access_token'];
+        String refreshToken = data['refresh_token'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', accessToken);
+        await prefs.setString('refresh_token', refreshToken);
+        await prefs.setString('auth_provider', 'local');
+        
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        } else if (data['detail'] is List) {
+          final err = data['detail'][0];
+          final field = err['loc']?.last?.toString() ?? 'Field';
+          return '$field: ${err['msg']}';
+        }
+        return 'Incorrect email or password.';
+      }
+    } catch (e) {
+      return 'Network Error: $e';
+    }
+  }
+
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> loginWithGoogle() async {
+    try {
+      await GoogleSignIn.instance.initialize(
+        serverClientId: '733315696908-tpau04bmsk824olg6m0a3coanojl147v.apps.googleusercontent.com',
+      );
+
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        return 'Failed to get ID token from Google.';
+      }
+
+      // Send token to backend
+      final response = await http.post(
+        Uri.parse('$_baseUrl/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id_token': idToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String accessToken = data['access_token'];
+        String refreshToken = data['refresh_token'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', accessToken);
+        await prefs.setString('refresh_token', refreshToken);
+        await prefs.setString('auth_provider', 'google');
+        
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Google login failed on server.';
+      }
+    } catch (e) {
+      print('GOOGLE SIGN IN ERROR: $e');
+      if (e.toString().contains('canceled') || e.toString().contains('Canceled')) {
+        return 'CANCELED';
+      }
+      return 'Google Sign In Error: $e';
+    }
+  }
+
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> loginWithMicrosoft() async {
+    try {
+      final Config config = Config(
+        tenant: 'common', // We will keep 'common' so any Microsoft account can log in
+        clientId: 'a1a55b82-e464-4ac1-80fd-5ad23fcbef56', // Microsoft Client ID
+        scope: 'openid profile email User.Read',
+        redirectUri: 'https://login.live.com/oauth20_desktop.srf', // Standard URI for mobile webviews
+        navigatorKey: globalNavigatorKey,
+        customParameters: {'prompt': 'select_account'},
+        // webUseRedirect is ONLY for web. It breaks mobile authentication.
+      );
+
+      final AadOAuth oauth = AadOAuth(config);
+      final result = await oauth.login();
+      
+      final String? accessToken = await oauth.getAccessToken();
+
+      if (accessToken == null) {
+        String errMsg = 'Failed to get Access token from Microsoft.';
+        try {
+           result.fold((l) {
+             final errStr = l.toString().toLowerCase();
+             if (errStr.contains('canceled') || errStr.contains('accessdenied')) {
+               errMsg = 'CANCELED';
+             } else {
+               errMsg = 'Microsoft Auth Error: ${l.toString()}';
+             }
+           }, (r) => null);
+        } catch (_) {}
+        return errMsg;
+      }
+
+      // Send token to backend
+      final response = await http.post(
+        Uri.parse('$_baseUrl/microsoft'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'access_token': accessToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String jwtAccessToken = data['access_token'];
+        String jwtRefreshToken = data['refresh_token'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', jwtAccessToken);
+        await prefs.setString('refresh_token', jwtRefreshToken);
+        await prefs.setString('auth_provider', 'microsoft');
+        
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Microsoft login failed on server.';
+      }
+    } catch (e) {
+      print('MICROSOFT SIGN IN ERROR: $e');
+      if (e.toString().contains('canceled') || e.toString().contains('Canceled')) {
+        return 'CANCELED';
+      }
+      return 'Microsoft Sign In Error: $e';
+    }
+  }
+
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> signup(String name, String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/signup'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'name': name.trim(),
+          'email': email.trim(),
+          'password': password,
+          'role': 'parent',
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        // Success: Account created, but needs email verification OTP
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        
+        if (data['detail'] is String) {
+          return data['detail'];
+        } else if (data['detail'] is List) {
+          final err = data['detail'][0];
+          final field = err['loc']?.last?.toString() ?? 'Field';
+          return '$field: ${err['msg']}';
+        }
+        return 'Failed to sign up. Please check your inputs.';
+      }
+    } catch (e) {
+      print('SIGNUP ERROR: $e');
+      return 'Network Error: $e';
+    }
+  }
+
+  /// Verify Email via OTP during Signup
+  Future<String?> verifyEmail(String email, String otp) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/verify-email'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email.trim(),
+          'otp': otp.trim()
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String jwtAccessToken = data['access_token'];
+        String jwtRefreshToken = data['refresh_token'];
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', jwtAccessToken);
+        await prefs.setString('refresh_token', jwtRefreshToken);
+        await prefs.setString('auth_provider', 'local');
+        
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        } else if (data['detail'] is List) {
+          final err = data['detail'][0];
+          return err['msg'] ?? 'Validation error';
+        }
+        return 'Failed to verify email.';
+      }
+    } catch (e) {
+      return 'Network Error: $e';
+    }
+  }
+
+  /// Helper to get the token
+  Future<String?> getAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+  }
+
+  /// Helper to get the auth provider
+  Future<String> getAuthProvider() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_provider') ?? 'local';
+  }
+
+  /// Get current user profile
+  Future<Map<String, dynamic>?> getUserProfile() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return null;
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Change Password
+  Future<String?> changePassword(String oldPassword, String newPassword) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/change-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'old_password': oldPassword,
+          'new_password': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        } else if (data['detail'] is List) {
+          final err = data['detail'][0];
+          final field = err['loc']?.last?.toString() ?? 'Field';
+          return '$field: ${err['msg']}';
+        }
+        return 'Failed to change password.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Request Password Reset
+  Future<String?> requestPasswordReset(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email.trim()}),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Failed to send reset code.';
+      }
+    } catch (e) {
+      return 'Network Error: $e';
+    }
+  }
+
+  /// Reset Password
+  Future<String?> resetPassword(String email, String otp, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email.trim(),
+          'otp': otp.trim(),
+          'new_password': newPassword
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        } else if (data['detail'] is List) {
+          final err = data['detail'][0];
+          return err['msg'] ?? 'Validation error';
+        }
+        return 'Failed to reset password.';
+      }
+    } catch (e) {
+      return 'Network Error: $e';
+    }
+  }
+
+  /// Verify parent password
+  Future<String?> verifyPassword(String password) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/verify-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        }
+        return 'Incorrect password.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Clear tokens (logout)
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    final provider = prefs.getString('auth_provider');
+    
+    if (provider == 'google') {
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (_) {}
+    } else if (provider == 'microsoft') {
+      try {
+        final Config config = Config(
+          tenant: 'common',
+          clientId: 'a1a55b82-e464-4ac1-80fd-5ad23fcbef56',
+          scope: 'openid profile email User.Read',
+          redirectUri: 'https://login.live.com/oauth20_desktop.srf',
+          navigatorKey: globalNavigatorKey,
+        );
+        await AadOAuth(config).logout();
+      } catch (_) {}
+    }
+
+    await prefs.remove('access_token');
+    await prefs.remove('refresh_token');
+    await prefs.remove('auth_provider');
+  }
+}

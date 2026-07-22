@@ -8,11 +8,16 @@ __pycache__/
 venv/
 env/
 .env
+*.env
 build/
 dist/
 *.egg-info/
 .pytest_cache/
 .claude/
+.coverage
+htmlcov/
+*.joblib
+*.pt
 
 # EXCEPT models specifically placed in the final_models directory for the viva
 !final_models/
@@ -27,6 +32,7 @@ dist/
 *.db
 *.sqlite3
 *.db-journal
+*/db/
 
 # =========================
 # Jupyter Notebooks
@@ -43,6 +49,7 @@ dist/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
+/coverage/
 
 # Avoid ignoring the frontend folder itself, just ignore its build outputs
 **/build/
@@ -51,6 +58,9 @@ dist/
 **/android/.gradle/
 **/android/local.properties
 **/android/app/build/
+/android/app/debug
+/android/app/profile
+/android/app/release
 *.jks
 *.keystore
 
@@ -58,33 +68,44 @@ dist/
 **/ios/Pods/
 **/ios/.symlinks/
 **/ios/Flutter/Flutter.podspec
+**/ios/Flutter/.last_build_id
 **/macos/Pods/
 **/macos/Flutter/ephemeral/
-.DS_Store
 xcuserdata/
 DerivedData/
+
+# Flutter specifics
+**/doc/api/
+app.*.symbols
+app.*.map.json
+**/linux/
+**/windows/
 
 # =========================
 # IDEs & Editor Configs
 # =========================
 .vscode/
 .idea/
+*.iml
+*.ipr
+*.iws
 *.swp
 *.swo
-"__pycache__/" 
-"*.pyc" 
+.DS_Store
 
-# ========================= 
-# Merged from R26-SE-031-V2/.gitignore
 # =========================
-*.env
-*.joblib
-*.pt
+# Miscellaneous
+# =========================
 Thumbs.db
-.coverage
-htmlcov/
-*/db/
 logs/
-
 test_output.log
 test_summary.txt
+*.class
+*.log
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
