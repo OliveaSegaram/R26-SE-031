@@ -8,10 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Separated from AuthService for clean architecture.
 class StudentService {
   static String get _baseUrl {
-    if (kIsWeb) return 'http://127.0.0.1:8015/api/v1/auth';
-    if (Platform.isAndroid) return 'http://10.0.2.2:8015/api/v1/auth';
-    if (Platform.isIOS) return 'http://192.168.1.3:8015/api/v1/auth'; // Connect via Local IP
-    return 'http://127.0.0.1:8015/api/v1/auth';
+    // Connect directly to the Cloud Server!
+    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
   }
 
   Future<String?> _getAccessToken() async {
