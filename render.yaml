@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: adaptedmind-auth-api
+    env: python
+    buildCommand: "pip install -r app/backend/auth-service-v1/requirements.txt"
+    startCommand: "cd app/backend/auth-service-v1 && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PORT
+        value: 8015
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: MONGODB_URL
+        sync: false
+      - key: SMTP_EMAIL
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
