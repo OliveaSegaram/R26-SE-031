@@ -56,6 +56,11 @@ class TelemetryService {
     debugPrint('Telemetry: Session started');
   }
 
+  void startActivity(String activityName) {
+    _activityStartTime = DateTime.now();
+    debugPrint('Telemetry: Activity started - $activityName');
+  }
+
   void broadcastRoundStart(String activityName, int roundNumber, List<String> tags) {
     _activityStartTime = DateTime.now();
     for (var plugin in _plugins) {

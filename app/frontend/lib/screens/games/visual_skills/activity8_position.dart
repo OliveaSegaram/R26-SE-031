@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/telemetry_wrapper.dart';
 import '../../../models/curriculum_models.dart';
+import 'dart:math' as math;
 
 class Activity8Position extends StatefulWidget {
   final ActivityNode activityNode;
@@ -103,127 +104,194 @@ class _Activity8PositionState extends State<Activity8Position> {
       backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
-          'පිහිටීම හඳුනාගැනීම',
+          widget.activityNode.title.isNotEmpty ? widget.activityNode.title : 'පිහිටීම හඳුනාගැනීම',
           style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              // Progression Indicator
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'වටය ${_currentRoundIndex + 1} / ${_rounds.length}',
-                    style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              LinearProgressIndicator(
-                value: (_currentRoundIndex + 1) / _rounds.length,
-                backgroundColor: AppColors.borderLight,
-                color: AppColors.gentleGreen,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 24),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final availableHeight = constraints.maxHeight;
+            final isSmallScreen = availableHeight < 680;
+            final double cardPadding = isSmallScreen ? 14.0 : 20.0;
+            final double sceneFontSize = isSmallScreen ? 42.0 : 54.0;
+            final double optionBoxSize = isSmallScreen ? 68.0 : 84.0;
+            final double optionFontSize = isSmallScreen ? 28.0 : 36.0;
 
-              // Visual Scene
-              Container(
-                width: 200,
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                decoration: BoxDecoration(
-                  color: Colors.lightBlue.shade50,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.lightBlue, width: 3),
-                ),
-                child: Column(
-                  children: [
-                    Text(currentRound.sceneItems[0], style: const TextStyle(fontSize: 60)),
-                    const SizedBox(height: 10),
-                    Text(currentRound.sceneItems[1], style: const TextStyle(fontSize: 60)),
-                    const SizedBox(height: 10),
-                    Text(currentRound.sceneItems[2], style: const TextStyle(fontSize: 60)),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 48),
-              
-              Text(
-                currentRound.question,
-                style: GoogleFonts.notoSansSinhala(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryDark,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
-              const Spacer(),
-              
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: currentRound.options.map((opt) {
-                  final isCorrectSelection = _isComplete && opt == currentRound.correctOption;
-
-                  return GestureDetector(
-                    onTap: () => _checkAnswer(opt),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: isCorrectSelection ? AppColors.gentleGreen.withValues(alpha: 0.3) : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isCorrectSelection ? AppColors.gentleGreen : Colors.transparent,
-                          width: 4,
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: availableHeight),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: EdgeInsets.all(cardPadding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Progression Indicator
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'වටය ${_currentRoundIndex + 1} / ${_rounds.length}',
+                              style: AppTypography.sinhala(fontSize: isSmallScreen ? 16 : 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                            ),
+                          ],
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(opt, style: const TextStyle(fontSize: 40)),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const Spacer(),
+                        const SizedBox(height: 6),
+                        LinearProgressIndicator(
+                          value: (_currentRoundIndex + 1) / _rounds.length,
+                          backgroundColor: AppColors.borderLight,
+                          color: AppColors.gentleGreen,
+                          minHeight: 8,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        SizedBox(height: isSmallScreen ? 16 : 24),
 
-              if (_isComplete)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.gentleGreen,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.star, color: Colors.white, size: 32),
-                      const SizedBox(width: 8),
-                      Text(
-                        'විශිෂ්ටයි!',
-                        style: AppTypography.sinhala(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white),
-                      ),
-                    ],
+                        // Visual Scene Card
+                        if (currentRound.sceneItems.isNotEmpty)
+                          Container(
+                            width: math.min(constraints.maxWidth * 0.8, 240),
+                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 12 : 18, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.lightBlue.shade50,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.lightBlue, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.lightBlue.withValues(alpha: 0.15),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: currentRound.sceneItems.map((item) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 4),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(item, style: TextStyle(fontSize: sceneFontSize)),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        
+                        SizedBox(height: isSmallScreen ? 16 : 28),
+
+                        // Question Prompt Card
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(isSmallScreen ? 14 : 20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.borderLight),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          child: Text(
+                            currentRound.question,
+                            style: GoogleFonts.notoSansSinhala(
+                              fontSize: isSmallScreen ? 18 : 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryDark,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        
+                        const Spacer(),
+                        SizedBox(height: isSmallScreen ? 16 : 24),
+                        
+                        // Options Grid/Row
+                        Wrap(
+                          spacing: isSmallScreen ? 12 : 20,
+                          runSpacing: isSmallScreen ? 12 : 20,
+                          alignment: WrapAlignment.center,
+                          children: currentRound.options.map((opt) {
+                            final isCorrectSelection = _isComplete && opt == currentRound.correctOption;
+
+                            return GestureDetector(
+                              onTap: () => _checkAnswer(opt),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                width: optionBoxSize,
+                                height: optionBoxSize,
+                                decoration: BoxDecoration(
+                                  color: isCorrectSelection ? AppColors.gentleGreen.withValues(alpha: 0.3) : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isCorrectSelection ? AppColors.gentleGreen : AppColors.borderLight,
+                                    width: isCorrectSelection ? 4 : 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.08),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(opt, style: TextStyle(fontSize: optionFontSize, fontWeight: FontWeight.w600)),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        
+                        const Spacer(),
+                        SizedBox(height: isSmallScreen ? 12 : 20),
+
+                        if (_isComplete)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.gentleGreen,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.gentleGreen.withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star_rounded, color: Colors.white, size: 32),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'විශිෂ්ටයි!',
+                                  style: AppTypography.sinhala(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-            ],
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
