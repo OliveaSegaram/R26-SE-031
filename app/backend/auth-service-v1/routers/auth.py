@@ -109,6 +109,12 @@ async def verify_email(request: Request, req: VerifyEmailRequest):
             "is_verified": True
         }
         
+        if pending.get("role") == "specialist":
+            import random
+            import string
+            # Generate a professional 6-character alphanumeric clinic code
+            user_doc["clinic_code"] = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        
         # Upsert just in case they were somehow inserted but unverified before we changed architecture
         await db.users.update_one(
             {"email": email},
