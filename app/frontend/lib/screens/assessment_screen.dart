@@ -291,56 +291,66 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             ),
           ],
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Character Image
-              MonsterCharacter(
-                size: 160,
-                animation: MonsterAnimation.idle,
-                imagePath: _monsterImages[index % _monsterImages.length],
-              ),
-              
-              const SizedBox(height: 32),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxHeight < 540;
+            final monsterSize = isSmall ? 110.0 : 150.0;
+            final spacing = isSmall ? 16.0 : 28.0;
+            final fontSize = isSmall ? 20.0 : 23.0;
 
-              // Question Text
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Text(
-                  question.questionText,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.heading(
-                    fontSize: 24,
-                    color: AppColors.calmBlueDark,
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: isSmall ? 16 : 24, vertical: isSmall ? 16 : 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Character Image
+                  MonsterCharacter(
+                    size: monsterSize,
+                    animation: MonsterAnimation.idle,
+                    imagePath: _monsterImages[index % _monsterImages.length],
                   ),
-                ),
+                  
+                  SizedBox(height: spacing),
+
+                  // Question Text
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      question.questionText,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.heading(
+                        fontSize: fontSize,
+                        color: AppColors.calmBlueDark,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: spacing),
+
+                  // YES Button
+                  PressableGameButton(
+                    text: 'yes',
+                    icon: Icons.check_circle_outline_rounded,
+                    isSelected: _answers[index] == true,
+                    onTap: () => _onOptionSelected(index, true),
+                    activeColor: AppColors.gentleGreen,
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // NO Button
+                  PressableGameButton(
+                    text: 'no',
+                    icon: Icons.cancel_outlined,
+                    isSelected: _answers[index] == false,
+                    onTap: () => _onOptionSelected(index, false),
+                    activeColor: AppColors.softCoral,
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 32),
-
-              // YES Button
-              PressableGameButton(
-                text: 'yes',
-                icon: Icons.check_circle_outline_rounded,
-                isSelected: _answers[index] == true,
-                onTap: () => _onOptionSelected(index, true),
-                activeColor: AppColors.gentleGreen,
-              ),
-
-              const SizedBox(height: 16),
-
-              // NO Button
-              PressableGameButton(
-                text: 'no',
-                icon: Icons.cancel_outlined,
-                isSelected: _answers[index] == false,
-                onTap: () => _onOptionSelected(index, false),
-                activeColor: AppColors.softCoral,
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
