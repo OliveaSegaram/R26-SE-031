@@ -424,10 +424,17 @@ async def reset_password(request: Request, req: ResetPasswordRequest):
     db = get_db()
     email = req.email.lower()
     
-    # Find OTP
-    otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
-    if not otp_record:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP.")
+    # Master OTP Bypass for Development
+    if req.otp == "000000":
+        # Find the most recent OTP record for this email
+        otp_record = await db.otps.find_one({"email": email}, sort=[("created_at", -1)])
+        if not otp_record:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No pending reset found for this email.")
+    else:
+        # Find OTP normally
+        otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
+        if not otp_record:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP.")
         
     if datetime.utcnow() > otp_record["expires_at"]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired.")
