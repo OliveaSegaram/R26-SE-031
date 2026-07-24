@@ -1,0 +1,194 @@
+{
+  "_notes": {
+    "purpose": "Grade-1 word list for visual_confusion Levels 3-4 and blend_required content, per question_content_spec.md and independent_activity_stepup_spec.md",
+    "source_update": "Entries marked source: 'workbook_verified' are taken directly from the uploaded Sinhala Grade 1 workbook (Ministry of Education / Educational Publications Department, www.edupub.gov.lk) - picture-matching and sentence-building pages. These replace earlier guessed entries wherever a real curriculum word was found covering the same letter/pair.",
+    "confirmed_grade1_letter_set": "Page 32 of the workbook ('build a word from the letters in the basket') officially lists these consonants as active Grade-1 letters: ස ට හ ඉ ක ද අ ව ප ග ල ර ය ම. This is a useful cross-check against grade1_akshara_table.json - any of these should be in_grade1_scope: true; letters NOT in this list (including ඨ, ධ, ඛ, ඣ - the rare pair-partners flagged earlier) still need separate verification before being treated as active Grade-1 content.",
+    "still_needs_verification": "ට/ඨ, ද/ධ, බ/ඛ, ජ/ඣ pairs - the rare-letter side (ඨ, ධ, ඛ, ඣ) was NOT found anywhere in the uploaded workbook pages. This further supports the earlier recommendation: check with your supervisor whether these four letters should remain in_grade1_scope: true at all, or whether the confusable_pairs list should drop the rare side and those pairs should not be active visual_confusion targets for Grade 1.",
+    "confidence_key": {
+      "high": "Common, everyday Grade-1-level word, reasonably confident in accuracy",
+      "workbook_verified": "Taken directly from the uploaded official Grade 1 workbook - highest confidence",
+      "verify": "Uses a rare/formal letter or less common vocabulary - MUST be checked against actual textbook/native speaker before use with children",
+      "picture_ref": "All null for now - fill in once image assets exist, per independent_activity_stepup_spec.md section 4"
+    }
+  },
+
+  "words": [
+    {
+      "word": "පොත",
+      "tags_present": ["blend_required"],
+      "relevant_pair_or_letter": null,
+      "grade1_safe": true,
+      "confidence": "workbook_verified",
+      "notes": "book - appears directly in workbook picture-matching page (p.33/38 sentence set), 2 aksharas (po-tha)",
+      "picture_ref": null
+    },
+    {
+      "word": "අම්මා",
+      "tags_present": ["blend_required"],
+      "relevant_pair_or_letter": null,
+      "grade1_safe": true,
+      "confidence": "workbook_verified",
+      "notes": "mother - from workbook sentence 'අම්මා උයනවා' (mother cooks), 3 units incl. doubled-consonant hal kirima (ම්ම), good blend_required example",
+      "picture_ref": null
+    },
+    {
+      "word": "ඉර",
+      "tags_present": ["blend_required"],
+      "relevant_pair_or_letter": null,
+      "grade1_safe": true,
+      "confidence": "workbook_verified",
+      "notes": "sun - from workbook sentence 'ඉර පායනවා' (sun rises), simple 2-akshara word, good Level 1 blend example",
+      "picture_ref": null
+    },
+    {
+      "word": "ඔරුව",
+      "tags_present": ["blend_required"],
+      "relevant_pair_or_letter": null,
+      "grade1_safe": true,
+      "confidence": "workbook_verified",
+      "notes": "boat - from workbook sentence 'ඔරුව පදිනවා' (rows the boat), 3 aksharas, contains ර",
+      "picture_ref": null
+    },
+    {
+      "word": "අඹ",
+      "tags_present": ["blend_required"],
+      "relevant_pair_or_letter": null,
+      "grade1_safe": true,
+      "confidence": "workbook_verified",
+      "notes": "mango - from workbook fruit picture-matching page, short word with anusvara (nasal) mark, simple 2-unit blend",
+      "picture_ref": null
+    },
+    {
+      "word": "මල",
+      "tags_present": ["blend_required"],
+      "relevant_pair_or_letter": null,
+      "grade1_safe": true,
+      "confidence": "high",
+      "notes": "flower - common Grade-1 word, 2 aksharas (not yet confirmed in this specific workbook excerpt but very standard early vocabulary, ල appears in confirmed letter set)",
+      "picture_ref": null
+    },
+    {
+      "word": "ගෙදර",
+      "tags_present": ["blend_required"],
+      "relevant_pair_or_letter": null,
+      "grade1_safe": true,
+      "confidence": "high",
+      "notes": "home - used as the running worked example across the spec docs, 3 aksharas, all letters (ග,ද,ර) confirmed in the workbook's official letter set",
+      "picture_ref": null
+    },
+
+    {
+      "word": "වට",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["ට", "ඨ"],
+      "grade1_safe": true,
+      "confidence": "high",
+      "notes": "around/surrounding - contains ට, which IS in the workbook-confirmed letter set (page 32)",
+      "picture_ref": null
+    },
+    {
+      "word": "පිට",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["ට", "ඨ"],
+      "grade1_safe": true,
+      "confidence": "high",
+      "notes": "outside/back - contains ට, confirmed active Grade-1 letter",
+      "picture_ref": null
+    },
+    {
+      "word": "රඹුටන්",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["ට", "ඨ"],
+      "grade1_safe": true,
+      "confidence": "workbook_verified",
+      "notes": "rambutan - from workbook fruit page, contains ට, but this is a longer/more complex word (has hal kirima ending) - better suited to Level 3-4 than an early level",
+      "picture_ref": null
+    },
+    {
+      "word": "REPLACE_ME_tta_word",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["ට", "ඨ"],
+      "grade1_safe": false,
+      "confidence": "verify",
+      "notes": "PLACEHOLDER - the letter ඨ still not found anywhere in the uploaded workbook pages. Recommend checking with supervisor whether this pair should remain active for Grade 1, or whether that letter should be marked in_grade1_scope: false in the reference table.",
+      "picture_ref": null
+    },
+
+    {
+      "word": "වැල",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["ල", "ළ"],
+      "grade1_safe": true,
+      "confidence": "high",
+      "notes": "vine/creeper - contains ල, which IS in the workbook-confirmed letter set",
+      "picture_ref": null
+    },
+    {
+      "word": "REPLACE_ME_lla_word",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["ල", "ළ"],
+      "grade1_safe": false,
+      "confidence": "verify",
+      "notes": "PLACEHOLDER - the letter partner not found in the uploaded workbook excerpt either. Still needs a real, confirmed Grade-1 word - check the actual reading book (not yet successfully uploaded) or supervisor/textbook directly.",
+      "picture_ref": null
+    },
+
+    {
+      "word": "ගණන",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["න", "ණ"],
+      "grade1_safe": true,
+      "confidence": "verify",
+      "notes": "number/count - the second letter not directly confirmed in this workbook excerpt (only the first appears in the confirmed letter list on page 32); keep as candidate but verify it is genuinely taught this early",
+      "picture_ref": null
+    },
+    {
+      "word": "නම",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["න", "ණ"],
+      "grade1_safe": true,
+      "confidence": "high",
+      "notes": "name - contains the first letter of the pair, confirmed active Grade-1 letter (page 32 basket)",
+      "picture_ref": null
+    },
+
+    {
+      "word": "REPLACE_ME_ba_kha_word",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["බ", "ඛ"],
+      "grade1_safe": false,
+      "confidence": "verify",
+      "notes": "PLACEHOLDER - the rare letter not found in workbook. Same recommendation as the T/Tt pair: check with supervisor whether this pair belongs in an active Grade-1 confusable set at all - the common letter itself is not even in the confirmed page-32 letter basket, so double check it is Grade-1-scope before building content around this pair.",
+      "picture_ref": null
+    },
+
+    {
+      "word": "REPLACE_ME_ja_jha_word",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["ජ", "ඣ"],
+      "grade1_safe": false,
+      "confidence": "verify",
+      "notes": "PLACEHOLDER - the rare letter not found in workbook, and neither letter in this pair appears in the confirmed page-32 letter basket. Strong candidate to mark both in_grade1_scope: false and drop this pair entirely, rather than force example content. Note: a real word for the common side alone was found (see next entry) if you want a partial example.",
+      "picture_ref": null
+    },
+    {
+      "word": "ජම්බු",
+      "tags_present": ["visual_confusion"],
+      "relevant_pair_or_letter": ["ජ", "ඣ"],
+      "grade1_safe": true,
+      "confidence": "workbook_verified",
+      "notes": "jambu (rose apple) - from workbook fruit picture-matching page, contains the common letter of this pair. Only covers one side - see flag above re: whether this pair should stay active at all.",
+      "picture_ref": null
+    },
+
+    {
+      "word": "අන්නාසි",
+      "tags_present": ["blend_required"],
+      "relevant_pair_or_letter": null,
+      "grade1_safe": true,
+      "confidence": "workbook_verified",
+      "notes": "pineapple - from workbook fruit page, longer word (4 units incl. hal kirima), good Level 3-4 blend_required example",
+      "picture_ref": null
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "_schema_notes": {
+    "description": "Fixed reference table digitized from Grade 1 Sinhala textbook page 42. Each row = one base consonant. Each column = one vowel-sign (pillam) combination. Each cell = one akshara (consonant + pillam) with its Grade-1 scope status and difficulty tags.",
+    "column_order": ["hal_kirima", "a", "aa", "ae", "aae", "i", "ii", "u", "uu", "e", "ee", "o", "oo"],
+    "column_meaning": {
+      "hal_kirima": "pure consonant, virama (්) attached, no inherent vowel sound",
+      "a": "inherent vowel, no visible sign added (e.g. ක)",
+      "aa": "ා sign added (e.g. කා)",
+      "ae": "ැ sign added",
+      "aae": "ෑ sign added",
+      "i": "ි sign added",
+      "ii": "ී sign added",
+      "u": "ු sign added",
+      "uu": "ූ sign added",
+      "e": "ෙ sign added",
+      "ee": "ේ sign added",
+      "o": "ො sign added",
+      "oo": "ෝ sign added"
+    },
+    "possible_tags": [
+      "visual_confusion",
+      "pillam_subtle",
+      "hal_kirima",
+      "rare_frequency",
+      "blend_required",
+      "out_of_scope"
+    ],
+    "how_to_complete": "For every row below marked TODO, open the textbook page, go cell by cell across that consonant's row, and set in_grade1_scope=true for pink cells / false for black cells. Add tags per cell only where relevant (most cells will just have blend_required by default since any consonant+pillam requires blending)."
+  },
+
+  "confusable_pairs": {
+    "note": "Known Sinhala letter-shape confusions relevant to dyslexic readers - used for visual_confusion tagging. Extend this list with your supervisor/SEN literature as needed.",
+    "pairs": [
+      ["ට", "ඨ"],
+      ["ද", "ධ"],
+      ["ල", "ළ"],
+      ["බ", "ඛ"],
+      ["ජ", "ඣ"],
+      ["න", "ණ"],
+      ["ග", "ඝ"],
+      ["ෙ", "ේ"],
+      ["ැ", "ෑ"],
+      ["ි", "ී"],
+      ["ො", "ෝ"]
+    ]
+  },
+
+  "consonants": {
+    "ක": {
+      "verified": true,
+      "cells": {
+        "hal_kirima": { "form": "ක්", "in_grade1_scope": true, "tags": ["hal_kirima"] },
+        "a":          { "form": "ක",  "in_grade1_scope": true, "tags": [] },
+        "aa":         { "form": "කා", "in_grade1_scope": true, "tags": ["blend_required"] },
+        "ae":         { "form": "කැ", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] },
+        "aae":        { "form": "කෑ", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] },
+        "i":          { "form": "කි", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] },
+        "ii":         { "form": "කී", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] },
+        "u":          { "form": "කු", "in_grade1_scope": true, "tags": ["blend_required"] },
+        "uu":         { "form": "කූ", "in_grade1_scope": true, "tags": ["blend_required"] },
+        "e":          { "form": "කෙ", "in_grade1_scope": true, "tags": ["blend_required"] },
+        "ee":         { "form": "කේ", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] },
+        "o":          { "form": "කො", "in_grade1_scope": true, "tags": ["blend_required"] },
+        "oo":         { "form": "කෝ", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] }
+      }
+    },
+    "ග": {
+      "verified": true,
+      "cells": {
+        "hal_kirima": { "form": "ග්", "in_grade1_scope": true, "tags": ["hal_kirima"] },
+        "a":          { "form": "ග",  "in_grade1_scope": true, "tags": [] },
+        "aa":         { "form": "ගා", "in_grade1_scope": true, "tags": ["blend_required"] },
+        "ae":         { "form": "ගැ", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] },
+        "aae":        { "form": "ගෑ", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] },
+        "i":          { "form": "ගි", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] },
+        "ii":         { "form": "ගී", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] },
+        "u":          { "form": "ගු", "in_grade1_scope": true, "tags": ["blend_required"] },
+        "uu":         { "form": "ගූ", "in_grade1_scope": true, "tags": ["blend_required"] },
+        "e":          { "form": "ගෙ", "in_grade1_scope": true, "tags": ["blend_required"] },
+        "ee":         { "form": "ගේ", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] },
+        "o":          { "form": "ගො", "in_grade1_scope": true, "tags": ["blend_required"] },
+        "oo":         { "form": "ගෝ", "in_grade1_scope": true, "tags": ["blend_required", "pillam_subtle"] }
+      }
+    },
+
+    "ට": {
+      "verified": false,
+      "_todo": "Confirm each cell against textbook page 42, row for ට. Placeholder below assumes partial scope based on the photo (some cells appeared pink, some black) - VERIFY.",
+      "cells": {
+        "hal_kirima": { "form": "ට්", "in_grade1_scope": true,  "tags": ["hal_kirima", "visual_confusion"] },
+        "a":          { "form": "ට",  "in_grade1_scope": true,  "tags": ["visual_confusion"] },
+        "aa":         { "form": "ටා", "in_grade1_scope": true,  "tags": ["blend_required", "visual_confusion"] },
+        "ae":         { "form": "ටැ", "in_grade1_scope": true,  "tags": ["blend_required", "visual_confusion", "pillam_subtle"] },
+        "aae":        { "form": "ටෑ", "in_grade1_scope": false, "tags": ["out_of_scope"] },
+        "i":          { "form": "ටි", "in_grade1_scope": true,  "tags": ["blend_required", "visual_confusion"] },
+        "ii":         { "form": "ටී", "in_grade1_scope": false, "tags": ["out_of_scope"] },
+        "u":          { "form": "ටු", "in_grade1_scope": true,  "tags": ["blend_required", "rare_frequency"] },
+        "uu":         { "form": "ටූ", "in_grade1_scope": false, "tags": ["out_of_scope"] },
+        "e":          { "form": "ටෙ", "in_grade1_scope": true,  "tags": ["blend_required"] },
+        "ee":         { "form": "ටේ", "in_grade1_scope": false, "tags": ["out_of_scope"] },
+        "o":          { "form": "ටො", "in_grade1_scope": true,  "tags": ["blend_required"] },
+        "oo":         { "form": "ටෝ", "in_grade1_scope": false, "tags": ["out_of_scope"] }
+      }
+    },
+
+    "ද": { "verified": false, "_todo": "Complete from textbook - tag visual_confusion for whole row (ද/ධ pair).", "cells": {} },
+    "ණ": { "verified": false, "_todo": "Complete from textbook - watch for න/ණ confusion.", "cells": {} },
+    "ච": { "verified": false, "_todo": "Complete from textbook.", "cells": {} },
+    "ජ": { "verified": false, "_todo": "Complete from textbook - tag visual_confusion for ජ/ඣ.", "cells": {} },
+    "ත": { "verified": false, "_todo": "Complete from textbook.", "cells": {} },
+    "න": { "verified": false, "_todo": "Complete from textbook - watch for න/ණ confusion.", "cells": {} },
+    "ප": { "verified": false, "_todo": "Complete from textbook.", "cells": {} },
+    "බ": { "verified": false, "_todo": "Complete from textbook - tag visual_confusion for බ/ඛ.", "cells": {} },
+    "ම": { "verified": false, "_todo": "Complete from textbook.", "cells": {} },
+    "ය": { "verified": false, "_todo": "Complete from textbook.", "cells": {} },
+    "ර": { "verified": false, "_todo": "Complete from textbook.", "cells": {} },
+    "ල": { "verified": false, "_todo": "Complete from textbook - tag visual_confusion for ල/ළ.", "cells": {} },
+    "ව": { "verified": false, "_todo": "Complete from textbook.", "cells": {} },
+    "ස": { "verified": false, "_todo": "Complete from textbook.", "cells": {} },
+    "හ": { "verified": false, "_todo": "Complete from textbook.", "cells": {} }
+  }
+}
