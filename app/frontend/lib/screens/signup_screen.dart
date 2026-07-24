@@ -132,31 +132,43 @@ class _SignUpScreenState extends State<SignUpScreen>
                 children: [
                   const SizedBox(height: 12),
 
-                  // Back button
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardSurface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderLight),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.calmBlueDark.withValues(alpha: 0.15),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                            spreadRadius: -2,
+                  // Header Row with Back Button and Demo Bug
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: AppColors.cardSurface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.borderLight),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.calmBlueDark.withValues(alpha: 0.15),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                                spreadRadius: -2,
+                              ),
+                            ],
                           ),
-                        ],
+                          child: const Icon(Icons.arrow_back_ios_new_rounded,
+                              color: AppColors.calmBlueDark, size: 20),
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: AppColors.textPrimary,
-                        size: 22,
+                      // 1-Click Demo Bypass Button
+                      IconButton(
+                        icon: const Icon(Icons.bug_report, color: AppColors.textHint),
+                        onPressed: () {
+                          _nameController.text = "Demo User";
+                          _emailController.text = "demo_${DateTime.now().millisecondsSinceEpoch}@adaptedmind.com";
+                          _passwordController.text = "password123";
+                          _onSignUp();
+                        },
                       ),
-                    ),
+                    ],
                   ),
 
                   const SizedBox(height: 20),
