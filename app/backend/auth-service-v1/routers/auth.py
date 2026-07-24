@@ -17,7 +17,8 @@ from schemas.auth import (
 )
 from services.auth_utils import (
     get_password_hash, verify_password,
-    create_access_token, create_refresh_token, verify_token, verify_google_token, verify_microsoft_token
+    create_access_token, create_refresh_token, verify_token, verify_google_token, verify_microsoft_token,
+    generate_otp, send_otp_email
 )
 from dependencies import get_current_user
 
