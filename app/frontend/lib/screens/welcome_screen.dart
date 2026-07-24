@@ -163,16 +163,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Adapted',
-                          style: AppTypography.heading(
-                            fontSize: 44,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                            height: 1.0,
-                          ),
-                        ),
-                        Text(
-                          'Mind',
+                          'Sipsara',
                           style: AppTypography.heading(
                             fontSize: 44,
                             fontWeight: FontWeight.w800,
