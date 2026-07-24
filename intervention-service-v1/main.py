@@ -4,12 +4,17 @@ intervention-service-v1/main.py
 C4 — Intelligent Intervention & Guidance Engine (IIGE)
 FastAPI application — Port 8013
 
-Endpoints:
-    POST /api/v1/intervention/check         → Stage check + payload
-    GET  /api/v1/intervention/sm2/schedule/{student_id}  → Today's review skills
-    POST /api/v1/intervention/sm2/update    → Update SM-2 after activity
-    POST /api/v1/intervention/rti_alert     → Log/retrieve Tier 3 alerts
-    POST /api/v1/students/initialize        → Initialize SM-2 for new student
+New rule-based pipeline (Grade-1 mobile):
+    POST /api/v1/intervention/trigger
+    POST /api/v1/intervention/cycle/start
+    POST /api/v1/intervention/cycle/respond
+    GET  /api/v1/intervention/mastery/{child_id}
+
+Legacy (kept for compatibility):
+    POST /api/v1/intervention/check
+    GET  /api/v1/intervention/sm2/schedule/{student_id}
+    POST /api/v1/intervention/sm2/update
+    POST /api/v1/students/initialize
     GET  /health
 """
 
@@ -19,21 +24,25 @@ import time
 import httpx
 from pathlib import Path
 from contextlib import asynccontextmanager
+from typing import Any, Dict, List, Optional, Union
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent))
 
 from shared.database import connect_to_mongo, close_mongo_connection
 from shared.schemas import (
-    InterventionCheckPayload, InterventionStageResponse, InterventionStage,
-    SM2UpdatePayload, SM2ScheduleResponse, ActivityType, ActivityContent, RTIAlert
+    InterventionCheckPayload,
+    SM2UpdatePayload, SM2ScheduleResponse,
 )
 from core.intervention_engine import InterventionEngine
 from core.sm2_scheduler import SM2Scheduler
-from core.stroke_scorer import score_stroke, accuracy_to_sm2_quality
+from core.stroke_scorer import score_stroke
+from core.pipeline import InterventionPipeline
+from core.tts import router as tts_router
 
 # ── Configuration ──────────────────────────────────────────────────────────
 C3_BASE_URL = os.getenv("C3_BASE_URL", "http://localhost:8012")
@@ -43,6 +52,37 @@ RTI_FAILURE_COUNT = int(os.getenv("RTI_TIER3_FAILURE_COUNT", "3"))
 # ── Engines ────────────────────────────────────────────────────────────────
 engine = InterventionEngine()
 scheduler = SM2Scheduler()
+pipeline = InterventionPipeline()
+
+
+# ── New C4 request models (Grade-1 mobile) ─────────────────────────────────
+class TriggerPayload(BaseModel):
+    child_id: str
+    word: str
+    audio_clip_ref: Optional[str] = None
+    reading_position: Optional[dict] = None
+    phonological_strain_index: float = Field(0.5, ge=0.0, le=1.0)
+    session_fatigue_index: float = Field(0.0, ge=0.0, le=1.0)
+    error_pattern_vector: List[int] = Field(default=[0, 0, 0, 0])
+    zone_hint: Optional[str] = Field(None, description="start|middle|end when audio unavailable")
+
+
+class CycleStartPayload(BaseModel):
+    child_id: str
+    tag: str
+    specific_instance: Union[List[str], str]
+    word: Optional[str] = None
+    cycle_mode: Optional[str] = None
+    session_fatigue_index: float = 0.0
+    localization_zone: Optional[str] = None
+    localization_confidence: Optional[float] = None
+    error_pattern_flags: Optional[List[str]] = None
+
+
+class CycleRespondPayload(BaseModel):
+    cycle_id: str
+    stage: str
+    response: Dict[str, Any] = Field(default_factory=dict)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -53,14 +93,35 @@ async def lifespan(app: FastAPI):
 # ── App ────────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="C4 — Intelligent Intervention & Guidance Engine (IIGE)",
-    description="Phonological intervention pipeline: syllable splitting, SM-2 scheduling, RTI escalation.",
-    version="2.0.0",
+    description=(
+        "Grade-1 Sinhala intervention: Unicode segmentation, struggle localization, "
+        "tag lookup, 5-stage audio activities (button/choice — no speech scoring)."
+    ),
+    version="3.0.0",
     lifespan=lifespan,
 )
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
+app.include_router(tts_router)
+
+
+# Direct TTS aliases (in case router reload misses) — same handlers
+@app.get("/api/v1/c4/tts")
+def tts_synthesize(
+    text: str,
+    lang: str = "si",
+    kind: str = "word",
+):
+    from core.tts import synthesize
+    return synthesize(text=text, lang=lang, kind=kind)
+
+
+@app.get("/api/v1/c4/tts/audio/{filename}")
+def tts_audio(filename: str):
+    from core.tts import serve_audio
+    return serve_audio(filename=filename)
 
 
 async def _fetch_mastery_from_c3(student_id: str) -> dict:
@@ -77,7 +138,68 @@ async def _fetch_mastery_from_c3(student_id: str) -> dict:
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "C4-IIGE"}
+    return {"status": "ok", "service": "C4-IIGE", "pipeline": "rule_based_v3"}
+
+
+# ── New Grade-1 rule-based pipeline ────────────────────────────────────────
+
+@app.post("/api/v1/intervention/trigger")
+async def intervention_trigger(payload: TriggerPayload):
+    """
+    Run pipeline A–D: strain gate → segment word → localize → tag lookup.
+    Returns {tag, engine, specific_instance, level, cycle_mode} for cycle/start.
+    """
+    result = await pipeline.trigger(
+        child_id=payload.child_id,
+        word=payload.word,
+        phonological_strain_index=payload.phonological_strain_index,
+        session_fatigue_index=payload.session_fatigue_index,
+        error_pattern_vector=payload.error_pattern_vector,
+        zone_hint=payload.zone_hint,
+        audio_clip_ref=payload.audio_clip_ref,
+        reading_position=payload.reading_position,
+    )
+    return result
+
+
+@app.post("/api/v1/intervention/cycle/start")
+async def intervention_cycle_start(payload: CycleStartPayload):
+    """Initialize 5-stage cycle; returns TEACH content for Flutter."""
+    return await pipeline.start_cycle(
+        child_id=payload.child_id,
+        tag=payload.tag,
+        specific_instance=payload.specific_instance,
+        word=payload.word,
+        cycle_mode=payload.cycle_mode,
+        session_fatigue_index=payload.session_fatigue_index,
+        localization_zone=payload.localization_zone,
+        localization_confidence=payload.localization_confidence,
+        error_pattern_flags=payload.error_pattern_flags,
+    )
+
+
+@app.post("/api/v1/intervention/cycle/respond")
+async def intervention_cycle_respond(payload: CycleRespondPayload):
+    """
+    Advance the cycle state machine.
+    For choice templates send {"correct": true/false} or {"choice_id": "..."}.
+    For echo/progressive send {"attempted": true/false} (voice-activity only).
+    """
+    result = await pipeline.respond_cycle(
+        cycle_id=payload.cycle_id,
+        stage=payload.stage,
+        response=payload.response,
+    )
+    if result.get("error") == "unknown_cycle":
+        raise HTTPException(status_code=404, detail="Unknown cycle_id")
+    return result
+
+
+@app.get("/api/v1/intervention/mastery/{child_id}")
+async def intervention_mastery(child_id: str):
+    """C4 per-tag BKT p_know map (separate from Component 3 BKT)."""
+    rows = await pipeline.mastery.get_map(child_id)
+    return {"child_id": child_id, "mastery": rows}
 
 
 @app.post("/api/v1/students/initialize")

@@ -48,6 +48,22 @@ class MockMongoCollection:
             return await self.insert_one(new_doc)
         return type('obj', (object,), {'modified_count': 0})()
 
+    def find(self, query=None):
+        query = query or {}
+
+        class _Cursor:
+            def __init__(self, docs):
+                self._docs = docs
+
+            async def to_list(self, length=100):
+                return self._docs[:length]
+
+        docs = []
+        for doc in self.data.values():
+            if all(doc.get(k) == v for k, v in query.items()):
+                docs.append(doc)
+        return _Cursor(docs)
+
 class MockMongoDB:
     """In-memory mock database with collection fallback."""
     def __init__(self):
