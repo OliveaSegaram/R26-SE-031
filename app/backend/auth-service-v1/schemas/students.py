@@ -14,7 +14,6 @@ class StudentCreate(BaseModel):
     username: str = Field(..., min_length=2, max_length=30)
     grade: str = "Grade 1"  # Locked to Grade 1 for this app
     daily_limit: str = "No Limit"
-    parent_password: str
     assessment_results: list[bool] = []
     avatar_url: Optional[str] = None
     consent_given: bool = False

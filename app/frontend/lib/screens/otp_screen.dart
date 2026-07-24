@@ -5,6 +5,7 @@ import '../widgets/gradient_button.dart';
 import '../services/auth_service.dart';
 import 'reset_password_screen.dart';
 import 'select_student_screen.dart';
+import 'onboarding_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final String email;
@@ -24,10 +25,20 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   void initState() {
     super.initState();
-    // Request focus automatically
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) _focusNode.requestFocus();
-    });
+    // Request focus automatically, unless it's a demo bypass
+    if (widget.email.startsWith('demo_')) {
+      // Auto-fill and auto-verify for demo users
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _otpController.text = "000000";
+          _verifyOtp();
+        }
+      });
+    } else {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) _focusNode.requestFocus();
+      });
+    }
   }
 
   @override
@@ -57,10 +68,17 @@ class _OtpScreenState extends State<OtpScreen> {
           SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
         );
       } else {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const SelectStudentScreen()),
-          (route) => false,
-        );
+        if (widget.isSignup) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+            (route) => false,
+          );
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const SelectStudentScreen()),
+            (route) => false,
+          );
+        }
       }
     } else {
       // Forgot Password flow: pass OTP to ResetPasswordScreen

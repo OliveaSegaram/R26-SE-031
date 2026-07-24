@@ -243,6 +243,35 @@ class AuthService {
     }
   }
 
+  /// Connect a specialist to a student
+  Future<String?> connectSpecialist(String clinicCode, String studentId) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated';
+
+      final response = await http.post(
+        Uri.parse('https://adaptedmind-auth-api.onrender.com/api/v1/specialists/connect'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'clinic_code': clinicCode,
+          'student_id': studentId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Failed to connect specialist.';
+      }
+    } catch (e) {
+      return 'Network Error: $e';
+    }
+  }
+
   /// Helper to get the token
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
