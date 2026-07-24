@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
@@ -173,24 +174,29 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
               );
             },
             child: Container(
-              width: 48,
-              height: 48,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
                 color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderLight),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppColors.gentleGreen.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    color: AppColors.gentleGreen.withValues(alpha: 0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.settings_rounded,
-                color: AppColors.textPrimary,
-                size: 22,
+              child: const Center(
+                child: FaIcon(
+                  FontAwesomeIcons.userGroup,
+                  color: AppColors.gentleGreen,
+                  size: 22,
+                ),
               ),
             ),
           ),

@@ -89,7 +89,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.softCoral.withValues(alpha: 0.06),
+            AppColors.softCoral.withValues(alpha: 0.12),
             AppColors.cream,
           ],
           begin: Alignment.topCenter,
