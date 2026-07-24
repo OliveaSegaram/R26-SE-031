@@ -118,7 +118,7 @@ def send_otp_email(email_address: str, otp: str):
         
     try:
         msg = EmailMessage()
-        msg['Subject'] = "Your AdaptedMind Security Code"
+        msg['Subject'] = "Your Sipsara Security Code"
         msg['From'] = SMTP_EMAIL
         msg['To'] = email_address
         
@@ -126,7 +126,7 @@ def send_otp_email(email_address: str, otp: str):
         html_content = f"""
         <html>
             <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #4A90E2;">AdaptedMind Security Code</h2>
+                <h2 style="color: #4A90E2;">Sipsara Security Code</h2>
                 <p>Hello,</p>
                 <p>Please use the following 6-digit code to verify your account or reset your password.</p>
                 <div style="background-color: #F8F9FA; padding: 20px; text-align: center; border-radius: 8px; margin: 24px 0;">

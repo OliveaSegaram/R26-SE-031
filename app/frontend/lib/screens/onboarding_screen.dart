@@ -92,7 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildPage1() {
     return const OnboardingPageContent(
       imagePath: 'assets/images/solo_yellow_straight.png',
-      text: "Welcome to AdaptedMind!\nI'm Moko, your new learning buddy!",
+      text: "Welcome to Sipsara!\nI'm Moko, your new learning buddy!",
     );
   }
 
