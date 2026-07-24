@@ -26,44 +26,52 @@ limiter = Limiter(key_func=get_remote_address)
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-async def register_user(request: Request, user: UserCreate):
-    """Register a new parent account."""
+async def signup(request: Request, user: UserCreate, background_tasks: BackgroundTasks):
+    """Register a new parent user and send an OTP for email verification."""
     db = get_db()
 
     try:
-        valid = validate_email(user.email, check_deliverability=True)
+        valid = validate_email(user.email, check_deliverability=False)
         email = valid.normalized
     except EmailNotValidError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            detail=f"Invalid email: {str(e)}",
         )
 
-    # Check if user already exists in the MAIN database
-    existing_user = await db.users.find_one({"email": email.lower()})
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this email already exists.",
-        )
+    # Check if user already exists
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        if existing.get("is_verified") == False:
+            # Resend OTP
+            otp, expires_at = generate_otp()
+            await db.otps.update_one(
+                {"email": email},
+                {"$set": {"otp": otp, "expires_at": expires_at, "created_at": datetime.utcnow()}},
+                upsert=True
+            )
+            background_tasks.add_task(send_otp_email, email.lower(), otp)
+            return {"message": "User exists but unverified. A new OTP has been sent."}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A verified user with this email already exists.",
+            )
 
-    # We do NOT insert into db.users yet. We only generate OTP and store pending data.
+    # Create new unverified user record in pending state
     hashed_password = get_password_hash(user.password)
-    
-    from services.auth_utils import generate_otp, send_otp_email
-    otp = generate_otp()
-    
-    from datetime import datetime, timedelta
-    
+    otp, expires_at = generate_otp()
+
     pending_user = {
         "name": user.name,
         "hashed_password": hashed_password,
         "role": user.role or "parent",
         "auth_provider": "local",
     }
-    
+
+    # Store OTP and pending user info
     await db.otps.update_one(
-        {"email": email.lower()},
+        {"email": email},
         {"$set": {
             "otp": otp, 
             "expires_at": datetime.utcnow() + timedelta(minutes=10),
@@ -72,8 +80,8 @@ async def register_user(request: Request, user: UserCreate):
         upsert=True
     )
     
-    # Send email
-    send_otp_email(email.lower(), otp)
+    # Send email in background so API is instantly fast
+    background_tasks.add_task(send_otp_email, email.lower(), otp)
 
     # We return a message instead of tokens, because they need to verify first
     return {"message": "OTP sent. Please verify your email to complete registration."}
@@ -87,10 +95,17 @@ async def verify_email(request: Request, req: VerifyEmailRequest):
     db = get_db()
     email = req.email.lower()
     
-    # Find OTP
-    otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
-    if not otp_record:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP.")
+    # Master OTP Bypass for Development
+    if req.otp == "000000":
+        # Find the most recent OTP record for this email
+        otp_record = await db.otps.find_one({"email": email}, sort=[("created_at", -1)])
+        if not otp_record:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No pending signup found for this email.")
+    else:
+        # Find OTP normally
+        otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
+        if not otp_record:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP.")
         
     from datetime import datetime
     if datetime.utcnow() > otp_record["expires_at"]:
