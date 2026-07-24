@@ -6,6 +6,7 @@ Authentication endpoints: signup, login, refresh, me, change-password, verify-pa
 
 from fastapi import APIRouter, HTTPException, status, Depends, Request, BackgroundTasks
 from email_validator import validate_email, EmailNotValidError
+from datetime import datetime, timedelta
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -44,10 +45,10 @@ async def signup(request: Request, user: UserCreate, background_tasks: Backgroun
     if existing:
         if existing.get("is_verified") == False:
             # Resend OTP
-            otp, expires_at = generate_otp()
+            otp = generate_otp()
             await db.otps.update_one(
                 {"email": email},
-                {"$set": {"otp": otp, "expires_at": expires_at, "created_at": datetime.utcnow()}},
+                {"$set": {"otp": otp, "expires_at": datetime.utcnow() + timedelta(minutes=10), "created_at": datetime.utcnow()}},
                 upsert=True
             )
             background_tasks.add_task(send_otp_email, email.lower(), otp)
@@ -60,7 +61,7 @@ async def signup(request: Request, user: UserCreate, background_tasks: Backgroun
 
     # Create new unverified user record in pending state
     hashed_password = get_password_hash(user.password)
-    otp, expires_at = generate_otp()
+    otp = generate_otp()
 
     pending_user = {
         "name": user.name,
@@ -374,7 +375,7 @@ async def verify_user_password(request: VerifyPasswordRequest, current_user: dic
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
     return {"status": "success", "message": "Password is correct"}
 
-from datetime import datetime, timedelta
+# import moved to top
 from schemas.auth import ForgotPasswordRequest, ResetPasswordRequest
 
 @router.post("/forgot-password")
