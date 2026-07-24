@@ -4,7 +4,7 @@ routers/auth.py
 Authentication endpoints: signup, login, refresh, me, change-password, verify-password.
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends, Request
+from fastapi import APIRouter, HTTPException, status, Depends, Request, BackgroundTasks
 from email_validator import validate_email, EmailNotValidError
 from slowapi import Limiter
 from slowapi.util import get_remote_address
