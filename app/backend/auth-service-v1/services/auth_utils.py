@@ -8,9 +8,8 @@ from datetime import datetime, timedelta
 import jwt
 from google.oauth2 import id_token
 from google.auth.transport import requests
-from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES, SMTP_EMAIL, SMTP_PASSWORD
-import smtplib
-from email.message import EmailMessage
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES, RESEND_API_KEY
+import resend
 import urllib.request
 import json
 import bcrypt
@@ -104,23 +103,18 @@ def generate_otp(length: int = 6) -> str:
 
 def send_otp_email(email_address: str, otp: str):
     """
-    Send the OTP via email using SMTP. 
-    If SMTP credentials are not configured, fallback to console print.
+    Send the OTP via email using Resend API.
     """
-    # Always print to console for development visibility
     print(f"========== OTP FOR {email_address} ==========")
     print(f"Your password reset code is: {otp}")
     print(f"=======================================")
     
-    if not SMTP_EMAIL or not SMTP_PASSWORD:
-        print("Warning: SMTP_EMAIL or SMTP_PASSWORD not found in environment. Email not sent.")
+    if not RESEND_API_KEY:
+        print("Warning: RESEND_API_KEY not found in environment. Email not sent.")
         return
         
     try:
-        msg = EmailMessage()
-        msg['Subject'] = "Your AdaptedMind Security Code"
-        msg['From'] = SMTP_EMAIL
-        msg['To'] = email_address
+        resend.api_key = RESEND_API_KEY
         
         # HTML Content
         html_content = f"""
@@ -138,14 +132,15 @@ def send_otp_email(email_address: str, otp: str):
         </html>
         """
         
-        msg.add_alternative(html_content, subtype='html')
+        params = {
+            "from": "onboarding@resend.dev",
+            "to": [email_address],
+            "subject": "Your AdaptedMind Security Code",
+            "html": html_content,
+        }
         
-        # Send email using Gmail SMTP
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(SMTP_EMAIL, SMTP_PASSWORD)
-            server.send_message(msg)
-            
-        print(f"Successfully sent OTP email to {email_address}")
+        email = resend.Emails.send(params)
+        print(f"Successfully sent OTP email via Resend to {email_address}: {email}")
         
     except Exception as e:
-        print(f"Failed to send email to {email_address}: {e}")
+        print(f"Failed to send email to {email_address} via Resend: {e}")
