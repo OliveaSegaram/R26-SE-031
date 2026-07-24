@@ -18,8 +18,9 @@ REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 30  # 30 days
 # Server
 PORT = int(os.getenv("C5_PORT", "8015"))
 
-# Resend Email Configuration
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+# SMTP Email Configuration
+SMTP_EMAIL = os.getenv("SMTP_EMAIL")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 
 # CORS
 CORS_ORIGINS = ["*"]
