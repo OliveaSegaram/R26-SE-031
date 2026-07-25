@@ -152,4 +152,4 @@ def send_otp_email(email_address: str, otp: str):
     except Exception as e:
         print(f"Failed to send email to {email_address}: {e}")
         from fastapi import HTTPException
-        raise HTTPException(status_code=500, detail="Could not send OTP email. Please try again later.")
+        raise HTTPException(status_code=500, detail=f"Could not send OTP email: {str(e)}")
