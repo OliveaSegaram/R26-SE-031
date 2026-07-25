@@ -140,8 +140,10 @@ def send_otp_email(email_address: str, otp: str):
         
         msg.add_alternative(html_content, subtype='html')
         
-        # Send email using Gmail SMTP
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        # Send email using Gmail SMTP (Port 587 with STARTTLS is required on most Cloud Hosts like Render)
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.ehlo()
+            server.starttls()
             server.login(SMTP_EMAIL, SMTP_PASSWORD)
             server.send_message(msg)
             
