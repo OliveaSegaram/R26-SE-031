@@ -33,7 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     {'label': 'home', 'icon': FontAwesomeIcons.houseChimney, 'color': AppColors.calmBlue},
     {'label': 'shop', 'icon': FontAwesomeIcons.store, 'color': AppColors.softCoral},
     {'label': 'progress', 'icon': FontAwesomeIcons.trophy, 'color': AppColors.warmAmber},
-    {'label': 'settings', 'icon': FontAwesomeIcons.gear, 'color': AppColors.gentleGreen},
+    {'label': 'parents', 'icon': FontAwesomeIcons.userGroup, 'color': AppColors.gentleGreen},
   ];
 
   CurriculumIndex? _curriculum;

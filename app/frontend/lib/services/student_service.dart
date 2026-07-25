@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StudentService {
   static String get _baseUrl {
     // Connect directly to the Cloud Server!
-    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
+    return 'https://sipsara-auth-api.onrender.com/api/v1/auth';
   }
 
   Future<String?> _getAccessToken() async {

@@ -430,7 +430,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow('email support', 'support@adaptedmind.com'),
+          _buildInfoRow('email support', 'support@sipsara.com'),
           Divider(color: AppColors.borderLight, height: 24),
           _buildInfoRow('phone support', '1-800-123-4567'),
           const SizedBox(height: 24),

@@ -25,17 +25,17 @@ void main() async {
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]).then((_) {
-    runApp(const AdaptedMindApp());
+    runApp(const SipsaraApp());
   });
 }
 
-class AdaptedMindApp extends StatelessWidget {
-  const AdaptedMindApp({super.key});
+class SipsaraApp extends StatelessWidget {
+  const SipsaraApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'AdaptedMind',
+      title: 'Sipsara',
       debugShowCheckedModeBanner: false,
       navigatorKey: globalNavigatorKey,
       theme: AppTheme.lightTheme,

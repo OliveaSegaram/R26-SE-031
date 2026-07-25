@@ -163,7 +163,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                         icon: const Icon(Icons.bug_report, color: AppColors.textHint),
                         onPressed: () {
                           _nameController.text = "Demo User";
-                          _emailController.text = "demo_${DateTime.now().millisecondsSinceEpoch}@adaptedmind.com";
+                          _emailController.text = "demo_${DateTime.now().millisecondsSinceEpoch}@sipsara.com";
                           _passwordController.text = "password123";
                           _onSignUp();
                         },
@@ -176,7 +176,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                   // Character
                   Center(
                     child: MonsterCharacter(
-                      size: 100,
+                      size: 150,
                       animation: MonsterAnimation.excited,
                       imagePath: 'assets/images/solo_green.png',
                     ),

@@ -89,7 +89,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.softCoral.withValues(alpha: 0.06),
+            AppColors.softCoral.withValues(alpha: 0.12),
             AppColors.cream,
           ],
           begin: Alignment.topCenter,
@@ -361,7 +361,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow('email support', 'support@adaptedmind.com'),
+          _buildInfoRow('email support', 'support@sipsara.com'),
           Divider(color: AppColors.borderLight, height: 24),
           _buildInfoRow('phone support', '1-800-123-4567'),
           const SizedBox(height: 24),

@@ -105,6 +105,63 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     super.dispose();
   }
 
+  Widget _buildPremiumTitle() {
+    final String? sinhalaFontFamily = AppTypography.sinhala().fontFamily;
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // 1. Drop shadow for depth
+        Transform.translate(
+          offset: const Offset(0, 5),
+          child: Text(
+            'සිප්සර',
+            style: TextStyle(
+              fontFamily: sinhalaFontFamily,
+              fontSize: 68,
+              fontWeight: FontWeight.w900,
+              color: AppColors.calmBlue.withValues(alpha: 0.25),
+            ),
+          ),
+        ),
+        // 2. Thick Outer Border (Calm Blue to match the app theme)
+        Text(
+          'සිප්සර',
+          style: TextStyle(
+            fontFamily: sinhalaFontFamily,
+            fontSize: 68,
+            fontWeight: FontWeight.w900,
+            foreground: Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 10
+              ..color = AppColors.calmBlue,
+          ),
+        ),
+        // 3. Vibrant Inner Gradient Fill (Green/Yellow to pop against the blue)
+        ShaderMask(
+          shaderCallback: (bounds) {
+            return const LinearGradient(
+              colors: [Color(0xFFa8e063), Color(0xFF56ab2f)], // Vibrant leaf green
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ).createShader(
+              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+            );
+          },
+          child: Text(
+            'සිප්සර',
+            style: TextStyle(
+              fontFamily: sinhalaFontFamily,
+              fontSize: 68,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -159,29 +216,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         ),
                       );
                     },
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Adapted',
-                          style: AppTypography.heading(
-                            fontSize: 44,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                            height: 1.0,
-                          ),
-                        ),
-                        Text(
-                          'Mind',
-                          style: AppTypography.heading(
-                            fontSize: 44,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.calmBlue,
-                            height: 1.0,
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: _buildPremiumTitle(),
                   ),
 
                   // === MONSTER CHARACTERS GROUP ===
