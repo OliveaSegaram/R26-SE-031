@@ -155,7 +155,7 @@ class _SignInScreenState extends State<SignInScreen>
                   // Character
                   Center(
                     child: MonsterCharacter(
-                      size: 110,
+                      size: 160,
                       animation: MonsterAnimation.wave,
                       imagePath: 'assets/images/mascot_blue_jumping.png',
                     ),
