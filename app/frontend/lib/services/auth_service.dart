@@ -13,7 +13,7 @@ import '../main.dart'; // For globalNavigatorKey
 class AuthService {
   static String get _baseUrl {
     // Connect directly to the Cloud Server!
-    return 'https://sipsara-auth-api.onrender.com/api/v1/auth';
+    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
   }
 
   /// Returns null on success, or an error message string on failure.
