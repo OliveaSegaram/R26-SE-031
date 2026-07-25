@@ -90,7 +90,7 @@ class _Activity9SequenceState extends State<Activity9Sequence> {
             _isComplete = false;
           });
         } else {
-          Navigator.pop(context, true);
+          if (context.findAncestorStateOfType<TelemetryWrapperState>() != null) { context.findAncestorStateOfType<TelemetryWrapperState>()!.completeActivity(context); } else { Navigator.pop(context, 0); }
         }
       });
     } else {

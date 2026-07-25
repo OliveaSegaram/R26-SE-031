@@ -33,9 +33,9 @@ class _Activity2PatternState extends State<Activity2Pattern> {
   void initState() {
     super.initState();
     _rounds = widget.activityNode.rounds.map((roundData) {
-      final pattern = List<String>.from(roundData['pattern'] ?? []);
+      final pattern = List<String>.from(roundData['pattern'] ?? roundData['sequence'] ?? []);
       List<String> options = List<String>.from(roundData['options'] ?? []);
-      int correctOptionIndex = roundData['correct_option_index'] ?? 0;
+      int correctOptionIndex = roundData['correct_option_index'] ?? roundData['correct_index'] ?? 0;
       
       // Shuffle options and fix correct index
       final correctOption = options[correctOptionIndex];
@@ -78,7 +78,7 @@ class _Activity2PatternState extends State<Activity2Pattern> {
             _isCorrect = false;
           });
         } else {
-          Navigator.pop(context, true);
+          if (context.findAncestorStateOfType<TelemetryWrapperState>() != null) { context.findAncestorStateOfType<TelemetryWrapperState>()!.completeActivity(context); } else { Navigator.pop(context, 0); }
         }
       });
     } else {

@@ -37,8 +37,12 @@ class _Activity10ShadowMatchState extends State<Activity10ShadowMatch> {
 
   void _initRounds() {
     _rounds = widget.activityNode.rounds.map((roundData) {
-      List<String> items = List<String>.from(roundData['items'] ?? []);
-      List<String> shadows = List<String>.from(roundData['shadows'] ?? []);
+      List<String> items = roundData.containsKey('items')
+          ? List<String>.from(roundData['items'])
+          : List<String>.from(roundData['options'] ?? []);
+      List<String> shadows = roundData.containsKey('shadows')
+          ? List<String>.from(roundData['shadows'])
+          : List<String>.from(roundData['options'] ?? []);
       
       if (items.isEmpty) {
         items = ['🌳', '🐟', '🚌', '🏫'];
@@ -81,7 +85,7 @@ class _Activity10ShadowMatchState extends State<Activity10ShadowMatch> {
             });
             _setupRound();
           } else {
-            Navigator.pop(context, true);
+            if (context.findAncestorStateOfType<TelemetryWrapperState>() != null) { context.findAncestorStateOfType<TelemetryWrapperState>()!.completeActivity(context); } else { Navigator.pop(context, 0); }
           }
         });
       }

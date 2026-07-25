@@ -99,7 +99,7 @@ class _Activity5CategorySortingState extends State<Activity5CategorySorting> {
             });
             _setupCurrentRound();
           } else {
-            Navigator.pop(context, true);
+            if (context.findAncestorStateOfType<TelemetryWrapperState>() != null) { context.findAncestorStateOfType<TelemetryWrapperState>()!.completeActivity(context); } else { Navigator.pop(context, 0); }
           }
         });
       }

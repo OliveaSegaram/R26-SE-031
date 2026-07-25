@@ -46,8 +46,12 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
     const defaultEmojis = ['🌸', '🚗', '🐟', '🏫', '🍎', '🌳', '🚌', '🐦', '🐕', '🏠', '🦆', '🌲', '⚽', '🏀', '🍎', '🍌'];
     
     _rounds = widget.activityNode.rounds.map((roundData) {
-      List<String> targetItems = List<String>.from(roundData['targetItems'] ?? []);
-      List<String> allOptions = List<String>.from(roundData['allOptions'] ?? []);
+      List<String> targetItems = roundData.containsKey('targetItems') 
+          ? List<String>.from(roundData['targetItems']) 
+          : [roundData['correctOption'] as String? ?? '⭐'];
+      List<String> allOptions = roundData.containsKey('allOptions') 
+          ? List<String>.from(roundData['allOptions']) 
+          : List<String>.from(roundData['options'] ?? ['⭐', '🌺']);
       
       // Fallback if not provided in JSON
       if (targetItems.isEmpty) {
@@ -132,7 +136,7 @@ class _Activity4VisualMemoryState extends State<Activity4VisualMemory> {
             });
             _startTimer();
           } else {
-            Navigator.pop(context, true);
+            if (context.findAncestorStateOfType<TelemetryWrapperState>() != null) { context.findAncestorStateOfType<TelemetryWrapperState>()!.completeActivity(context); } else { Navigator.pop(context, 0); }
           }
         });
       } else {

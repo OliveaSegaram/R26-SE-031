@@ -288,6 +288,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         final nodeY = index * 120.0 + 20;
 
         bool isCompleted = ProgressService().isActivityCompleted(widget.skillMap.id, level.id);
+        int score = ProgressService().getActivityScore(widget.skillMap.id, level.id);
         bool isCurrent = index == currentLevel;
         bool isLocked = index > currentLevel;
         double additionalScale = 1.0;
@@ -309,7 +310,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         }
 
         return Positioned(
-          left: nodeX - 32,
+          left: nodeX - 40,
           top: nodeY,
           child: Transform.scale(
             scale: additionalScale,
@@ -319,6 +320,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
               isCompleted: isCompleted,
               isCurrent: isCurrent,
               isLocked: isLocked,
+              score: score,
             ),
           ),
         );
@@ -332,6 +334,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     required bool isCompleted,
     required bool isCurrent,
     required bool isLocked,
+    required int score,
   }) {
     final type = index == levels.length - 1 ? 'trophy' : 'star';
     final label = (index + 1).toString();
@@ -368,58 +371,98 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         }
       },
       child: SizedBox(
-        width: 64,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        width: 80,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
           children: [
-            // Pulse animation for current level
-            AnimatedBuilder(
-              animation: _pulseController,
-              builder: (context, child) {
-                // Only pulse if it's current and we aren't in the middle of unlocking it
-                final scale = (isCurrent && _animatingFromLevel == -1)
-                    ? 1.0 + (_pulseController.value * 0.08)
-                    : 1.0;
-                return Transform.scale(scale: scale, child: child);
-              },
-              child: Container(
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: borderColor, width: borderWidth),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      offset: const Offset(0, 6),
-                      blurRadius: 8,
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Pulse animation for current level
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    // Only pulse if it's current and we aren't in the middle of unlocking it
+                    final scale = (isCurrent && _animatingFromLevel == -1)
+                        ? 1.0 + (_pulseController.value * 0.08)
+                        : 1.0;
+                    return Transform.scale(scale: scale, child: child);
+                  },
+                  child: Container(
+                    width: size,
+                    height: size,
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: borderColor, width: borderWidth),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          offset: const Offset(0, 6),
+                          blurRadius: 8,
+                        ),
+                        if (isCurrent)
+                          BoxShadow(
+                            color: AppColors.warmAmber.withValues(alpha: 0.4),
+                            blurRadius: 20,
+                            spreadRadius: 4,
+                          ),
+                      ],
                     ),
-                    if (isCurrent)
-                      BoxShadow(
-                        color: AppColors.warmAmber.withValues(alpha: 0.4),
-                        blurRadius: 20,
-                        spreadRadius: 4,
-                      ),
-                  ],
+                    child: Center(
+                      child: isLocked
+                          ? Icon(Icons.lock_rounded, color: AppColors.borderLight, size: 24)
+                          : (isCompleted && type != 'trophy'
+                              ? const Icon(Icons.check_rounded, color: Colors.white, size: 28)
+                              : Text(
+                                  type == 'trophy' ? '🏆' : label,
+                                  style: AppTypography.button(
+                                    fontSize: type == 'star' || type == 'trophy' ? 22 : 24,
+                                    color: contentColor,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                )),
+                    ),
+                  ),
                 ),
-                child: Center(
-                  child: isLocked
-                      ? Icon(Icons.lock_rounded, color: AppColors.borderLight, size: 24)
-                      : (isCompleted && type != 'trophy'
-                          ? const Icon(Icons.check_rounded, color: Colors.white, size: 28)
-                          : Text(
-                              type == 'trophy' ? '🏆' : label,
-                              style: AppTypography.button(
-                                fontSize: type == 'star' || type == 'trophy' ? 22 : 24,
-                                color: contentColor,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            )),
+                const SizedBox(height: 12),
+              ],
+            ),
+            if (isCompleted || (isCurrent && score > 0))
+              Positioned(
+                bottom: 2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: borderColor, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star, color: Colors.white, size: 10),
+                      const SizedBox(width: 2),
+                      Text(
+                        '$score%',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
           ],
         ),
       ),
@@ -483,11 +526,19 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         MaterialPageRoute(builder: (context) => nextScreen),
       );
 
-      if (result == true && index == currentLevel) {
+      if (result != null && result is int) {
+        final currentScore = ProgressService().getActivityScore(widget.skillMap.id, levels[index].id);
+        final isCompleted = ProgressService().isActivityCompleted(widget.skillMap.id, levels[index].id);
+        
+        // Only overwrite score if higher, or if it was never completed
+        if (result > currentScore || !isCompleted) {
+          await ProgressService().saveActivityScore(widget.skillMap.id, levels[index].id, result);
+        }
+
         // Mark as completed persistently
         await ProgressService().markActivityCompleted(widget.skillMap.id, levels[index].id);
         
-        if (currentLevel < levels.length - 1) {
+        if (index == currentLevel && currentLevel < levels.length - 1) {
           setState(() {
             _animatingFromLevel = currentLevel;
             currentLevel++;

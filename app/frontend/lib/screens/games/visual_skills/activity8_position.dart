@@ -82,7 +82,7 @@ class _Activity8PositionState extends State<Activity8Position> {
             _isComplete = false;
           });
         } else {
-          Navigator.pop(context, true);
+          if (context.findAncestorStateOfType<TelemetryWrapperState>() != null) { context.findAncestorStateOfType<TelemetryWrapperState>()!.completeActivity(context); } else { Navigator.pop(context, 0); }
         }
       });
     } else {
