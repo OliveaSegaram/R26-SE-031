@@ -57,9 +57,16 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     TelemetryService().broadcastPointerEvent(details);
   }
 
+  int _totalScore = 0;
+  int _roundsCompletedTotal = 0;
+
   void completeRound(int score) {
     _stopwatch.stop();
     final latency = _stopwatch.elapsedMilliseconds;
+    
+    // Accumulate score
+    _totalScore += score;
+    _roundsCompletedTotal++;
     
     // Broadcast the round completion to all plugins (including Voice, Eye Tracking, etc)
     TelemetryService().broadcastRoundComplete(score, latency);
@@ -88,6 +95,14 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       _currentRound, 
       widget.activityNode.telemetryTags,
     );
+  }
+
+  void completeActivity(BuildContext context) {
+    int finalScore = 0;
+    if (_roundsCompletedTotal > 0) {
+      finalScore = (_totalScore / _roundsCompletedTotal).round();
+    }
+    Navigator.pop(context, finalScore);
   }
 
   @override

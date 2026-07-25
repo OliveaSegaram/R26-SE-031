@@ -2,46 +2,107 @@
   {
     "id": "skill_6",
     "title": "Reading \"Hal\" Letters",
-    "description": "Dynamic curriculum generated from contents.md",
+    "description": "Dynamic curriculum generated from contents.md with cognitive telemetry",
     "activities": [
       {
         "id": "act_1",
         "title": "Identify the Hal Letter",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "decoding",
+          "reading_fluency"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "Tap the Hal letter in `ගස්` (Tree-plural)."
+            "raw_text": "Tap the Hal letter in `ගස්` (Tree-plural).",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap the Hal letter in `මල්` (Flowers)."
+            "raw_text": "Tap the Hal letter in `මල්` (Flowers).",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap the Hal letter in `පත්` (Leaves)."
+            "raw_text": "Tap the Hal letter in `පත්` (Leaves).",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap the Hal letter in `ගල්` (Stones)."
+            "raw_text": "Tap the Hal letter in `ගල්` (Stones).",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap the Hal letter in `පන්` (Rushes/Reeds)."
+            "raw_text": "Tap the Hal letter in `පන්` (Rushes/Reeds).",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap the Hal letter in `බත්` (Rice)."
+            "raw_text": "Tap the Hal letter in `බත්` (Rice).",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap the Hal letter in `කිරිල්` (Bird - partial)."
+            "raw_text": "Tap the Hal letter in `කිරිල්` (Bird - partial).",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap the Hal letter in `බළල්` (Cat - partial)."
+            "raw_text": "Tap the Hal letter in `බළල්` (Cat - partial).",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap the Hal letter in `පාසල්` (Schools)."
+            "raw_text": "Tap the Hal letter in `පාසල්` (Schools).",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap the Hal letter in `පොත්` (Books)."
+            "raw_text": "Tap the Hal letter in `පොත්` (Books).",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       },
@@ -50,40 +111,100 @@
         "title": "Read Hal Words",
         "description": "",
         "telemetry_tags": [
-          "speaking",
-          "recognizing"
+          "decoding",
+          "reading_fluency"
         ],
-        "template_type": "reading_game",
+        "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "Tap & Read `ගස්`."
+            "raw_text": "Tap & Read `ගස්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap & Read `මල්`."
+            "raw_text": "Tap & Read `මල්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap & Read `පත්`."
+            "raw_text": "Tap & Read `පත්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap & Read `ගල්`."
+            "raw_text": "Tap & Read `ගල්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap & Read `පන්`."
+            "raw_text": "Tap & Read `පන්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap & Read `බත්`."
+            "raw_text": "Tap & Read `බත්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap & Read `සත්`."
+            "raw_text": "Tap & Read `සත්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap & Read `රන්`."
+            "raw_text": "Tap & Read `රන්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap & Read `පාසල්`."
+            "raw_text": "Tap & Read `පාසල්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Tap & Read `පොත්`."
+            "raw_text": "Tap & Read `පොත්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       },
@@ -92,39 +213,100 @@
         "title": "Picture to Hal Word",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "decoding",
+          "reading_fluency"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "Picture of Trees -> Select `ගස්`."
+            "raw_text": "Picture of Trees -> Select `ගස්`.",
+            "options": [
+              "ගස්",
+              "Other"
+            ],
+            "correctOption": "ගස්",
+            "correct_index": 0
           },
           {
-            "raw_text": "Picture of Flowers -> Select `මල්`."
+            "raw_text": "Picture of Flowers -> Select `මල්`.",
+            "options": [
+              "මල්",
+              "Other"
+            ],
+            "correctOption": "මල්",
+            "correct_index": 0
           },
           {
-            "raw_text": "Picture of Leaves -> Select `පත්`."
+            "raw_text": "Picture of Leaves -> Select `පත්`.",
+            "options": [
+              "පත්",
+              "Other"
+            ],
+            "correctOption": "පත්",
+            "correct_index": 0
           },
           {
-            "raw_text": "Picture of Stones -> Select `ගල්`."
+            "raw_text": "Picture of Stones -> Select `ගල්`.",
+            "options": [
+              "ගල්",
+              "Other"
+            ],
+            "correctOption": "ගල්",
+            "correct_index": 0
           },
           {
-            "raw_text": "Picture of Rice -> Select `බත්`."
+            "raw_text": "Picture of Rice -> Select `බත්`.",
+            "options": [
+              "බත්",
+              "Other"
+            ],
+            "correctOption": "බත්",
+            "correct_index": 0
           },
           {
-            "raw_text": "Picture of Gold -> Select `රන්`."
+            "raw_text": "Picture of Gold -> Select `රන්`.",
+            "options": [
+              "රන්",
+              "Other"
+            ],
+            "correctOption": "රන්",
+            "correct_index": 0
           },
           {
-            "raw_text": "Picture of Schools -> Select `පාසල්`."
+            "raw_text": "Picture of Schools -> Select `පාසල්`.",
+            "options": [
+              "පාසල්",
+              "Other"
+            ],
+            "correctOption": "පාසල්",
+            "correct_index": 0
           },
           {
-            "raw_text": "Picture of Books -> Select `පොත්`."
+            "raw_text": "Picture of Books -> Select `පොත්`.",
+            "options": [
+              "පොත්",
+              "Other"
+            ],
+            "correctOption": "පොත්",
+            "correct_index": 0
           },
           {
-            "raw_text": "Match 4 pictures to 4 Hal words."
+            "raw_text": "Match 4 pictures to 4 Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Match 6 pictures to 6 Hal words."
+            "raw_text": "Match 6 pictures to 6 Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       },
@@ -133,129 +315,90 @@
         "title": "Missing Hal Letter",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "decoding",
+          "reading_fluency"
         ],
         "template_type": "missing_picture_game",
         "rounds": [
           {
             "raw_text": "`ග _` (Trees) -> Select `ස්`.",
             "sequence": [
-              "`ග",
-              "_`"
+              null,
+              "Item"
             ],
-            "options": [
-              "?",
-              "!"
-            ],
-            "correct_option_index": 0
+            "correctOption": "Item"
           },
           {
             "raw_text": "`ම _` (Flowers) -> Select `ල්`.",
             "sequence": [
-              "`ම",
-              "_`"
+              null,
+              "Item"
             ],
-            "options": [
-              "?",
-              "!"
-            ],
-            "correct_option_index": 0
+            "correctOption": "Item"
           },
           {
             "raw_text": "`ප _` (Leaves) -> Select `ත්`.",
             "sequence": [
-              "`ප",
-              "_`"
+              null,
+              "Item"
             ],
-            "options": [
-              "?",
-              "!"
-            ],
-            "correct_option_index": 0
+            "correctOption": "Item"
           },
           {
             "raw_text": "`ග _` (Stones) -> Select `ල්`.",
             "sequence": [
-              "`ග",
-              "_`"
+              null,
+              "Item"
             ],
-            "options": [
-              "?",
-              "!"
-            ],
-            "correct_option_index": 0
+            "correctOption": "Item"
           },
           {
             "raw_text": "`බ _` (Rice) -> Select `ත්`.",
             "sequence": [
-              "`බ",
-              "_`"
+              null,
+              "Item"
             ],
-            "options": [
-              "?",
-              "!"
-            ],
-            "correct_option_index": 0
+            "correctOption": "Item"
           },
           {
             "raw_text": "`ර _` (Gold) -> Select `න්`.",
             "sequence": [
-              "`ර",
-              "_`"
+              null,
+              "Item"
             ],
-            "options": [
-              "?",
-              "!"
-            ],
-            "correct_option_index": 0
+            "correctOption": "Item"
           },
           {
             "raw_text": "`පාස _` (Schools) -> Select `ල්`.",
             "sequence": [
-              "`පාස",
-              "_`"
+              null,
+              "Item"
             ],
-            "options": [
-              "?",
-              "!"
-            ],
-            "correct_option_index": 0
+            "correctOption": "Item"
           },
           {
             "raw_text": "`පො _` (Books) -> Select `ත්`.",
             "sequence": [
-              "`පො",
-              "_`"
+              null,
+              "Item"
             ],
-            "options": [
-              "?",
-              "!"
-            ],
-            "correct_option_index": 0
+            "correctOption": "Item"
           },
           {
             "raw_text": "`මා _` (Fish-plural) -> Select `ළු` (Trick - no hal).",
             "sequence": [
-              "`මා",
-              "_`"
+              null,
+              "Item"
             ],
-            "options": [
-              "?",
-              "!"
-            ],
-            "correct_option_index": 0
+            "correctOption": "Item"
           },
           {
             "raw_text": "`ස _` (Truth) -> Select `ත්`.",
             "sequence": [
-              "`ස",
-              "_`"
+              null,
+              "Item"
             ],
-            "options": [
-              "?",
-              "!"
-            ],
-            "correct_option_index": 0
+            "correctOption": "Item"
           }
         ]
       },
@@ -264,39 +407,100 @@
         "title": "Build the Hal Word",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "decoding",
+          "reading_fluency"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "Trees: Drag `ග`, `ස්`."
+            "raw_text": "Trees: Drag `ග`, `ස්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Flowers: Drag `ම`, `ල්`."
+            "raw_text": "Flowers: Drag `ම`, `ල්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Leaves: Drag `ප`, `ත්`."
+            "raw_text": "Leaves: Drag `ප`, `ත්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Stones: Drag `ග`, `ල්`."
+            "raw_text": "Stones: Drag `ග`, `ල්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Rice: Drag `බ`, `ත්`."
+            "raw_text": "Rice: Drag `බ`, `ත්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Gold: Drag `ර`, `න්`."
+            "raw_text": "Gold: Drag `ර`, `න්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Schools: Drag `පා`, `ස`, `ල්`."
+            "raw_text": "Schools: Drag `පා`, `ස`, `ල්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Books: Drag `පො`, `ත්`."
+            "raw_text": "Books: Drag `පො`, `ත්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Cats: Drag `බ`, `ළ`, `ල්`."
+            "raw_text": "Cats: Drag `බ`, `ළ`, `ල්`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Dogs: Drag `බ`, `ල්`, `ලො`."
+            "raw_text": "Dogs: Drag `බ`, `ල්`, `ලො`.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       },
@@ -305,39 +509,100 @@
         "title": "Odd One Out",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "decoding",
+          "reading_fluency"
         ],
         "template_type": "odd_one_out_game",
         "rounds": [
           {
-            "raw_text": "`ගස් මල් ගස පත්` -> Find `ගස` (no hal)."
+            "raw_text": "`ගස් මල් ගස පත්` -> Find `ගස` (no hal).",
+            "options": [
+              "ගස` (no hal)",
+              "Other"
+            ],
+            "correctOption": "ගස` (no hal)",
+            "correct_index": 0
           },
           {
-            "raw_text": "`මල ගල් බත් රන්` -> Find `මල` (no hal)."
+            "raw_text": "`මල ගල් බත් රන්` -> Find `මල` (no hal).",
+            "options": [
+              "මල` (no hal)",
+              "Other"
+            ],
+            "correctOption": "මල` (no hal)",
+            "correct_index": 0
           },
           {
-            "raw_text": "`පොත් පාසල පාසල් ගස්` -> Find `පාසල`."
+            "raw_text": "`පොත් පාසල පාසල් ගස්` -> Find `පාසල`.",
+            "options": [
+              "පාසල",
+              "Other"
+            ],
+            "correctOption": "පාසල",
+            "correct_index": 0
           },
           {
-            "raw_text": "`බත් ගස් මල් අත` -> Find `අත`."
+            "raw_text": "`බත් ගස් මල් අත` -> Find `අත`.",
+            "options": [
+              "අත",
+              "Other"
+            ],
+            "correctOption": "අත",
+            "correct_index": 0
           },
           {
-            "raw_text": "`පන් රන් බස ගල්` -> Find `බස`."
+            "raw_text": "`පන් රන් බස ගල්` -> Find `බස`.",
+            "options": [
+              "බස",
+              "Other"
+            ],
+            "correctOption": "බස",
+            "correct_index": 0
           },
           {
-            "raw_text": "`මල් ගස් පත් බත් ගස` -> Find `ගස`."
+            "raw_text": "`මල් ගස් පත් බත් ගස` -> Find `ගස`.",
+            "options": [
+              "ගස",
+              "Other"
+            ],
+            "correctOption": "ගස",
+            "correct_index": 0
           },
           {
-            "raw_text": "`පොත් ගල් මල රන්` -> Find `මල`."
+            "raw_text": "`පොත් ගල් මල රන්` -> Find `මල`.",
+            "options": [
+              "මල",
+              "Other"
+            ],
+            "correctOption": "මල",
+            "correct_index": 0
           },
           {
-            "raw_text": "`පාසල් ගස් මල් අත` -> Find `අත`."
+            "raw_text": "`පාසල් ගස් මල් අත` -> Find `අත`.",
+            "options": [
+              "අත",
+              "Other"
+            ],
+            "correctOption": "අත",
+            "correct_index": 0
           },
           {
-            "raw_text": "`බත් පන් බස ගල්` -> Find `බස`."
+            "raw_text": "`බත් පන් බස ගල්` -> Find `බස`.",
+            "options": [
+              "බස",
+              "Other"
+            ],
+            "correctOption": "බස",
+            "correct_index": 0
           },
           {
-            "raw_text": "Grid of 15 Hal words and 1 non-Hal word."
+            "raw_text": "Grid of 15 Hal words and 1 non-Hal word.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       },
@@ -346,39 +611,102 @@
         "title": "Sorting Words",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "logical_reasoning",
+          "decoding",
+          "spatial_awareness",
+          "reading_fluency"
         ],
         "template_type": "sorting_game",
         "rounds": [
           {
-            "raw_text": "Sort 2 Hal words vs 2 Non-Hal words."
+            "raw_text": "Sort 2 Hal words vs 2 Non-Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sort 3 Hal words vs 3 Non-Hal words."
+            "raw_text": "Sort 3 Hal words vs 3 Non-Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sort 4 Hal words vs 4 Non-Hal words."
+            "raw_text": "Sort 4 Hal words vs 4 Non-Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sort 5 Hal words vs 5 Non-Hal words."
+            "raw_text": "Sort 5 Hal words vs 5 Non-Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sort 6 Hal words vs 6 Non-Hal words."
+            "raw_text": "Sort 6 Hal words vs 6 Non-Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sort 7 Hal words vs 7 Non-Hal words."
+            "raw_text": "Sort 7 Hal words vs 7 Non-Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sort 8 Hal words vs 8 Non-Hal words."
+            "raw_text": "Sort 8 Hal words vs 8 Non-Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sort 9 Hal words vs 9 Non-Hal words."
+            "raw_text": "Sort 9 Hal words vs 9 Non-Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sort 10 Hal words vs 10 Non-Hal words."
+            "raw_text": "Sort 10 Hal words vs 10 Non-Hal words.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sort 15 words rapidly into Hal vs Non-Hal bins."
+            "raw_text": "Sort 15 words rapidly into Hal vs Non-Hal bins.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       },
@@ -387,39 +715,101 @@
         "title": "Hal Word Memory",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "decoding",
+          "working_memory",
+          "reading_fluency"
         ],
         "template_type": "memory_game",
         "rounds": [
           {
-            "raw_text": "Show 2 Hal words for 3s. Recall."
+            "raw_text": "Show 2 Hal words for 3s. Recall.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Show 3 Hal words for 4s. Recall."
+            "raw_text": "Show 3 Hal words for 4s. Recall.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Show 4 Hal words for 5s. Recall."
+            "raw_text": "Show 4 Hal words for 5s. Recall.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Show 5 Hal words for 6s. Recall."
+            "raw_text": "Show 5 Hal words for 6s. Recall.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Show 6 Hal words for 7s. Recall."
+            "raw_text": "Show 6 Hal words for 7s. Recall.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Show 7 Hal words for 8s. Recall."
+            "raw_text": "Show 7 Hal words for 8s. Recall.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Show 8 Hal words for 9s. Recall."
+            "raw_text": "Show 8 Hal words for 9s. Recall.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Show 9 Hal words for 10s. Recall."
+            "raw_text": "Show 9 Hal words for 10s. Recall.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Show 10 Hal words for 12s. Recall."
+            "raw_text": "Show 10 Hal words for 12s. Recall.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Show 10 Hal words for 10s. Recall perfectly."
+            "raw_text": "Show 10 Hal words for 10s. Recall perfectly.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       },
@@ -428,39 +818,203 @@
         "title": "Hal Word Search",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "decoding",
+          "visual_discrimination",
+          "reading_fluency"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "Find `ගස්` in a 4x4 grid."
+            "raw_text": "Find `ගස්` in a 4x4 grid.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Find `මල්` in a 4x4 grid."
+            "raw_text": "Find `මල්` in a 4x4 grid.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Find `පත්` in a 5x5 grid."
+            "raw_text": "Find `පත්` in a 5x5 grid.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Find `ගල්` in a 5x5 grid."
+            "raw_text": "Find `ගල්` in a 5x5 grid.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Find `බත්` in a 6x6 grid."
+            "raw_text": "Find `බත්` in a 6x6 grid.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Find `රන්` in a 6x6 grid."
+            "raw_text": "Find `රන්` in a 6x6 grid.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Find `පාසල්` in a 7x7 grid."
+            "raw_text": "Find `පාසල්` in a 7x7 grid.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Find 2 Hal words in an 8x8 grid."
+            "raw_text": "Find 2 Hal words in an 8x8 grid.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Find 3 Hal words in a 9x9 grid."
+            "raw_text": "Find 3 Hal words in a 9x9 grid.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Find 5 Hal words in a 10x10 grid."
+            "raw_text": "Find 5 Hal words in a 10x10 grid.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
+          }
+        ]
+      },
+      {
+        "id": "act_10",
+        "title": "Timed Rapid Hal Reading",
+        "description": "",
+        "telemetry_tags": [
+          "decoding",
+          "reading_fluency"
+        ],
+        "template_type": "generic_mcq_game",
+        "rounds": [
+          {
+            "raw_text": "Read aloud 4 Hal words in 10s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
+          },
+          {
+            "raw_text": "Read aloud 6 Hal words in 10s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
+          },
+          {
+            "raw_text": "Read aloud 8 Hal words in 15s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
+          },
+          {
+            "raw_text": "Read aloud 10 Hal words in 15s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
+          },
+          {
+            "raw_text": "Read aloud 12 Hal words in 20s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
+          },
+          {
+            "raw_text": "Read aloud 15 Hal words in 20s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
+          },
+          {
+            "raw_text": "Read aloud 18 Hal words in 25s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
+          },
+          {
+            "raw_text": "Read aloud 20 Hal words in 25s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
+          },
+          {
+            "raw_text": "Read aloud 25 Hal words in 30s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
+          },
+          {
+            "raw_text": "Read aloud 30 Hal words in 40s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       }

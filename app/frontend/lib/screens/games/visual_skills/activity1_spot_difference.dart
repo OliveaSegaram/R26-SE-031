@@ -90,7 +90,7 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
           });
         } else {
           // Finished all rounds
-          Navigator.pop(context, true);
+          if (context.findAncestorStateOfType<TelemetryWrapperState>() != null) { context.findAncestorStateOfType<TelemetryWrapperState>()!.completeActivity(context); } else { Navigator.pop(context, 0); }
         }
       });
     } else {

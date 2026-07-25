@@ -2,32 +2,62 @@
   {
     "id": "skill_10",
     "title": "Reading Comprehension",
-    "description": "Dynamic curriculum generated from contents.md",
+    "description": "Dynamic curriculum generated from contents.md with cognitive telemetry",
     "activities": [
       {
         "id": "act_1",
         "title": "Short Passage Decoding",
         "description": "",
         "telemetry_tags": [
-          "speaking",
-          "recognizing"
+          "reading_fluency",
+          "reading_comprehension"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "Read aloud: \"අද ළමයා පාසලට ගියේය.\" (2 rounds)"
+            "raw_text": "Read aloud: \"අද ළමයා පාසලට ගියේය.\" (2 rounds)",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read aloud: \"ගුරුතුමිය අලුත් කතාවක් කියා දුන්නා.\" (2 rounds)"
+            "raw_text": "Read aloud: \"ගුරුතුමිය අලුත් කතාවක් කියා දුන්නා.\" (2 rounds)",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read aloud: \"ළමයි සතුටින් ඇසූහ.\" (2 rounds)"
+            "raw_text": "Read aloud: \"ළමයි සතුටින් ඇසූහ.\" (2 rounds)",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read aloud: \"පසුව ඔවුන් පොත් කියවූහ.\" (2 rounds)"
+            "raw_text": "Read aloud: \"පසුව ඔවුන් පොත් කියවූහ.\" (2 rounds)",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read aloud: \"අවසානයේ ඔවුන් ගෙදර ගියහ.\" (2 rounds)"
+            "raw_text": "Read aloud: \"අවසානයේ ඔවුන් ගෙදර ගියහ.\" (2 rounds)",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       },
@@ -36,39 +66,100 @@
         "title": "Identify the Main Character",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "reading_fluency",
+          "reading_comprehension"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "Passage about a child (ළමයා). -> Tap picture of child."
+            "raw_text": "Passage about a child (ළමයා). -> Tap picture of child.",
+            "options": [
+              "picture of child",
+              "Other"
+            ],
+            "correctOption": "picture of child",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage about a mother (අම්මා). -> Tap picture of mother."
+            "raw_text": "Passage about a mother (අම්මා). -> Tap picture of mother.",
+            "options": [
+              "picture of mother",
+              "Other"
+            ],
+            "correctOption": "picture of mother",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage about a squirrel (ලේනා). -> Tap picture of squirrel."
+            "raw_text": "Passage about a squirrel (ලේනා). -> Tap picture of squirrel.",
+            "options": [
+              "picture of squirrel",
+              "Other"
+            ],
+            "correctOption": "picture of squirrel",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage about a bird (කුරුල්ලා). -> Tap picture of bird."
+            "raw_text": "Passage about a bird (කුරුල්ලා). -> Tap picture of bird.",
+            "options": [
+              "picture of bird",
+              "Other"
+            ],
+            "correctOption": "picture of bird",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage about a teacher (ගුරුතුමිය). -> Tap picture of teacher."
+            "raw_text": "Passage about a teacher (ගුරුතුමිය). -> Tap picture of teacher.",
+            "options": [
+              "picture of teacher",
+              "Other"
+            ],
+            "correctOption": "picture of teacher",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage about a farmer (ගොවියා). -> Tap picture of farmer."
+            "raw_text": "Passage about a farmer (ගොවියා). -> Tap picture of farmer.",
+            "options": [
+              "picture of farmer",
+              "Other"
+            ],
+            "correctOption": "picture of farmer",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage about a dog (බල්ලා). -> Tap picture of dog."
+            "raw_text": "Passage about a dog (බල්ලා). -> Tap picture of dog.",
+            "options": [
+              "picture of dog",
+              "Other"
+            ],
+            "correctOption": "picture of dog",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage about a cat (පූසා). -> Tap picture of cat."
+            "raw_text": "Passage about a cat (පූසා). -> Tap picture of cat.",
+            "options": [
+              "picture of cat",
+              "Other"
+            ],
+            "correctOption": "picture of cat",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage about an elephant (අලියා). -> Tap picture of elephant."
+            "raw_text": "Passage about an elephant (අලියා). -> Tap picture of elephant.",
+            "options": [
+              "picture of elephant",
+              "Other"
+            ],
+            "correctOption": "picture of elephant",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage about a fish (මාළු). -> Tap picture of fish."
+            "raw_text": "Passage about a fish (මාළු). -> Tap picture of fish.",
+            "options": [
+              "picture of fish",
+              "Other"
+            ],
+            "correctOption": "picture of fish",
+            "correct_index": 0
           }
         ]
       },
@@ -77,40 +168,100 @@
         "title": "WHO Questions (කවුද)",
         "description": "",
         "telemetry_tags": [
-          "listening",
-          "recognizing"
+          "reading_fluency",
+          "reading_comprehension"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "\"Who went to school?\" -> ළමයා."
+            "raw_text": "\"Who went to school?\" -> ළමයා.",
+            "options": [
+              "ළමයා",
+              "Other"
+            ],
+            "correctOption": "ළමයා",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Who told the story?\" -> ගුරුතුමිය."
+            "raw_text": "\"Who told the story?\" -> ගුරුතුමිය.",
+            "options": [
+              "ගුරුතුමිය",
+              "Other"
+            ],
+            "correctOption": "ගුරුතුමිය",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Who cooked food?\" -> අම්මා."
+            "raw_text": "\"Who cooked food?\" -> අම්මා.",
+            "options": [
+              "අම්මා",
+              "Other"
+            ],
+            "correctOption": "අම්මා",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Who ate the rose apple?\" -> ලේනා."
+            "raw_text": "\"Who ate the rose apple?\" -> ලේනා.",
+            "options": [
+              "ලේනා",
+              "Other"
+            ],
+            "correctOption": "ලේනා",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Who works in the field?\" -> ගොවියා."
+            "raw_text": "\"Who works in the field?\" -> ගොවියා.",
+            "options": [
+              "ගොවියා",
+              "Other"
+            ],
+            "correctOption": "ගොවියා",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Who flies in the sky?\" -> කුරුල්ලා."
+            "raw_text": "\"Who flies in the sky?\" -> කුරුල්ලා.",
+            "options": [
+              "කුරුල්ලා",
+              "Other"
+            ],
+            "correctOption": "කුරුල්ලා",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Who swims in the water?\" -> මාළු."
+            "raw_text": "\"Who swims in the water?\" -> මාළු.",
+            "options": [
+              "මාළු",
+              "Other"
+            ],
+            "correctOption": "මාළු",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Who treats the sick?\" -> වෛද්‍යවරයා."
+            "raw_text": "\"Who treats the sick?\" -> වෛද්‍යවරයා.",
+            "options": [
+              "වෛද්‍යවරයා",
+              "Other"
+            ],
+            "correctOption": "වෛද්‍යවරයා",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Who barks?\" -> බල්ලා."
+            "raw_text": "\"Who barks?\" -> බල්ලා.",
+            "options": [
+              "බල්ලා",
+              "Other"
+            ],
+            "correctOption": "බල්ලා",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Who meows?\" -> පූසා."
+            "raw_text": "\"Who meows?\" -> පූසා.",
+            "options": [
+              "පූසා",
+              "Other"
+            ],
+            "correctOption": "පූසා",
+            "correct_index": 0
           }
         ]
       },
@@ -119,40 +270,100 @@
         "title": "WHAT Questions (මොනවාද)",
         "description": "",
         "telemetry_tags": [
-          "listening",
-          "recognizing"
+          "reading_fluency",
+          "reading_comprehension"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "\"What did the child read?\" -> පොත්."
+            "raw_text": "\"What did the child read?\" -> පොත්.",
+            "options": [
+              "පොත්",
+              "Other"
+            ],
+            "correctOption": "පොත්",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"What did mother cook?\" -> කෑම."
+            "raw_text": "\"What did mother cook?\" -> කෑම.",
+            "options": [
+              "කෑම",
+              "Other"
+            ],
+            "correctOption": "කෑම",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"What did the squirrel eat?\" -> ජම්බු."
+            "raw_text": "\"What did the squirrel eat?\" -> ජම්බු.",
+            "options": [
+              "ජම්බු",
+              "Other"
+            ],
+            "correctOption": "ජම්බු",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"What did mother buy at the market?\" -> එළවළු."
+            "raw_text": "\"What did mother buy at the market?\" -> එළවළු.",
+            "options": [
+              "එළවළු",
+              "Other"
+            ],
+            "correctOption": "එළවළු",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"What did the teacher tell?\" -> කතාවක් (Story)."
+            "raw_text": "\"What did the teacher tell?\" -> කතාවක් (Story).",
+            "options": [
+              "කතාවක් (Story)",
+              "Other"
+            ],
+            "correctOption": "කතාවක් (Story)",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"What does the child write?\" -> අකුරු."
+            "raw_text": "\"What does the child write?\" -> අකුරු.",
+            "options": [
+              "අකුරු",
+              "Other"
+            ],
+            "correctOption": "අකුරු",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"What does the sun give?\" -> එළිය (Light)."
+            "raw_text": "\"What does the sun give?\" -> එළිය (Light).",
+            "options": [
+              "එළිය (Light)",
+              "Other"
+            ],
+            "correctOption": "එළිය (Light)",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"What does the cow give?\" -> කිරි (Milk)."
+            "raw_text": "\"What does the cow give?\" -> කිරි (Milk).",
+            "options": [
+              "කිරි (Milk)",
+              "Other"
+            ],
+            "correctOption": "කිරි (Milk)",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"What does the tree have?\" -> කොළ (Leaves)."
+            "raw_text": "\"What does the tree have?\" -> කොළ (Leaves).",
+            "options": [
+              "කොළ (Leaves)",
+              "Other"
+            ],
+            "correctOption": "කොළ (Leaves)",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"What does the bird build?\" -> කූඩුව (Nest)."
+            "raw_text": "\"What does the bird build?\" -> කූඩුව (Nest).",
+            "options": [
+              "කූඩුව (Nest)",
+              "Other"
+            ],
+            "correctOption": "කූඩුව (Nest)",
+            "correct_index": 0
           }
         ]
       },
@@ -161,40 +372,100 @@
         "title": "WHERE Questions (කොහෙද)",
         "description": "",
         "telemetry_tags": [
-          "listening",
-          "recognizing"
+          "reading_fluency",
+          "reading_comprehension"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "\"Where did the child go?\" -> පාසලට."
+            "raw_text": "\"Where did the child go?\" -> පාසලට.",
+            "options": [
+              "පාසලට",
+              "Other"
+            ],
+            "correctOption": "පාසලට",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Where did mother go?\" -> වෙළඳපොළට."
+            "raw_text": "\"Where did mother go?\" -> වෙළඳපොළට.",
+            "options": [
+              "වෙළඳපොළට",
+              "Other"
+            ],
+            "correctOption": "වෙළඳපොළට",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Where does the squirrel live?\" -> ගසේ."
+            "raw_text": "\"Where does the squirrel live?\" -> ගසේ.",
+            "options": [
+              "ගසේ",
+              "Other"
+            ],
+            "correctOption": "ගසේ",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Where does the fish live?\" -> ජලයේ."
+            "raw_text": "\"Where does the fish live?\" -> ජලයේ.",
+            "options": [
+              "ජලයේ",
+              "Other"
+            ],
+            "correctOption": "ජලයේ",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Where does the farmer work?\" -> කුඹුරේ."
+            "raw_text": "\"Where does the farmer work?\" -> කුඹුරේ.",
+            "options": [
+              "කුඹුරේ",
+              "Other"
+            ],
+            "correctOption": "කුඹුරේ",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Where does the bird fly?\" -> අහසේ."
+            "raw_text": "\"Where does the bird fly?\" -> අහසේ.",
+            "options": [
+              "අහසේ",
+              "Other"
+            ],
+            "correctOption": "අහසේ",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Where does the bus go?\" -> පාරේ."
+            "raw_text": "\"Where does the bus go?\" -> පාරේ.",
+            "options": [
+              "පාරේ",
+              "Other"
+            ],
+            "correctOption": "පාරේ",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Where does the doctor work?\" -> රෝහලේ."
+            "raw_text": "\"Where does the doctor work?\" -> රෝහලේ.",
+            "options": [
+              "රෝහලේ",
+              "Other"
+            ],
+            "correctOption": "රෝහලේ",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Where do you read books?\" -> පුස්තකාලයේ."
+            "raw_text": "\"Where do you read books?\" -> පුස්තකාලයේ.",
+            "options": [
+              "පුස්තකාලයේ",
+              "Other"
+            ],
+            "correctOption": "පුස්තකාලයේ",
+            "correct_index": 0
           },
           {
-            "raw_text": "\"Where do you sleep?\" -> ගෙදර."
+            "raw_text": "\"Where do you sleep?\" -> ගෙදර.",
+            "options": [
+              "ගෙදර",
+              "Other"
+            ],
+            "correctOption": "ගෙදර",
+            "correct_index": 0
           }
         ]
       },
@@ -203,209 +474,102 @@
         "title": "Sequence the Story Events",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "logical_reasoning",
+          "spatial_awareness",
+          "reading_fluency",
+          "reading_comprehension"
         ],
-        "template_type": "pattern_game",
+        "template_type": "generic_mcq_game",
         "rounds": [
           {
             "raw_text": "2 events: 1. Wake up. 2. Go to school.",
-            "pattern": [
-              "2",
-              "events:",
-              "1.",
-              "Wake",
-              "up.",
-              "2.",
-              "Go",
-              "to",
-              "school."
-            ],
             "options": [
-              "?",
-              "!"
+              "Option 1",
+              "Option 2"
             ],
-            "correct_option_index": 0
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
             "raw_text": "2 events: 1. Eat. 2. Wash hands.",
-            "pattern": [
-              "2",
-              "events:",
-              "1.",
-              "Eat.",
-              "2.",
-              "Wash",
-              "hands."
-            ],
             "options": [
-              "?",
-              "!"
+              "Option 1",
+              "Option 2"
             ],
-            "correct_option_index": 0
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
             "raw_text": "3 events: 1. Go to school. 2. Learn. 3. Come home.",
-            "pattern": [
-              "3",
-              "events:",
-              "1.",
-              "Go",
-              "to",
-              "school.",
-              "2.",
-              "Learn.",
-              "3.",
-              "Come",
-              "home."
-            ],
             "options": [
-              "?",
-              "!"
+              "Option 1",
+              "Option 2"
             ],
-            "correct_option_index": 0
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
             "raw_text": "3 events: 1. Plant seed. 2. Water it. 3. Tree grows.",
-            "pattern": [
-              "3",
-              "events:",
-              "1.",
-              "Plant",
-              "seed.",
-              "2.",
-              "Water",
-              "it.",
-              "3.",
-              "Tree",
-              "grows."
-            ],
             "options": [
-              "?",
-              "!"
+              "Option 1",
+              "Option 2"
             ],
-            "correct_option_index": 0
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
             "raw_text": "4 events: 1. Go to market. 2. Buy food. 3. Come home. 4. Cook.",
-            "pattern": [
-              "4",
-              "events:",
-              "1.",
-              "Go",
-              "to",
-              "market.",
-              "2.",
-              "Buy",
-              "food.",
-              "3.",
-              "Come",
-              "home.",
-              "4.",
-              "Cook."
-            ],
             "options": [
-              "?",
-              "!"
+              "Option 1",
+              "Option 2"
             ],
-            "correct_option_index": 0
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
             "raw_text": "4 events: 1. Climb tree. 2. Eat fruit. 3. Drink water. 4. Rest.",
-            "pattern": [
-              "4",
-              "events:",
-              "1.",
-              "Climb",
-              "tree.",
-              "2.",
-              "Eat",
-              "fruit.",
-              "3.",
-              "Drink",
-              "water.",
-              "4.",
-              "Rest."
-            ],
             "options": [
-              "?",
-              "!"
+              "Option 1",
+              "Option 2"
             ],
-            "correct_option_index": 0
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
             "raw_text": "5 events: 1. Wake up. 2. Brush teeth. 3. Eat breakfast. 4. Go to school. 5. Learn.",
-            "pattern": [
-              "5",
-              "events:",
-              "1.",
-              "Wake",
-              "up.",
-              "2.",
-              "Brush",
-              "teeth.",
-              "3.",
-              "Eat",
-              "breakfast.",
-              "4.",
-              "Go",
-              "to",
-              "school.",
-              "5.",
-              "Learn."
-            ],
             "options": [
-              "?",
-              "!"
+              "Option 1",
+              "Option 2"
             ],
-            "correct_option_index": 0
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
             "raw_text": "5 events (Squirrel story from output.txt).",
-            "pattern": [
-              "5",
-              "events",
-              "(Squirrel",
-              "story",
-              "from",
-              "output.txt)."
-            ],
             "options": [
-              "?",
-              "!"
+              "Option 1",
+              "Option 2"
             ],
-            "correct_option_index": 0
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
             "raw_text": "5 events (School story from output.txt).",
-            "pattern": [
-              "5",
-              "events",
-              "(School",
-              "story",
-              "from",
-              "output.txt)."
-            ],
             "options": [
-              "?",
-              "!"
+              "Option 1",
+              "Option 2"
             ],
-            "correct_option_index": 0
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
             "raw_text": "5 events (Market story from output.txt).",
-            "pattern": [
-              "5",
-              "events",
-              "(Market",
-              "story",
-              "from",
-              "output.txt)."
-            ],
             "options": [
-              "?",
-              "!"
+              "Option 1",
+              "Option 2"
             ],
-            "correct_option_index": 0
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       },
@@ -414,164 +578,102 @@
         "title": "Action & Consequence",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "logical_reasoning",
+          "spatial_awareness",
+          "reading_fluency",
+          "reading_comprehension"
         ],
-        "template_type": "pattern_game",
+        "template_type": "generic_mcq_game",
         "rounds": [
           {
             "raw_text": "\"Mother went to market\" -> \"Bought vegetables.\"",
-            "pattern": [
-              "\"Mother",
-              "went",
-              "to",
-              "market\"",
-              "->",
-              "\"Bought",
-              "vegetables.\""
-            ],
             "options": [
-              "?",
-              "!"
+              "\"Bought vegetables.\"",
+              "Other"
             ],
-            "correct_option_index": 0
+            "correctOption": "\"Bought vegetables.\"",
+            "correct_index": 0
           },
           {
             "raw_text": "\"Child went to school\" -> \"Learned lessons.\"",
-            "pattern": [
-              "\"Child",
-              "went",
-              "to",
-              "school\"",
-              "->",
-              "\"Learned",
-              "lessons.\""
-            ],
             "options": [
-              "?",
-              "!"
+              "\"Learned lessons.\"",
+              "Other"
             ],
-            "correct_option_index": 0
+            "correctOption": "\"Learned lessons.\"",
+            "correct_index": 0
           },
           {
             "raw_text": "\"Squirrel climbed tree\" -> \"Ate fruit.\"",
-            "pattern": [
-              "\"Squirrel",
-              "climbed",
-              "tree\"",
-              "->",
-              "\"Ate",
-              "fruit.\""
-            ],
             "options": [
-              "?",
-              "!"
+              "\"Ate fruit.\"",
+              "Other"
             ],
-            "correct_option_index": 0
+            "correctOption": "\"Ate fruit.\"",
+            "correct_index": 0
           },
           {
             "raw_text": "\"It rained\" -> \"Got wet.\"",
-            "pattern": [
-              "\"It",
-              "rained\"",
-              "->",
-              "\"Got",
-              "wet.\""
-            ],
             "options": [
-              "?",
-              "!"
+              "\"Got wet.\"",
+              "Other"
             ],
-            "correct_option_index": 0
+            "correctOption": "\"Got wet.\"",
+            "correct_index": 0
           },
           {
             "raw_text": "\"Sun shone\" -> \"Clothes dried.\"",
-            "pattern": [
-              "\"Sun",
-              "shone\"",
-              "->",
-              "\"Clothes",
-              "dried.\""
-            ],
             "options": [
-              "?",
-              "!"
+              "\"Clothes dried.\"",
+              "Other"
             ],
-            "correct_option_index": 0
+            "correctOption": "\"Clothes dried.\"",
+            "correct_index": 0
           },
           {
             "raw_text": "\"Dog barked\" -> \"Cat ran.\"",
-            "pattern": [
-              "\"Dog",
-              "barked\"",
-              "->",
-              "\"Cat",
-              "ran.\""
-            ],
             "options": [
-              "?",
-              "!"
+              "\"Cat ran.\"",
+              "Other"
             ],
-            "correct_option_index": 0
+            "correctOption": "\"Cat ran.\"",
+            "correct_index": 0
           },
           {
             "raw_text": "\"Ate food\" -> \"Not hungry.\"",
-            "pattern": [
-              "\"Ate",
-              "food\"",
-              "->",
-              "\"Not",
-              "hungry.\""
-            ],
             "options": [
-              "?",
-              "!"
+              "\"Not hungry.\"",
+              "Other"
             ],
-            "correct_option_index": 0
+            "correctOption": "\"Not hungry.\"",
+            "correct_index": 0
           },
           {
             "raw_text": "\"Drank water\" -> \"Not thirsty.\"",
-            "pattern": [
-              "\"Drank",
-              "water\"",
-              "->",
-              "\"Not",
-              "thirsty.\""
-            ],
             "options": [
-              "?",
-              "!"
+              "\"Not thirsty.\"",
+              "Other"
             ],
-            "correct_option_index": 0
+            "correctOption": "\"Not thirsty.\"",
+            "correct_index": 0
           },
           {
             "raw_text": "\"Read book\" -> \"Gained knowledge.\"",
-            "pattern": [
-              "\"Read",
-              "book\"",
-              "->",
-              "\"Gained",
-              "knowledge.\""
-            ],
             "options": [
-              "?",
-              "!"
+              "\"Gained knowledge.\"",
+              "Other"
             ],
-            "correct_option_index": 0
+            "correctOption": "\"Gained knowledge.\"",
+            "correct_index": 0
           },
           {
             "raw_text": "\"Planted tree\" -> \"Got flowers/fruits.\"",
-            "pattern": [
-              "\"Planted",
-              "tree\"",
-              "->",
-              "\"Got",
-              "flowers/fruits.\""
-            ],
             "options": [
-              "?",
-              "!"
+              "\"Got flowers/fruits.\"",
+              "Other"
             ],
-            "correct_option_index": 0
+            "correctOption": "\"Got flowers/fruits.\"",
+            "correct_index": 0
           }
         ]
       },
@@ -580,39 +682,100 @@
         "title": "True or False (Passage Based)",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "reading_fluency",
+          "reading_comprehension"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "Passage 1: \"ළමයා පාසලට ගියේය.\" -> Statement: \"ළමයා කඩේට ගියේය.\" (False)"
+            "raw_text": "Passage 1: \"ළමයා පාසලට ගියේය.\" -> Statement: \"ළමයා කඩේට ගියේය.\" (False)",
+            "options": [
+              "Statement: \"ළමයා කඩේට ගියේය.\" (False)",
+              "Other"
+            ],
+            "correctOption": "Statement: \"ළමයා කඩේට ගියේය.\" (False)",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage 1 -> Statement: \"ළමයා පාසලට ගියේය.\" (True)"
+            "raw_text": "Passage 1 -> Statement: \"ළමයා පාසලට ගියේය.\" (True)",
+            "options": [
+              "Statement: \"ළමයා පාසලට ගියේය.\" (True)",
+              "Other"
+            ],
+            "correctOption": "Statement: \"ළමයා පාසලට ගියේය.\" (True)",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage 2 (Squirrel): \"ලේනා ජම්බු කෑවා.\" -> Statement: \"ලේනා අඹ කෑවා.\" (False)"
+            "raw_text": "Passage 2 (Squirrel): \"ලේනා ජම්බු කෑවා.\" -> Statement: \"ලේනා අඹ කෑවා.\" (False)",
+            "options": [
+              "Statement: \"ලේනා අඹ කෑවා.\" (False)",
+              "Other"
+            ],
+            "correctOption": "Statement: \"ලේනා අඹ කෑවා.\" (False)",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage 2 -> Statement: \"ලේනා ජම්බු කෑවා.\" (True)"
+            "raw_text": "Passage 2 -> Statement: \"ලේනා ජම්බු කෑවා.\" (True)",
+            "options": [
+              "Statement: \"ලේනා ජම්බු කෑවා.\" (True)",
+              "Other"
+            ],
+            "correctOption": "Statement: \"ලේනා ජම්බු කෑවා.\" (True)",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage 3 (Market): \"අම්මා එළවළු ගෙනාවා.\" -> Statement: \"අම්මා සෙල්ලම් බඩු ගෙනාවා.\" (False)"
+            "raw_text": "Passage 3 (Market): \"අම්මා එළවළු ගෙනාවා.\" -> Statement: \"අම්මා සෙල්ලම් බඩු ගෙනාවා.\" (False)",
+            "options": [
+              "Statement: \"අම්මා සෙල්ලම් බඩු ගෙනාවා.\" (False)",
+              "Other"
+            ],
+            "correctOption": "Statement: \"අම්මා සෙල්ලම් බඩු ගෙනාවා.\" (False)",
+            "correct_index": 0
           },
           {
-            "raw_text": "Passage 3 -> Statement: \"අම්මා එළවළු ගෙනාවා.\" (True)"
+            "raw_text": "Passage 3 -> Statement: \"අම්මා එළවළු ගෙනාවා.\" (True)",
+            "options": [
+              "Statement: \"අම්මා එළවළු ගෙනාවා.\" (True)",
+              "Other"
+            ],
+            "correctOption": "Statement: \"අම්මා එළවළු ගෙනාවා.\" (True)",
+            "correct_index": 0
           },
           {
-            "raw_text": "Read 3 sentences, answer 1 T/F."
+            "raw_text": "Read 3 sentences, answer 1 T/F.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read 3 sentences, answer 2 T/F."
+            "raw_text": "Read 3 sentences, answer 2 T/F.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read 4 sentences, answer 3 T/F."
+            "raw_text": "Read 4 sentences, answer 3 T/F.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read 5 sentences, answer 3 complex T/F."
+            "raw_text": "Read 5 sentences, answer 3 complex T/F.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       },
@@ -621,7 +784,8 @@
         "title": "Fill in the Blank (Context)",
         "description": "",
         "telemetry_tags": [
-          "recognizing"
+          "reading_fluency",
+          "reading_comprehension"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
@@ -631,7 +795,8 @@
               "පාසලට",
               "අහසට"
             ],
-            "question": "\"අද ළමයා ______ ගියේය.\"  -> පාසලට"
+            "correctOption": "පාසලට",
+            "correct_index": 0
           },
           {
             "raw_text": "\"ලේනා ______ කෑවා.\" (Options: ජම්බු, ගස) -> ජම්බු",
@@ -639,7 +804,8 @@
               "ජම්බු",
               "ගස"
             ],
-            "question": "\"ලේනා ______ කෑවා.\"  -> ජම්බු"
+            "correctOption": "ජම්බු",
+            "correct_index": 0
           },
           {
             "raw_text": "\"අම්මා වෙළඳපොළෙන් ______ ගෙනාවා.\" (Options: එළවළු, පාර) -> එළවළු",
@@ -647,7 +813,8 @@
               "එළවළු",
               "පාර"
             ],
-            "question": "\"අම්මා වෙළඳපොළෙන් ______ ගෙනාවා.\"  -> එළවළු"
+            "correctOption": "එළවළු",
+            "correct_index": 0
           },
           {
             "raw_text": "\"ගුරුතුමිය ______ උගන්වයි.\" (Options: ළමයින්ට, මාළුවන්ට) -> ළමයින්ට",
@@ -655,7 +822,8 @@
               "ළමයින්ට",
               "මාළුවන්ට"
             ],
-            "question": "\"ගුරුතුමිය ______ උගන්වයි.\"  -> ළමයින්ට"
+            "correctOption": "ළමයින්ට",
+            "correct_index": 0
           },
           {
             "raw_text": "\"කුරුල්ලා ______ පියාසර කරයි.\" (Options: අහසේ, ජලයේ) -> අහසේ",
@@ -663,7 +831,8 @@
               "අහසේ",
               "ජලයේ"
             ],
-            "question": "\"කුරුල්ලා ______ පියාසර කරයි.\"  -> අහසේ"
+            "correctOption": "අහසේ",
+            "correct_index": 0
           },
           {
             "raw_text": "\"මාළු ______ පීනයි.\" (Options: ජලයේ, ගසේ) -> ජලයේ",
@@ -671,7 +840,8 @@
               "ජලයේ",
               "ගසේ"
             ],
-            "question": "\"මාළු ______ පීනයි.\"  -> ජලයේ"
+            "correctOption": "ජලයේ",
+            "correct_index": 0
           },
           {
             "raw_text": "\"ගොවියා ______ වැඩ කරයි.\" (Options: කුඹුරේ, අහසේ) -> කුඹුරේ",
@@ -679,7 +849,8 @@
               "කුඹුරේ",
               "අහසේ"
             ],
-            "question": "\"ගොවියා ______ වැඩ කරයි.\"  -> කුඹුරේ"
+            "correctOption": "කුඹුරේ",
+            "correct_index": 0
           },
           {
             "raw_text": "\"බසය ______ යයි.\" (Options: පාරේ, ජලයේ) -> පාරේ",
@@ -687,7 +858,8 @@
               "පාරේ",
               "ජලයේ"
             ],
-            "question": "\"බසය ______ යයි.\"  -> පාරේ"
+            "correctOption": "පාරේ",
+            "correct_index": 0
           },
           {
             "raw_text": "\"ඉර ______ පායයි.\" (Options: උදේට, රාත්‍රියට) -> උදේට",
@@ -695,7 +867,8 @@
               "උදේට",
               "රාත්‍රියට"
             ],
-            "question": "\"ඉර ______ පායයි.\"  -> උදේට"
+            "correctOption": "උදේට",
+            "correct_index": 0
           },
           {
             "raw_text": "\"තරු ______ පායයි.\" (Options: රාත්‍රියට, උදේට) -> රාත්‍රියට",
@@ -703,37 +876,98 @@
               "රාත්‍රියට",
               "උදේට"
             ],
-            "question": "\"තරු ______ පායයි.\"  -> රාත්‍රියට"
+            "correctOption": "රාත්‍රියට",
+            "correct_index": 0
           },
           {
-            "raw_text": "Read aloud short passage in 30s."
+            "raw_text": "Read aloud short passage in 30s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read aloud short passage in 25s."
+            "raw_text": "Read aloud short passage in 25s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read aloud medium passage in 40s."
+            "raw_text": "Read aloud medium passage in 40s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read aloud medium passage in 35s."
+            "raw_text": "Read aloud medium passage in 35s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Read aloud long passage in 60s."
+            "raw_text": "Read aloud long passage in 60s.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Answer WHO question from long passage."
+            "raw_text": "Answer WHO question from long passage.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Answer WHAT question from long passage."
+            "raw_text": "Answer WHAT question from long passage.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Answer WHERE question from long passage."
+            "raw_text": "Answer WHERE question from long passage.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sequence 3 events from long passage."
+            "raw_text": "Sequence 3 events from long passage.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           },
           {
-            "raw_text": "Sequence 5 events from long passage perfectly."
+            "raw_text": "Sequence 5 events from long passage perfectly.",
+            "options": [
+              "Option 1",
+              "Option 2"
+            ],
+            "correct_index": 0,
+            "correctOption": "Option 1"
           }
         ]
       }

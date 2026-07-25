@@ -35,7 +35,7 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
     _rounds = widget.activityNode.rounds.map((roundData) {
       final sequence = List<String?>.from(roundData['sequence'] ?? []);
       List<String> options = List<String>.from(roundData['options'] ?? []);
-      int correctOptionIndex = roundData['correct_option_index'] ?? 0;
+      int correctOptionIndex = roundData['correct_option_index'] ?? roundData['correct_index'] ?? 0;
       
       // Ensure the correct option is indeed at the correct index
       final correctOption = options[correctOptionIndex];
@@ -75,7 +75,7 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
             _isCorrect = false;
           });
         } else {
-          Navigator.pop(context, true);
+          if (context.findAncestorStateOfType<TelemetryWrapperState>() != null) { context.findAncestorStateOfType<TelemetryWrapperState>()!.completeActivity(context); } else { Navigator.pop(context, 0); }
         }
       });
     } else {

@@ -41,9 +41,11 @@ class _Activity6HiddenShapeState extends State<Activity6HiddenShape> {
     
     _rounds = widget.activityNode.rounds.map((roundData) {
       String instruction = roundData['raw_text'] ?? 'හැඩය සොයන්න';
-      String target = roundData['target'] ?? '⭐';
-      int targetCount = roundData['target_count'] ?? 3;
-      List<String> distractors = List<String>.from(roundData['distractors'] ?? ['○', '□']);
+      String target = roundData['target'] ?? roundData['correctOption'] ?? '⭐';
+      int targetCount = roundData['target_count'] ?? (roundData.containsKey('correctOption') ? 1 : 3);
+      List<String> distractors = roundData.containsKey('distractors')
+          ? List<String>.from(roundData['distractors'])
+          : List<String>.from(roundData['options'] ?? ['○', '□']);
       
       List<String> shapes = [];
       for (int i = 0; i < targetCount; i++) shapes.add(target);
@@ -100,7 +102,7 @@ class _Activity6HiddenShapeState extends State<Activity6HiddenShape> {
               _isComplete = false;
             });
           } else {
-            Navigator.pop(context, true);
+            if (context.findAncestorStateOfType<TelemetryWrapperState>() != null) { context.findAncestorStateOfType<TelemetryWrapperState>()!.completeActivity(context); } else { Navigator.pop(context, 0); }
           }
         });
       }
