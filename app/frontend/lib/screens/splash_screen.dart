@@ -42,8 +42,6 @@ class _SplashScreenState extends State<SplashScreen>
     _animationController.forward();
 
     // Navigate to welcome screen after 3.5 seconds
-    // TEMPORARILY DISABLED for user to review the splash screen UI
-    /*
     Future.delayed(const Duration(milliseconds: 3500), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -59,7 +57,6 @@ class _SplashScreenState extends State<SplashScreen>
         );
       }
     });
-    */
   }
 
   @override
@@ -71,7 +68,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.calmBlue, // Dark background matching the image edges
+      backgroundColor: AppColors.calmBlue,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -102,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // Logo and Tagline at the bottom
+          // Logo at the bottom (Sinhala)
           Positioned(
             bottom: 80,
             left: 0,
@@ -114,30 +111,7 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'සිප්සර',
-                      style: AppTypography.heading(
-                        fontSize: 68,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.warmAmber,
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: Text(
-                        'Learn, Play and Grow!',
-                        style: AppTypography.body(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textBrown,
-                        ),
-                      ),
-                    ),
+                    _buildPremiumLogo(),
                   ],
                 ),
               ),
@@ -145,6 +119,19 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPremiumLogo() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Image.asset(
+          'assets/images/app_logo.png',
+          height: 120, // Huge custom logo
+          fit: BoxFit.contain,
+        ),
+      ],
     );
   }
 }
