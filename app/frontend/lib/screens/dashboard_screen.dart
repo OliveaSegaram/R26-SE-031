@@ -5,7 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_theme.dart';
 import 'level_map_screen.dart';
 import 'select_student_screen.dart';
-import 'parent_account_screen.dart';
+import 'parent/parent_hub_screen.dart';
 import 'character_shop_screen.dart';
 import '../models/curriculum_models.dart';
 /// Dashboard Screen
@@ -185,7 +185,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 if (!mounted) return;
                 
                 if (index == 3) { // Settings routes to Parent Screen
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ParentAccountScreen()));
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ParentHubScreen()));
                   setState(() => _navIndex = 0);
                 } else if (index == 1) { // Shop routes to Character Shop
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const CharacterShopScreen()));

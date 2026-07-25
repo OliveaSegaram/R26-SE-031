@@ -21,12 +21,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Students"])
 @router.post("/students", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)
 async def add_student(request: StudentCreate, current_user: dict = Depends(get_current_user)):
     """Add a new student under the authenticated parent's account."""
-    # 1. Verify parent password if local account
-    provider = current_user.get("auth_provider", "local")
-    is_social = provider in ["google", "microsoft"] or not current_user.get("hashed_password")
-    if not is_social:
-        if not verify_password(request.parent_password, current_user["hashed_password"]):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect parent password")
+    # 1. Verification of parent password is no longer required
 
     db = get_db()
     parent_oid = current_user["_id"]  # This is always a BSON ObjectId from MongoDB

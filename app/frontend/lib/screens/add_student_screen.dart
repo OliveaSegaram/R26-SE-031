@@ -291,16 +291,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    if (!_isGoogleUser)
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          hintText: 'parent account password',
-                        ),
-                        style: AppTypography.body(fontSize: 16),
-                        validator: (val) => val == null || val.isEmpty ? 'required' : null,
-                      ),
                   ],
                 ),
               ),
@@ -319,21 +309,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                         'username': _usernameController.text.trim(),
                         'grade': _selectedGrade,
                         'daily_limit': _selectedDailyLimit,
-                        'parent_password': _isGoogleUser ? '' : _passwordController.text,
                         'avatar_url': _selectedAvatarUrl,
                       };
 
                       if (widget.editStudentData == null) {
-                        setState(() { _isLoading = true; });
-                        final pwdError = await AuthService().verifyPassword(_isGoogleUser ? '' : _passwordController.text);
-                        if (!mounted) return;
-                        setState(() { _isLoading = false; });
-                        
-                        if (pwdError != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(pwdError), backgroundColor: AppColors.softCoral));
-                          return;
-                        }
-
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

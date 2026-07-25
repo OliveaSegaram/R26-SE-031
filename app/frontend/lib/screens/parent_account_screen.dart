@@ -3,6 +3,7 @@ import '../../theme/app_theme.dart';
 import 'welcome_screen.dart';
 import 'assessment_screen.dart';
 import 'add_student_screen.dart';
+import 'connect_specialist_screen.dart';
 import 'dashboard_screen.dart';
 import '../services/auth_service.dart';
 import '../services/student_service.dart';
@@ -84,6 +85,10 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
             
             _buildSectionHeader('manage students'),
             _buildStudentsCard(),
+            const SizedBox(height: 24),
+            
+            _buildSectionHeader('specialist access'),
+            _buildSpecialistCard(),
             const SizedBox(height: 24),
             
             _buildSectionHeader('manage subscription'),
@@ -287,6 +292,41 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.gentleGreen,
+                ),
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpecialistCard() {
+    return _buildCardContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "connect your child's reading specialist or speech-language pathologist to share learning data.",
+            style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ConnectSpecialistScreen()),
+                );
+              },
+              icon: const Icon(Icons.link_rounded, color: AppColors.calmBlue, size: 18),
+              label: Text(
+                'connect specialist',
+                style: AppTypography.body(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.calmBlue,
                 ),
               ),
             ),

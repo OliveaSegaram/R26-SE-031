@@ -6,7 +6,7 @@ import '../widgets/gradient_button.dart';
 import '../services/student_service.dart';
 import 'dashboard_screen.dart';
 import 'add_student_screen.dart';
-import 'parent_account_screen.dart';
+import 'parent/parent_hub_screen.dart';
 
 /// Select Student Screen
 /// Dyslexia-accessible: calm blue header, warm white student cards,
@@ -169,7 +169,7 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ParentAccountScreen()),
+                MaterialPageRoute(builder: (context) => const ParentHubScreen()),
               );
             },
             child: Container(
