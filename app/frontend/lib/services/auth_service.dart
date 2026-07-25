@@ -12,8 +12,11 @@ import '../main.dart'; // For globalNavigatorKey
 /// Student management is in StudentService.
 class AuthService {
   static String get _baseUrl {
-    // Connect directly to the Cloud Server!
-    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
+    // Local Testing (using your Mac's IP address):
+    return 'http://192.168.1.3:8000/api/v1/auth';
+    
+    // Cloud Server (Render):
+    // return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
   }
 
   /// Returns null on success, or an error message string on failure.
