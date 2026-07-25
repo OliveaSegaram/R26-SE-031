@@ -42,6 +42,8 @@ class _SplashScreenState extends State<SplashScreen>
     _animationController.forward();
 
     // Navigate to welcome screen after 3.5 seconds
+    // TEMPORARILY DISABLED for user to review the splash screen UI
+    /*
     Future.delayed(const Duration(milliseconds: 3500), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -57,6 +59,7 @@ class _SplashScreenState extends State<SplashScreen>
         );
       }
     });
+    */
   }
 
   @override
@@ -112,9 +115,9 @@ class _SplashScreenState extends State<SplashScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Sipsara',
+                      'සිප්සර',
                       style: AppTypography.heading(
-                        fontSize: 62,
+                        fontSize: 68,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
                       ),
