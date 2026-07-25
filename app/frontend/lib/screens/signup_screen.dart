@@ -176,7 +176,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                   // Character
                   Center(
                     child: MonsterCharacter(
-                      size: 150,
+                      size: 100,
                       animation: MonsterAnimation.excited,
                       imagePath: 'assets/images/solo_green.png',
                     ),
