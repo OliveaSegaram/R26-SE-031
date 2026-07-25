@@ -356,7 +356,10 @@ class AuthService {
         return null;
       } else {
         final data = jsonDecode(response.body);
-        return data['detail'] ?? 'Failed to send reset code.';
+        if (data['detail'] is List && data['detail'].isNotEmpty) {
+          return data['detail'][0]['msg']?.toString() ?? 'Invalid input format.';
+        }
+        return data['detail']?.toString() ?? 'Failed to send reset code.';
       }
     } catch (e) {
       return 'Network Error: $e';

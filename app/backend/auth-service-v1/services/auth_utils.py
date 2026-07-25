@@ -141,7 +141,7 @@ def send_otp_email(email_address: str, otp: str):
         msg.add_alternative(html_content, subtype='html')
         
         # Send email using Gmail SMTP (Port 587 with STARTTLS is required on most Cloud Hosts like Render)
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        with smtplib.SMTP('smtp.gmail.com', 587, timeout=10) as server:
             server.ehlo()
             server.starttls()
             server.login(SMTP_EMAIL, SMTP_PASSWORD)
@@ -151,3 +151,5 @@ def send_otp_email(email_address: str, otp: str):
         
     except Exception as e:
         print(f"Failed to send email to {email_address}: {e}")
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail="Could not send OTP email. Please try again later.")
