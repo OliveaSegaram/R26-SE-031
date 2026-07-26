@@ -143,7 +143,7 @@ def send_otp_email(email_address: str, otp: str):
     </html>
     """
     
-    sender_email = os.getenv("SMTP_EMAIL", "adaptedmind.learning@gmail.com")
+    sender_email = os.getenv("SMTP_EMAIL", "sipsara.app.support@gmail.com")
     
     payload = {
         "sender": {
