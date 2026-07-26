@@ -62,10 +62,12 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: Text(
           'parent account',
           style: AppTypography.heading(fontSize: 22, color: AppColors.textPrimary),
