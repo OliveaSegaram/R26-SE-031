@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
-import 'assessment_screen.dart';
+import '../services/student_service.dart';
+import 'assessment_prompt_screen.dart';
 
 /// Parental Consent Screen
 /// Displayed before the assessment when registering a new student.
@@ -22,6 +23,7 @@ class _ConsentScreenState extends State<ConsentScreen>
   late Animation<double> _fadeAnimation;
 
   final _signatureController = TextEditingController();
+  bool _isSubmitting = false;
 
   bool _consentGuardian = false;
   bool _consentData = false;
@@ -56,20 +58,39 @@ class _ConsentScreenState extends State<ConsentScreen>
     super.dispose();
   }
 
-  void _onAgreeAndContinue() {
-    if (!_allConsentsGiven) return;
+  void _onAgreeAndContinue() async {
+    if (!_allConsentsGiven || _isSubmitting) return;
 
-    final consentData = Map<String, dynamic>.from(widget.studentData);
-    consentData['consent_given'] = true;
-    consentData['consent_parent_name'] = _signatureController.text.trim();
-    consentData['consent_date'] = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    setState(() { _isSubmitting = true; });
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AssessmentScreen(studentData: consentData),
-      ),
-    );
+    final studentData = Map<String, dynamic>.from(widget.studentData);
+    studentData['consent_given'] = true;
+    studentData['consent_parent_name'] = _signatureController.text.trim();
+    studentData['consent_date'] = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    // Save student to DB immediately!
+    final result = await StudentService().addStudent(studentData);
+
+    if (!mounted) return;
+    setState(() { _isSubmitting = false; });
+
+    if (result.containsKey('error')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['error']), backgroundColor: AppColors.softCoral),
+      );
+    } else {
+      // Student saved! Navigate to assessment prompt
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AssessmentPromptScreen(
+            studentId: result['id'],
+            studentName: studentData['first_name'],
+            avatarUrl: studentData['avatar_url'],
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -323,16 +344,18 @@ class _ConsentScreenState extends State<ConsentScreen>
               const SizedBox(height: 32),
 
               // --- Agree Button ---
-              GradientButton(
-                text: 'i agree & continue',
-                icon: Icons.check_circle_rounded,
-                gradient: _allConsentsGiven
-                    ? AppColors.greenGradient
-                    : LinearGradient(
-                        colors: [Colors.grey.shade400, Colors.grey.shade500],
-                      ),
-                onPressed: _allConsentsGiven ? _onAgreeAndContinue : () {},
-              ),
+              _isSubmitting
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.gentleGreen))
+                  : GradientButton(
+                      text: 'i agree & continue',
+                      icon: Icons.check_circle_rounded,
+                      gradient: _allConsentsGiven
+                          ? AppColors.greenGradient
+                          : LinearGradient(
+                              colors: [Colors.grey.shade400, Colors.grey.shade500],
+                            ),
+                      onPressed: _allConsentsGiven ? _onAgreeAndContinue : () {},
+                    ),
 
               const SizedBox(height: 12),
 
