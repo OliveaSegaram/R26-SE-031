@@ -11,9 +11,9 @@ import 'parent_account_screen.dart';
 /// Assessment Screen
 /// Redesigned to use a beautiful PageView, dynamic 3D characters, and glossy UI.
 class AssessmentScreen extends StatefulWidget {
-  final Map<String, dynamic>? studentData;
+  final String studentId;
 
-  const AssessmentScreen({super.key, this.studentData});
+  const AssessmentScreen({super.key, required this.studentId});
 
   @override
   State<AssessmentScreen> createState() => _AssessmentScreenState();
@@ -92,19 +92,14 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       return;
     }
 
-    if (widget.studentData == null) {
-      _navigateToResults();
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
 
-    final data = Map<String, dynamic>.from(widget.studentData!);
-    data['assessment_results'] = _answers.cast<bool>();
-
-    final error = await StudentService().addStudent(data);
+    final error = await StudentService().submitAssessment(
+      widget.studentId,
+      _answers.cast<bool>(),
+    );
     
     if (!mounted) return;
 
@@ -118,7 +113,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('student added successfully!'), backgroundColor: AppColors.gentleGreen),
+        const SnackBar(content: Text('screening completed successfully!'), backgroundColor: AppColors.gentleGreen),
       );
       _navigateToResults();
     }

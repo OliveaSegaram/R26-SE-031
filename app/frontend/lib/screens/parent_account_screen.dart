@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import 'welcome_screen.dart';
 import 'assessment_screen.dart';
+import 'assessment_prompt_screen.dart';
 import 'add_student_screen.dart';
 import 'connect_specialist_screen.dart';
 import 'dashboard_screen.dart';
@@ -61,10 +62,12 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: Text(
           'parent account',
           style: AppTypography.heading(fontSize: 22, color: AppColors.textPrimary),
@@ -181,15 +184,6 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Table Header
-          Row(
-            children: [
-              Expanded(flex: 2, child: _buildTableHeader('student')),
-              Expanded(flex: 1, child: _buildTableHeader('grade')),
-              Expanded(flex: 2, child: _buildTableHeader('time limit')),
-            ],
-          ),
-          const SizedBox(height: 12),
           if (_students.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -200,8 +194,9 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
             )
           else
             ..._students.map((student) {
+              final bool needsScreening = student['assessment_completed'] != true;
               return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: InkWell(
                   onTap: () {
                     Navigator.push(
@@ -211,69 +206,122 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                       ),
                     );
                   },
-                  borderRadius: BorderRadius.circular(10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 2, 
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: AppColors.cardSurface,
-                              backgroundImage: AssetImage(student['avatar_url'] ?? 'assets/images/solo_blue.png'),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(child: _buildTableData(student['first_name'] ?? 'unknown')),
-                          ],
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.warmWhite,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: Row(
+                      children: [
+                        // Avatar
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor: AppColors.cream,
+                          backgroundImage: AssetImage(student['avatar_url'] ?? 'assets/images/solo_blue.png'),
                         ),
-                      ),
-                      Expanded(flex: 1, child: _buildTableData(student['grade'] ?? 'n/a')),
-                      Expanded(
-                        flex: 2,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.warmWhite,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: AppColors.borderLight),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      student['daily_limit'] ?? 'no limit',
-                                      style: AppTypography.caption(fontSize: 13, color: AppColors.textPrimary),
-                                    ),
-                                    const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
-                                  ],
+                        const SizedBox(width: 12),
+
+                        // Name + screening nudge
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                student['first_name'] ?? 'unknown',
+                                style: AppTypography.body(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AddStudentScreen(editStudentData: student as Map<String, dynamic>),
+                              if (needsScreening)
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AssessmentPromptScreen(
+                                          studentId: student['id'],
+                                          studentName: student['first_name'] ?? 'Student',
+                                          avatarUrl: student['avatar_url'],
+                                        ),
+                                      ),
+                                    ).then((_) => _loadUserProfile());
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      'complete screening →',
+                                      style: AppTypography.caption(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.calmBlue,
+                                      ),
+                                    ),
                                   ),
-                                );
-                              },
-                              child: const Icon(Icons.edit, color: AppColors.calmBlue, size: 20),
-                            ),
-                          ],
+                                )
+                              else
+                                Text(
+                                  'screening completed ✓',
+                                  style: AppTypography.caption(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.gentleGreen,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+
+                        // Daily limit pill
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.cream,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            student['daily_limit'] ?? 'no limit',
+                            style: AppTypography.caption(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        // Edit button
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AddStudentScreen(editStudentData: student as Map<String, dynamic>),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: AppColors.calmBlue.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.edit_rounded, color: AppColors.calmBlue, size: 16),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
             }),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
 import '../welcome_screen.dart';
+import '../assessment_prompt_screen.dart';
 import '../add_student_screen.dart';
 import '../connect_specialist_screen.dart';
 import '../../services/auth_service.dart';
@@ -98,21 +99,22 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
       ),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderLight),
+          if (Navigator.canPop(context))
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.cardSurface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: const Icon(Icons.arrow_back_rounded,
+                    color: AppColors.textPrimary, size: 22),
               ),
-              child: const Icon(Icons.arrow_back_rounded,
-                  color: AppColors.textPrimary, size: 22),
             ),
-          ),
-          const SizedBox(width: 16),
+          if (Navigator.canPop(context)) const SizedBox(width: 16),
           Text(
             'settings',
             style: AppTypography.heading(
@@ -211,54 +213,124 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
             )
           else
             ..._students.map((student) {
+              final bool needsScreening = student['assessment_completed'] != true;
               return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: AppColors.cardSurface,
-                      backgroundImage: AssetImage(
-                          student['avatar_url'] ?? 'assets/images/solo_blue.png'),
+                padding: const EdgeInsets.only(bottom: 8),
+                child: InkWell(
+                  // Removed navigation to DashboardScreen for settings page to match previous behavior 
+                  // or we can add it if needed. The old code just didn't have onTap on the whole row.
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.warmWhite,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.borderLight),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            student['first_name'] ?? 'unknown',
-                            style: AppTypography.body(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
+                    child: Row(
+                      children: [
+                        // Avatar
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor: AppColors.cream,
+                          backgroundImage: AssetImage(student['avatar_url'] ?? 'assets/images/solo_blue.png'),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // Name + screening nudge
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                student['first_name'] ?? 'unknown',
+                                style: AppTypography.body(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              if (needsScreening)
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AssessmentPromptScreen(
+                                          studentId: student['id'],
+                                          studentName: student['first_name'] ?? 'Student',
+                                          avatarUrl: student['avatar_url'],
+                                        ),
+                                      ),
+                                    ).then((_) => _loadUserProfile());
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      'complete screening →',
+                                      style: AppTypography.caption(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.calmBlue,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else
+                                Text(
+                                  'screening completed ✓',
+                                  style: AppTypography.caption(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.gentleGreen,
+                                  ),
+                                ),
+                            ],
                           ),
-                          Text(
-                            student['grade'] ?? 'n/a',
+                        ),
+
+                        // Daily limit pill
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.cream,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            student['daily_limit'] ?? 'no limit',
                             style: AppTypography.caption(
-                              fontSize: 12,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.textSecondary,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AddStudentScreen(
-                                editStudentData:
-                                    student as Map<String, dynamic>),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        // Edit button
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AddStudentScreen(editStudentData: student as Map<String, dynamic>),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: AppColors.calmBlue.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.edit_rounded, color: AppColors.calmBlue, size: 16),
                           ),
-                        );
-                      },
-                      child: const Icon(Icons.edit,
-                          color: AppColors.calmBlue, size: 20),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               );
             }),
