@@ -90,7 +90,7 @@ class _Activity7SizeOrderingState extends State<Activity7SizeOrdering> {
               _isComplete = false;
             });
           } else {
-            Navigator.pop(context, true);
+            if (context.findAncestorStateOfType<TelemetryWrapperState>() != null) { context.findAncestorStateOfType<TelemetryWrapperState>()!.completeActivity(context); } else { Navigator.pop(context, 0); }
           }
         });
       }

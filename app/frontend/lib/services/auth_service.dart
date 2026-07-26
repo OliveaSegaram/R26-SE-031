@@ -12,7 +12,10 @@ import '../main.dart'; // For globalNavigatorKey
 /// Student management is in StudentService.
 class AuthService {
   static String get _baseUrl {
-    // Connect directly to the Cloud Server!
+    // Local Testing (using your Mac's IP address):
+    // return 'http://192.168.1.3:8000/api/v1/auth';
+    
+    // Cloud Server (Render):
     return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
   }
 
@@ -243,6 +246,35 @@ class AuthService {
     }
   }
 
+  /// Connect a specialist to a student
+  Future<String?> connectSpecialist(String clinicCode, String studentId) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated';
+
+      final response = await http.post(
+        Uri.parse('https://sipsara-auth-api.onrender.com/api/v1/specialists/connect'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'clinic_code': clinicCode,
+          'student_id': studentId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Failed to connect specialist.';
+      }
+    } catch (e) {
+      return 'Network Error: $e';
+    }
+  }
+
   /// Helper to get the token
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -327,7 +359,10 @@ class AuthService {
         return null;
       } else {
         final data = jsonDecode(response.body);
-        return data['detail'] ?? 'Failed to send reset code.';
+        if (data['detail'] is List && data['detail'].isNotEmpty) {
+          return data['detail'][0]['msg']?.toString() ?? 'Invalid input format.';
+        }
+        return data['detail']?.toString() ?? 'Failed to send reset code.';
       }
     } catch (e) {
       return 'Network Error: $e';

@@ -11,9 +11,9 @@ import 'parent_account_screen.dart';
 /// Assessment Screen
 /// Redesigned to use a beautiful PageView, dynamic 3D characters, and glossy UI.
 class AssessmentScreen extends StatefulWidget {
-  final Map<String, dynamic>? studentData;
+  final String studentId;
 
-  const AssessmentScreen({super.key, this.studentData});
+  const AssessmentScreen({super.key, required this.studentId});
 
   @override
   State<AssessmentScreen> createState() => _AssessmentScreenState();
@@ -92,19 +92,14 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       return;
     }
 
-    if (widget.studentData == null) {
-      _navigateToResults();
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
 
-    final data = Map<String, dynamic>.from(widget.studentData!);
-    data['assessment_results'] = _answers.cast<bool>();
-
-    final error = await StudentService().addStudent(data);
+    final error = await StudentService().submitAssessment(
+      widget.studentId,
+      _answers.cast<bool>(),
+    );
     
     if (!mounted) return;
 
@@ -118,7 +113,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('student added successfully!'), backgroundColor: AppColors.gentleGreen),
+        const SnackBar(content: Text('screening completed successfully!'), backgroundColor: AppColors.gentleGreen),
       );
       _navigateToResults();
     }
@@ -291,56 +286,66 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             ),
           ],
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Character Image
-              MonsterCharacter(
-                size: 160,
-                animation: MonsterAnimation.idle,
-                imagePath: _monsterImages[index % _monsterImages.length],
-              ),
-              
-              const SizedBox(height: 32),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxHeight < 540;
+            final monsterSize = isSmall ? 110.0 : 150.0;
+            final spacing = isSmall ? 16.0 : 28.0;
+            final fontSize = isSmall ? 20.0 : 23.0;
 
-              // Question Text
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Text(
-                  question.questionText,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.heading(
-                    fontSize: 24,
-                    color: AppColors.calmBlueDark,
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: isSmall ? 16 : 24, vertical: isSmall ? 16 : 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Character Image
+                  MonsterCharacter(
+                    size: monsterSize,
+                    animation: MonsterAnimation.idle,
+                    imagePath: _monsterImages[index % _monsterImages.length],
                   ),
-                ),
+                  
+                  SizedBox(height: spacing),
+
+                  // Question Text
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      question.questionText,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.heading(
+                        fontSize: fontSize,
+                        color: AppColors.calmBlueDark,
+                      ),
+                    ),
+                  ),
+
+                  SizedBox(height: spacing),
+
+                  // YES Button
+                  PressableGameButton(
+                    text: 'yes',
+                    icon: Icons.check_circle_outline_rounded,
+                    isSelected: _answers[index] == true,
+                    onTap: () => _onOptionSelected(index, true),
+                    activeColor: AppColors.gentleGreen,
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // NO Button
+                  PressableGameButton(
+                    text: 'no',
+                    icon: Icons.cancel_outlined,
+                    isSelected: _answers[index] == false,
+                    onTap: () => _onOptionSelected(index, false),
+                    activeColor: AppColors.softCoral,
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 32),
-
-              // YES Button
-              PressableGameButton(
-                text: 'yes',
-                icon: Icons.check_circle_outline_rounded,
-                isSelected: _answers[index] == true,
-                onTap: () => _onOptionSelected(index, true),
-                activeColor: AppColors.gentleGreen,
-              ),
-
-              const SizedBox(height: 16),
-
-              // NO Button
-              PressableGameButton(
-                text: 'no',
-                icon: Icons.cancel_outlined,
-                isSelected: _answers[index] == false,
-                onTap: () => _onOptionSelected(index, false),
-                activeColor: AppColors.softCoral,
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

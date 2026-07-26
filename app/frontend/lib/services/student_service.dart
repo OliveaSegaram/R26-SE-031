@@ -8,7 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Separated from AuthService for clean architecture.
 class StudentService {
   static String get _baseUrl {
-    // Connect directly to the Cloud Server!
+    // Local Testing (using your Mac's IP address):
+    // return 'http://192.168.1.3:8000/api/v1/auth';
+    
+    // Cloud Server (Render):
     return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
   }
 
@@ -18,11 +21,11 @@ class StudentService {
   }
 
   /// Add a student under the current parent.
-  /// Returns null on success, or an error message string on failure.
-  Future<String?> addStudent(Map<String, dynamic> studentData) async {
+  /// Returns a Map with student data on success (including 'id'), or a Map with 'error' key on failure.
+  Future<Map<String, dynamic>> addStudent(Map<String, dynamic> studentData) async {
     try {
       final token = await _getAccessToken();
-      if (token == null) return 'Not authenticated.';
+      if (token == null) return {'error': 'Not authenticated.'};
 
       final response = await http.post(
         Uri.parse('$_baseUrl/students'),
@@ -34,20 +37,20 @@ class StudentService {
       );
 
       if (response.statusCode == 201) {
-        return null; // Success
+        return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
         final data = jsonDecode(response.body);
         if (data['detail'] is String) {
-          return data['detail'];
+          return {'error': data['detail']};
         } else if (data['detail'] is List) {
           final err = data['detail'][0];
           final field = err['loc']?.last?.toString() ?? 'Field';
-          return '$field: ${err['msg']}';
+          return {'error': '$field: ${err["msg"]}'};
         }
-        return 'Failed to add student.';
+        return {'error': 'Failed to add student.'};
       }
     } catch (e) {
-      return 'Failed to connect to the server.';
+      return {'error': 'Failed to connect to the server.'};
     }
   }
 
@@ -103,6 +106,36 @@ class StudentService {
           return '$field: ${err['msg']}';
         }
         return 'Failed to update student.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Submit assessment results for an existing student.
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> submitAssessment(String studentId, List<bool> assessmentResults) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.patch(
+        Uri.parse('$_baseUrl/students/$studentId/assessment'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'assessment_results': assessmentResults}),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        }
+        return 'Failed to submit assessment.';
       }
     } catch (e) {
       return 'Failed to connect to the server.';

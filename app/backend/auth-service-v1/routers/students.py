@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from bson.objectid import ObjectId
 
 from shared.database import get_db
-from schemas.students import StudentCreate, StudentUpdate, StudentResponse
+from schemas.students import StudentCreate, StudentUpdate, StudentResponse, AssessmentSubmit
 from services.auth_utils import verify_password
 from dependencies import get_current_user
 
@@ -21,12 +21,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Students"])
 @router.post("/students", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)
 async def add_student(request: StudentCreate, current_user: dict = Depends(get_current_user)):
     """Add a new student under the authenticated parent's account."""
-    # 1. Verify parent password if local account
-    provider = current_user.get("auth_provider", "local")
-    is_social = provider in ["google", "microsoft"] or not current_user.get("hashed_password")
-    if not is_social:
-        if not verify_password(request.parent_password, current_user["hashed_password"]):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect parent password")
+    # 1. Verification of parent password is no longer required
 
     db = get_db()
     parent_oid = current_user["_id"]  # This is always a BSON ObjectId from MongoDB
@@ -61,6 +56,8 @@ async def add_student(request: StudentCreate, current_user: dict = Depends(get_c
         grade="Grade 1",
         daily_limit=request.daily_limit,
         avatar_url=request.avatar_url,
+        assessment_results=request.assessment_results,
+        assessment_completed=len(request.assessment_results) == 14,
     )
 
 
@@ -80,6 +77,7 @@ async def list_students(current_user: dict = Depends(get_current_user)):
 
     result = []
     for s in students:
+        assessment = s.get("assessment_results", [])
         result.append(StudentResponse(
             id=str(s["_id"]),
             first_name=s["first_name"],
@@ -88,6 +86,8 @@ async def list_students(current_user: dict = Depends(get_current_user)):
             grade=s.get("grade", "Grade 1"),
             daily_limit=s.get("daily_limit", "No Limit"),
             avatar_url=s.get("avatar_url"),
+            assessment_results=assessment,
+            assessment_completed=len(assessment) == 14,
         ))
 
     return result
@@ -131,6 +131,8 @@ async def update_student(student_id: str, request: StudentUpdate, current_user: 
 
     await db.students.update_one({"_id": obj_id}, {"$set": update_doc})
 
+    updated = await db.students.find_one({"_id": obj_id})
+    assessment = updated.get("assessment_results", [])
     return StudentResponse(
         id=str(obj_id),
         first_name=request.first_name,
@@ -139,4 +141,40 @@ async def update_student(student_id: str, request: StudentUpdate, current_user: 
         grade="Grade 1",
         daily_limit=request.daily_limit,
         avatar_url=request.avatar_url,
+        assessment_results=assessment,
+        assessment_completed=len(assessment) == 14,
+    )
+
+
+@router.patch("/students/{student_id}/assessment", response_model=StudentResponse)
+async def submit_assessment(student_id: str, request: AssessmentSubmit, current_user: dict = Depends(get_current_user)):
+    """Submit assessment results for an existing student. Only the owning parent can do this."""
+    try:
+        obj_id = ObjectId(student_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid student ID")
+
+    db = get_db()
+    parent_oid = current_user["_id"]
+
+    # Ensure student belongs to THIS parent
+    existing_student = await db.students.find_one({"_id": obj_id, "parent_id": parent_oid})
+    if not existing_student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
+    await db.students.update_one(
+        {"_id": obj_id},
+        {"$set": {"assessment_results": request.assessment_results}}
+    )
+
+    return StudentResponse(
+        id=str(obj_id),
+        first_name=existing_student["first_name"],
+        last_name=existing_student["last_name"],
+        username=existing_student["username"],
+        grade=existing_student.get("grade", "Grade 1"),
+        daily_limit=existing_student.get("daily_limit", "No Limit"),
+        avatar_url=existing_student.get("avatar_url"),
+        assessment_results=request.assessment_results,
+        assessment_completed=True,
     )

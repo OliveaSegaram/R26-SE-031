@@ -24,13 +24,15 @@ class SkillSummary {
   final String subtitle;
   final String icon;
   final String file;
+  final int totalActivities;
 
   SkillSummary({
     required this.id, 
     required this.title, 
     required this.subtitle, 
     required this.icon, 
-    required this.file
+    required this.file,
+    this.totalActivities = 0,
   });
 
   factory SkillSummary.fromJson(Map<String, dynamic> json) {
@@ -40,6 +42,7 @@ class SkillSummary {
       subtitle: json['description'] ?? '',
       icon: json['icon'] ?? 'assets/images/skills/s0.png',
       file: json['file_path'] ?? json['file'] ?? '',
+      totalActivities: json['total_activities'] ?? 0,
     );
   }
 }
@@ -51,17 +54,54 @@ class SkillDetail {
 
   SkillDetail({required this.id, required this.title, required this.activities});
 
-  factory SkillDetail.fromJson(List<dynamic> jsonList, String id, String title) {
-    return SkillDetail(
-      id: id,
-      title: title,
-      activities: jsonList.map((a) => ActivityNode.fromJson(a as Map<String, dynamic>)).toList(),
-    );
+  factory SkillDetail.fromJson(dynamic decodedJson, String fallbackId, String fallbackTitle) {
+    if (decodedJson is List) {
+      if (decodedJson.isNotEmpty &&
+          decodedJson.first is Map &&
+          (decodedJson.first as Map).containsKey('activities')) {
+        // Root is a list wrapping the skill object: [{ id, title, activities: [...] }]
+        final skillMap = decodedJson.first as Map<String, dynamic>;
+        final String id = skillMap['id']?.toString() ?? fallbackId;
+        final String title = skillMap['title']?.toString() ?? fallbackTitle;
+        final List<dynamic> activitiesList = skillMap['activities'] as List<dynamic>? ?? [];
+        return SkillDetail(
+          id: id,
+          title: title,
+          activities: activitiesList
+              .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
+              .toList(),
+        );
+      } else {
+        // Root is a direct list of activity nodes
+        return SkillDetail(
+          id: fallbackId,
+          title: fallbackTitle,
+          activities: decodedJson
+              .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
+              .toList(),
+        );
+      }
+    } else if (decodedJson is Map) {
+      // Root is a single skill object: { id, title, activities: [...] }
+      final skillMap = decodedJson as Map<String, dynamic>;
+      final String id = skillMap['id']?.toString() ?? fallbackId;
+      final String title = skillMap['title']?.toString() ?? fallbackTitle;
+      final List<dynamic> activitiesList = skillMap['activities'] as List<dynamic>? ?? [];
+      return SkillDetail(
+        id: id,
+        title: title,
+        activities: activitiesList
+            .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
+            .toList(),
+      );
+    }
+
+    return SkillDetail(id: fallbackId, title: fallbackTitle, activities: []);
   }
 
   static Future<SkillDetail> load(String fileName) async {
     final String response = await rootBundle.loadString('assets/data/curriculum/$fileName');
-    return SkillDetail.fromJson(json.decode(response) as List<dynamic>, fileName.replaceAll('.json', ''), 'Skill Details');
+    return SkillDetail.fromJson(json.decode(response), fileName.replaceAll('.json', ''), 'Skill Details');
   }
 }
 
@@ -82,11 +122,16 @@ class ActivityNode {
 
   factory ActivityNode.fromJson(Map<String, dynamic> json) {
     return ActivityNode(
-      id: json['id'],
-      title: json['title'],
-      telemetryTags: List<String>.from(json['telemetry_tags']),
-      templateType: json['template_type'],
-      rounds: List<Map<String, dynamic>>.from(json['rounds']),
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      telemetryTags: json['telemetry_tags'] != null
+          ? List<String>.from(json['telemetry_tags'] as Iterable)
+          : <String>[],
+      templateType: json['template_type']?.toString() ?? '',
+      rounds: json['rounds'] != null
+          ? List<Map<String, dynamic>>.from(
+              (json['rounds'] as Iterable).map((r) => Map<String, dynamic>.from(r as Map)))
+          : <Map<String, dynamic>>[],
     );
   }
 }

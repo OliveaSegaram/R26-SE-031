@@ -14,7 +14,6 @@ class StudentCreate(BaseModel):
     username: str = Field(..., min_length=2, max_length=30)
     grade: str = "Grade 1"  # Locked to Grade 1 for this app
     daily_limit: str = "No Limit"
-    parent_password: str
     assessment_results: list[bool] = []
     avatar_url: Optional[str] = None
     consent_given: bool = False
@@ -32,6 +31,10 @@ class StudentUpdate(BaseModel):
     avatar_url: Optional[str] = None
 
 
+class AssessmentSubmit(BaseModel):
+    assessment_results: list[bool] = Field(..., min_length=14, max_length=14)
+
+
 class StudentResponse(BaseModel):
     id: str
     first_name: str
@@ -40,3 +43,5 @@ class StudentResponse(BaseModel):
     grade: str
     daily_limit: str
     avatar_url: Optional[str] = None
+    assessment_results: list[bool] = []
+    assessment_completed: bool = False

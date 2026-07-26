@@ -112,40 +112,57 @@ def send_otp_email(email_address: str, otp: str):
     print(f"Your password reset code is: {otp}")
     print(f"=======================================")
     
-    if not SMTP_EMAIL or not SMTP_PASSWORD:
-        print("Warning: SMTP_EMAIL or SMTP_PASSWORD not found in environment. Email not sent.")
-        return
+    import os
+    import requests
+    from fastapi import HTTPException
+    
+    api_key = os.getenv("BREVO_API_KEY")
+    if not api_key:
+        print("Warning: BREVO_API_KEY not found in environment. Email not sent.")
+        raise HTTPException(status_code=500, detail="Email service is not configured (missing BREVO_API_KEY).")
         
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json"
+    }
+    
+    html_content = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #4A90E2;">Sipsara Security Code</h2>
+            <p>Hello,</p>
+            <p>Please use the following 6-digit code to verify your account or reset your password.</p>
+            <div style="background-color: #F8F9FA; padding: 20px; text-align: center; border-radius: 8px; margin: 24px 0;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2C3E50;">{otp}</span>
+            </div>
+            <p>This code will expire in 10 minutes.</p>
+            <p>If you didn't request this, you can safely ignore this email.</p>
+        </body>
+    </html>
+    """
+    
+    sender_email = os.getenv("SMTP_EMAIL", "sipsara.app.support@gmail.com")
+    
+    payload = {
+        "sender": {
+            "name": "Sipsara Auth",
+            "email": sender_email
+        },
+        "to": [{"email": email_address}],
+        "subject": "Your Sipsara Security Code",
+        "htmlContent": html_content
+    }
+    
     try:
-        msg = EmailMessage()
-        msg['Subject'] = "Your AdaptedMind Security Code"
-        msg['From'] = SMTP_EMAIL
-        msg['To'] = email_address
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
         
-        # HTML Content
-        html_content = f"""
-        <html>
-            <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #4A90E2;">AdaptedMind Security Code</h2>
-                <p>Hello,</p>
-                <p>Please use the following 6-digit code to verify your account or reset your password.</p>
-                <div style="background-color: #F8F9FA; padding: 20px; text-align: center; border-radius: 8px; margin: 24px 0;">
-                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2C3E50;">{otp}</span>
-                </div>
-                <p>This code will expire in 10 minutes.</p>
-                <p>If you didn't request this, you can safely ignore this email.</p>
-            </body>
-        </html>
-        """
-        
-        msg.add_alternative(html_content, subtype='html')
-        
-        # Send email using Gmail SMTP
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(SMTP_EMAIL, SMTP_PASSWORD)
-            server.send_message(msg)
+        if response.status_code not in [200, 201, 202]:
+            raise Exception(f"Brevo API error {response.status_code}: {response.text}")
             
-        print(f"Successfully sent OTP email to {email_address}")
+        print(f"Successfully sent OTP email to {email_address} via Brevo")
         
     except Exception as e:
         print(f"Failed to send email to {email_address}: {e}")
+        raise HTTPException(status_code=500, detail=f"Could not send OTP email: {str(e)}")

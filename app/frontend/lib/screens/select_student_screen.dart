@@ -1,12 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
 import '../services/student_service.dart';
 import 'dashboard_screen.dart';
 import 'add_student_screen.dart';
-import 'parent_account_screen.dart';
+import 'parent/parent_hub_screen.dart';
 
 /// Select Student Screen
 /// Dyslexia-accessible: calm blue header, warm white student cards,
@@ -139,58 +140,40 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderLight),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: AppColors.textPrimary,
-                size: 22,
-              ),
-            ),
-          ),
+          // Removed back button to prevent returning to login
           const Spacer(),
           // Settings / Parent account
           GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ParentAccountScreen()),
+                MaterialPageRoute(builder: (context) => const ParentHubScreen()),
               );
             },
             child: Container(
-              width: 48,
-              height: 48,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
                 color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderLight),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppColors.gentleGreen.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    color: AppColors.gentleGreen.withValues(alpha: 0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.settings_rounded,
-                color: AppColors.textPrimary,
-                size: 22,
+              child: const Center(
+                child: FaIcon(
+                  FontAwesomeIcons.userGroup,
+                  color: AppColors.gentleGreen,
+                  size: 22,
+                ),
               ),
             ),
           ),
