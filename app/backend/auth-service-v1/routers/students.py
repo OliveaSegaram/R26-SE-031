@@ -26,10 +26,10 @@ async def add_student(request: StudentCreate, current_user: dict = Depends(get_c
     db = get_db()
     parent_oid = current_user["_id"]  # This is always a BSON ObjectId from MongoDB
 
-    # 2. Check if username is taken globally
-    existing = await db.students.find_one({"username": request.username.lower()})
-    if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+    # 2. Check if username is taken globally (Disabled for this phase per user request)
+    # existing = await db.students.find_one({"username": request.username.lower()})
+    # if existing:
+    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
 
     # 3. Create student document — parent_id is stored as ObjectId for consistency
     student_doc = {
