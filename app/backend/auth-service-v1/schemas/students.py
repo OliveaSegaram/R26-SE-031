@@ -31,6 +31,10 @@ class StudentUpdate(BaseModel):
     avatar_url: Optional[str] = None
 
 
+class AssessmentSubmit(BaseModel):
+    assessment_results: list[bool] = Field(..., min_length=14, max_length=14)
+
+
 class StudentResponse(BaseModel):
     id: str
     first_name: str
@@ -39,3 +43,5 @@ class StudentResponse(BaseModel):
     grade: str
     daily_limit: str
     avatar_url: Optional[str] = None
+    assessment_results: list[bool] = []
+    assessment_completed: bool = False
