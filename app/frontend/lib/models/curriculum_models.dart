@@ -24,13 +24,15 @@ class SkillSummary {
   final String subtitle;
   final String icon;
   final String file;
+  final int totalActivities;
 
   SkillSummary({
     required this.id, 
     required this.title, 
     required this.subtitle, 
     required this.icon, 
-    required this.file
+    required this.file,
+    this.totalActivities = 0,
   });
 
   factory SkillSummary.fromJson(Map<String, dynamic> json) {
@@ -40,6 +42,7 @@ class SkillSummary {
       subtitle: json['description'] ?? '',
       icon: json['icon'] ?? 'assets/images/skills/s0.png',
       file: json['file_path'] ?? json['file'] ?? '',
+      totalActivities: json['total_activities'] ?? 0,
     );
   }
 }
