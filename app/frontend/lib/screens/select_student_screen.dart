@@ -140,30 +140,7 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderLight),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: AppColors.textPrimary,
-                size: 22,
-              ),
-            ),
-          ),
+          // Removed back button to prevent returning to login
           const Spacer(),
           // Settings / Parent account
           GestureDetector(
