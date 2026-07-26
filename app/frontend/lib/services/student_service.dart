@@ -8,8 +8,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Separated from AuthService for clean architecture.
 class StudentService {
   static String get _baseUrl {
-    // Connect directly to the Cloud Server!
-    return 'https://sipsara-auth-api.onrender.com/api/v1/auth';
+    // Local Testing (using your Mac's IP address):
+    // return 'http://192.168.1.3:8000/api/v1/auth';
+    
+    // Cloud Server (Render):
+    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
   }
 
   Future<String?> _getAccessToken() async {
