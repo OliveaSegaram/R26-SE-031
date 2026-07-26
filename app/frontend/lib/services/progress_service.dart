@@ -52,6 +52,35 @@ class ProgressService {
     return completed.contains('${skillId}_$activityId');
   }
 
+  /// Get the number of completed activities for a given skill
+  int getCompletedActivitiesCount(String skillId) {
+    final key = '$_keyCompletedActivitiesPrefix$currentStudentId';
+    List<String> completed = _prefs?.getStringList(key) ?? [];
+    
+    int count = 0;
+    for (String id in completed) {
+      if (id.startsWith('${skillId}_')) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /// Get the normalized progress for a skill (0.0 to 1.0)
+  double getSkillProgress(String skillId, int totalActivities) {
+    if (totalActivities <= 0) return 0.0;
+    int completed = getCompletedActivitiesCount(skillId);
+    return (completed / totalActivities).clamp(0.0, 1.0);
+  }
+
+  /// Get a list of all completed activity keys for a given skill
+  List<String> getCompletedActivitiesForSkill(String skillId) {
+    final key = '$_keyCompletedActivitiesPrefix$currentStudentId';
+    List<String> completed = _prefs?.getStringList(key) ?? [];
+    
+    return completed.where((id) => id.startsWith('${skillId}_')).toList();
+  }
+
   // --- Scoring ---
 
   Future<void> saveActivityScore(String skillId, String activityId, int score) async {

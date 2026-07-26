@@ -7,7 +7,9 @@ import 'level_map_screen.dart';
 import 'select_student_screen.dart';
 import 'parent/parent_hub_screen.dart';
 import 'character_shop_screen.dart';
+import 'progress_analytics_screen.dart';
 import '../models/curriculum_models.dart';
+import '../services/progress_service.dart';
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
 /// calm blue accents, 16pt+ text.
@@ -190,6 +192,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                 } else if (index == 1) { // Shop routes to Character Shop
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const CharacterShopScreen()));
                   setState(() => _navIndex = 0);
+                } else if (index == 2) { // Progress routes to Analytics Screen
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => ProgressAnalyticsScreen(studentData: widget.studentData)));
+                  setState(() => _navIndex = 0);
                 } else if (index != 0) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -281,15 +286,15 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // Highly visual "Hero Image" card layout
   Widget _buildHeroSkillCard(SkillSummary skill, Color color) {
-    // Dummy progress for now
-    final progress = 0.5;
+    // Dynamic progress from ProgressService
+    final progress = ProgressService().getSkillProgress(skill.id, skill.totalActivities);
 
     return GestureDetector(
       onTap: () async {
         try {
           final skillDetail = await SkillDetail.load(skill.file);
           if (!mounted) return;
-          Navigator.push(
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => LevelMapScreen(
@@ -298,6 +303,8 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
             ),
           );
+          // Refresh progress upon return
+          if (mounted) setState(() {});
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load ${skill.title}: $e')));
         }
