@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../theme/app_theme.dart';
 import '../models/dashboard_config.dart';
 import 'level_map_screen.dart';
@@ -8,9 +9,9 @@ import 'select_student_screen.dart';
 import 'parent/parent_hub_screen.dart';
 import 'character_shop_screen.dart';
 import 'progress_analytics_screen.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
+
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
 /// calm blue accents, 16pt+ text.
@@ -23,26 +24,13 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen>
-    with TickerProviderStateMixin {
-  
-  // Navigation State
-  int _navIndex = 0; // 0: Home, 1: Shop, 2: Progress, 3: Settings
-  int _streak = 0;
-
+class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
-
-  DashboardConfig? _dashConfig;
-
-  final List<Map<String, dynamic>> _navItems = [
-    {'label': 'home', 'icon': FontAwesomeIcons.houseChimney, 'color': AppColors.calmBlue},
-    {'label': 'shop', 'icon': FontAwesomeIcons.store, 'color': AppColors.softCoral},
-    {'label': 'progress', 'icon': FontAwesomeIcons.trophy, 'color': AppColors.warmAmber},
-    {'label': 'parents', 'icon': FontAwesomeIcons.userGroup, 'color': AppColors.gentleGreen},
-  ];
-
   CurriculumIndex? _curriculum;
+  int _activeNavIndex = 0; // 0: home, 1: shop, 2: progress, 3: parents
+  int _streak = 0;
+  DashboardConfig? _dashConfig;
 
   @override
   void initState() {
@@ -56,32 +44,28 @@ class _DashboardScreenState extends State<DashboardScreen>
       curve: Curves.easeOut,
     );
     _fadeController.forward();
+
     _loadCurriculum();
     _loadStreak();
-    _loadDashConfig();
+    _loadDashboardConfig();
   }
 
-  Future<void> _loadCurriculum() async {
-    try {
-      final data = await CurriculumIndex.load();
-      if (mounted) setState(() => _curriculum = data);
-    } catch (e) {
-      print('Error loading curriculum: $e');
-    }
+  Future<void> _loadDashboardConfig() async {
+    final cfg = await DashboardConfig.load();
+    if (mounted) setState(() => _dashConfig = cfg);
   }
 
   Future<void> _loadStreak() async {
-    // Read the existing streak — do NOT call updateAndGetStreak() here.
-    // Streaks only increment inside markActivityCompleted().
-    if (mounted) setState(() => _streak = ProgressService().currentStreak);
+    final streak = ProgressService().currentStreak;
+    if (mounted) setState(() => _streak = streak);
   }
 
-  Future<void> _loadDashConfig() async {
-    try {
-      final config = await DashboardConfig.load();
-      if (mounted) setState(() => _dashConfig = config);
-    } catch (e) {
-      print('Error loading dashboard config: $e');
+  Future<void> _loadCurriculum() async {
+    final curr = await CurriculumIndex.load();
+    if (mounted) {
+      setState(() {
+        _curriculum = curr;
+      });
     }
   }
 
@@ -93,7 +77,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final studentName = widget.studentData?['first_name'] ?? 'learner';
+    final studentName = widget.studentData?['name'] ?? 'Student';
     final avatarUrl = widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png';
 
     return Scaffold(
@@ -104,17 +88,36 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header (Avatar Profile + Welcome Message perfectly aligned)
+              // Header (Avatar Profile + Welcome Message)
               _buildHeader(studentName, avatarUrl),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Custom Top Navigation Bar (replaces the old category filters)
+              // Custom Top Navigation Bar
               _buildTopNavBar(),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Skill cards grid
+              // Section Header: "Your Learning Journey"
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Text(
+                      '🚀 learning path',
+                      style: AppTypography.heading(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Skill cards list
               Expanded(
                 child: _curriculum == null 
                   ? const Center(child: CircularProgressIndicator())
@@ -136,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     final subtitle = _streak > 1 ? (config?.subtitleFor(_streak) ?? '🔥 $_streak day streak! Keep going!') : '';
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -150,7 +153,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   greeting,
                   style: AppTypography.heading(
                     fontSize: 22,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -174,18 +177,18 @@ class _DashboardScreenState extends State<DashboardScreen>
             children: [
               if (_streak > 0) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.warmAmber.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                         color: AppColors.warmAmber.withValues(alpha: 0.4),
-                        width: 1.5),
+                        width: 1.8),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('🔥', style: TextStyle(fontSize: 16)),
+                      const Text('🔥', style: TextStyle(fontSize: 18)),
                       const SizedBox(width: 4),
                       Text(
                         '$_streak',
@@ -213,7 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   height: 54,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.calmBlue, width: 2),
+                    border: Border.all(color: AppColors.calmBlue, width: 2.5),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.calmBlue.withValues(alpha: 0.25),
@@ -238,91 +241,63 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: List.generate(_navItems.length, (index) {
           final item = _navItems[index];
-          final isSelected = _navIndex == index;
+          final isSelected = _activeNavIndex == index;
           final color = item['color'] as Color;
 
-          return GestureDetector(
-            onTap: () {
-              setState(() => _navIndex = index);
-              
-              // Handle Navigation Actions
-              Future.delayed(const Duration(milliseconds: 200), () {
-                if (!mounted) return;
-                
-                if (index == 3) { // Settings routes to Parent Screen
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ParentHubScreen()));
-                  setState(() => _navIndex = 0);
-                } else if (index == 1) { // Shop routes to Character Shop
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CharacterShopScreen()));
-                  setState(() => _navIndex = 0);
-                } else if (index == 2) { // Progress routes to Analytics Screen
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => ProgressAnalyticsScreen(studentData: widget.studentData)));
-                  setState(() => _navIndex = 0);
-                } else if (index != 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${item['label']} coming soon!'),
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                    ),
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _activeNavIndex = index);
+                final route = item['route'] as Widget?;
+                if (route != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => route),
                   );
-                  setState(() => _navIndex = 0);
                 }
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
-              width: 78,
-              height: 84,
-              margin: EdgeInsets.only(
-                top: isSelected ? 4 : 8,
-                bottom: isSelected ? 12 : 8,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected ? color : AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isSelected ? color : AppColors.borderLight,
-                  width: 2,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 8),
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: AppColors.shadow,
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FaIcon(
-                    item['icon'],
-                    size: 28,
-                    color: isSelected ? Colors.white : color.withValues(alpha: 0.8),
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? color : AppColors.cardSurface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? color : AppColors.borderLight,
+                    width: isSelected ? 2.5 : 1.5,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    item['label'] as String,
-                    style: AppTypography.caption(
-                      fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                      color: isSelected ? Colors.white : AppColors.textSecondary,
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected
+                          ? color.withValues(alpha: 0.35)
+                          : AppColors.shadow.withValues(alpha: 0.08),
+                      blurRadius: isSelected ? 12 : 6,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FaIcon(
+                      item['icon'] as IconData,
+                      size: 24,
+                      color: isSelected ? Colors.white : color.withValues(alpha: 0.85),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      item['label'] as String,
+                      style: AppTypography.caption(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -352,7 +327,6 @@ class _DashboardScreenState extends State<DashboardScreen>
 
         return _AnimatedSkillCard(
           skill: skill,
-          // color and image come from JSON via the model
           color: skill.color,
           imagePath: skill.imagePath,
           studentData: widget.studentData,
@@ -365,6 +339,33 @@ class _DashboardScreenState extends State<DashboardScreen>
       },
     );
   }
+
+  static const List<Map<String, dynamic>> _navItems = [
+    {
+      'label': 'home',
+      'icon': FontAwesomeIcons.house,
+      'color': AppColors.calmBlue,
+      'route': null,
+    },
+    {
+      'label': 'shop',
+      'icon': FontAwesomeIcons.store,
+      'color': AppColors.softCoral,
+      'route': CharacterShopScreen(),
+    },
+    {
+      'label': 'progress',
+      'icon': FontAwesomeIcons.trophy,
+      'color': AppColors.warmAmber,
+      'route': ProgressAnalyticsScreen(),
+    },
+    {
+      'label': 'parents',
+      'icon': FontAwesomeIcons.userGroup,
+      'color': AppColors.gentleGreen,
+      'route': ParentHubScreen(),
+    },
+  ];
 }
 
 class _AnimatedSkillCard extends StatefulWidget {
@@ -381,7 +382,7 @@ class _AnimatedSkillCard extends StatefulWidget {
     required this.color,
     required this.imagePath,
     this.studentData,
-    required this.isLocked,
+    this.isLocked = false,
     this.dashConfig,
     required this.onReturn,
   });
@@ -403,7 +404,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
       vsync: this,
     )..repeat(reverse: true);
     
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.025).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -423,40 +424,40 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
     final filledStars = (progress * maxStars).round();
 
     final cardContent = Container(
-      height: 155,
+      height: 175,
       decoration: BoxDecoration(
         color: widget.isLocked
-            ? AppColors.cardSurface.withValues(alpha: 0.75)
+            ? AppColors.cardSurface.withValues(alpha: 0.85)
             : AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: widget.isLocked
               ? AppColors.borderLight
-              : widget.color,
+              : widget.color.withValues(alpha: 0.9),
           width: widget.isLocked ? 2 : 3.5,
         ),
         boxShadow: [
           BoxShadow(
             color: widget.isLocked
-                ? AppColors.shadow
-                : widget.color.withValues(alpha: 0.22),
-            blurRadius: widget.isLocked ? 8 : 16,
-            offset: const Offset(0, 6),
+                ? AppColors.shadow.withValues(alpha: 0.08)
+                : widget.color.withValues(alpha: 0.25),
+            blurRadius: widget.isLocked ? 10 : 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Left: Hero image with greyscale + lock overlay when locked
-          Expanded(
-            flex: 38,
+          // Left: Hero image (128px wide) with emoji badge & greyscale lock filter
+          SizedBox(
+            width: 128,
             child: Stack(
               fit: StackFit.expand,
               children: [
                 ClipRRect(
                   borderRadius:
-                      const BorderRadius.horizontal(left: Radius.circular(22)),
+                      const BorderRadius.horizontal(left: Radius.circular(24)),
                   child: ColorFiltered(
                     colorFilter: widget.isLocked
                         ? const ColorFilter.matrix([
@@ -473,20 +474,47 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                       errorBuilder: (_, __, ___) => Container(
                         color: widget.color.withValues(alpha: 0.1),
                         child: Icon(Icons.auto_awesome_rounded,
-                            color: widget.color, size: 50),
+                            color: widget.color, size: 54),
                       ),
                     ),
                   ),
                 ),
+
+                // Floating Emoji Glass Badge at Top-Left
+                if (widget.skill.emoji.isNotEmpty)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.88),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        widget.skill.emoji,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+
+                // Lock Overlay when locked
                 if (widget.isLocked)
                   ClipRRect(
                     borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(22)),
+                        left: Radius.circular(24)),
                     child: Container(
-                      color: Colors.black.withValues(alpha: 0.25),
+                      color: Colors.black.withValues(alpha: 0.28),
                       child: const Center(
                         child: Icon(Icons.lock_rounded,
-                            color: Colors.white, size: 36),
+                            color: Colors.white, size: 40),
                       ),
                     ),
                   ),
@@ -494,52 +522,34 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
             ),
           ),
 
-          // Right: Title, subtitle, star progress + Play / Try button
+          // Right Content Area: Title, description, big stars & 3D Play/Try button
           Expanded(
-            flex: 62,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Title row + TTS speaker
+                  // Title + Audio speaker button row
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.skill.title,
-                              style: AppTypography.heading(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                                color: widget.isLocked
-                                    ? AppColors.textSecondary
-                                    : AppColors.textPrimary,
-                                height: 1.15,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (widget.skill.subtitle.isNotEmpty) ...[
-                              const SizedBox(height: 3),
-                              Text(
-                                widget.skill.subtitle,
-                                style: AppTypography.caption(
-                                  fontSize: 11.5,
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ],
+                        child: Text(
+                          widget.skill.title,
+                          style: AppTypography.heading(
+                            fontSize: 17.5,
+                            fontWeight: FontWeight.w900,
+                            color: widget.isLocked
+                                ? AppColors.textSecondary
+                                : AppColors.textPrimary,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 6),
                       GestureDetector(
                         onTap: () async {
                           final url = widget.skill.audioUrl;
@@ -558,110 +568,127 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                           }
                         },
                         child: Container(
-                          padding: const EdgeInsets.all(6),
-                          margin: const EdgeInsets.only(left: 4),
+                          padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
                             color: widget.color.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.volume_up_rounded,
-                              color: widget.color, size: 18),
+                          child: Icon(
+                            Icons.volume_up_rounded,
+                            color: widget.color,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ],
                   ),
 
-                  // Bottom Section: 5 Big Stars + Chunky Play / Try Button
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Big Stars Row
-                        Row(
-                          children: List.generate(
-                            maxStars,
-                            (i) => Padding(
-                              padding: const EdgeInsets.only(right: 2),
-                              child: Icon(
-                                i < filledStars
-                                    ? Icons.star_rounded
-                                    : Icons.star_outline_rounded,
-                                color: i < filledStars
-                                    ? AppColors.warmAmber
-                                    : AppColors.borderLight,
-                                size: 24,
-                              ),
+                  // Subtitle / Description
+                  if (widget.skill.subtitle.isNotEmpty)
+                    Text(
+                      widget.skill.subtitle,
+                      style: AppTypography.caption(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+
+                  // Bottom Action Row: Big 25px Stars + Chunky 3D Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Big Glowing 25px Stars Row
+                      Row(
+                        children: List.generate(
+                          maxStars,
+                          (i) => Padding(
+                            padding: const EdgeInsets.only(right: 2),
+                            child: Icon(
+                              i < filledStars
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                              color: i < filledStars
+                                  ? AppColors.warmAmber
+                                  : AppColors.borderLight,
+                              size: 25,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                      ),
 
-                        // Action Button (Big Play for active, Big Try for locked)
-                        if (!widget.isLocked)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: widget.color,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: widget.color.withValues(alpha: 0.4),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
+                      // Chunky 3D Play / Try Button
+                      if (!widget.isLocked)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 9),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                widget.color,
+                                widget.color.withValues(alpha: 0.85),
                               ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.play_arrow_rounded,
-                                    color: Colors.white, size: 20),
-                                SizedBox(width: 3),
-                                Text(
-                                  'Play',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 13.5,
-                                    letterSpacing: 0.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 7),
-                            decoration: BoxDecoration(
-                              color: AppColors.warmAmber.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(18),
-                              border:
-                                  Border.all(color: AppColors.warmAmber, width: 1.8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.lock_open_rounded,
-                                    color: AppColors.warmAmber, size: 16),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Try',
-                                  style: AppTypography.heading(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.warmAmber,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: widget.color.withValues(alpha: 0.45),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
                           ),
-                      ],
-                    ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.play_arrow_rounded,
+                                  color: Colors.white, size: 22),
+                              SizedBox(width: 4),
+                              Text(
+                                'Play',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14.5,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.warmAmber.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: AppColors.warmAmber, width: 2),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_open_rounded,
+                                  color: AppColors.warmAmber, size: 18),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Try',
+                                style: AppTypography.heading(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.warmAmber,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),
@@ -678,6 +705,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
           try {
             final skillDetail = await SkillDetail.load(widget.skill.file);
             if (!mounted) return;
+
             await Navigator.push(
               context,
               MaterialPageRoute(
@@ -689,8 +717,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
             );
             widget.onReturn();
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to load ${widget.skill.title}: $e')));
+            debugPrint('Error loading skill detail: $e');
           }
         },
         child: cardContent,
