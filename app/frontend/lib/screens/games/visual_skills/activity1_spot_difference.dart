@@ -45,14 +45,16 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
     super.initState();
     final node = widget.activityNode ?? _defaultNode;
     _rounds = node.rounds.map((roundData) {
-      final target = roundData['target'] as String;
-      // Taking the first distractor for MVP, though the array can have multiple
-      final distractor = (roundData['distractors'] as List).first as String;
-      final totalCount = (roundData['target_count'] as int) + (roundData['distractor_count'] as int);
-      final correctIndex = roundData['correct_index'] as int;
+      final target = roundData['target']?.toString() ?? '🌸';
+      final distractorList = roundData['distractors'] as List? ?? ['🌳'];
+      final distractor = distractorList.first?.toString() ?? '🌳';
+      final totalCount = ((roundData['target_count'] as int?) ?? 1) + ((roundData['distractor_count'] as int?) ?? 2);
+      final correctIndex = (roundData['correct_index'] as int?) ?? 0;
 
       List<String> items = List.filled(totalCount, distractor);
-      items[correctIndex] = target;
+      if (correctIndex < items.length) {
+        items[correctIndex] = target;
+      }
 
       return SpotDifferenceRound(items: items, correctIndex: correctIndex);
     }).toList();

@@ -33,14 +33,18 @@ class _Activity3MissingPictureState extends State<Activity3MissingPicture> {
   void initState() {
     super.initState();
     _rounds = widget.activityNode.rounds.map((roundData) {
-      final sequence = List<String?>.from(roundData['sequence'] ?? []);
-      List<String> options = List<String>.from(roundData['options'] ?? []);
+      final rawSeq = roundData['sequence'] as List? ?? [];
+      final sequence = rawSeq.map((e) => e?.toString()).toList();
+      List<String> options = (roundData['options'] as List? ?? [])
+          .map((e) => e.toString())
+          .toList();
       int correctOptionIndex = roundData['correct_option_index'] ?? roundData['correct_index'] ?? 0;
       
-      // Ensure the correct option is indeed at the correct index
-      final correctOption = options[correctOptionIndex];
-      options.shuffle();
-      correctOptionIndex = options.indexOf(correctOption);
+      if (options.isNotEmpty && correctOptionIndex < options.length) {
+        final correctOption = options[correctOptionIndex];
+        options.shuffle();
+        correctOptionIndex = options.indexOf(correctOption);
+      }
 
       return MissingPictureRound(
         sequence: sequence,

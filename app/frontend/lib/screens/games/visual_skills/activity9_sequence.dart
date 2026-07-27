@@ -37,8 +37,11 @@ class _Activity9SequenceState extends State<Activity9Sequence> {
 
   void _initRounds() {
     _rounds = widget.activityNode.rounds.map((roundData) {
-      List<String?> sequence = List<String?>.from(roundData['sequence'] ?? []);
-      List<String> options = List<String>.from(roundData['options'] ?? []);
+      final rawSeq = roundData['sequence'] as List? ?? [];
+      List<String?> sequence = rawSeq.map((e) => e?.toString()).toList();
+      List<String> options = (roundData['options'] as List? ?? [])
+          .map((e) => e.toString())
+          .toList();
       int correctOptionIndex = roundData['correct_option_index'] ?? 0;
       
       if (sequence.isEmpty) {
@@ -49,10 +52,11 @@ class _Activity9SequenceState extends State<Activity9Sequence> {
         correctOptionIndex = 1;
       }
       
-      // Shuffle options and fix correct index
-      final correctOption = options[correctOptionIndex];
-      options.shuffle();
-      correctOptionIndex = options.indexOf(correctOption);
+      if (options.isNotEmpty && correctOptionIndex < options.length) {
+        final correctOption = options[correctOptionIndex];
+        options.shuffle();
+        correctOptionIndex = options.indexOf(correctOption);
+      }
 
       return SequenceRound(
         sequence: sequence,
