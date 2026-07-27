@@ -174,9 +174,51 @@ async def submit_assessment(student_id: str, request: AssessmentSubmit, current_
         assessment_completed=True,
     )
 
-# @router.patch("/students/{student_id}/progress", response_model=StudentResponse)
-# async def sync_progress(student_id: str, request: ProgressSyncRequest, current_user: dict = Depends(get_current_user)):
-#     \"\"\"Sync progress data (completed activities and scores) to the database.\"\"\"
+
+@router.patch("/students/{student_id}/progress", response_model=StudentResponse)
+async def sync_progress(student_id: str, request: ProgressSyncRequest, current_user: dict = Depends(get_current_user)):
+    """Sync progress data (completed activities and scores) to the database.
+
+    ISOLATION: Only the owning parent can sync progress for their student.
+    Uses $set to overwrite progress arrays — the Flutter app sends a union-merged
+    payload so no data is lost on the client side before calling this.
+    """
+    try:
+        obj_id = ObjectId(student_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid student ID")
+
+    db = get_db()
+    parent_oid = current_user["_id"]
+
+    # Ensure student belongs to THIS parent
+    existing_student = await db.students.find_one({"_id": obj_id, "parent_id": parent_oid})
+    if not existing_student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
+    await db.students.update_one(
+        {"_id": obj_id},
+        {"$set": {
+            "completed_activities": request.completed_activities,
+            "activity_scores": request.activity_scores,
+        }}
+    )
+
+    assessment = existing_student.get("assessment_results", [])
+    return StudentResponse(
+        id=str(obj_id),
+        first_name=existing_student["first_name"],
+        last_name=existing_student["last_name"],
+        grade=existing_student.get("grade", "Grade 1"),
+        daily_limit=existing_student.get("daily_limit", "No Limit"),
+        avatar_url=existing_student.get("avatar_url"),
+        assessment_results=assessment,
+        completed_activities=request.completed_activities,
+        activity_scores=request.activity_scores,
+        assessment_completed=len(assessment) == 14,
+    )
+
+
 @router.delete("/students/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_student(student_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a student. Only the owning parent can delete their student."""
@@ -193,29 +235,8 @@ async def delete_student(student_id: str, current_user: dict = Depends(get_curre
     if not existing_student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
 
-    # await db.students.update_one(
-    #     {"_id": obj_id},
-    #     {"$set": {
-    #         "completed_activities": request.completed_activities,
-    #         "activity_scores": request.activity_scores
-    #     }}
-    # )
-
-    # return StudentResponse(
-    #     id=str(obj_id),
-    #     first_name=existing_student["first_name"],
-    #     last_name=existing_student["last_name"],
-    #     username=existing_student["username"],
-    #     grade=existing_student.get("grade", "Grade 1"),
-    #     daily_limit=existing_student.get("daily_limit", "No Limit"),
-    #     avatar_url=existing_student.get("avatar_url"),
-    #     assessment_results=existing_student.get("assessment_results", []),
-    #     completed_activities=request.completed_activities,
-    #     activity_scores=request.activity_scores,
-    #     assessment_completed=len(existing_student.get("assessment_results", [])) == 14,
-    # )
     result = await db.students.delete_one({"_id": obj_id, "parent_id": parent_oid})
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete student")
-    
+
     return None
