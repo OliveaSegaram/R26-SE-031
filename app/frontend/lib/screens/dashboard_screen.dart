@@ -8,9 +8,9 @@ import 'select_student_screen.dart';
 import 'parent/parent_hub_screen.dart';
 import 'character_shop_screen.dart';
 import 'progress_analytics_screen.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
-import '../services/tts_service.dart';
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
 /// calm blue accents, 16pt+ text.
@@ -393,6 +393,7 @@ class _AnimatedSkillCard extends StatefulWidget {
 class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -409,6 +410,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
 
   @override
   void dispose() {
+    _audioPlayer.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -539,7 +541,22 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => TtsService().speak(widget.skill.title),
+                        onTap: () async {
+                          final url = widget.skill.audioUrl;
+                          if (url.isNotEmpty) {
+                            try {
+                              await _audioPlayer.stop();
+                              if (url.startsWith('http://') || url.startsWith('https://')) {
+                                await _audioPlayer.play(UrlSource(url));
+                              } else {
+                                final cleanPath = url.replaceFirst('assets/', '');
+                                await _audioPlayer.play(AssetSource(cleanPath));
+                              }
+                            } catch (e) {
+                              debugPrint('Error playing custom skill audio: $e');
+                            }
+                          }
+                        },
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           margin: const EdgeInsets.only(left: 4),

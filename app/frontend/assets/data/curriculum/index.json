@@ -8,6 +8,7 @@
     "image_path": "assets/images/skills/s0.png",
     "color_hex": "#4A90D9",
     "emoji": "🔷",
+    "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/skill_1_name.mp3",
     "is_locked": false
   },
   {
@@ -19,6 +20,7 @@
     "image_path": "assets/images/skills/s1.png",
     "color_hex": "#6DBE6D",
     "emoji": "🅰️",
+    "audio_url": "",
     "is_locked": true
   },
   {
@@ -30,6 +32,7 @@
     "image_path": "assets/images/skills/s2.png",
     "color_hex": "#E8A54B",
     "emoji": "🔤",
+    "audio_url": "",
     "is_locked": true
   },
   {
@@ -41,6 +44,7 @@
     "image_path": "assets/images/skills/s3.png",
     "color_hex": "#E87C6D",
     "emoji": "🧩",
+    "audio_url": "",
     "is_locked": true
   },
   {
@@ -52,6 +56,7 @@
     "image_path": "assets/images/skills/s4.png",
     "color_hex": "#9B7ED4",
     "emoji": "📖",
+    "audio_url": "",
     "is_locked": true
   },
   {
@@ -63,6 +68,7 @@
     "image_path": "assets/images/skills/s5.png",
     "color_hex": "#5BB8A8",
     "emoji": "✨",
+    "audio_url": "",
     "is_locked": true
   },
   {
@@ -74,6 +80,7 @@
     "image_path": "assets/images/skills/s6.png",
     "color_hex": "#E87BB0",
     "emoji": "🌟",
+    "audio_url": "",
     "is_locked": true
   },
   {
@@ -85,6 +92,7 @@
     "image_path": "assets/images/skills/s7.png",
     "color_hex": "#F0843C",
     "emoji": "💪",
+    "audio_url": "",
     "is_locked": true
   },
   {
@@ -96,6 +104,7 @@
     "image_path": "assets/images/skills/s8.png",
     "color_hex": "#7B8EC4",
     "emoji": "🏆",
+    "audio_url": "",
     "is_locked": true
   },
   {
@@ -107,6 +116,7 @@
     "image_path": "assets/images/skills/s9.png",
     "color_hex": "#C4A83C",
     "emoji": "🧠",
+    "audio_url": "",
     "is_locked": true
   }
 ]

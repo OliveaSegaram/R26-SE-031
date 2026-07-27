@@ -29,6 +29,7 @@ class SkillSummary {
   final String imagePath;
   final String colorHex;
   final String emoji;
+  final String audioUrl;
 
   SkillSummary({
     required this.id,
@@ -40,6 +41,7 @@ class SkillSummary {
     this.imagePath = 'assets/images/skills/s0.png',
     this.colorHex = '#4A90D9',
     this.emoji = '⭐',
+    this.audioUrl = '',
   });
 
   /// Parses the colorHex string (e.g. "#4A90D9") into a Flutter Color.
@@ -59,6 +61,7 @@ class SkillSummary {
       imagePath: json['image_path'] ?? 'assets/images/skills/s0.png',
       colorHex: json['color_hex'] ?? '#4A90D9',
       emoji: json['emoji'] ?? '⭐',
+      audioUrl: json['audio_url'] ?? json['audio_path'] ?? json['audio'] ?? '',
     );
   }
 }
