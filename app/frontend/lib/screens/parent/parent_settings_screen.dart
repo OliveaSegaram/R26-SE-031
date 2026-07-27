@@ -418,12 +418,14 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                     children: [
                       Row(
                         children: [
-                          Text(
-                            'Two-factor authentication',
-                            style: AppTypography.body(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                          Flexible(
+                            child: Text(
+                              'Two-factor authentication',
+                              style: AppTypography.body(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
