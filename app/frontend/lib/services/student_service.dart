@@ -12,7 +12,7 @@ class StudentService {
     // return 'http://127.0.0.1:8015/api/v1/auth';
     
     // Cloud Server (Render):
-    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
+    return 'https://adaptedmind-auth-api-wrix.onrender.com/api/v1/auth';
   }
 
   Future<String?> _getAccessToken() async {
