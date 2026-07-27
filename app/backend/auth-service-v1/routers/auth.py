@@ -12,7 +12,7 @@ from slowapi.util import get_remote_address
 
 from shared.database import get_db
 from schemas.auth import (
-    UserCreate, UserLogin, Token, TokenRefreshRequest,
+    UserCreate, UserUpdate, UserLogin, Token, TokenRefreshRequest,
     UserResponse, ChangePasswordRequest, VerifyPasswordRequest, GoogleLoginRequest, MicrosoftLoginRequest
 )
 from services.auth_utils import (
@@ -343,6 +343,39 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         email=current_user["email"],
         role=current_user.get("role", "parent"),
     )
+@router.put("/me", response_model=UserResponse)
+async def update_me(request: UserUpdate, current_user: dict = Depends(get_current_user)):
+    """Update the authenticated user's profile."""
+    db = get_db()
+    
+    update_data = {}
+    if request.name is not None:
+        update_data["name"] = request.name.strip()
+    if request.email is not None:
+        update_data["email"] = request.email.strip().lower()
+        
+    if update_data:
+        # Check if email is being changed and is already taken
+        if "email" in update_data and update_data["email"] != current_user["email"]:
+            existing = await db.users.find_one({"email": update_data["email"]})
+            if existing:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already registered")
+                
+        user_doc = await db.users.find_one_and_update(
+            {"_id": current_user["_id"]},
+            {"$set": update_data},
+            return_document=True
+        )
+    else:
+        user_doc = current_user
+
+    return UserResponse(
+        id=str(user_doc["_id"]),
+        name=user_doc["name"],
+        email=user_doc["email"],
+        role=user_doc.get("role", "parent"),
+    )
+
 
 
 @router.post("/change-password")

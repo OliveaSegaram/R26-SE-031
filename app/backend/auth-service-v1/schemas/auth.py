@@ -15,6 +15,11 @@ class UserCreate(BaseModel):
     role: Optional[str] = "parent"
 
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=2, max_length=50)
+    email: Optional[EmailStr] = None
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)

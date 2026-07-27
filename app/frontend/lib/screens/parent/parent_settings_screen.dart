@@ -1111,18 +1111,24 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                           errorMessage = null;
                         });
                         
-                        // Mock API call to satisfy "no backend needed"
-                        await Future.delayed(const Duration(milliseconds: 800));
+                        final error = await AuthService().updateProfile(name: newName);
 
-                        if (!ctx.mounted) return;
-                        Navigator.pop(ctx);
-                        setState(() => _userName = newName);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Name updated locally!'),
-                            backgroundColor: AppColors.gentleGreen,
-                          ),
-                        );
+                        if (error != null) {
+                          setDialogState(() {
+                            isLoading = false;
+                            errorMessage = error;
+                          });
+                        } else {
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          setState(() => _userName = newName);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Name updated successfully!'),
+                              backgroundColor: AppColors.gentleGreen,
+                            ),
+                          );
+                        }
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.calmBlue,
@@ -1204,18 +1210,24 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                           errorMessage = null;
                         });
 
-                        // Mock API call
-                        await Future.delayed(const Duration(milliseconds: 800));
+                        final error = await AuthService().updateProfile(email: newEmail);
 
-                        if (!ctx.mounted) return;
-                        Navigator.pop(ctx);
-                        setState(() => _userEmail = newEmail);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Email updated locally!'),
-                            backgroundColor: AppColors.gentleGreen,
-                          ),
-                        );
+                        if (error != null) {
+                          setDialogState(() {
+                            isLoading = false;
+                            errorMessage = error;
+                          });
+                        } else {
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          setState(() => _userEmail = newEmail);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Email updated successfully!'),
+                              backgroundColor: AppColors.gentleGreen,
+                            ),
+                          );
+                        }
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.calmBlue,

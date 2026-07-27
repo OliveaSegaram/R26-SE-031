@@ -310,6 +310,39 @@ class AuthService {
     }
   }
 
+  /// Update Profile (Name/Email)
+  Future<String?> updateProfile({String? name, String? email}) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final Map<String, dynamic> body = {};
+      if (name != null) body['name'] = name;
+      if (email != null) body['email'] = email;
+
+      final response = await http.put(
+        Uri.parse('$_baseUrl/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        }
+        return 'Failed to update profile.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
   /// Change Password
   Future<String?> changePassword(String oldPassword, String newPassword) async {
     try {
