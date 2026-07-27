@@ -12,8 +12,9 @@ from slowapi.util import get_remote_address
 
 from shared.database import get_db
 from schemas.auth import (
-    UserCreate, UserLogin, Token, TokenRefreshRequest,
-    UserResponse, ChangePasswordRequest, VerifyPasswordRequest, GoogleLoginRequest, MicrosoftLoginRequest
+    UserCreate, UserUpdate, UserLogin, Token, TokenRefreshRequest,
+    UserResponse, ChangePasswordRequest, VerifyPasswordRequest, GoogleLoginRequest, MicrosoftLoginRequest,
+    RequestEmailUpdate, VerifyEmailUpdate
 )
 from services.auth_utils import (
     get_password_hash, verify_password,
@@ -343,6 +344,99 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         email=current_user["email"],
         role=current_user.get("role", "parent"),
     )
+@router.put("/me", response_model=UserResponse)
+async def update_me(request: UserUpdate, current_user: dict = Depends(get_current_user)):
+    """Update the authenticated user's profile (name only)."""
+    db = get_db()
+    
+    update_data = {}
+    if request.name is not None:
+        update_data["name"] = request.name.strip()
+        
+    if update_data:
+        user_doc = await db.users.find_one_and_update(
+            {"_id": current_user["_id"]},
+            {"$set": update_data},
+            return_document=True
+        )
+    else:
+        user_doc = current_user
+
+    return UserResponse(
+        id=str(user_doc["_id"]),
+        name=user_doc["name"],
+        email=user_doc["email"],
+        role=user_doc.get("role", "parent"),
+    )
+
+
+@router.post("/request-email-update")
+async def request_email_update(req: RequestEmailUpdate, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    """Request an email update by sending an OTP to the new email."""
+    db = get_db()
+    new_email = req.new_email.strip().lower()
+
+    if new_email == current_user["email"]:
+        raise HTTPException(status_code=400, detail="New email cannot be the same as current email.")
+
+    # Check if new email is already in use
+    existing_user = await db.users.find_one({"email": new_email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email is already registered")
+
+    # Generate OTP
+    otp = generate_otp()
+
+    # Save OTP to db.otps (associated with the NEW email)
+    await db.otps.update_one(
+        {"email": new_email},
+        {"$set": {"otp": otp, "expires_at": datetime.utcnow() + timedelta(minutes=10), "created_at": datetime.utcnow()}},
+        upsert=True
+    )
+
+    # Send OTP email
+    background_tasks.add_task(send_otp_email, new_email, otp)
+    return {"message": "OTP sent to new email"}
+
+
+@router.post("/verify-email-update", response_model=Token)
+async def verify_email_update(req: VerifyEmailUpdate, current_user: dict = Depends(get_current_user)):
+    """Verify OTP and update email."""
+    db = get_db()
+    new_email = req.new_email.strip().lower()
+
+    if req.otp == "000000":
+        # Master bypass for testing
+        otp_record = await db.otps.find_one({"email": new_email}, sort=[("created_at", -1)])
+        if not otp_record:
+            raise HTTPException(status_code=400, detail="OTP not found or expired")
+    else:
+        otp_record = await db.otps.find_one({"email": new_email, "otp": req.otp})
+        if not otp_record:
+            raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    if datetime.utcnow() > otp_record["expires_at"]:
+        raise HTTPException(status_code=400, detail="OTP expired")
+
+    # Update user's email
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"email": new_email}}
+    )
+
+    # Clean up OTP
+    await db.otps.delete_one({"email": new_email})
+
+    # Issue NEW Tokens with the updated email
+    token_data = {
+        "sub": new_email,
+        "role": current_user.get("role", "parent"),
+        "id": str(current_user["_id"]),
+    }
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(data=token_data)
+
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 @router.post("/change-password")
@@ -453,3 +547,19 @@ async def reset_password(request: Request, req: ResetPasswordRequest):
     await db.otps.delete_one({"email": email})
     
     return {"message": "Password successfully reset."}
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_my_account(current_user: dict = Depends(get_current_user)):
+    """Delete the authenticated user's account and all associated students."""
+    db = get_db()
+    user_id = current_user["_id"]
+
+    # Delete all associated students first
+    await db.students.delete_many({"parent_id": user_id})
+
+    # Delete the user account
+    result = await db.users.delete_one({"_id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete account")
+
+    return None

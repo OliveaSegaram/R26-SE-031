@@ -87,69 +87,13 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.calmBlue,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background Full Screen Illustration
-          Image.asset(
-            'assets/images/splash_bg.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-          ),
-          
-          // Gradient at the bottom so the logo pops out clearly against the artwork
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 300,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    AppColors.calmBlue.withValues(alpha: 0.95),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Logo at the bottom (Sinhala)
-          Positioned(
-            bottom: 80,
-            left: 0,
-            right: 0,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildPremiumLogo(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPremiumLogo() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset(
-          'assets/images/app_logo.png',
-          height: 120, // Huge custom logo
-          fit: BoxFit.contain,
+      body: SizedBox.expand(
+        child: Image.asset(
+          'assets/images/splash_bg.png',
+          fit: BoxFit.cover,
+          alignment: Alignment.center,
         ),
-      ],
+      ),
     );
   }
 }
