@@ -15,6 +15,8 @@ class ProgressService {
   static const String _keyActivityScoresPrefix = 'scores_'; // + studentId
   static const String _keyLastActiveDate = 'last_active_date';
   static const String _keyStreakCount = 'streak_count';
+  // Only true if streak was incremented by completing an activity (not just opening the app)
+  static const String _keyStreakEarned = 'streak_earned_by_activity';
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -81,6 +83,8 @@ class ProgressService {
       await _prefs?.setStringList(key, completed);
       // Streak only counts if an activity was actually completed today
       await updateAndGetStreak();
+      // Mark the streak as genuinely earned through activity completion
+      await _prefs?.setBool(_keyStreakEarned, true);
       _triggerCloudSync();
     }
   }
@@ -148,8 +152,13 @@ class ProgressService {
 
   // --- Streak Tracking ---
 
-  /// Returns the current streak count without updating it
-  int get currentStreak => _prefs?.getInt(_keyStreakCount) ?? 0;
+  /// Returns the current streak count, but only if it was earned through
+  /// activity completion. Returns 0 if the streak was set by app-open alone.
+  int get currentStreak {
+    final earned = _prefs?.getBool(_keyStreakEarned) ?? false;
+    if (!earned) return 0;
+    return _prefs?.getInt(_keyStreakCount) ?? 0;
+  }
 
   /// Checks today's date vs last active date. Increments streak if consecutive day,
   /// resets to 1 if broken, keeps it the same if called on the same day.
@@ -172,7 +181,8 @@ class ProgressService {
       } else if (diff == 1) {
         streak += 1;
       } else {
-        streak = 1; // Streak broken
+        streak = 1; // Streak broken — must be re-earned through activity
+        await _prefs?.setBool(_keyStreakEarned, false);
       }
     }
 
