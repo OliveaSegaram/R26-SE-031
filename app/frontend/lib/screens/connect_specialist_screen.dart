@@ -108,7 +108,7 @@ class _ConnectSpecialistScreenState extends State<ConnectSpecialistScreen> {
                           items: _students.map((student) {
                             return DropdownMenuItem<String>(
                               value: student['_id'],
-                              child: Text(student['first_name'], style: AppTypography.body(fontSize: 16)),
+                              child: Text(student['first_name'] ?? 'student', style: AppTypography.body(fontSize: 16)),
                             );
                           }).toList(),
                           onChanged: (val) => setState(() => _selectedStudentId = val),

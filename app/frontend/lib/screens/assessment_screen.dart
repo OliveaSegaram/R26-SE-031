@@ -120,12 +120,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 
   void _navigateToResults() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => const ParentAccountScreen(),
-      ),
-      (route) => false,
-    );
+    Navigator.of(context).pop();
   }
 
   @override
