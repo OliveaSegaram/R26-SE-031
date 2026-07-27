@@ -22,7 +22,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
   String? _selectedGrade = 'Grade 1';
@@ -55,7 +54,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     if (widget.editStudentData != null) {
       _firstNameController.text = widget.editStudentData!['first_name'] ?? '';
       _lastNameController.text = widget.editStudentData!['last_name'] ?? '';
-      _usernameController.text = widget.editStudentData!['username'] ?? '';
       _selectedGrade = widget.editStudentData!['grade'];
       _selectedDailyLimit =
           widget.editStudentData!['daily_limit'] ?? 'No Limit';
@@ -80,7 +78,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -199,20 +196,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            TextFormField(
-                              controller: _usernameController,
-                              decoration: const InputDecoration(
-                                hintText: 'student username (login)',
-                              ),
-                              style: AppTypography.body(fontSize: 16),
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) return 'required';
-                                if (val.trim().length < 2) return 'must be at least 2 characters';
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-
                             // Grade — locked to Grade 1
                             Container(
                               width: double.infinity,
@@ -305,8 +288,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                                       'first_name': _firstNameController.text
                                           .trim(),
                                       'last_name': _lastNameController.text
-                                          .trim(),
-                                      'username': _usernameController.text
                                           .trim(),
                                       'grade': _selectedGrade,
                                       'daily_limit': _selectedDailyLimit,
