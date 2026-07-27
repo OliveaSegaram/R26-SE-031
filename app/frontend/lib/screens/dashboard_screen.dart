@@ -340,21 +340,23 @@ class _DashboardScreenState extends State<DashboardScreen>
       itemBuilder: (context, index) {
         final skill = _curriculum!.skills[index];
 
-        // Lock state: first skill always unlocked; subsequent unlock when previous has progress
-        bool isLocked = false;
-        if (index > 0) {
-          final prevSkill = _curriculum!.skills[index - 1];
-          final prevCompleted = ProgressService().getCompletedActivitiesCount(prevSkill.id);
-          isLocked = prevCompleted == 0;
-        }
+        final String? prevSkillId = index > 0 ? _curriculum!.skills[index - 1].id : null;
+        final int prevTotal = index > 0 ? _curriculum!.skills[index - 1].totalActivities : 0;
+
+        final bool isUnlocked = ProgressService().isSkillUnlocked(
+          index,
+          skill.id,
+          prevSkillId,
+          prevTotal,
+        );
 
         return _AnimatedSkillCard(
           skill: skill,
-          // color and image come from JSON via the model — no more hardcoded cycling
+          // color and image come from JSON via the model
           color: skill.color,
           imagePath: skill.imagePath,
           studentData: widget.studentData,
-          isLocked: isLocked,
+          isLocked: !isUnlocked,
           dashConfig: config,
           onReturn: () {
             if (mounted) setState(() {});
