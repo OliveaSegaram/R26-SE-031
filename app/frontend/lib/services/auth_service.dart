@@ -520,6 +520,30 @@ class AuthService {
     }
   }
 
+  /// Delete Account
+  Future<String?> deleteAccount() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 204) {
+        return null; // Success
+      } else {
+        return 'Failed to delete account. Status: ${response.statusCode}';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
   /// Clear tokens (logout)
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();

@@ -392,51 +392,40 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
         ),
         const SizedBox(height: 12),
         // Security toggles
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.slateBg.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            children: [
-              _buildSecurityToggle(
-                icon: Icons.lock_outline_rounded,
-                label: 'two-factor auth',
-                value: false,
-                onChanged: (_) => _showComingSoon('Two-factor authentication'),
-                comingSoon: true,
-              ),
-              const SizedBox(height: 8),
-              _buildSecurityToggle(
-                icon: Icons.notifications_active_outlined,
-                label: 'login alerts',
-                value: true,
-                onChanged: (_) => _showComingSoon('Login alerts'),
-                comingSoon: true,
-              ),
-            ],
-          ),
+        _buildSecurityToggle(
+          icon: Icons.lock_outline_rounded,
+          label: 'two-factor auth',
+          value: false,
+          onChanged: (_) => _showComingSoon('Two-factor authentication'),
+          comingSoon: true,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        _buildSecurityToggle(
+          icon: Icons.notifications_active_outlined,
+          label: 'login alerts',
+          value: true,
+          onChanged: (_) => _showComingSoon('Login alerts'),
+          comingSoon: true,
+        ),
+        const SizedBox(height: 24),
         // Delete Account
         SizedBox(
           width: double.infinity,
           child: TextButton.icon(
-            onPressed: () => _showComingSoon('Delete Account'),
+            onPressed: _showDeleteAccountDialog,
             icon: const Icon(Icons.delete_forever_rounded,
-                color: Colors.redAccent, size: 18),
+                color: Colors.redAccent, size: 20),
             label: Text(
               'delete account',
               style: AppTypography.body(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: Colors.redAccent,
               ),
             ),
             style: TextButton.styleFrom(
               alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             ),
           ),
         ),
@@ -519,48 +508,70 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
     required ValueChanged<bool> onChanged,
     bool comingSoon = false,
   }) {
-    return Row(
-      children: [
-        Icon(icon, color: AppColors.calmBlue, size: 18),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: AppTypography.body(
-              fontSize: 14,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-        if (comingSoon)
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight, width: 1),
+      ),
+      child: Row(
+        children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.warmAmber.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(6),
+              color: AppColors.calmBlue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              'soon',
-              style: AppTypography.caption(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: AppColors.warmAmber,
-              ),
+            child: Icon(icon, color: AppColors.calmBlue, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Row(
+              children: [
+                Text(
+                  label,
+                  style: AppTypography.body(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (comingSoon) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.warmAmber.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'soon',
+                      style: AppTypography.caption(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.warmAmber,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-        const SizedBox(width: 6),
-        SizedBox(
-          height: 28,
-          child: Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: AppColors.gentleGreen,
-            activeTrackColor: AppColors.gentleGreen.withValues(alpha: 0.3),
-            inactiveThumbColor: AppColors.textSecondary,
-            inactiveTrackColor: AppColors.borderLight,
+          const SizedBox(width: 12),
+          SizedBox(
+            height: 32,
+            child: Switch(
+              value: value,
+              onChanged: onChanged,
+              activeColor: AppColors.gentleGreen,
+              activeTrackColor: AppColors.gentleGreen.withValues(alpha: 0.3),
+              inactiveThumbColor: AppColors.textSecondary,
+              inactiveTrackColor: AppColors.borderLight,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1452,6 +1463,110 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
             ],
           );
         });
+      },
+    );
+  }
+
+
+  void _showDeleteAccountDialog() {
+    final controller = TextEditingController();
+    bool isLoading = false;
+    String? errorMessage;
+    bool isMatch = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.cream,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                'Delete Account',
+                style: AppTypography.heading(fontSize: 22, color: Colors.redAccent),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'This action is irreversible. All your data and student profiles will be permanently deleted.',
+                    style: AppTypography.body(fontSize: 15),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'To confirm, type your full name:',
+                    style: AppTypography.caption(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _userName,
+                    style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      hintText: _userName,
+                      errorText: errorMessage,
+                    ),
+                    onChanged: (val) {
+                      setDialogState(() {
+                        isMatch = val.trim() == _userName;
+                        errorMessage = null;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                  child: Text('Cancel', style: AppTypography.body(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: (!isMatch || isLoading)
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isLoading = true;
+                            errorMessage = null;
+                          });
+
+                          final error = await AuthService().deleteAccount();
+
+                          if (error != null) {
+                            setDialogState(() {
+                              isLoading = false;
+                              errorMessage = error;
+                            });
+                          } else {
+                            await AuthService().logout();
+                            if (!ctx.mounted) return;
+                            Navigator.pushAndRemoveUntil(
+                              ctx,
+                              MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                              (route) => false,
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text('Delete Permanently', style: AppTypography.body(color: Colors.white, fontWeight: FontWeight.w600)),
+                ),
+              ],
+            );
+          },
+        );
       },
     );
   }

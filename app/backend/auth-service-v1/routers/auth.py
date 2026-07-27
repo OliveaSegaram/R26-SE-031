@@ -547,3 +547,19 @@ async def reset_password(request: Request, req: ResetPasswordRequest):
     await db.otps.delete_one({"email": email})
     
     return {"message": "Password successfully reset."}
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_my_account(current_user: dict = Depends(get_current_user)):
+    """Delete the authenticated user's account and all associated students."""
+    db = get_db()
+    user_id = current_user["_id"]
+
+    # Delete all associated students first
+    await db.students.delete_many({"parent_id": user_id})
+
+    # Delete the user account
+    result = await db.users.delete_one({"_id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete account")
+
+    return None
