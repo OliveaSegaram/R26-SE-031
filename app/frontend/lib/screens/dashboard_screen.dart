@@ -446,7 +446,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
         children: [
           // Left: Hero image with greyscale + lock overlay when locked
           Expanded(
-            flex: 4,
+            flex: 35,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -492,9 +492,9 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
 
           // Right: Title, audio button, star progress + Play / Try button
           Expanded(
-            flex: 6,
+            flex: 65,
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(14.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -507,7 +507,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                         child: Text(
                           widget.skill.title,
                           style: AppTypography.heading(
-                            fontSize: 17,
+                            fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: widget.isLocked
                                 ? AppColors.textSecondary
@@ -521,104 +521,109 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                       GestureDetector(
                         onTap: () => TtsService().speak(widget.skill.title),
                         child: Container(
-                          padding: const EdgeInsets.all(7),
-                          margin: const EdgeInsets.only(left: 6),
+                          padding: const EdgeInsets.all(6),
+                          margin: const EdgeInsets.only(left: 4),
                           decoration: BoxDecoration(
                             color: widget.color.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(Icons.volume_up_rounded,
-                              color: widget.color, size: 20),
+                              color: widget.color, size: 18),
                         ),
                       ),
                     ],
                   ),
 
-                  // Bottom Row: 5 Stars on Left + Play / Try Button on Right
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Stars Row
-                      Row(
-                        children: List.generate(
-                          maxStars,
-                          (i) => Padding(
-                            padding: const EdgeInsets.only(right: 2),
-                            child: Icon(
-                              i < filledStars
-                                  ? Icons.star_rounded
-                                  : Icons.star_outline_rounded,
-                              color: i < filledStars
-                                  ? AppColors.warmAmber
-                                  : AppColors.borderLight,
-                              size: 20,
+                  // Bottom Row: 5 Stars on Left + Play / Try Button on Right (FittedBox to guarantee zero overflow)
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Stars Row
+                        Row(
+                          children: List.generate(
+                            maxStars,
+                            (i) => Padding(
+                              padding: const EdgeInsets.only(right: 1),
+                              child: Icon(
+                                i < filledStars
+                                    ? Icons.star_rounded
+                                    : Icons.star_outline_rounded,
+                                color: i < filledStars
+                                    ? AppColors.warmAmber
+                                    : AppColors.borderLight,
+                                size: 18,
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
 
-                      // Action Button (Play for active, Try for locked)
-                      if (!widget.isLocked)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: widget.color,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: widget.color.withValues(alpha: 0.35),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.play_arrow_rounded,
-                                  color: Colors.white, size: 18),
-                              SizedBox(width: 2),
-                              Text(
-                                'Play',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13,
+                        // Action Button (Play for active, Try for locked)
+                        if (!widget.isLocked)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: widget.color,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: widget.color.withValues(alpha: 0.35),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
                                 ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppColors.warmAmber.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(16),
-                            border:
-                                Border.all(color: AppColors.warmAmber, width: 1.5),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.lock_open_rounded,
-                                  color: AppColors.warmAmber, size: 14),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Try',
-                                style: AppTypography.heading(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.warmAmber,
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.play_arrow_rounded,
+                                    color: Colors.white, size: 16),
+                                SizedBox(width: 2),
+                                Text(
+                                  'Play',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.warmAmber.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(16),
+                              border:
+                                  Border.all(color: AppColors.warmAmber, width: 1.5),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.lock_open_rounded,
+                                    color: AppColors.warmAmber, size: 13),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'Try',
+                                  style: AppTypography.heading(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.warmAmber,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
