@@ -28,8 +28,6 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
 
   // Email preference toggles
   bool _progressEmails = true;
-  bool _promotions = false;
-  bool _newsletters = false;
   bool _periodicUpdates = true;
 
   @override
@@ -641,110 +639,98 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+                          horizontal: 14, vertical: 12),
                       child: Row(
                         children: [
                           CircleAvatar(
-                            radius: 18,
+                            radius: 20,
                             backgroundColor: AppColors.cream,
                             backgroundImage: AssetImage(
                                 student['avatar_url'] ??
                                     'assets/images/solo_blue.png'),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 14),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  student['first_name'] ?? 'unknown',
-                                  style: AppTypography.body(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                if (needsScreening)
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              AssessmentPromptScreen(
-                                            studentId: student['id'],
-                                            studentName:
-                                                student['first_name'] ??
-                                                    'Student',
-                                            avatarUrl:
-                                                student['avatar_url'],
-                                          ),
-                                        ),
-                                      ).then((_) => _loadData());
-                                    },
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                            Icons
-                                                .warning_amber_rounded,
-                                            color: AppColors.warmAmber,
-                                            size: 13),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'complete screening →',
-                                          style: AppTypography.caption(
-                                            fontSize: 11,
-                                            fontWeight:
-                                                FontWeight.w600,
-                                            color: AppColors.calmBlue,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                else
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                          Icons.check_circle_rounded,
-                                          color: AppColors.gentleGreen,
-                                          size: 13),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'screening completed',
-                                        style: AppTypography.caption(
-                                          fontSize: 11,
-                                          fontWeight:
-                                              FontWeight.w500,
-                                          color: AppColors.gentleGreen,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                              ],
+                            child: Text(
+                              student['first_name'] ?? 'unknown',
+                              style: AppTypography.body(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          // Daily limit pill
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.cream,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              student['daily_limit'] ?? 'No Limit',
-                              style: AppTypography.caption(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
+                          const SizedBox(width: 8),
+                          // Screening Status Pill (replaces limit)
+                          if (needsScreening)
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        AssessmentPromptScreen(
+                                      studentId: student['id'],
+                                      studentName:
+                                          student['first_name'] ?? 'Student',
+                                      avatarUrl: student['avatar_url'],
+                                    ),
+                                  ),
+                                ).then((_) => _loadData());
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.warmAmber.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.warning_amber_rounded,
+                                        size: 13, color: AppColors.warmAmber),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Screening',
+                                      style: AppTypography.caption(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.warmAmber,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AppColors.gentleGreen.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.check_circle_rounded,
+                                      size: 13, color: AppColors.gentleGreen),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Completed',
+                                    style: AppTypography.caption(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.gentleGreen,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                          // Edit
+                          // Action 2: Edit
                           _iconBtn(
                             Icons.edit_rounded,
                             AppColors.calmBlue,
@@ -759,10 +745,9 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                               ).then((_) => _loadData());
                             },
                           ),
-                          const SizedBox(width: 4),
-                          // Delete
+                          // Action 3: Delete
                           _iconBtn(
-                            Icons.delete_rounded,
+                            Icons.delete_outline_rounded,
                             Colors.redAccent,
                             () => _showDeleteStudentDialog(
                                 student as Map<String, dynamic>),
@@ -812,17 +797,22 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
     );
   }
 
-  Widget _iconBtn(IconData icon, Color color, VoidCallback onTap) {
+  Widget _iconBtn(IconData icon, Color color, VoidCallback? onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 28,
-        height: 28,
+        width: 34,
+        height: 34,
+        margin: const EdgeInsets.only(left: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(8),
+          color: onTap == null
+              ? color.withValues(alpha: 0.05)
+              : color.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: color, size: 15),
+        child: Icon(icon,
+            color: onTap == null ? color.withValues(alpha: 0.4) : color,
+            size: 16),
       ),
     );
   }
@@ -900,46 +890,77 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
   Widget _buildNotificationsContent() {
     return Column(
       children: [
-        _buildNotifToggle('progress reports', _progressEmails,
-            (v) => setState(() => _progressEmails = v)),
-        _buildNotifToggle('promotions & offers', _promotions,
-            (v) => setState(() => _promotions = v)),
-        _buildNotifToggle('newsletters', _newsletters,
-            (v) => setState(() => _newsletters = v)),
-        _buildNotifToggle('periodic updates', _periodicUpdates,
-            (v) => setState(() => _periodicUpdates = v)),
+        _buildNotifToggle(
+          'learning progress',
+          'get notified when your child completes a screening or milestone.',
+          _progressEmails,
+          (v) => setState(() => _progressEmails = v),
+        ),
+        _buildNotifToggle(
+          'app updates & features',
+          'receive important announcements about new educational tools.',
+          _periodicUpdates,
+          (v) => setState(() => _periodicUpdates = v),
+        ),
       ],
     );
   }
 
   Widget _buildNotifToggle(
-      String label, bool value, ValueChanged<bool> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: AppTypography.body(
-                  fontSize: 14, color: AppColors.textPrimary),
+      String title, String subtitle, bool value, ValueChanged<bool> onChanged) {
+    bool showInfo = false;
+    return StatefulBuilder(builder: (context, setLocalState) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.body(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => setLocalState(() => showInfo = !showInfo),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(Icons.info_outline_rounded,
+                        size: 18,
+                        color: showInfo
+                            ? AppColors.calmBlue
+                            : AppColors.textHint),
+                  ),
+                ),
+                const Spacer(),
+                Switch(
+                  value: value,
+                  onChanged: onChanged,
+                  activeColor: AppColors.gentleGreen,
+                  activeTrackColor: AppColors.gentleGreen.withValues(alpha: 0.3),
+                  inactiveThumbColor: AppColors.textSecondary,
+                  inactiveTrackColor: AppColors.borderLight,
+                ),
+              ],
             ),
-          ),
-          SizedBox(
-            height: 28,
-            child: Switch(
-              value: value,
-              onChanged: onChanged,
-              activeColor: AppColors.gentleGreen,
-              activeTrackColor:
-                  AppColors.gentleGreen.withValues(alpha: 0.3),
-              inactiveThumbColor: AppColors.textSecondary,
-              inactiveTrackColor: AppColors.borderLight,
-            ),
-          ),
-        ],
-      ),
-    );
+            if (showInfo)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, right: 40),
+                child: Text(
+                  subtitle,
+                  style: AppTypography.caption(
+                          fontSize: 12, color: AppColors.textSecondary)
+                      .copyWith(height: 1.3),
+                ),
+              ),
+          ],
+        ),
+      );
+    });
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -949,7 +970,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
     return Column(
       children: [
         _buildHelpRow(Icons.email_outlined, 'email support',
-            'support@sipsara.com'),
+            'sipsara.app.support@gmail.com'),
         const SizedBox(height: 8),
         _buildHelpRow(Icons.phone_outlined, 'phone support',
             '1-800-123-4567'),
@@ -1006,8 +1027,8 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
           label: Text('logout',
               style: AppTypography.button(fontSize: 15)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.softCoral.withValues(alpha: 0.12),
-            foregroundColor: AppColors.softCoral,
+            backgroundColor: Colors.redAccent,
+            foregroundColor: Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16)),

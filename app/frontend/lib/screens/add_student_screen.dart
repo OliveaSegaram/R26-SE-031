@@ -400,13 +400,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                                                 AppColors.gentleGreen,
                                           ),
                                         );
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const ParentAccountScreen(),
-                                          ),
-                                        );
+                                        Navigator.pop(context);
                                       }
                                     }
                                   } else if (_selectedGrade == null) {
