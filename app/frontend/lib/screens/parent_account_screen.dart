@@ -29,6 +29,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
   String _userName = 'loading...';
   String _userEmail = 'loading...';
   List<dynamic> _students = [];
+  final Set<String> _deletingStudentIds = {};
 
   @override
   void initState() {
@@ -195,15 +196,24 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
           else
             ..._students.map((student) {
               final bool needsScreening = student['assessment_completed'] != true;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DashboardScreen(studentData: student as Map<String, dynamic>),
-                      ),
+              final bool isDeleting = _deletingStudentIds.contains(student['id']);
+
+              return AnimatedOpacity(
+                duration: const Duration(milliseconds: 400),
+                opacity: isDeleting ? 0.0 : 1.0,
+                child: AnimatedScale(
+                  duration: const Duration(milliseconds: 400),
+                  scale: isDeleting ? 0.01 : 1.0,
+                  curve: Curves.easeInBack, // Gives that "sucked into magic dust" effect
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DashboardScreen(studentData: student as Map<String, dynamic>),
+                          ),
                     );
                   },
                   borderRadius: BorderRadius.circular(14),
@@ -334,10 +344,12 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                ),
-              );
+                    ), // Row
+                  ), // Container
+                ), // InkWell
+              ), // Padding
+              ), // AnimatedScale
+              ); // AnimatedOpacity
             }),
           const SizedBox(height: 12),
           Align(
@@ -768,8 +780,24 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                             });
                           } else {
                             if (!context.mounted) return;
-                            Navigator.pop(context); // Close dialog
-                            _loadUserProfile(); // Refresh list
+                            Navigator.pop(context); // Close dialog first
+                            
+                            // Now use the PARENT's setState to trigger the disappear animation
+                            this.setState(() {
+                              _deletingStudentIds.add(studentId);
+                            });
+                            
+                            // Wait for the shrink+fade animation to finish
+                            await Future.delayed(const Duration(milliseconds: 500));
+                            
+                            // Remove the student from the local list (no server re-fetch needed)
+                            if (!mounted) return;
+                            this.setState(() {
+                              _students.removeWhere((s) => s['id'] == studentId);
+                              _deletingStudentIds.remove(studentId);
+                            });
+                            
+                            if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('$studentName deleted successfully.'),

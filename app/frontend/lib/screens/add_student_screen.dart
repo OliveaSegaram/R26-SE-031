@@ -248,9 +248,11 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                                 hintText: 'student username (login)',
                               ),
                               style: AppTypography.body(fontSize: 16),
-                              validator: (val) => val == null || val.isEmpty
-                                  ? 'required'
-                                  : null,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) return 'required';
+                                if (val.trim().length < 2) return 'must be at least 2 characters';
+                                return null;
+                              },
                             ),
                             const SizedBox(height: 16),
 

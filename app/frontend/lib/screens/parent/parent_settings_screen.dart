@@ -27,6 +27,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
   String _userName = 'loading...';
   String _userEmail = 'loading...';
   List<dynamic> _students = [];
+  final Set<String> _deletingStudentIds = {};
 
   @override
   void initState() {
@@ -214,19 +215,26 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
           else
             ..._students.map((student) {
               final bool needsScreening = student['assessment_completed'] != true;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: InkWell(
-                  // Removed navigation to DashboardScreen for settings page to match previous behavior 
-                  // or we can add it if needed. The old code just didn't have onTap on the whole row.
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.warmWhite,
+              final bool isDeleting = _deletingStudentIds.contains(student['id']);
+
+              return AnimatedOpacity(
+                duration: const Duration(milliseconds: 400),
+                opacity: isDeleting ? 0.0 : 1.0,
+                child: AnimatedScale(
+                  duration: const Duration(milliseconds: 400),
+                  scale: isDeleting ? 0.01 : 1.0,
+                  curve: Curves.easeInBack, // Gives that "sucked into magic dust" effect
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: InkWell(
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.borderLight),
-                    ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.warmWhite,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.borderLight),
+                        ),
                     child: Row(
                       children: [
                         // Avatar
@@ -347,10 +355,12 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                ),
-              );
+                    ), // Row
+                  ), // Container
+                ), // InkWell
+              ), // Padding
+              ), // AnimatedScale
+              ); // AnimatedOpacity
             }),
           const SizedBox(height: 12),
           TextButton.icon(
@@ -705,8 +715,24 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen> {
                             });
                           } else {
                             if (!context.mounted) return;
-                            Navigator.pop(context); // Close dialog
-                            _loadUserProfile(); // Refresh list.
+                            Navigator.pop(context); // Close dialog first
+                            
+                            // Now use the PARENT's setState to trigger the disappear animation
+                            this.setState(() {
+                              _deletingStudentIds.add(studentId);
+                            });
+                            
+                            // Wait for the shrink+fade animation to finish
+                            await Future.delayed(const Duration(milliseconds: 500));
+                            
+                            // Remove the student from the local list (no server re-fetch needed)
+                            if (!mounted) return;
+                            this.setState(() {
+                              _students.removeWhere((s) => s['id'] == studentId);
+                              _deletingStudentIds.remove(studentId);
+                            });
+                            
+                            if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('$studentName deleted successfully.'),
