@@ -1,11 +1,11 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
 import 'games/game_factory.dart';
+import 'activity_complete_screen.dart';
 
 /// Level Map Screen
 /// Dyslexia-accessible: calm blue header, gentle green/warm amber nodes,
@@ -514,12 +514,39 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     );
   }
 
-  Future<void> _navigateToLevel(int index) async {
+  Future<void> _navigateToLevel(int index, {bool forceGame = false}) async {
     if (_isNavigating || _animatingFromLevel != -1) return;
     _isNavigating = true;
 
     try {
-      Widget nextScreen = GameFactory.buildGame(levels[index]);
+      final level = levels[index];
+      final bool isCompleted = ProgressService().isActivityCompleted(widget.skillMap.id, level.id);
+      final int savedScore = ProgressService().getActivityScore(widget.skillMap.id, level.id);
+
+      // If already completed and not force-playing, show ActivityCompleteScreen directly (revisiting mode)
+      if (isCompleted && !forceGame) {
+        _isNavigating = false;
+        final action = await Navigator.push<String>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ActivityCompleteScreen(
+              activityNode: level,
+              skillId: widget.skillMap.id,
+              score: savedScore,
+              isRevisiting: true,
+              onRetake: () => Navigator.pop(context, 'retake'),
+              onContinue: () => Navigator.pop(context, 'continue'),
+            ),
+          ),
+        );
+
+        if (action == 'retake') {
+          await _navigateToLevel(index, forceGame: true);
+        }
+        return;
+      }
+
+      Widget nextScreen = GameFactory.buildGame(level);
 
       final result = await Navigator.push(
         context,
@@ -527,16 +554,15 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       );
 
       if (result != null && result is int) {
-        final currentScore = ProgressService().getActivityScore(widget.skillMap.id, levels[index].id);
-        final isCompleted = ProgressService().isActivityCompleted(widget.skillMap.id, levels[index].id);
+        final currentScore = ProgressService().getActivityScore(widget.skillMap.id, level.id);
         
         // Only overwrite score if higher, or if it was never completed
         if (result > currentScore || !isCompleted) {
-          await ProgressService().saveActivityScore(widget.skillMap.id, levels[index].id, result);
+          await ProgressService().saveActivityScore(widget.skillMap.id, level.id, result);
         }
 
         // Mark as completed persistently
-        await ProgressService().markActivityCompleted(widget.skillMap.id, levels[index].id);
+        await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
         
         if (index == currentLevel && currentLevel < levels.length - 1) {
           setState(() {
@@ -550,21 +576,12 @@ class _LevelMapScreenState extends State<LevelMapScreen>
               setState(() {
                 _animatingFromLevel = -1;
               });
-              
-              // Delay before auto-starting next level if needed
-              Future.delayed(const Duration(seconds: 1), () {
-                if (mounted && !_isNavigating && _animatingFromLevel == -1) {
-                  _navigateToLevel(currentLevel);
-                }
-              });
             }
           });
           
           _scrollToCurrentLevel();
         } else {
-          setState(() {
-            // Re-render to show completion state
-          });
+          setState(() {});
         }
       }
     } finally {

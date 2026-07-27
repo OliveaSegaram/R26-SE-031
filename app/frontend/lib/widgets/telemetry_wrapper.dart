@@ -3,6 +3,8 @@ import '../services/telemetry_service.dart';
 import '../services/telemetry/plugins/voice_analysis_plugin.dart';
 import '../services/telemetry/plugins/eye_tracking_plugin.dart';
 import '../models/curriculum_models.dart';
+import '../screens/activity_complete_screen.dart';
+import '../screens/games/game_factory.dart';
 
 /// A wrapper widget that tracks all touch events, latency, and coordinates
 /// before they reach the underlying game template.
@@ -100,9 +102,31 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   void completeActivity(BuildContext context) {
     int finalScore = 0;
     if (_roundsCompletedTotal > 0) {
-      finalScore = (_totalScore / _roundsCompletedTotal).round();
+      finalScore = (_totalScore / _roundsCompletedTotal).round().clamp(0, 100);
     }
-    Navigator.pop(context, finalScore);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActivityCompleteScreen(
+          activityNode: widget.activityNode,
+          skillId: widget.activityNode.id,
+          score: finalScore,
+          isRevisiting: false,
+          onRetake: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GameFactory.buildGame(widget.activityNode),
+              ),
+            );
+          },
+          onContinue: () {
+            Navigator.pop(context, finalScore);
+          },
+        ),
+      ),
+    );
   }
 
   @override
