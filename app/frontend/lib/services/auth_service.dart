@@ -13,7 +13,7 @@ import '../main.dart'; // For globalNavigatorKey
 class AuthService {
   static String get _baseUrl {
     // Local Testing (using your Mac's IP address):
-    // return 'http://192.168.1.3:8000/api/v1/auth';
+    // return 'http://127.0.0.1:8015/api/v1/auth';
     
     // Cloud Server (Render):
     return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';

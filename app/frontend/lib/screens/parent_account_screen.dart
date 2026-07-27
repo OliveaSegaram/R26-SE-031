@@ -315,6 +315,24 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                             child: const Icon(Icons.edit_rounded, color: AppColors.calmBlue, size: 16),
                           ),
                         ),
+
+                        const SizedBox(width: 8),
+
+                        // Delete button
+                        GestureDetector(
+                          onTap: () {
+                            _showDeleteConfirmationDialog(student as Map<String, dynamic>);
+                          },
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.delete_rounded, color: Colors.redAccent, size: 16),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -674,6 +692,103 @@ class _ParentAccountScreenState extends State<ParentAccountScreen> {
                   child: isLoading
                       ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : Text('save', style: AppTypography.button(fontSize: 14)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showDeleteConfirmationDialog(Map<String, dynamic> student) async {
+    final studentName = student['first_name'] ?? 'this student';
+    final studentId = student['id'];
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        bool isDeleting = false;
+        String? deleteError;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: AppColors.warmWhite,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 28),
+                  const SizedBox(width: 12),
+                  Text(
+                    'delete student?',
+                    style: AppTypography.heading(fontSize: 20, color: Colors.redAccent),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'are you absolutely sure you want to delete $studentName? this action cannot be undone and all learning progress will be lost permanently.',
+                    style: AppTypography.body(fontSize: 15, color: AppColors.textPrimary),
+                  ),
+                  if (deleteError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12.0),
+                      child: Text(
+                        deleteError!,
+                        style: AppTypography.body(fontSize: 13, color: Colors.redAccent),
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isDeleting ? null : () => Navigator.pop(context),
+                  child: Text('cancel', style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                          setState(() {
+                            isDeleting = true;
+                            deleteError = null;
+                          });
+
+                          final error = await StudentService().deleteStudent(studentId);
+
+                          if (error != null) {
+                            setState(() {
+                              isDeleting = false;
+                              deleteError = error;
+                            });
+                          } else {
+                            if (!context.mounted) return;
+                            Navigator.pop(context); // Close dialog
+                            _loadUserProfile(); // Refresh list
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('$studentName deleted successfully.'),
+                                backgroundColor: AppColors.gentleGreen,
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: isDeleting
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : Text('delete forever', style: AppTypography.button(fontSize: 14)),
                 ),
               ],
             );
