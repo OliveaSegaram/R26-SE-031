@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class CurriculumIndex {
@@ -25,15 +26,27 @@ class SkillSummary {
   final String icon;
   final String file;
   final int totalActivities;
+  final String imagePath;
+  final String colorHex;
+  final String emoji;
 
   SkillSummary({
-    required this.id, 
-    required this.title, 
-    required this.subtitle, 
-    required this.icon, 
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
     required this.file,
     this.totalActivities = 0,
+    this.imagePath = 'assets/images/skills/s0.png',
+    this.colorHex = '#4A90D9',
+    this.emoji = '⭐',
   });
+
+  /// Parses the colorHex string (e.g. "#4A90D9") into a Flutter Color.
+  Color get color {
+    final hex = colorHex.replaceFirst('#', '');
+    return Color(int.parse('FF$hex', radix: 16));
+  }
 
   factory SkillSummary.fromJson(Map<String, dynamic> json) {
     return SkillSummary(
@@ -43,6 +56,9 @@ class SkillSummary {
       icon: json['icon'] ?? 'assets/images/skills/s0.png',
       file: json['file_path'] ?? json['file'] ?? '',
       totalActivities: json['total_activities'] ?? 0,
+      imagePath: json['image_path'] ?? 'assets/images/skills/s0.png',
+      colorHex: json['color_hex'] ?? '#4A90D9',
+      emoji: json['emoji'] ?? '⭐',
     );
   }
 }
