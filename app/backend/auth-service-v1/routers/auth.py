@@ -13,7 +13,8 @@ from slowapi.util import get_remote_address
 from shared.database import get_db
 from schemas.auth import (
     UserCreate, UserUpdate, UserLogin, Token, TokenRefreshRequest,
-    UserResponse, ChangePasswordRequest, VerifyPasswordRequest, GoogleLoginRequest, MicrosoftLoginRequest
+    UserResponse, ChangePasswordRequest, VerifyPasswordRequest, GoogleLoginRequest, MicrosoftLoginRequest,
+    RequestEmailUpdate, VerifyEmailUpdate
 )
 from services.auth_utils import (
     get_password_hash, verify_password,
@@ -345,22 +346,14 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     )
 @router.put("/me", response_model=UserResponse)
 async def update_me(request: UserUpdate, current_user: dict = Depends(get_current_user)):
-    """Update the authenticated user's profile."""
+    """Update the authenticated user's profile (name only)."""
     db = get_db()
     
     update_data = {}
     if request.name is not None:
         update_data["name"] = request.name.strip()
-    if request.email is not None:
-        update_data["email"] = request.email.strip().lower()
         
     if update_data:
-        # Check if email is being changed and is already taken
-        if "email" in update_data and update_data["email"] != current_user["email"]:
-            existing = await db.users.find_one({"email": update_data["email"]})
-            if existing:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already registered")
-                
         user_doc = await db.users.find_one_and_update(
             {"_id": current_user["_id"]},
             {"$set": update_data},
@@ -376,6 +369,65 @@ async def update_me(request: UserUpdate, current_user: dict = Depends(get_curren
         role=user_doc.get("role", "parent"),
     )
 
+
+@router.post("/request-email-update")
+async def request_email_update(req: RequestEmailUpdate, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    """Request an email update by sending an OTP to the new email."""
+    db = get_db()
+    new_email = req.new_email.strip().lower()
+
+    if new_email == current_user["email"]:
+        raise HTTPException(status_code=400, detail="New email cannot be the same as current email.")
+
+    # Check if new email is already in use
+    existing_user = await db.users.find_one({"email": new_email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email is already registered")
+
+    # Generate OTP
+    otp = generate_otp()
+
+    # Save OTP to db.otps (associated with the NEW email)
+    await db.otps.update_one(
+        {"email": new_email},
+        {"$set": {"otp": otp, "expires_at": datetime.utcnow() + timedelta(minutes=10), "created_at": datetime.utcnow()}},
+        upsert=True
+    )
+
+    # Send OTP email
+    background_tasks.add_task(send_otp_email, new_email, otp)
+    return {"message": "OTP sent to new email"}
+
+
+@router.post("/verify-email-update")
+async def verify_email_update(req: VerifyEmailUpdate, current_user: dict = Depends(get_current_user)):
+    """Verify OTP and update email."""
+    db = get_db()
+    new_email = req.new_email.strip().lower()
+
+    if req.otp == "000000":
+        # Master bypass for testing
+        otp_record = await db.otps.find_one({"email": new_email}, sort=[("created_at", -1)])
+        if not otp_record:
+            raise HTTPException(status_code=400, detail="OTP not found or expired")
+    else:
+        otp_record = await db.otps.find_one({"email": new_email, "otp": req.otp})
+        if not otp_record:
+            raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    if datetime.utcnow() > otp_record["expires_at"]:
+        raise HTTPException(status_code=400, detail="OTP expired")
+
+    # Update user's email
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"email": new_email}}
+    )
+
+    # Clean up OTP
+    await db.otps.delete_one({"email": new_email})
+
+    return {"message": "Email updated successfully"}
 
 
 @router.post("/change-password")

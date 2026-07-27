@@ -1210,7 +1210,108 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                           errorMessage = null;
                         });
 
-                        final error = await AuthService().updateProfile(email: newEmail);
+                        final error = await AuthService().requestEmailUpdate(newEmail);
+
+                        if (error != null) {
+                          setDialogState(() {
+                            isLoading = false;
+                            errorMessage = error;
+                          });
+                        } else {
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          _showEmailOtpDialog(newEmail);
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.calmBlue,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : Text('save',
+                        style: AppTypography.button(fontSize: 14)),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  void _showEmailOtpDialog(String newEmail) {
+    final controller = TextEditingController();
+    bool isLoading = false;
+    String? errorMessage;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setDialogState) {
+          return AlertDialog(
+            backgroundColor: AppColors.cardSurface,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24)),
+            title: Text('verify new email',
+                style: AppTypography.heading(
+                    fontSize: 20, color: AppColors.textPrimary)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'We sent a 6-digit code to $newEmail.',
+                  style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 16),
+                if (errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(errorMessage!,
+                        style: AppTypography.body(
+                            fontSize: 14, color: AppColors.softCoral)),
+                  ),
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  style: AppTypography.body(fontSize: 16),
+                  decoration: InputDecoration(
+                    labelText: '6-digit code',
+                    labelStyle: AppTypography.caption(),
+                    counterText: '',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                child: Text('cancel',
+                    style: AppTypography.body(
+                        fontSize: 14, color: AppColors.textSecondary)),
+              ),
+              ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        final otp = controller.text.trim();
+                        if (otp.length != 6) {
+                          setDialogState(
+                              () => errorMessage = 'Enter a valid 6-digit code.');
+                          return;
+                        }
+                        setDialogState(() {
+                          isLoading = true;
+                          errorMessage = null;
+                        });
+
+                        final error = await AuthService().verifyEmailUpdate(newEmail, otp);
 
                         if (error != null) {
                           setDialogState(() {
@@ -1240,7 +1341,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                         width: 16,
                         child: CircularProgressIndicator(
                             color: Colors.white, strokeWidth: 2))
-                    : Text('save',
+                    : Text('verify',
                         style: AppTypography.button(fontSize: 14)),
               ),
             ],

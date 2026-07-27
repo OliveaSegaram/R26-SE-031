@@ -343,6 +343,61 @@ class AuthService {
     }
   }
 
+  /// Request Email Update (Sends OTP)
+  Future<String?> requestEmailUpdate(String newEmail) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/request-email-update'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'new_email': newEmail}),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Failed to request email update.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Verify Email Update (Confirms OTP)
+  Future<String?> verifyEmailUpdate(String newEmail, String otp) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/verify-email-update'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'new_email': newEmail,
+          'otp': otp,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Failed to verify email update.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
   /// Change Password
   Future<String?> changePassword(String oldPassword, String newPassword) async {
     try {

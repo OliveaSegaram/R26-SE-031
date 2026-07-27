@@ -71,3 +71,10 @@ class ResetPasswordRequest(BaseModel):
 class VerifyEmailRequest(BaseModel):
     email: EmailStr
     otp: str = Field(..., min_length=6, max_length=6)
+
+class RequestEmailUpdate(BaseModel):
+    new_email: EmailStr
+
+class VerifyEmailUpdate(BaseModel):
+    new_email: EmailStr
+    otp: str = Field(..., min_length=6, max_length=6)
