@@ -233,4 +233,32 @@ class StudentService {
       return 'Failed to connect to the server.';
     }
   }
+
+  /// Fetch the ML-generated cognitive analytics profile for a student.
+  ///
+  /// Returns a Map with cognitive indices, risk assessment, and
+  /// intervention recommendations on success, or an empty Map on failure.
+  ///
+  /// Accessible by: parent (who owns the student) or a connected specialist.
+  Future<Map<String, dynamic>> getCognitiveAnalytics(String studentId) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return {};
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/telemetry/$studentId/analytics'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {};
+    } catch (e) {
+      return {};
+    }
+  }
 }
