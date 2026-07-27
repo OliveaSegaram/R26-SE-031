@@ -103,59 +103,16 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (widget.editStudentData != null) ...[
-                        Center(
-                          child: Column(
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppColors.calmBlue,
-                                    width: 3,
-                                  ),
-                                ),
-                                child: CircleAvatar(
-                                  radius: 40,
-                                  backgroundColor: AppColors.cardSurface,
-                                  backgroundImage: AssetImage(
-                                    _selectedAvatarUrl,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'editing ${widget.editStudentData!['first_name']}',
-                                style: AppTypography.heading(
-                                  fontSize: 20,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                      ] else ...[
+                      if (widget.editStudentData == null) ...[
                         Text(
                           'add an additional student for free. you are allowed to add up to 5 children to your account.',
                           style: AppTypography.body(
-                            fontSize: 16,
+                            fontSize: 15,
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 28),
                       ],
-
-                      Text(
-                        widget.editStudentData == null
-                            ? 'new student information'
-                            : 'student information',
-                        style: AppTypography.heading(
-                          fontSize: 20,
-                          color: AppColors.calmBlue,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
 
                       Text(
                         'choose a monster profile picture',
@@ -452,88 +409,32 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.borderLight,
-            width: 1,
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+      child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.calmBlue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: AppColors.calmBlue,
-                    size: 16,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Parent Hub',
-                  style: AppTypography.body(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.calmBlue,
-                  ),
-                ),
-              ],
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.cardSurface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.borderLight),
+              ),
+              child: const Icon(Icons.arrow_back_rounded,
+                  color: AppColors.textPrimary, size: 20),
             ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.calmBlue,
-                      AppColors.calmBlue.withValues(alpha: 0.8),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.calmBlue.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.person_add_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                widget.editStudentData == null ? 'Add Student' : 'Edit Student',
-                style: AppTypography.heading(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
+          const SizedBox(width: 16),
+          Text(
+            widget.editStudentData == null ? 'add student' : 'edit student',
+            style: AppTypography.heading(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),

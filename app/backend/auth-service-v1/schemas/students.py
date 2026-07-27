@@ -27,7 +27,6 @@ class StudentUpdate(BaseModel):
     username: str = Field(..., min_length=2, max_length=30)
     grade: str = "Grade 1"
     daily_limit: str = "No Limit"
-    parent_password: str
     avatar_url: Optional[str] = None
 
 

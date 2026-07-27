@@ -97,10 +97,6 @@ async def list_students(current_user: dict = Depends(get_current_user)):
 async def update_student(student_id: str, request: StudentUpdate, current_user: dict = Depends(get_current_user)):
     """Update a student's details. Only the owning parent can update."""
     provider = current_user.get("auth_provider", "local")
-    is_social = provider in ["google", "microsoft"] or not current_user.get("hashed_password")
-    if not is_social:
-        if not verify_password(request.parent_password, current_user["hashed_password"]):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect parent password")
 
     try:
         obj_id = ObjectId(student_id)
