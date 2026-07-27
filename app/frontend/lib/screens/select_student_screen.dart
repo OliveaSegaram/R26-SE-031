@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
 import '../services/student_service.dart';
+import '../services/progress_service.dart';
 import 'dashboard_screen.dart';
 import 'add_student_screen.dart';
 import 'parent/parent_hub_screen.dart';
@@ -231,8 +232,15 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
         final avatarUrl = student['avatar_url'] ?? 'assets/images/solo_blue.png';
 
         return GestureDetector(
-          onTap: () {
+          onTap: () async {
             setState(() => _selectedIndex = index);
+            
+            // Sync progress globally for the selected student
+            if (student['id'] != null) {
+              await ProgressService().setCurrentStudentId(student['id']);
+              await ProgressService().loadFromCloud(student);
+            }
+            
             Future.delayed(const Duration(milliseconds: 300), () {
               if (mounted) {
                 Navigator.push(

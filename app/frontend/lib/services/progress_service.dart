@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'student_service.dart';
 
 class ProgressService {
   static final ProgressService _instance = ProgressService._internal();
@@ -27,6 +28,44 @@ class ProgressService {
     return _prefs?.getString(_keyCurrentStudentId) ?? 'test_student_001';
   }
 
+  // --- Cloud Sync ---
+
+  /// Loads progress data from the backend student payload into local storage
+  Future<void> loadFromCloud(Map<String, dynamic> studentData) async {
+    final String studentId = studentData['id'] ?? currentStudentId;
+    
+    // Extract cloud data
+    List<dynamic> cloudCompleted = studentData['completed_activities'] ?? [];
+    Map<String, dynamic> cloudScores = studentData['activity_scores'] ?? {};
+    
+    // Convert types
+    List<String> completedActivities = cloudCompleted.map((e) => e.toString()).toList();
+    Map<String, int> scores = cloudScores.map((key, value) => MapEntry(key, value as int));
+
+    // Save to local SharedPreferences
+    final completedKey = '$_keyCompletedActivitiesPrefix$studentId';
+    final scoresKey = '$_keyActivityScoresPrefix$studentId';
+    
+    await _prefs?.setStringList(completedKey, completedActivities);
+    await _prefs?.setString(scoresKey, json.encode(scores));
+  }
+
+  void _triggerCloudSync() {
+    final completedKey = '$_keyCompletedActivitiesPrefix$currentStudentId';
+    final scoresKey = '$_keyActivityScoresPrefix$currentStudentId';
+    
+    List<String> completed = _prefs?.getStringList(completedKey) ?? [];
+    String? scoresJson = _prefs?.getString(scoresKey);
+    Map<String, int> scores = {};
+    if (scoresJson != null) {
+      final Map<String, dynamic> decoded = json.decode(scoresJson);
+      scores = decoded.map((key, value) => MapEntry(key, value as int));
+    }
+    
+    // Fire and forget network call
+    StudentService().syncProgress(currentStudentId, completed, scores);
+  }
+
   // --- Activity Progression ---
 
   /// Marks an activity as completed for the current student
@@ -38,6 +77,7 @@ class ProgressService {
     if (!completed.contains(activityKey)) {
       completed.add(activityKey);
       await _prefs?.setStringList(key, completed);
+      _triggerCloudSync();
     }
   }
 
@@ -90,6 +130,7 @@ class ProgressService {
     
     scores['${skillId}_$activityId'] = score;
     await _prefs?.setString(key, json.encode(scores));
+    _triggerCloudSync();
   }
 
   int getActivityScore(String skillId, String activityId) {

@@ -10,6 +10,7 @@ import 'character_shop_screen.dart';
 import 'progress_analytics_screen.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
+import '../services/tts_service.dart';
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
 /// calm blue accents, 16pt+ text.
@@ -266,145 +267,218 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildSkillsGrid() {
-    return GridView.builder(
+    return ListView.separated(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.82,
-      ),
       itemCount: _curriculum!.skills.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final skill = _curriculum!.skills[index];
         // Cycle colors for MVP aesthetics
         final colors = [AppColors.calmBlue, AppColors.gentleGreen, AppColors.warmAmber, AppColors.softCoral];
-        return _buildHeroSkillCard(skill, colors[index % colors.length]);
+        return _AnimatedSkillCard(
+          skill: skill,
+          color: colors[index % colors.length],
+          imagePath: 'assets/images/skills/s${index % 10}.png',
+          studentData: widget.studentData,
+          onReturn: () {
+            if (mounted) setState(() {});
+          },
+        );
       },
     );
   }
+}
 
-  // Highly visual "Hero Image" card layout
-  Widget _buildHeroSkillCard(SkillSummary skill, Color color) {
-    // Dynamic progress from ProgressService
-    final progress = ProgressService().getSkillProgress(skill.id, skill.totalActivities);
+class _AnimatedSkillCard extends StatefulWidget {
+  final SkillSummary skill;
+  final Color color;
+  final String imagePath;
+  final Map<String, dynamic>? studentData;
+  final VoidCallback onReturn;
 
-    return GestureDetector(
-      onTap: () async {
-        try {
-          final skillDetail = await SkillDetail.load(skill.file);
-          if (!mounted) return;
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LevelMapScreen(
-                skillMap: skillDetail,
-                studentData: widget.studentData,
+  const _AnimatedSkillCard({
+    required this.skill,
+    required this.color,
+    required this.imagePath,
+    this.studentData,
+    required this.onReturn,
+  });
+
+  @override
+  State<_AnimatedSkillCard> createState() => _AnimatedSkillCardState();
+}
+
+class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = ProgressService().getSkillProgress(widget.skill.id, widget.skill.totalActivities);
+
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: GestureDetector(
+        onTap: () async {
+          try {
+            final skillDetail = await SkillDetail.load(widget.skill.file);
+            if (!mounted) return;
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LevelMapScreen(
+                  skillMap: skillDetail,
+                  studentData: widget.studentData,
+                ),
               ),
-            ),
-          );
-          // Refresh progress upon return
-          if (mounted) setState(() {});
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load ${skill.title}: $e')));
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.borderLight, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Top Half: Custom Hero Image
-            Expanded(
-              flex: 5,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-                child: Image.asset(
-                  'assets/images/skills/s0.png', // Hardcoded fallback for now
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: color.withValues(alpha: 0.1),
-                    child: Icon(Icons.auto_awesome_rounded, color: color, size: 40),
+            );
+            widget.onReturn();
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load ${widget.skill.title}: $e')));
+          }
+        },
+        child: Container(
+          height: 140, // Generous height for child friendly layout
+          decoration: BoxDecoration(
+            color: AppColors.cardSurface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: widget.color.withValues(alpha: 0.3), width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: widget.color.withValues(alpha: 0.15),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Left Half: Large Hero Image
+              Expanded(
+                flex: 4,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(21)),
+                  child: Image.asset(
+                    widget.imagePath,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: widget.color.withValues(alpha: 0.1),
+                      child: Icon(Icons.auto_awesome_rounded, color: widget.color, size: 50),
+                    ),
                   ),
                 ),
               ),
-            ),
-            
-            // Bottom Half: English Title and Progress Bar
-            Expanded(
-              flex: 5,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Title
-                    Text(
-                      skill.title,
-                      style: AppTypography.heading(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    
-                    // Progress Indicator
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'progress',
-                              style: AppTypography.caption(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              '${(progress * 100).round()}%',
-                              style: AppTypography.caption(
-                                fontSize: 12,
+              
+              // Right Half: Details, Audio, and Progress
+              Expanded(
+                flex: 6,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Title and Speaker Row
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.skill.title,
+                              style: AppTypography.heading(
+                                fontSize: 18, // Larger font
                                 fontWeight: FontWeight.w800,
-                                color: color,
+                                color: AppColors.textPrimary,
+                                height: 1.2,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              TtsService().speak(widget.skill.title);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(8), // Larger tap target
+                              margin: const EdgeInsets.only(left: 8),
+                              decoration: BoxDecoration(
+                                color: widget.color.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.volume_up_rounded,
+                                color: widget.color,
+                                size: 24, // Larger icon
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            backgroundColor: AppColors.borderLight,
-                            color: color,
-                            minHeight: 8,
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                      
+                      // Progress Bar Section
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Progress',
+                                style: AppTypography.caption(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                '${(progress * 100).round()}%',
+                                style: AppTypography.caption(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w900,
+                                  color: widget.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              backgroundColor: AppColors.borderLight,
+                              color: widget.color,
+                              minHeight: 12, // Thicker progress bar
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
