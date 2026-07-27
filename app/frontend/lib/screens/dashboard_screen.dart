@@ -282,8 +282,8 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      item['icon'] as IconData,
+                    FaIcon(
+                      item['icon'] as FaIconData,
                       size: 24,
                       color: isSelected ? Colors.white : color.withValues(alpha: 0.85),
                     ),
