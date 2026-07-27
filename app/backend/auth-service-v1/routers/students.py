@@ -178,3 +178,25 @@ async def submit_assessment(student_id: str, request: AssessmentSubmit, current_
         assessment_results=request.assessment_results,
         assessment_completed=True,
     )
+
+@router.delete("/students/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_student(student_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a student. Only the owning parent can delete their student."""
+    try:
+        obj_id = ObjectId(student_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid student ID")
+
+    db = get_db()
+    parent_oid = current_user["_id"]
+
+    # Ensure student belongs to THIS parent
+    existing_student = await db.students.find_one({"_id": obj_id, "parent_id": parent_oid})
+    if not existing_student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
+    result = await db.students.delete_one({"_id": obj_id, "parent_id": parent_oid})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete student")
+    
+    return None
