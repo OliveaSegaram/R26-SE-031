@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'; // For PointerEvent
 import 'telemetry/telemetry_plugin.dart';
+import 'student_service.dart';
 
 class TelemetryEvent {
   final String activityName;
@@ -113,16 +114,16 @@ class TelemetryService {
 
     debugPrint('Telemetry: Submitting session data: \n${jsonEncode(payload)}');
     
-    // TODO: Replace with actual backend URL
-    // try {
-    //   await http.post(
-    //     Uri.parse('http://10.0.2.2:8000/api/v1/telemetry'),
-    //     headers: {'Content-Type': 'application/json'},
-    //     body: jsonEncode(payload),
-    //   );
-    // } catch (e) {
-    //   debugPrint('Telemetry Error: $e');
-    // }
+    try {
+      final error = await StudentService().submitTelemetry(payload);
+      if (error != null) {
+        debugPrint('Telemetry Submission Error: $error');
+      } else {
+        debugPrint('Telemetry submitted successfully.');
+      }
+    } catch (e) {
+      debugPrint('Telemetry Exception: $e');
+    }
 
     _sessionEvents.clear();
   }
