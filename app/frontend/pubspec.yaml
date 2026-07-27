@@ -39,6 +39,7 @@ flutter:
     - assets/images/skills/
     - assets/thumbnails/
     - assets/audio/
+    - assets/data/
     - assets/data/curriculum/
 
 flutter_icons:
