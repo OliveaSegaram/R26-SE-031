@@ -71,8 +71,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _loadStreak() async {
-    final streak = await ProgressService().updateAndGetStreak();
-    if (mounted) setState(() => _streak = streak);
+    // Read the existing streak — do NOT call updateAndGetStreak() here.
+    // Streaks only increment inside markActivityCompleted().
+    if (mounted) setState(() => _streak = ProgressService().currentStreak);
   }
 
   Future<void> _loadDashConfig() async {

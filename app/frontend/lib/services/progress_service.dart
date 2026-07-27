@@ -13,6 +13,8 @@ class ProgressService {
   static const String _keyCurrentStudentId = 'current_student_id';
   static const String _keyCompletedActivitiesPrefix = 'completed_'; // + studentId
   static const String _keyActivityScoresPrefix = 'scores_'; // + studentId
+  static const String _keyLastActiveDate = 'last_active_date';
+  static const String _keyStreakCount = 'streak_count';
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -77,6 +79,8 @@ class ProgressService {
     if (!completed.contains(activityKey)) {
       completed.add(activityKey);
       await _prefs?.setStringList(key, completed);
+      // Streak only counts if an activity was actually completed today
+      await updateAndGetStreak();
       _triggerCloudSync();
     }
   }
@@ -140,5 +144,40 @@ class ProgressService {
     
     Map<String, dynamic> scores = json.decode(scoresJson);
     return scores['${skillId}_$activityId'] ?? 0;
+  }
+
+  // --- Streak Tracking ---
+
+  /// Returns the current streak count without updating it
+  int get currentStreak => _prefs?.getInt(_keyStreakCount) ?? 0;
+
+  /// Checks today's date vs last active date. Increments streak if consecutive day,
+  /// resets to 1 if broken, keeps it the same if called on the same day.
+  Future<int> updateAndGetStreak() async {
+    final today = DateTime.now();
+    final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+    final lastActiveStr = _prefs?.getString(_keyLastActiveDate);
+    int streak = _prefs?.getInt(_keyStreakCount) ?? 0;
+
+    if (lastActiveStr == null) {
+      streak = 1;
+    } else {
+      final parts = lastActiveStr.split('-');
+      final lastActive = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+      final today0 = DateTime(today.year, today.month, today.day);
+      final diff = today0.difference(lastActive).inDays;
+      if (diff == 0) {
+        // Same day — no change
+      } else if (diff == 1) {
+        streak += 1;
+      } else {
+        streak = 1; // Streak broken
+      }
+    }
+
+    await _prefs?.setString(_keyLastActiveDate, todayStr);
+    await _prefs?.setInt(_keyStreakCount, streak);
+    return streak;
   }
 }
