@@ -399,7 +399,7 @@ async def request_email_update(req: RequestEmailUpdate, background_tasks: Backgr
     return {"message": "OTP sent to new email"}
 
 
-@router.post("/verify-email-update")
+@router.post("/verify-email-update", response_model=Token)
 async def verify_email_update(req: VerifyEmailUpdate, current_user: dict = Depends(get_current_user)):
     """Verify OTP and update email."""
     db = get_db()
@@ -427,7 +427,16 @@ async def verify_email_update(req: VerifyEmailUpdate, current_user: dict = Depen
     # Clean up OTP
     await db.otps.delete_one({"email": new_email})
 
-    return {"message": "Email updated successfully"}
+    # Issue NEW Tokens with the updated email
+    token_data = {
+        "sub": new_email,
+        "role": current_user.get("role", "parent"),
+        "id": str(current_user["_id"]),
+    }
+    access_token = create_access_token(data=token_data)
+    refresh_token = create_refresh_token(data=token_data)
+
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 @router.post("/change-password")

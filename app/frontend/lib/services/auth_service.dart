@@ -388,6 +388,10 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', data['access_token']);
+        await prefs.setString('refresh_token', data['refresh_token']);
         return null;
       } else {
         final data = jsonDecode(response.body);
