@@ -558,12 +558,13 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                     ],
                   ),
 
-                  // Bottom Action Row: FittedBox prevents right overflow on narrow screens
+                  // Bottom Action Row: FittedBox with mainAxisSize: MainAxisSize.min prevents right overflow on narrow screens
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Stars Row
@@ -580,19 +581,19 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                                 color: i < filledStars
                                     ? AppColors.warmAmber
                                     : AppColors.borderLight,
-                                size: 24,
+                                size: 20,
                               ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
 
                         // Chunky 3D Play / Try Button
                         if (!widget.isLocked)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
+                                horizontal: 14, vertical: 7),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
@@ -602,12 +603,12 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
                                   color: widget.color.withValues(alpha: 0.4),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
@@ -615,15 +616,15 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                               mainAxisSize: MainAxisSize.min,
                               children: const [
                                 Icon(Icons.play_arrow_rounded,
-                                    color: Colors.white, size: 20),
-                                SizedBox(width: 4),
+                                    color: Colors.white, size: 18),
+                                SizedBox(width: 3),
                                 Text(
                                   'Play',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w900,
-                                    fontSize: 13.5,
-                                    letterSpacing: 0.4,
+                                    fontSize: 13,
+                                    letterSpacing: 0.3,
                                   ),
                                 ),
                               ],
@@ -632,23 +633,23 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                         else
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 7),
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: AppColors.warmAmber.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                  color: AppColors.warmAmber, width: 1.8),
+                                  color: AppColors.warmAmber, width: 1.5),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.lock_open_rounded,
-                                    color: AppColors.warmAmber, size: 16),
-                                const SizedBox(width: 4),
+                                    color: AppColors.warmAmber, size: 15),
+                                const SizedBox(width: 3),
                                 Text(
                                   'Try',
                                   style: AppTypography.heading(
-                                    fontSize: 13,
+                                    fontSize: 12.5,
                                     fontWeight: FontWeight.w900,
                                     color: AppColors.warmAmber,
                                   ),
