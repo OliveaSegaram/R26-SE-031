@@ -6,13 +6,9 @@
   },
   "streak": {
     "multi_day_label": "day streak! Keep going! 🔥",
-    "zero_label": "Ready to earn some stars? ⭐"
+    "zero_label": ""
   },
   "progress": {
-    "max_stars": 5,
-    "label_not_started": "tap to start! 👆",
-    "label_in_progress": "your stars ⭐",
-    "label_locked": "locked 🔒"
-  },
-  "locked_snackbar": "🔒 Complete the previous skill first!"
+    "max_stars": 5
+  }
 }

@@ -133,9 +133,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     final greeting = config != null
         ? config.greetingFor(hour, name)
         : (hour < 12 ? 'Good morning, $name! ☀️' : hour < 17 ? 'Good afternoon, $name! 🌤️' : 'Good evening, $name! 🌙');
-    final subtitle = config != null
-        ? config.subtitleFor(_streak)
-        : (_streak > 1 ? '🔥 $_streak day streak! Keep going!' : 'Ready to earn some stars? ⭐');
+    final subtitle = _streak > 1 ? (config?.subtitleFor(_streak) ?? '🔥 $_streak day streak! Keep going!') : '';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
@@ -143,7 +141,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Left Side: Dynamic greeting + motivational subtitle
+          // Left Side: Dynamic greeting
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,15 +154,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                     color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: AppTypography.body(
-                    fontSize: 14,
-                    color: _streak > 1 ? AppColors.softCoral : AppColors.textSecondary,
-                    fontWeight: _streak > 1 ? FontWeight.w700 : FontWeight.normal,
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: AppTypography.body(
+                      fontSize: 14,
+                      color: AppColors.softCoral,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -417,30 +417,26 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
     final maxStars = cfg?.progress.maxStars ?? 5;
     final progress = ProgressService().getSkillProgress(widget.skill.id, widget.skill.totalActivities);
     final filledStars = (progress * maxStars).round();
-    final lockedSnackbarText = cfg?.lockedSnackbar ?? '🔒 Complete the previous skill first!';
-    final labelNotStarted = cfg?.progress.labelNotStarted ?? 'tap to start! 👆';
-    final labelInProgress = cfg?.progress.labelInProgress ?? 'your stars ⭐';
-    final labelLocked = cfg?.progress.labelLocked ?? 'locked 🔒';
 
     final cardContent = Container(
       height: 140,
       decoration: BoxDecoration(
         color: widget.isLocked
-            ? AppColors.cardSurface.withValues(alpha: 0.6)
+            ? AppColors.cardSurface.withValues(alpha: 0.7)
             : AppColors.cardSurface,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: widget.isLocked
               ? AppColors.borderLight
-              : widget.color.withValues(alpha: 0.3),
-          width: 3,
+              : widget.color,
+          width: widget.isLocked ? 2 : 3.5,
         ),
         boxShadow: [
           BoxShadow(
             color: widget.isLocked
                 ? AppColors.shadow
-                : widget.color.withValues(alpha: 0.15),
-            blurRadius: 12,
+                : widget.color.withValues(alpha: 0.25),
+            blurRadius: widget.isLocked ? 8 : 16,
             offset: const Offset(0, 6),
           ),
         ],
@@ -456,7 +452,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
               children: [
                 ClipRRect(
                   borderRadius:
-                      const BorderRadius.horizontal(left: Radius.circular(21)),
+                      const BorderRadius.horizontal(left: Radius.circular(20)),
                   child: ColorFiltered(
                     colorFilter: widget.isLocked
                         ? const ColorFilter.matrix([
@@ -481,7 +477,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                 if (widget.isLocked)
                   ClipRRect(
                     borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(21)),
+                        left: Radius.circular(20)),
                     child: Container(
                       color: Colors.black.withValues(alpha: 0.25),
                       child: const Center(
@@ -494,7 +490,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
             ),
           ),
 
-          // Right: Title, audio button, star-based progress
+          // Right: Title, audio button, star progress + Play / Try button
           Expanded(
             flex: 6,
             child: Padding(
@@ -503,7 +499,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Title row
+                  // Title row + TTS speaker
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -522,43 +518,33 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (!widget.isLocked)
-                        GestureDetector(
-                          onTap: () => TtsService().speak(widget.skill.title),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            margin: const EdgeInsets.only(left: 8),
-                            decoration: BoxDecoration(
-                              color: widget.color.withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.volume_up_rounded,
-                                color: widget.color, size: 22),
+                      GestureDetector(
+                        onTap: () => TtsService().speak(widget.skill.title),
+                        child: Container(
+                          padding: const EdgeInsets.all(7),
+                          margin: const EdgeInsets.only(left: 6),
+                          decoration: BoxDecoration(
+                            color: widget.color.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
                           ),
+                          child: Icon(Icons.volume_up_rounded,
+                              color: widget.color, size: 20),
                         ),
+                      ),
                     ],
                   ),
 
-                  // Star-based progress
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // Bottom Row: 5 Stars on Left + Play / Try Button on Right
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        widget.isLocked
-                            ? labelLocked
-                            : (progress == 0 ? labelNotStarted : labelInProgress),
-                        style: AppTypography.caption(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
+                      // Stars Row
                       Row(
                         children: List.generate(
                           maxStars,
                           (i) => Padding(
-                            padding: const EdgeInsets.only(right: 3),
+                            padding: const EdgeInsets.only(right: 2),
                             child: Icon(
                               i < filledStars
                                   ? Icons.star_rounded
@@ -566,11 +552,72 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
                               color: i < filledStars
                                   ? AppColors.warmAmber
                                   : AppColors.borderLight,
-                              size: 24,
+                              size: 20,
                             ),
                           ),
                         ),
                       ),
+
+                      // Action Button (Play for active, Try for locked)
+                      if (!widget.isLocked)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: widget.color,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: widget.color.withValues(alpha: 0.35),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.play_arrow_rounded,
+                                  color: Colors.white, size: 18),
+                              SizedBox(width: 2),
+                              Text(
+                                'Play',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.warmAmber.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(16),
+                            border:
+                                Border.all(color: AppColors.warmAmber, width: 1.5),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_open_rounded,
+                                  color: AppColors.warmAmber, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Try',
+                                style: AppTypography.heading(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.warmAmber,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ],
@@ -585,16 +632,6 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
       scale: _scaleAnimation,
       child: GestureDetector(
         onTap: () async {
-          if (widget.isLocked) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(lockedSnackbarText),
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-            return;
-          }
           try {
             final skillDetail = await SkillDetail.load(widget.skill.file);
             if (!mounted) return;
