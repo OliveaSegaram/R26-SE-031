@@ -59,7 +59,26 @@ class ActivityCompleteScreen extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              // Activity Name Badge
+              if (activityNode.title.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.calmBlue.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.4), width: 1.5),
+                  ),
+                  child: Text(
+                    activityNode.title,
+                    style: AppTypography.heading(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.calmBlue,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
 
               // Title Banner
               Text(
