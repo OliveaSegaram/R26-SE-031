@@ -391,21 +391,75 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
           subtitle: _isSocialLogin ? 'managed by $_authProvider' : null,
         ),
         const SizedBox(height: 12),
-        // Security toggles
-        _buildSecurityToggle(
-          icon: Icons.lock_outline_rounded,
-          label: 'two-factor auth',
-          value: false,
-          onChanged: (_) => _showComingSoon('Two-factor authentication'),
-          comingSoon: true,
-        ),
-        const SizedBox(height: 12),
-        _buildSecurityToggle(
-          icon: Icons.notifications_active_outlined,
-          label: 'login alerts',
-          value: true,
-          onChanged: (_) => _showComingSoon('Login alerts'),
-          comingSoon: true,
+        // Security settings
+        GestureDetector(
+          onTap: () => _showComingSoon('Two-factor authentication'),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.borderLight, width: 1),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.calmBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.shield_outlined, color: AppColors.calmBlue, size: 20),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Two-factor authentication',
+                            style: AppTypography.body(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.warmAmber.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'soon',
+                              style: AppTypography.caption(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.warmAmber,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Add an extra layer of security to your account',
+                        style: AppTypography.caption(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 20),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 24),
         // Delete Account
@@ -901,6 +955,12 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
   Widget _buildNotificationsContent() {
     return Column(
       children: [
+        _buildNotifToggle(
+          'login alerts',
+          'get notified when your account is accessed from a new device.',
+          true,
+          (v) => _showComingSoon('Login alerts'),
+        ),
         _buildNotifToggle(
           'learning progress',
           'get notified when your child completes a screening or milestone.',
