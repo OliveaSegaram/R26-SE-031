@@ -109,12 +109,16 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
   @override
   Widget build(BuildContext context) {
     final currentRound = _rounds[_currentRoundIndex];
+    final titleText = widget.activityNode?.title ?? 'වෙනස් හැඩය සොයමු';
+    final instructionText = (widget.activityNode?.description != null && widget.activityNode!.description.isNotEmpty)
+        ? widget.activityNode!.description
+        : 'අනෙක් හැඩවලට වඩා වෙනස් හැඩය තෝරන්න';
     
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
-          'වෙනස් රූපය සොයන්න',
+          titleText,
           style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
@@ -159,7 +163,7 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
                         ),
                         SizedBox(height: isSmallScreen ? 16 : 24),
                         Text(
-                          'වෙනස් රූපය තෝරන්න',
+                          instructionText,
                           style: AppTypography.sinhala(fontSize: isSmallScreen ? 20 : 24, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                           textAlign: TextAlign.center,
                         ),
