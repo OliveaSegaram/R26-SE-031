@@ -568,37 +568,38 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         MaterialPageRoute(builder: (context) => nextScreen),
       );
 
+      // Extract score result if provided as int or default to 100 on continue
+      int scoreToSave = 100;
       if (result != null && result is int) {
-        final currentScore = ProgressService().getActivityScore(widget.skillMap.id, level.id);
-        
-        // Only overwrite score if higher, or if it was never completed
-        if (result > currentScore || !isCompleted) {
-          await ProgressService().saveActivityScore(widget.skillMap.id, level.id, result);
-        }
+        scoreToSave = result;
+      }
 
-        // Mark as completed persistently
-        await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
-        
-        final nextLevelIndex = index + 1;
-        if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
-          setState(() {
-            _animatingFromLevel = currentLevel;
-            currentLevel = nextLevelIndex;
-          });
-          
-          // Start sequence animation
-          _unlockController.forward(from: 0.0).then((_) {
-            if (mounted) {
-              setState(() {
-                _animatingFromLevel = -1;
-              });
-            }
-          });
-          
-          _scrollToCurrentLevel();
-        } else {
-          _refreshCurrentLevel();
-        }
+      // Mark level as completed persistently
+      final currentScore = ProgressService().getActivityScore(widget.skillMap.id, level.id);
+      if (scoreToSave > currentScore || !isCompleted) {
+        await ProgressService().saveActivityScore(widget.skillMap.id, level.id, scoreToSave);
+      }
+      await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
+
+      final nextLevelIndex = index + 1;
+      if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
+        setState(() {
+          _animatingFromLevel = currentLevel;
+          currentLevel = nextLevelIndex;
+        });
+
+        // Trigger smooth avatar glide animation to the newly unlocked activity
+        _unlockController.forward(from: 0.0).then((_) {
+          if (mounted) {
+            setState(() {
+              _animatingFromLevel = -1;
+            });
+          }
+        });
+
+        _scrollToCurrentLevel();
+      } else {
+        _refreshCurrentLevel();
       }
     } finally {
       _isNavigating = false;
