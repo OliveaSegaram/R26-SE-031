@@ -168,7 +168,13 @@ async def verify_email(request: Request, req: VerifyEmailRequest):
 
 
 async def _handle_login_alert(db, user_doc, request: Request, background_tasks: BackgroundTasks):
-    ip_address = get_remote_address(request)
+    # Try to get the real IP if behind a proxy like Render
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        ip_address = forwarded_for.split(",")[0].strip()
+    else:
+        ip_address = request.client.host if request.client else "Unknown IP"
+
     user_agent = request.headers.get("user-agent", "Unknown Device")
     
     last_ip = user_doc.get("last_login_ip")
