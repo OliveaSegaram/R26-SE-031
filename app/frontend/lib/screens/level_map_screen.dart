@@ -42,15 +42,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     super.initState();
     
     // Calculate currentLevel from persistent storage
-    final progress = ProgressService();
-    currentLevel = 0;
-    for (int i = 0; i < levels.length; i++) {
-      if (progress.isActivityCompleted(widget.skillMap.id, levels[i].id)) {
-        currentLevel = i + 1; // Unlocks the next one
-      }
-    }
-    // Cap it
-    if (currentLevel >= levels.length) currentLevel = levels.length - 1;
+    _refreshCurrentLevel();
     
     // Pulse animation for the current active node
     _pulseController = AnimationController(
@@ -86,6 +78,23 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       _scrollToCurrentLevel();
       _autoStartFirstLevel();
     });
+  }
+
+  void _refreshCurrentLevel() async {
+    await ProgressService().init();
+    final progress = ProgressService();
+    int unlockedLevel = 0;
+    for (int i = 0; i < levels.length; i++) {
+      if (progress.isActivityCompleted(widget.skillMap.id, levels[i].id)) {
+        unlockedLevel = i + 1; // Unlocks the next one
+      }
+    }
+    if (unlockedLevel >= levels.length) unlockedLevel = levels.length - 1;
+    if (mounted) {
+      setState(() {
+        currentLevel = unlockedLevel;
+      });
+    }
   }
 
   void _autoStartFirstLevel() {

@@ -128,11 +128,15 @@ class ProgressService {
     }
   }
 
-  /// Checks if an activity is completed
+  /// Checks if an activity is completed (or has any recorded score > 0)
   bool isActivityCompleted(String skillId, String activityId) {
     final key = '$_keyCompletedActivitiesPrefix$currentStudentId';
     List<String> completed = _prefs?.getStringList(key) ?? [];
-    return completed.contains('${skillId}_$activityId');
+    if (completed.contains('${skillId}_$activityId')) return true;
+
+    // Fallback: If student played and earned any score > 0, consider it completed so they can continue
+    final score = getActivityScore(skillId, activityId);
+    return score > 0;
   }
 
   /// Get the number of completed activities for a given skill
@@ -144,6 +148,22 @@ class ProgressService {
     for (String id in completed) {
       if (id.startsWith('${skillId}_')) {
         count++;
+      }
+    }
+
+    // Fallback check against activity scores if not listed in completed array
+    if (count == 0 && _prefs != null) {
+      final scoresKey = '$_keyActivityScoresPrefix$currentStudentId';
+      String? scoresJson = _prefs?.getString(scoresKey);
+      if (scoresJson != null) {
+        try {
+          final Map<String, dynamic> scoresMap = json.decode(scoresJson);
+          for (String k in scoresMap.keys) {
+            if (k.startsWith('${skillId}_') && (scoresMap[k] as num) > 0) {
+              count++;
+            }
+          }
+        } catch (_) {}
       }
     }
     return count;
@@ -167,7 +187,7 @@ class ProgressService {
   /// Checks if a skill is unlocked based on:
   /// 1. First skill (index 0) is always unlocked.
   /// 2. Unlocked if ALL activities in preceding skill are completed.
-  /// 3. Trial shortcut: Unlocked if student tried this skill and completed its 1st activity (act_1) with 100% score.
+  /// 3. Trial shortcut: Unlocked if student tried this skill and completed its 1st activity (act_1).
   bool isSkillUnlocked(int index, String skillId, String? prevSkillId, int prevTotalActivities) {
     if (index == 0) return true;
 
@@ -177,11 +197,11 @@ class ProgressService {
       if (prevCompleted >= prevTotalActivities) return true;
     }
 
-    // Trial rule: 1st activity of this skill completed with 100% score
+    // Trial rule: 1st activity of this skill completed with any score > 0
     final firstActivityId = 'act_1';
     final isFirstCompleted = isActivityCompleted(skillId, firstActivityId);
     final firstScore = getActivityScore(skillId, firstActivityId);
-    if (isFirstCompleted && firstScore >= 100) return true;
+    if (isFirstCompleted || firstScore > 0) return true;
 
     return false;
   }
