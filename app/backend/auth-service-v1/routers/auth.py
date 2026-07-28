@@ -163,6 +163,8 @@ async def verify_email(request: Request, req: VerifyEmailRequest):
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
@@ -228,11 +230,13 @@ async def login(request: Request, user: UserLogin, background_tasks: BackgroundT
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/google", response_model=Token)
 @limiter.limit("10/minute")
-async def google_login(request: Request, login_req: GoogleLoginRequest):
+async def google_login(request: Request, login_req: GoogleLoginRequest, background_tasks: BackgroundTasks):
     """Authenticate via Google ID token and return JWT tokens."""
     db = get_db()
 
@@ -280,11 +284,13 @@ async def google_login(request: Request, login_req: GoogleLoginRequest):
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/microsoft", response_model=Token)
 @limiter.limit("10/minute")
-async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest):
+async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest, background_tasks: BackgroundTasks):
     """Authenticate via Microsoft Access token and return JWT tokens."""
     db = get_db()
 
@@ -332,6 +338,8 @@ async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest):
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/refresh", response_model=Token)
@@ -353,6 +361,8 @@ async def refresh_token_endpoint(request: Request, token_req: TokenRefreshReques
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
@@ -459,6 +469,8 @@ async def verify_email_update(req: VerifyEmailUpdate, current_user: dict = Depen
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
