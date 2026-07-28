@@ -95,7 +95,19 @@ async def signup(request: Request, user: UserCreate, background_tasks: Backgroun
 
 from schemas.auth import VerifyEmailRequest
 
+
+@router.delete("/cancel-signup/{email}")
+async def cancel_signup(email: str):
+    db = get_db()
+    email = email.lower()
+    user = await db.users.find_one({"email": email})
+    if user and user.get("is_verified"):
+        return {"status": "already verified"}
+    await db.otps.delete_one({"email": email})
+    return {"status": "deleted"}
+
 @router.post("/verify-email", response_model=Token)
+
 @limiter.limit("5/minute")
 async def verify_email(request: Request, req: VerifyEmailRequest):
     """Verify email via OTP and return JWT tokens on success."""

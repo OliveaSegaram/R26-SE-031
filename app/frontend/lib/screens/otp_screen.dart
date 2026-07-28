@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
@@ -18,13 +19,18 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
+
   final TextEditingController _otpController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isLoading = false;
+  Timer? _timer;
+  int _secondsRemaining = 30;
 
   @override
   void initState() {
     super.initState();
+    _startTimer();
+
     // Request focus automatically, unless it's a demo bypass
     if (widget.email.startsWith('demo_')) {
       // Auto-fill and auto-verify for demo users
@@ -38,18 +44,45 @@ class _OtpScreenState extends State<OtpScreen> {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) _focusNode.requestFocus();
       });
+
     }
+  }
+
+  void _startTimer() {
+    _secondsRemaining = 30;
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (_secondsRemaining > 0) {
+        setState(() {
+          _secondsRemaining--;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
+
     _otpController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
+
   Future<void> _verifyOtp() async {
+    if (_secondsRemaining == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OTP invalid. Please go back and resend.'), backgroundColor: AppColors.softCoral),
+      );
+      return;
+    }
+
     String otp = _otpController.text;
+
     if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter all 6 digits.'), backgroundColor: AppColors.softCoral),
@@ -90,9 +123,18 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (widget.isSignup) {
+          AuthService().cancelSignup(widget.email);
+        }
+      },
+      child: Scaffold(
+
       backgroundColor: AppColors.cream,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -216,11 +258,26 @@ class _OtpScreenState extends State<OtpScreen> {
                       text: 'verify',
                       onPressed: _verifyOtp,
                       icon: Icons.check_circle_outline,
+
                     ),
+              const SizedBox(height: 20),
+              Center(
+                child: Text(
+                  _secondsRemaining > 0
+                      ? 'Resend code in 0:${_secondsRemaining.toString().padLeft(2, '0')}'
+                      : 'OTP invalid. Please go back to resend.',
+                  style: TextStyle(
+                    color: _secondsRemaining > 0 ? AppColors.textSecondary : AppColors.softCoral,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
               const SizedBox(height: 20), // Extra padding for keyboard
+
             ],
           ),
         ),
+      ),
       ),
     );
   }
