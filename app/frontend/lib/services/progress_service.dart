@@ -184,6 +184,17 @@ class ProgressService {
     return completed.where((id) => id.startsWith('${skillId}_')).toList();
   }
 
+  // --- Intro Screen Tracking ---
+
+  Future<void> markSkillIntroSeen(String skillId) async {
+    final prefs = await _ensurePrefs();
+    await prefs.setBool('intro_seen_skill_${currentStudentId}_$skillId', true);
+  }
+
+  bool isSkillIntroSeen(String skillId) {
+    return _prefs?.getBool('intro_seen_skill_${currentStudentId}_$skillId') ?? false;
+  }
+
   /// Checks if a skill is unlocked based on:
   /// 1. First skill (index 0) is always unlocked.
   /// 2. Unlocked if ALL activities in preceding skill are completed.
