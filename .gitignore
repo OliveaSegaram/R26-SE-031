@@ -109,3 +109,6 @@ test_summary.txt
 .svn/
 .swiftpm/
 migrate_working_dir/
+/app/frontend/macos
+/app/frontend/windows
+/app/frontend/windows
