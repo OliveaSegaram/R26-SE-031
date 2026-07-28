@@ -3,6 +3,8 @@
     "id": "skill_1",
     "title": "හැඩතල සහ වර්ණ හඳුනා ගනිමු.",
     "description": "Shapes and colors recognition visual skills curriculum",
+    "intro_text": "සාදරයෙන් පිළිගන්නවා! මෙම කුසලතාවයෙන් අපි එකිනෙකට වෙනස් හැඩතල, රටා සහ වර්ණ හඳුනා ගැනීමට පුරුදු වෙමු.",
+    "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/skill_1_intro.mp3",
     "activities": [
       { "id": "act_1", "title": "වෙනස් හැඩය සොයමු", "file_path": "skill_1/act_1.json" },
       { "id": "act_2", "title": "රටාව සම්පූර්ණ කරමු", "file_path": "skill_1/act_2.json" },

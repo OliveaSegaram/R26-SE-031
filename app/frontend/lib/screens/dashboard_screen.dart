@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../theme/app_theme.dart';
 import '../models/dashboard_config.dart';
 import 'level_map_screen.dart';
+import 'skill_intro_screen.dart';
 import 'select_student_screen.dart';
 import 'parent/parent_hub_screen.dart';
 import 'character_shop_screen.dart';
@@ -676,14 +677,14 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
             final skillDetail = await SkillDetail.load(widget.skill.file);
             if (!mounted) return;
 
+            final bool isIntroSeen = ProgressService().isSkillIntroSeen(skillDetail.id);
+            final Widget targetScreen = isIntroSeen
+                ? LevelMapScreen(skillMap: skillDetail, studentData: widget.studentData)
+                : SkillIntroScreen(skillMap: skillDetail, studentData: widget.studentData);
+
             await Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => LevelMapScreen(
-                  skillMap: skillDetail,
-                  studentData: widget.studentData,
-                ),
-              ),
+              MaterialPageRoute(builder: (context) => targetScreen),
             );
             widget.onReturn();
           } catch (e) {

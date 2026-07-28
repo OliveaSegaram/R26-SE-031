@@ -2,6 +2,8 @@
   "id": "act_1",
   "title": "වෙනස් හැඩය සොයමු",
   "description": "අනෙක් හැඩවලට වඩා වෙනස් හැඩය සොයා තෝරන්න.",
+  "intro_text": "මෙම ක්‍රියාකාරකමේදී රූප සමූහයක් අතුරින් අනෙක් හැඩවලට වඩා වෙනස් හැඩය හොඳින් නිරීක්ෂණය කර තෝරන්න.",
+  "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/act_1_intro.mp3",
   "telemetry_tags": ["visual_discrimination", "shape_recognition"],
   "template_type": "odd_one_out_game",
   "rounds": [

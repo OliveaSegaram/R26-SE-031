@@ -69,60 +69,74 @@ class SkillSummary {
 class SkillDetail {
   final String id;
   final String title;
+  final String introText;
+  final String audioUrl;
   final List<ActivityNode> activities;
 
-  SkillDetail({required this.id, required this.title, required this.activities});
+  SkillDetail({
+    required this.id,
+    required this.title,
+    this.introText = '',
+    this.audioUrl = '',
+    required this.activities,
+  });
 
   factory SkillDetail.fromJson(dynamic decodedJson, String fallbackId, String fallbackTitle) {
     if (decodedJson is List) {
       if (decodedJson.isNotEmpty &&
           decodedJson.first is Map &&
           (decodedJson.first as Map).containsKey('activities')) {
-        // Root is a list wrapping the skill object: [{ id, title, activities: [...] }]
         final skillMap = decodedJson.first as Map<String, dynamic>;
         final String id = skillMap['id']?.toString() ?? fallbackId;
         final String title = skillMap['title']?.toString() ?? fallbackTitle;
+        final String introText = skillMap['intro_text']?.toString() ?? skillMap['description']?.toString() ?? '';
+        final String audioUrl = skillMap['audio_url']?.toString() ?? skillMap['intro_audio_url']?.toString() ?? '';
         final List<dynamic> activitiesList = skillMap['activities'] as List<dynamic>? ?? [];
         return SkillDetail(
           id: id,
           title: title,
+          introText: introText,
+          audioUrl: audioUrl,
           activities: activitiesList
               .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
               .toList(),
         );
       } else {
-        // Root is a direct list of activity nodes
         return SkillDetail(
           id: fallbackId,
           title: fallbackTitle,
+          introText: '',
+          audioUrl: '',
           activities: decodedJson
               .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
               .toList(),
         );
       }
     } else if (decodedJson is Map) {
-      // Root is a single skill object: { id, title, activities: [...] }
       final skillMap = decodedJson as Map<String, dynamic>;
       final String id = skillMap['id']?.toString() ?? fallbackId;
       final String title = skillMap['title']?.toString() ?? fallbackTitle;
+      final String introText = skillMap['intro_text']?.toString() ?? skillMap['description']?.toString() ?? '';
+      final String audioUrl = skillMap['audio_url']?.toString() ?? skillMap['intro_audio_url']?.toString() ?? '';
       final List<dynamic> activitiesList = skillMap['activities'] as List<dynamic>? ?? [];
       return SkillDetail(
         id: id,
         title: title,
+        introText: introText,
+        audioUrl: audioUrl,
         activities: activitiesList
             .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
             .toList(),
       );
     }
 
-    return SkillDetail(id: fallbackId, title: fallbackTitle, activities: []);
+    return SkillDetail(id: fallbackId, title: fallbackTitle, introText: '', audioUrl: '', activities: []);
   }
 
   static Future<SkillDetail> load(String fileName) async {
     final String response = await rootBundle.loadString('assets/data/curriculum/$fileName');
     final skillDetail = SkillDetail.fromJson(json.decode(response), fileName.replaceAll('.json', ''), 'Skill Details');
 
-    // Dynamically resolve modular per-activity JSON files if file_path is specified
     List<ActivityNode> resolvedActivities = [];
     for (var activity in skillDetail.activities) {
       if (activity.filePath.isNotEmpty) {
@@ -141,6 +155,8 @@ class SkillDetail {
     return SkillDetail(
       id: skillDetail.id,
       title: skillDetail.title,
+      introText: skillDetail.introText,
+      audioUrl: skillDetail.audioUrl,
       activities: resolvedActivities,
     );
   }
@@ -150,6 +166,8 @@ class ActivityNode {
   final String id;
   final String title;
   final String description;
+  final String introText;
+  final String audioUrl;
   final String filePath;
   final List<String> telemetryTags;
   final String templateType;
@@ -159,6 +177,8 @@ class ActivityNode {
     required this.id, 
     required this.title, 
     this.description = '',
+    this.introText = '',
+    this.audioUrl = '',
     this.filePath = '',
     required this.telemetryTags, 
     required this.templateType, 
@@ -170,6 +190,8 @@ class ActivityNode {
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
+      introText: json['intro_text']?.toString() ?? json['description']?.toString() ?? '',
+      audioUrl: json['audio_url']?.toString() ?? json['intro_audio_url']?.toString() ?? '',
       filePath: json['file_path']?.toString() ?? '',
       telemetryTags: json['telemetry_tags'] != null
           ? List<String>.from(json['telemetry_tags'] as Iterable)

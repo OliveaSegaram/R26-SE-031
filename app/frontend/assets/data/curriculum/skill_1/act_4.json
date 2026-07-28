@@ -2,6 +2,8 @@
   "id": "act_4",
   "title": "නොගැලපෙන රූපය සොයාමු",
   "description": "අනෙක් රූප කාණ්ඩයට නොගැලපෙන වෙනස් රූපය තෝරන්න.",
+  "intro_text": "ලබා දී ඇති රූප 4 අතරින් අනෙක් කාණ්ඩයට නොගැලපෙන වෙනස්ම රූපය සොයා තෝරන්න.",
+  "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/act_4_intro.mp3",
   "telemetry_tags": ["visual_classification", "odd_one_out"],
   "template_type": "non_matching_image_game",
   "rounds": [

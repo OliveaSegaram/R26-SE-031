@@ -1,9 +1,11 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../theme/app_theme.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
+import '../services/tts_service.dart';
 import 'games/game_factory.dart';
 import 'activity_complete_screen.dart';
 
@@ -25,6 +27,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   late AnimationController _pulseController;
   late AnimationController _unlockController;
   final ScrollController _scrollController = ScrollController();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   late Animation<double> _pathAnim;
   late Animation<double> _nodeScaleAnim;
@@ -125,10 +128,30 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
   @override
   void dispose() {
+    _audioPlayer.dispose();
     _pulseController.dispose();
     _unlockController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _playActivityAudio(ActivityNode level) async {
+    final url = level.audioUrl;
+    final text = level.introText.isNotEmpty
+        ? level.introText
+        : '${level.title}. ${level.description}';
+
+    if (url.isNotEmpty && (url.startsWith('http://') || url.startsWith('https://'))) {
+      try {
+        await _audioPlayer.stop();
+        await _audioPlayer.play(UrlSource(url));
+      } catch (e) {
+        debugPrint('Error playing activity audio: $e');
+        await TtsService().speak(text);
+      }
+    } else {
+      await TtsService().speak(text);
+    }
   }
 
   // Zigzag X offset (Duolingo-style)
@@ -341,6 +364,24 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                   ),
                   const SizedBox(width: 8),
 
+                  // Speaker Icon Button
+                  GestureDetector(
+                    onTap: () => _playActivityAudio(level),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.warmAmber.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.volume_up_rounded,
+                        color: AppColors.warmAmber,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
                   // Play Icon Action
                   if (!isLocked)
                     Container(
@@ -423,6 +464,31 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                 style: AppTypography.sinhala(fontSize: 15, color: AppColors.textSecondary),
               ),
             ],
+            const SizedBox(height: 16),
+
+            // Speaker Audio Instruction Button
+            GestureDetector(
+              onTap: () => _playActivityAudio(level),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.warmAmber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.warmAmber, width: 1.5),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 22),
+                    const SizedBox(width: 6),
+                    Text(
+                      'උපදෙස් වලට සවන් දෙන්න',
+                      style: AppTypography.sinhala(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.warmAmber),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,

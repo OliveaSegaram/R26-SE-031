@@ -2,6 +2,8 @@
   "id": "act_2",
   "title": "රටාව සම්පූර්ණ කරමු",
   "description": "ඊළඟට පැමිණෙන හැඩය හෝ වර්ණය තෝරා රටාව සම්පූර්ණ කරන්න.",
+  "intro_text": "ලබා දී ඇති හැඩතල සහ වර්ණ රටාව හොඳින් නිරීක්ෂණය කර ඊළඟට පැමිණෙන නිවැරදි හැඩය තෝරන්න.",
+  "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/act_2_intro.mp3",
   "telemetry_tags": ["pattern_recognition", "visual_logic"],
   "template_type": "pattern_game",
   "rounds": [

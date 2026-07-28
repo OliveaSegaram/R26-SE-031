@@ -1,19 +1,21 @@
 {
   "id": "act_11",
   "title": "වචන අනුපිළිවෙලට සවන් දී රූප පිලිවෙලින් පෙළගස්වමු",
-  "description": "අසා සිටින අනුපිළිවෙලට රූප නිවැරදිව පෙළගස්වන්න.",
-  "telemetry_tags": ["audio_sequence", "working_memory"],
+  "description": "අසා ගන්නා ශබ්ද අනුපිළිවෙලට අනුව රූප පිළිවෙලින් තෝරන්න.",
+  "intro_text": "ශ්‍රව්‍ය උපදෙස් වලින් කියවෙන රූප අනුපිළිවෙලට සවන් දී එම පිළිවෙලටම රූප මත තට්ටු කර පෙළගස්වන්න.",
+  "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/act_11_intro.mp3",
+  "telemetry_tags": ["auditory_sequential_memory", "visual_sequencing"],
   "template_type": "audio_sequence_game",
   "rounds": [
-    {"sequence": ["🔴", "🔵", "🟡"], "audio_prompt": "රතු, නිල්, කහ", "options": ["🔴", "🔵", "🟡"], "correct_order": [0, 1, 2]},
-    {"sequence": ["🟥", "🔺", "⭐"], "audio_prompt": "චතුරස්‍රය, ත්‍රිකෝණය, තරුව", "options": ["🔺", "🟥", "⭐"], "correct_order": [1, 0, 2]},
-    {"sequence": ["🍎", "🍌", "🍇"], "audio_prompt": "ඇපල්, කෙසෙල්, මිදි", "options": ["🍌", "🍎", "🍇"], "correct_order": [1, 0, 2]},
-    {"sequence": ["🐶", "🐱", "🐰"], "audio_prompt": "බල්ලා, පූසා, හාවා", "options": ["🐱", "🐰", "🐶"], "correct_order": [2, 0, 1]},
-    {"sequence": ["🚗", "🚌", "✈️"], "audio_prompt": "කාර්, බස්, අහස්යානය", "options": ["✈️", "🚗", "🚌"], "correct_order": [1, 2, 0]},
-    {"sequence": ["🟢", "🔴", "🔵"], "audio_prompt": "කොළ, රතු, නිල්", "options": ["🔴", "🟢", "🔵"], "correct_order": [1, 0, 2]},
-    {"sequence": ["⭐", "🌙", "☀️"], "audio_prompt": "තරුව, හඳ, ඉර", "options": ["☀️", "⭐", "🌙"], "correct_order": [1, 2, 0]},
-    {"sequence": ["🟣", "🟧", "⚪"], "audio_prompt": "දම්, තැඹිලි, සුදු", "options": ["⚪", "🟣", "🟧"], "correct_order": [1, 2, 0]},
-    {"sequence": ["🌸", "🌳", "🍎"], "audio_prompt": "මල, ගස, ඇපල්", "options": ["🌳", "🌸", "🍎"], "correct_order": [1, 0, 2]},
-    {"sequence": ["🐟", "🐦", "🐕"], "audio_prompt": "මාළුවා, කුරුල්ලා, බල්ලා", "options": ["🐦", "🐟", "🐕"], "correct_order": [1, 0, 2]}
+    {"audio_sequence": ["🔴", "🔵"], "options": ["🔴", "🔵", "🟢"], "correct_sequence": ["🔴", "🔵"]},
+    {"audio_sequence": ["⭐", "🌙"], "options": ["⭐", "🌙", "☀️"], "correct_sequence": ["⭐", "🌙"]},
+    {"audio_sequence": ["🍎", "🍌"], "options": ["🍎", "🍌", "🍇"], "correct_sequence": ["🍎", "🍌"]},
+    {"audio_sequence": ["🐶", "🐱"], "options": ["🐶", "🐱", "🐰"], "correct_sequence": ["🐶", "🐱"]},
+    {"audio_sequence": ["🔴", "🟢", "🔵"], "options": ["🔴", "🟢", "🔵", "🟡"], "correct_sequence": ["🔴", "🟢", "🔵"]},
+    {"audio_sequence": ["⭐", "🌙", "☀️"], "options": ["⭐", "🌙", "☀️", "☁️"], "correct_sequence": ["⭐", "🌙", "☀️"]},
+    {"audio_sequence": ["🚗", "🚌", "🚲"], "options": ["🚗", "🚌", "🚲", "✈️"], "correct_sequence": ["🚗", "🚌", "🚲"]},
+    {"audio_sequence": ["🍎", "🍌", "🍇"], "options": ["🍎", "🍌", "🍇", "🍊"], "correct_sequence": ["🍎", "🍌", "🍇"]},
+    {"audio_sequence": ["🐶", "🐱", "🐰"], "options": ["🐶", "🐱", "🐰", "🦊"], "correct_sequence": ["🐶", "🐱", "🐰"]},
+    {"audio_sequence": ["🔴", "🟡", "🟢", "🔵"], "options": ["🔴", "🟡", "🟢", "🔵"], "correct_sequence": ["🔴", "🟡", "🟢", "🔵"]}
   ]
 }

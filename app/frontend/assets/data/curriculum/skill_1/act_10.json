@@ -1,19 +1,21 @@
 {
   "id": "act_10",
   "title": "එක සමාන රූප හඳුනා ගනිමු",
-  "description": "එක හා සමාන රූප යුගල සොයා ගළපන්න.",
-  "telemetry_tags": ["visual_matching", "identical_pairs"],
+  "description": "ලබා දී ඇති රූපයට සම්පූර්ණයෙන්ම සමාන රූපය තෝරන්න.",
+  "intro_text": "වම් පසින් පෙන්වන රූපයට හැඩයෙන් සහ වර්ණයෙන් සම්පූර්ණයෙන්ම එක සමාන රූපය සොයා තෝරන්න.",
+  "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/act_10_intro.mp3",
+  "telemetry_tags": ["identical_match", "visual_form_constancy"],
   "template_type": "identical_match_game",
   "rounds": [
-    {"pairs": ["🔵", "🟥"], "options": ["🔵", "🟥", "🔵", "🟥"], "correct_pairs": [[0, 2], [1, 3]]},
-    {"pairs": ["🔺", "⭐"], "options": ["🔺", "⭐", "🔺", "⭐"], "correct_pairs": [[0, 2], [1, 3]]},
-    {"pairs": ["🔴", "🟢"], "options": ["🔴", "🟢", "🔴", "🟢"], "correct_pairs": [[0, 2], [1, 3]]},
-    {"pairs": ["🟡", "🟣"], "options": ["🟡", "🟣", "🟡", "🟣"], "correct_pairs": [[0, 2], [1, 3]]},
-    {"pairs": ["⬛", "⚪"], "options": ["⬛", "⚪", "⬛", "⚪"], "correct_pairs": [[0, 2], [1, 3]]},
-    {"pairs": ["🔷", "🔶"], "options": ["🔷", "🔶", "🔷", "🔶"], "correct_pairs": [[0, 2], [1, 3]]},
-    {"pairs": ["🍎", "🍌"], "options": ["🍎", "🍌", "🍎", "🍌"], "correct_pairs": [[0, 2], [1, 3]]},
-    {"pairs": ["🐶", "🐱"], "options": ["🐶", "🐱", "🐶", "🐱"], "correct_pairs": [[0, 2], [1, 3]]},
-    {"pairs": ["🚗", "🚌"], "options": ["🚗", "🚌", "🚗", "🚌"], "correct_pairs": [[0, 2], [1, 3]]},
-    {"pairs": ["☀️", "🌙"], "options": ["☀️", "🌙", "☀️", "🌙"], "correct_pairs": [[0, 2], [1, 3]]}
+    {"target": "🔴", "options": ["🔵", "🔴", "🟢"], "correct_index": 1},
+    {"target": "⭐", "options": ["⭐", "🌙", "☀️"], "correct_index": 0},
+    {"target": "🔺", "options": ["🟩", "🟦", "🔺"], "correct_index": 2},
+    {"target": "🍎", "options": ["🍌", "🍎", "🍇"], "correct_index": 1},
+    {"target": "🐶", "options": ["🐶", "🐱", "🐰"], "correct_index": 0},
+    {"target": "🚗", "options": ["🚌", "🚗", "🚲"], "correct_index": 1},
+    {"target": "⚽", "options": ["🏀", "🎾", "⚽"], "correct_index": 2},
+    {"target": "👕", "options": ["👕", "👗", "👖"], "correct_index": 0},
+    {"target": "☀️", "options": ["🌙", "☀️", "⭐"], "correct_index": 1},
+    {"target": "🌲", "options": ["🌸", "🌲", "🍀"], "correct_index": 1}
   ]
 }
