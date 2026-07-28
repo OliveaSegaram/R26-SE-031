@@ -33,8 +33,7 @@ class _Activity2CompletePatternState extends State<Activity2CompletePattern> {
       _selectedOptionIndex = index;
     });
 
-    final bool isRight = (selectedOption == correctOption) ||
-        (currentRound['correct_index'] != null && index == currentRound['correct_index']);
+    final bool isRight = (selectedOption == correctOption);
     int score = isRight ? 100 : 0;
     context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
 
