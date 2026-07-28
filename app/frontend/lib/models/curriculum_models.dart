@@ -120,13 +120,37 @@ class SkillDetail {
 
   static Future<SkillDetail> load(String fileName) async {
     final String response = await rootBundle.loadString('assets/data/curriculum/$fileName');
-    return SkillDetail.fromJson(json.decode(response), fileName.replaceAll('.json', ''), 'Skill Details');
+    final skillDetail = SkillDetail.fromJson(json.decode(response), fileName.replaceAll('.json', ''), 'Skill Details');
+
+    // Dynamically resolve modular per-activity JSON files if file_path is specified
+    List<ActivityNode> resolvedActivities = [];
+    for (var activity in skillDetail.activities) {
+      if (activity.filePath.isNotEmpty) {
+        try {
+          final String actResponse = await rootBundle.loadString('assets/data/curriculum/${activity.filePath}');
+          final Map<String, dynamic> actJson = json.decode(actResponse);
+          resolvedActivities.add(ActivityNode.fromJson(actJson));
+        } catch (e) {
+          resolvedActivities.add(activity);
+        }
+      } else {
+        resolvedActivities.add(activity);
+      }
+    }
+
+    return SkillDetail(
+      id: skillDetail.id,
+      title: skillDetail.title,
+      activities: resolvedActivities,
+    );
   }
 }
 
 class ActivityNode {
   final String id;
   final String title;
+  final String description;
+  final String filePath;
   final List<String> telemetryTags;
   final String templateType;
   final List<Map<String, dynamic>> rounds;
@@ -134,6 +158,8 @@ class ActivityNode {
   ActivityNode({
     required this.id, 
     required this.title, 
+    this.description = '',
+    this.filePath = '',
     required this.telemetryTags, 
     required this.templateType, 
     required this.rounds
@@ -143,6 +169,8 @@ class ActivityNode {
     return ActivityNode(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      filePath: json['file_path']?.toString() ?? '',
       telemetryTags: json['telemetry_tags'] != null
           ? List<String>.from(json['telemetry_tags'] as Iterable)
           : <String>[],

@@ -41,6 +41,7 @@ flutter:
     - assets/audio/
     - assets/data/
     - assets/data/curriculum/
+    - assets/data/curriculum/skill_1/
 
 flutter_icons:
   android: true
