@@ -206,7 +206,7 @@ class AuthService {
     }
   }
   /// Returns null on success, or an error message string on failure.
-  Future<String?> signup(String name, String email, String password) async {
+  Future<String?> signup(String name, String email, String password, {String role = "parent"}) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/signup'),
@@ -608,7 +608,6 @@ class AuthService {
       throw Exception(error['detail'] ?? 'Failed to update login alerts');
     }
   }
-
   // Upload Profile Picture
   Future<String> uploadProfilePicture(File imageFile) async {
     final token = await getAccessToken();
@@ -640,7 +639,6 @@ class AuthService {
       throw Exception('Failed to upload profile picture: ${response.body}');
     }
   }
-
   // Delete Profile Picture
   Future<void> deleteProfilePicture() async {
     final token = await getAccessToken();
@@ -655,6 +653,56 @@ class AuthService {
 
     if (response.statusCode != 200) {
       throw Exception('Failed to delete profile picture: ${response.body}');
+    }
+  }
+  // Connect Specialist
+  Future<String?> connectSpecialist(String clinicCode, String studentId) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/therapist/connect'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'clinic_code': clinicCode,
+          'student_id': studentId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final body = jsonDecode(response.body);
+        return body['detail'] ?? 'Failed to connect';
+      }
+    } catch (e) {
+      return e.toString();
+    }
+  }
+  // Get Therapist Connections
+  Future<List<dynamic>> getConnections() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return [];
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/therapist/connections'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 }

@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'signin_screen.dart';
 import 'character_intro_screen.dart';
+import 'therapist/therapist_dashboard_screen.dart';
 import 'otp_screen.dart';
 
 /// Sign-Up Screen
@@ -57,6 +58,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       _nameController.text.trim(),
       _emailController.text.trim(),
       _passwordController.text,
+      role: _isTherapist ? "therapist" : "parent",
     );
 
     if (!mounted) return;

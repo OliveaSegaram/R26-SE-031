@@ -5,6 +5,7 @@ import '../widgets/monster_character.dart';
 import '../services/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'select_student_screen.dart';
+import 'therapist/therapist_dashboard_screen.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -62,8 +63,12 @@ class _SignInScreenState extends State<SignInScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
+      final profile = await AuthService().getUserProfile();
+      if (!mounted) return;
+      final isTherapist = profile != null && profile['role'] == 'therapist';
+      
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const SelectStudentScreen()),
+        MaterialPageRoute(builder: (context) => isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen()),
         (Route<dynamic> route) => false,
       );
     }
