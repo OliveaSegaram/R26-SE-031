@@ -572,7 +572,7 @@ class AuthService {
   }
   // Toggle Login Alerts
   Future<Map<String, dynamic>> toggleLoginAlerts(bool enabled) async {
-    final token = await getToken();
+    final token = await getAccessToken();
     if (token == null) throw Exception('Not authenticated');
 
     final response = await http.put(
