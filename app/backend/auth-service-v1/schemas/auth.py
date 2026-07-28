@@ -23,6 +23,8 @@ class UserUpdate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
+    device_id: Optional[str] = None
+    device_name: Optional[str] = None
 
 
 class Token(BaseModel):
@@ -40,6 +42,8 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     role: str
+    login_alerts_enabled: bool = True
+    profile_picture_url: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -52,9 +56,13 @@ class VerifyPasswordRequest(BaseModel):
 
 class GoogleLoginRequest(BaseModel):
     id_token: str
+    device_id: Optional[str] = None
+    device_name: Optional[str] = None
 
 class MicrosoftLoginRequest(BaseModel):
     access_token: str
+    device_id: Optional[str] = None
+    device_name: Optional[str] = None
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
@@ -71,6 +79,9 @@ class ResetPasswordRequest(BaseModel):
 class VerifyEmailRequest(BaseModel):
     email: EmailStr
     otp: str = Field(..., min_length=6, max_length=6)
+
+class ToggleLoginAlertsRequest(BaseModel):
+    enabled: bool
 
 class RequestEmailUpdate(BaseModel):
     new_email: EmailStr

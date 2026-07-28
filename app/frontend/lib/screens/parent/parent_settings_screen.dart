@@ -1,3 +1,5 @@
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../welcome_screen.dart';
@@ -19,8 +21,10 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
     with TickerProviderStateMixin {
   // ── State ──
   bool _isLoading = true;
+  bool _isUploading = false;
   String _userName = '';
   String _userEmail = '';
+  String? _profilePictureUrl;
   String _authProvider = 'local';
   List<dynamic> _students = [];
   final Set<String> _deletingStudentIds = {};
@@ -29,6 +33,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
   // Email preference toggles
   bool _progressEmails = true;
   bool _periodicUpdates = true;
+  bool _loginAlertsEnabled = true;
 
   @override
   void initState() {
@@ -49,8 +54,98 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
         if (profile != null) {
           _userName = profile['name'] ?? '';
           _userEmail = profile['email'] ?? '';
+          _loginAlertsEnabled = profile['login_alerts_enabled'] ?? true;
+          _profilePictureUrl = profile['profile_picture_url'];
         }
       });
+    }
+  }
+
+
+  Future<void> _pickAndUploadImage() async {
+    if (_profilePictureUrl != null && _profilePictureUrl!.isNotEmpty) {
+      // Show bottom sheet to Change or Remove
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Profile Photo',
+                style: AppTypography.heading(fontSize: 18),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AppColors.calmBlue),
+                title: const Text('Change Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openPicker();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removePhoto();
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      );
+    } else {
+      _openPicker();
+    }
+  }
+  
+  Future<void> _removePhoto() async {
+    setState(() => _isUploading = true);
+    try {
+      await AuthService().deleteProfilePicture();
+      setState(() {
+        _profilePictureUrl = null;
+        _isUploading = false;
+      });
+    } catch (e) {
+      setState(() => _isUploading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to remove image: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _openPicker() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    
+    if (pickedFile != null) {
+      setState(() => _isUploading = true);
+      try {
+        final url = await AuthService().uploadProfilePicture(File(pickedFile.path));
+        setState(() {
+          _profilePictureUrl = url;
+          _isUploading = false;
+        });
+      } catch (e) {
+        setState(() => _isUploading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload image: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -63,6 +158,21 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
       return parts[0][0].toUpperCase();
     }
     return '?';
+  }
+
+  Future<void> _toggleLoginAlerts(bool value) async {
+    final previousValue = _loginAlertsEnabled;
+    setState(() => _loginAlertsEnabled = value);
+    try {
+      await AuthService().toggleLoginAlerts(value);
+    } catch (e) {
+      setState(() => _loginAlertsEnabled = previousValue);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update login alerts: $e')),
+        );
+      }
+    }
   }
 
   bool get _isSocialLogin =>
@@ -154,34 +264,86 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
       ),
       child: Column(
         children: [
-          // Avatar circle with initials
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF5A9DE0), Color(0xFF7DCE7D)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.calmBlue.withValues(alpha: 0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+          // Avatar circle with profile picture or initials
+          GestureDetector(
+            onTap: _pickAndUploadImage,
+            child: Stack(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF5A9DE0), Color(0xFF7DCE7D)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.calmBlue.withValues(alpha: 0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                    image: _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty
+                        ? DecorationImage(
+                            // Build the full URL if it's relative
+                            image: NetworkImage(
+                              _profilePictureUrl!.startsWith('http') 
+                                  ? _profilePictureUrl! 
+                                  : 'https://adaptedmind-auth-api.onrender.com$_profilePictureUrl'
+                            ),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: _profilePictureUrl == null || _profilePictureUrl!.isEmpty
+                      ? Center(
+                          child: Text(
+                            _initials,
+                            style: AppTypography.heading(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+                if (_isUploading)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.black45,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.calmBlue,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
                 ),
               ],
-            ),
-            child: Center(
-              child: Text(
-                _initials,
-                style: AppTypography.heading(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -389,79 +551,6 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
           editLabel: 'change',
           onEdit: _isSocialLogin ? null : () => _showChangePasswordDialog(),
           subtitle: _isSocialLogin ? 'managed by $_authProvider' : null,
-        ),
-        const SizedBox(height: 12),
-        // Security settings
-        GestureDetector(
-          onTap: () => _showComingSoon('Two-factor authentication'),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.borderLight, width: 1),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.calmBlue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.shield_outlined, color: AppColors.calmBlue, size: 20),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              'Two-factor authentication',
-                              style: AppTypography.body(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.warmAmber.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'soon',
-                              style: AppTypography.caption(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.warmAmber,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Add an extra layer of security to your account',
-                        style: AppTypography.caption(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 20),
-              ],
-            ),
-          ),
         ),
         const SizedBox(height: 24),
         // Delete Account
@@ -960,8 +1049,8 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
         _buildNotifToggle(
           'login alerts',
           'get notified when your account is accessed from a new device.',
-          true,
-          (v) => _showComingSoon('Login alerts'),
+          _loginAlertsEnabled,
+          (v) => _toggleLoginAlerts(v),
         ),
         _buildNotifToggle(
           'learning progress',
@@ -1135,89 +1224,121 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
       context: context,
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setDialogState) {
-          return AlertDialog(
-            backgroundColor: AppColors.cardSurface,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24)),
-            title: Text('edit name',
-                style: AppTypography.heading(
-                    fontSize: 20, color: AppColors.textPrimary)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(errorMessage!,
-                        style: AppTypography.body(
-                            fontSize: 14, color: AppColors.softCoral)),
-                  ),
-                TextField(
-                  controller: controller,
-                  style: AppTypography.body(fontSize: 16),
-                  decoration: InputDecoration(
-                    labelText: 'full name',
-                    labelStyle: AppTypography.caption(),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: isLoading ? null : () => Navigator.pop(ctx),
-                child: Text('cancel',
-                    style: AppTypography.body(
-                        fontSize: 14, color: AppColors.textSecondary)),
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
               ),
-              ElevatedButton(
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        final newName = controller.text.trim();
-                        if (newName.isEmpty || newName.length < 2) {
-                          setDialogState(() => errorMessage =
-                              'Name must be at least 2 characters.');
-                          return;
-                        }
-                        setDialogState(() {
-                          isLoading = true;
-                          errorMessage = null;
-                        });
-                        
-                        final error = await AuthService().updateProfile(name: newName);
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.calmBlue.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.person_outline_rounded, color: AppColors.calmBlue, size: 28),
+                      ),
+                      IconButton(
+                        onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Update Name', style: AppTypography.heading(fontSize: 22, color: AppColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  Text('Enter your full name to update your profile.', style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary)),
+                  const SizedBox(height: 24),
+                  if (errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(errorMessage!, style: AppTypography.caption(color: Colors.redAccent))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  TextField(
+                    controller: controller,
+                    style: AppTypography.body(fontSize: 16),
+                    decoration: InputDecoration(
+                      hintText: 'Full Name',
+                      hintStyle: AppTypography.body(color: AppColors.textHint),
+                      filled: true,
+                      fillColor: AppColors.slateBg.withValues(alpha: 0.4),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.textHint),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              final newName = controller.text.trim();
+                              if (newName.isEmpty || newName.length < 2) {
+                                setDialogState(() => errorMessage = 'Name must be at least 2 characters.');
+                                return;
+                              }
+                              setDialogState(() {
+                                isLoading = true;
+                                errorMessage = null;
+                              });
+                              
+                              final error = await AuthService().updateProfile(name: newName);
 
-                        if (error != null) {
-                          setDialogState(() {
-                            isLoading = false;
-                            errorMessage = error;
-                          });
-                        } else {
-                          if (!ctx.mounted) return;
-                          Navigator.pop(ctx);
-                          setState(() => _userName = newName);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Name updated successfully!'),
-                              backgroundColor: AppColors.gentleGreen,
-                            ),
-                          );
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.calmBlue,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : Text('save',
-                        style: AppTypography.button(fontSize: 14)),
+                              if (error != null) {
+                                setDialogState(() {
+                                  isLoading = false;
+                                  errorMessage = error;
+                                });
+                              } else {
+                                if (!ctx.mounted) return;
+                                Navigator.pop(ctx);
+                                setState(() => _userName = newName);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Name updated successfully!'),
+                                    backgroundColor: AppColors.gentleGreen,
+                                  ),
+                                );
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.calmBlue,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: isLoading
+                          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text('Save Changes', style: AppTypography.button(fontSize: 16, color: Colors.white)),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         });
       },
@@ -1233,84 +1354,116 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
       context: context,
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setDialogState) {
-          return AlertDialog(
-            backgroundColor: AppColors.cardSurface,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24)),
-            title: Text('edit email',
-                style: AppTypography.heading(
-                    fontSize: 20, color: AppColors.textPrimary)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(errorMessage!,
-                        style: AppTypography.body(
-                            fontSize: 14, color: AppColors.softCoral)),
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.calmBlue.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.mail_outline_rounded, color: AppColors.calmBlue, size: 28),
+                      ),
+                      IconButton(
+                        onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                      ),
+                    ],
                   ),
-                TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.emailAddress,
-                  style: AppTypography.body(fontSize: 16),
-                  decoration: InputDecoration(
-                    labelText: 'email address',
-                    labelStyle: AppTypography.caption(),
+                  const SizedBox(height: 16),
+                  Text('Update Email', style: AppTypography.heading(fontSize: 22, color: AppColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  Text('Enter a new email address. We will send a verification code to confirm.', style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary)),
+                  const SizedBox(height: 24),
+                  if (errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(errorMessage!, style: AppTypography.caption(color: Colors.redAccent))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.emailAddress,
+                    style: AppTypography.body(fontSize: 16),
+                    decoration: InputDecoration(
+                      hintText: 'Email Address',
+                      hintStyle: AppTypography.body(color: AppColors.textHint),
+                      filled: true,
+                      fillColor: AppColors.slateBg.withValues(alpha: 0.4),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      prefixIcon: const Icon(Icons.mail_outline_rounded, color: AppColors.textHint),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              final newEmail = controller.text.trim();
+                              if (newEmail.isEmpty || !newEmail.contains('@')) {
+                                setDialogState(() => errorMessage = 'Enter a valid email.');
+                                return;
+                              }
+                              setDialogState(() {
+                                isLoading = true;
+                                errorMessage = null;
+                              });
+
+                              final error = await AuthService().requestEmailUpdate(newEmail);
+
+                              if (error != null) {
+                                setDialogState(() {
+                                  isLoading = false;
+                                  errorMessage = error;
+                                });
+                              } else {
+                                if (!ctx.mounted) return;
+                                Navigator.pop(ctx);
+                                _showEmailOtpDialog(newEmail);
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.calmBlue,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: isLoading
+                          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text('Send Verification Code', style: AppTypography.button(fontSize: 16, color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: isLoading ? null : () => Navigator.pop(ctx),
-                child: Text('cancel',
-                    style: AppTypography.body(
-                        fontSize: 14, color: AppColors.textSecondary)),
-              ),
-              ElevatedButton(
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        final newEmail = controller.text.trim();
-                        if (newEmail.isEmpty || !newEmail.contains('@')) {
-                          setDialogState(
-                              () => errorMessage = 'Enter a valid email.');
-                          return;
-                        }
-                        setDialogState(() {
-                          isLoading = true;
-                          errorMessage = null;
-                        });
-
-                        final error = await AuthService().requestEmailUpdate(newEmail);
-
-                        if (error != null) {
-                          setDialogState(() {
-                            isLoading = false;
-                            errorMessage = error;
-                          });
-                        } else {
-                          if (!ctx.mounted) return;
-                          Navigator.pop(ctx);
-                          _showEmailOtpDialog(newEmail);
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.calmBlue,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : Text('save',
-                        style: AppTypography.button(fontSize: 14)),
-              ),
-            ],
           );
         });
       },
@@ -1327,97 +1480,124 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
       barrierDismissible: false,
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setDialogState) {
-          return AlertDialog(
-            backgroundColor: AppColors.cardSurface,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24)),
-            title: Text('verify new email',
-                style: AppTypography.heading(
-                    fontSize: 20, color: AppColors.textPrimary)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'We sent a 6-digit code to $newEmail.',
-                  style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 16),
-                if (errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(errorMessage!,
-                        style: AppTypography.body(
-                            fontSize: 14, color: AppColors.softCoral)),
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.gentleGreen.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.mark_email_read_outlined, color: AppColors.gentleGreen, size: 28),
+                      ),
+                      IconButton(
+                        onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                      ),
+                    ],
                   ),
-                TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  style: AppTypography.body(fontSize: 16),
-                  decoration: InputDecoration(
-                    labelText: '6-digit code',
-                    labelStyle: AppTypography.caption(),
-                    counterText: '',
+                  const SizedBox(height: 16),
+                  Text('Verify Email', style: AppTypography.heading(fontSize: 22, color: AppColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  Text('We sent a 6-digit verification code to $newEmail.', style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary)),
+                  const SizedBox(height: 24),
+                  if (errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(errorMessage!, style: AppTypography.caption(color: Colors.redAccent))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    style: AppTypography.body(fontSize: 20).copyWith(letterSpacing: 4),
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      hintText: '000000',
+                      hintStyle: AppTypography.body(color: AppColors.textHint).copyWith(letterSpacing: 4),
+                      filled: true,
+                      fillColor: AppColors.slateBg.withValues(alpha: 0.4),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      counterText: '',
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              final otp = controller.text.trim();
+                              if (otp.length != 6) {
+                                setDialogState(() => errorMessage = 'Enter a valid 6-digit code.');
+                                return;
+                              }
+                              setDialogState(() {
+                                isLoading = true;
+                                errorMessage = null;
+                              });
+
+                              final error = await AuthService().verifyEmailUpdate(newEmail, otp);
+
+                              if (error != null) {
+                                setDialogState(() {
+                                  isLoading = false;
+                                  errorMessage = error;
+                                });
+                              } else {
+                                if (!ctx.mounted) return;
+                                Navigator.pop(ctx);
+                                setState(() => _userEmail = newEmail);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Email updated successfully!'),
+                                    backgroundColor: AppColors.gentleGreen,
+                                  ),
+                                );
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gentleGreen,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: isLoading
+                          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text('Verify & Update', style: AppTypography.button(fontSize: 16, color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: isLoading ? null : () => Navigator.pop(ctx),
-                child: Text('cancel',
-                    style: AppTypography.body(
-                        fontSize: 14, color: AppColors.textSecondary)),
-              ),
-              ElevatedButton(
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        final otp = controller.text.trim();
-                        if (otp.length != 6) {
-                          setDialogState(
-                              () => errorMessage = 'Enter a valid 6-digit code.');
-                          return;
-                        }
-                        setDialogState(() {
-                          isLoading = true;
-                          errorMessage = null;
-                        });
-
-                        final error = await AuthService().verifyEmailUpdate(newEmail, otp);
-
-                        if (error != null) {
-                          setDialogState(() {
-                            isLoading = false;
-                            errorMessage = error;
-                          });
-                        } else {
-                          if (!ctx.mounted) return;
-                          Navigator.pop(ctx);
-                          setState(() => _userEmail = newEmail);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Email updated successfully!'),
-                              backgroundColor: AppColors.gentleGreen,
-                            ),
-                          );
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.calmBlue,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : Text('verify',
-                        style: AppTypography.button(fontSize: 14)),
-              ),
-            ],
           );
         });
       },
@@ -1434,102 +1614,138 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
       context: context,
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setDialogState) {
-          return AlertDialog(
-            backgroundColor: AppColors.cardSurface,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24)),
-            title: Text('change password',
-                style: AppTypography.heading(
-                    fontSize: 20, color: AppColors.textPrimary)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(errorMessage!,
-                        style: AppTypography.body(
-                            fontSize: 14, color: AppColors.softCoral)),
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.calmBlue.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.lock_outline_rounded, color: AppColors.calmBlue, size: 28),
+                      ),
+                      IconButton(
+                        onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                      ),
+                    ],
                   ),
-                TextField(
-                  controller: oldPwController,
-                  obscureText: true,
-                  style: AppTypography.body(fontSize: 16),
-                  decoration: InputDecoration(
-                    labelText: 'current password',
-                    labelStyle: AppTypography.caption(),
+                  const SizedBox(height: 16),
+                  Text('Change Password', style: AppTypography.heading(fontSize: 22, color: AppColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  Text('Protect your account with a strong new password.', style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary)),
+                  const SizedBox(height: 24),
+                  if (errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(errorMessage!, style: AppTypography.caption(color: Colors.redAccent))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  TextField(
+                    controller: oldPwController,
+                    obscureText: true,
+                    style: AppTypography.body(fontSize: 16),
+                    decoration: InputDecoration(
+                      hintText: 'Current Password',
+                      hintStyle: AppTypography.body(color: AppColors.textHint),
+                      filled: true,
+                      fillColor: AppColors.slateBg.withValues(alpha: 0.4),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      prefixIcon: const Icon(Icons.lock_open_rounded, color: AppColors.textHint),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: newPwController,
-                  obscureText: true,
-                  style: AppTypography.body(fontSize: 16),
-                  decoration: InputDecoration(
-                    labelText: 'new password',
-                    labelStyle: AppTypography.caption(),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: newPwController,
+                    obscureText: true,
+                    style: AppTypography.body(fontSize: 16),
+                    decoration: InputDecoration(
+                      hintText: 'New Password',
+                      hintStyle: AppTypography.body(color: AppColors.textHint),
+                      filled: true,
+                      fillColor: AppColors.slateBg.withValues(alpha: 0.4),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.textHint),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              setDialogState(() {
+                                isLoading = true;
+                                errorMessage = null;
+                              });
+                              
+                              final error = await AuthService().changePassword(
+                                oldPwController.text,
+                                newPwController.text,
+                              );
+                              if (error != null) {
+                                setDialogState(() {
+                                  isLoading = false;
+                                  errorMessage = error;
+                                });
+                              } else {
+                                if (!ctx.mounted) return;
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Password changed!'),
+                                    backgroundColor: AppColors.gentleGreen,
+                                  ),
+                                );
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.calmBlue,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
+                      ),
+                      child: isLoading
+                          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text('Update Password', style: AppTypography.button(fontSize: 16, color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: isLoading ? null : () => Navigator.pop(ctx),
-                child: Text('cancel',
-                    style: AppTypography.body(
-                        fontSize: 14, color: AppColors.textSecondary)),
-              ),
-              ElevatedButton(
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        setDialogState(() {
-                          isLoading = true;
-                          errorMessage = null;
-                        });
-                        // Use existing backend API for this!
-                        final error = await AuthService().changePassword(
-                          oldPwController.text,
-                          newPwController.text,
-                        );
-                        if (error != null) {
-                          setDialogState(() {
-                            isLoading = false;
-                            errorMessage = error;
-                          });
-                        } else {
-                          if (!ctx.mounted) return;
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Password changed!'),
-                              backgroundColor: AppColors.gentleGreen,
-                            ),
-                          );
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.calmBlue,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: isLoading
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : Text('save',
-                        style: AppTypography.button(fontSize: 14)),
-              ),
-            ],
           );
         });
       },
     );
   }
-
-
   void _showDeleteAccountDialog() {
     final controller = TextEditingController();
     bool isLoading = false;

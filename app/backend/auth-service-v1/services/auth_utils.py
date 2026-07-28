@@ -102,6 +102,58 @@ def generate_otp(length: int = 6) -> str:
     """Generate a random numeric OTP."""
     return "".join(random.choices(string.digits, k=length))
 
+def send_login_alert_email(email_address: str, ip_address: str, device_name: str, time_str: str):
+    """Sends an email notifying the user of a new login."""
+    try:
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <h2 style="color: #FF5A5F;">New Login Alert</h2>
+            <p>We noticed a new login to your account.</p>
+            <div style="background-color: #f4f4f4; padding: 15px; border-radius: 8px;">
+                <p><strong>Time:</strong> {time_str}</p>
+                <p><strong>IP Address:</strong> {ip_address}</p>
+                <p><strong>Device:</strong> {device_name}</p>
+            </div>
+            <p>If this was you, you can safely ignore this email.</p>
+            <p style="color: #d9534f; font-weight: bold;">If this wasn't you, please change your password immediately.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #888;">This is an automated security alert.</p>
+        </div>
+        """
+        import os
+        import requests
+        
+        api_key = os.getenv("BREVO_API_KEY")
+        if not api_key:
+            print("Warning: BREVO_API_KEY not found. Login alert email not sent.")
+            return
+            
+        url = "https://api.brevo.com/v3/smtp/email"
+        headers = {
+            "accept": "application/json",
+            "api-key": api_key,
+            "content-type": "application/json"
+        }
+        
+        sender_email = os.getenv("SMTP_EMAIL", "sipsara.app.support@gmail.com")
+        
+        payload = {
+            "sender": {"email": sender_email, "name": "Sipsara Security"},
+            "to": [{"email": email_address}],
+            "subject": "Security Alert: New login to your account",
+            "htmlContent": html_content
+        }
+        
+        response = requests.post(url, headers=headers, json=payload)
+        
+        if response.status_code in [200, 201, 202]:
+            print(f"Login alert email sent to {email_address} for IP {ip_address}")
+        else:
+            print(f"Failed to send login alert email: {response.text}")
+            
+    except Exception as e:
+        print(f"Failed to send login alert email Exception: {str(e)}")
+
 def send_otp_email(email_address: str, otp: str):
     """
     Send the OTP via email using SMTP. 

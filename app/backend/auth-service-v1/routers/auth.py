@@ -4,6 +4,10 @@ routers/auth.py
 Authentication endpoints: signup, login, refresh, me, change-password, verify-password.
 """
 
+from fastapi import UploadFile, File
+from fastapi.responses import StreamingResponse
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+from bson import ObjectId
 from fastapi import APIRouter, HTTPException, status, Depends, Request, BackgroundTasks
 from email_validator import validate_email, EmailNotValidError
 from datetime import datetime, timedelta
@@ -14,12 +18,12 @@ from shared.database import get_db
 from schemas.auth import (
     UserCreate, UserUpdate, UserLogin, Token, TokenRefreshRequest,
     UserResponse, ChangePasswordRequest, VerifyPasswordRequest, GoogleLoginRequest, MicrosoftLoginRequest,
-    RequestEmailUpdate, VerifyEmailUpdate
+    RequestEmailUpdate, VerifyEmailUpdate, ToggleLoginAlertsRequest
 )
 from services.auth_utils import (
     get_password_hash, verify_password,
     create_access_token, create_refresh_token, verify_token, verify_google_token, verify_microsoft_token,
-    generate_otp, send_otp_email
+    generate_otp, send_otp_email, send_login_alert_email
 )
 from dependencies import get_current_user
 
@@ -163,12 +167,64 @@ async def verify_email(request: Request, req: VerifyEmailRequest):
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+
+
+
+async def _handle_login_alert(db, user_doc, request: Request, background_tasks: BackgroundTasks, device_id: str = None, device_name: str = None):
+    # Try to get the real IP if behind a proxy like Render
+    forwarded_for = request.headers.get("x-forwarded-for")
+    ip_address = forwarded_for.split(",")[0].strip() if forwarded_for else (request.client.host if request.client else "Unknown IP")
+
+    # Fallback to User-Agent if device_name not provided by frontend
+    if not device_name:
+        device_name = request.headers.get("user-agent", "Unknown Device")
+        
+    if not device_id:
+        # Fallback to legacy IP-based logic for older app versions
+        last_ip = user_doc.get("last_login_ip")
+        alerts_enabled = user_doc.get("login_alerts_enabled", True)
+        
+        if alerts_enabled and last_ip and last_ip != ip_address:
+            now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            background_tasks.add_task(send_login_alert_email, user_doc["email"], ip_address, device_name, now_str)
+            
+        if last_ip != ip_address:
+            await db.users.update_one({"_id": user_doc["_id"]}, {"$set": {"last_login_ip": ip_address}})
+        return
+
+    # Modern Device-Based Logic
+    alerts_enabled = user_doc.get("login_alerts_enabled", True)
+    known_devices = user_doc.get("known_devices", [])
+    
+    # Check if this device is recognized
+    is_known = any(d.get("device_id") == device_id for d in known_devices)
+    
+    if not is_known:
+        if alerts_enabled and len(known_devices) > 0:
+            now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            background_tasks.add_task(send_login_alert_email, user_doc["email"], ip_address, device_name, now_str)
+            
+        # Add to known devices
+        new_device_entry = {
+            "device_id": device_id,
+            "device_name": device_name,
+            "first_seen": datetime.utcnow()
+        }
+        await db.users.update_one(
+            {"_id": user_doc["_id"]},
+            {"$push": {"known_devices": new_device_entry}, "$set": {"last_login_ip": ip_address}}
+        )
+    else:
+        # Update last_login_ip anyway
+        await db.users.update_one({"_id": user_doc["_id"]}, {"$set": {"last_login_ip": ip_address}})
 
 
 @router.post("/login", response_model=Token)
 @limiter.limit("10/minute")
-async def login(request: Request, user: UserLogin):
+async def login(request: Request, user: UserLogin, background_tasks: BackgroundTasks):
     """Authenticate and return JWT tokens."""
     db = get_db()
 
@@ -207,11 +263,13 @@ async def login(request: Request, user: UserLogin):
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/google", response_model=Token)
 @limiter.limit("10/minute")
-async def google_login(request: Request, login_req: GoogleLoginRequest):
+async def google_login(request: Request, login_req: GoogleLoginRequest, background_tasks: BackgroundTasks):
     """Authenticate via Google ID token and return JWT tokens."""
     db = get_db()
 
@@ -259,11 +317,13 @@ async def google_login(request: Request, login_req: GoogleLoginRequest):
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks, login_req.device_id, login_req.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/microsoft", response_model=Token)
 @limiter.limit("10/minute")
-async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest):
+async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest, background_tasks: BackgroundTasks):
     """Authenticate via Microsoft Access token and return JWT tokens."""
     db = get_db()
 
@@ -311,6 +371,8 @@ async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest):
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks, login_req.device_id, login_req.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/refresh", response_model=Token)
@@ -332,6 +394,8 @@ async def refresh_token_endpoint(request: Request, token_req: TokenRefreshReques
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
@@ -343,6 +407,8 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         name=current_user["name"],
         email=current_user["email"],
         role=current_user.get("role", "parent"),
+        login_alerts_enabled=current_user.get("login_alerts_enabled", True),
+        profile_picture_url=current_user.get("profile_picture_url"),
     )
 @router.put("/me", response_model=UserResponse)
 async def update_me(request: UserUpdate, current_user: dict = Depends(get_current_user)):
@@ -367,6 +433,7 @@ async def update_me(request: UserUpdate, current_user: dict = Depends(get_curren
         name=user_doc["name"],
         email=user_doc["email"],
         role=user_doc.get("role", "parent"),
+        login_alerts_enabled=user_doc.get("login_alerts_enabled", True),
     )
 
 
@@ -436,6 +503,8 @@ async def verify_email_update(req: VerifyEmailUpdate, current_user: dict = Depen
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
+
+    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
@@ -563,3 +632,100 @@ async def delete_my_account(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete account")
 
     return None
+
+@router.put("/settings/login-alerts", response_model=UserResponse)
+async def toggle_login_alerts(request: ToggleLoginAlertsRequest, current_user: dict = Depends(get_current_user)):
+    """Enable or disable login alerts."""
+    db = get_db()
+    
+    user_doc = await db.users.find_one_and_update(
+        {"_id": current_user["_id"]},
+        {"$set": {"login_alerts_enabled": request.enabled}},
+        return_document=True
+    )
+    
+    return UserResponse(
+        id=str(user_doc["_id"]),
+        name=user_doc["name"],
+        email=user_doc["email"],
+        role=user_doc.get("role", "parent"),
+        login_alerts_enabled=user_doc.get("login_alerts_enabled", True)
+    )
+
+
+@router.post("/profile/picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    db = get_db()
+    fs = AsyncIOMotorGridFSBucket(db)
+    
+    # Optional: Delete old profile picture if exists
+    old_pic_url = current_user.get("profile_picture_url")
+    if old_pic_url and "/api/v1/auth/profile/picture/" in old_pic_url:
+        old_file_id = old_pic_url.split("/")[-1]
+        try:
+            await fs.delete(ObjectId(old_file_id))
+        except Exception:
+            pass
+            
+    # Upload new file
+    file_id = await fs.upload_from_stream(
+        file.filename,
+        file.file,
+        metadata={"contentType": file.content_type, "user_id": str(current_user["_id"])}
+    )
+    
+    # Determine the base URL dynamically or just use relative path
+    # Using relative path because frontend prepends base URL? Wait.
+    # Frontend base URL is /api/v1/auth. So we can just return the file_id.
+    # Actually, returning full path /api/v1/auth/profile/picture/{file_id} is better.
+    new_url = f"/api/v1/auth/profile/picture/{str(file_id)}"
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"profile_picture_url": new_url}}
+    )
+    
+    return {"message": "Profile picture updated", "profile_picture_url": new_url}
+
+@router.get("/profile/picture/{file_id}")
+async def get_profile_picture(file_id: str):
+    db = get_db()
+    fs = AsyncIOMotorGridFSBucket(db)
+    
+    try:
+        grid_out = await fs.open_download_stream(ObjectId(file_id))
+        
+        async def file_iterator():
+            while True:
+                chunk = await grid_out.readchunk()
+                if not chunk:
+                    break
+                yield chunk
+                
+        return StreamingResponse(
+            file_iterator(),
+            media_type=grid_out.metadata.get("contentType", "image/jpeg") if grid_out.metadata else "image/jpeg"
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+@router.delete("/profile/picture")
+async def delete_profile_picture(current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    fs = AsyncIOMotorGridFSBucket(db)
+    
+    old_pic_url = current_user.get("profile_picture_url")
+    if old_pic_url and "/api/v1/auth/profile/picture/" in old_pic_url:
+        old_file_id = old_pic_url.split("/")[-1]
+        try:
+            await fs.delete(ObjectId(old_file_id))
+        except Exception:
+            pass
+            
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"profile_picture_url": ""}}
+    )
+    return {"message": "Profile picture deleted successfully"}
