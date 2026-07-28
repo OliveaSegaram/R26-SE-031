@@ -14,12 +14,12 @@ from shared.database import get_db
 from schemas.auth import (
     UserCreate, UserUpdate, UserLogin, Token, TokenRefreshRequest,
     UserResponse, ChangePasswordRequest, VerifyPasswordRequest, GoogleLoginRequest, MicrosoftLoginRequest,
-    RequestEmailUpdate, VerifyEmailUpdate
+    RequestEmailUpdate, VerifyEmailUpdate, ToggleLoginAlertsRequest
 )
 from services.auth_utils import (
     get_password_hash, verify_password,
     create_access_token, create_refresh_token, verify_token, verify_google_token, verify_microsoft_token,
-    generate_otp, send_otp_email
+    generate_otp, send_otp_email, send_login_alert_email
 )
 from dependencies import get_current_user
 
@@ -166,9 +166,24 @@ async def verify_email(request: Request, req: VerifyEmailRequest):
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
+
+async def _handle_login_alert(db, user_doc, request: Request, background_tasks: BackgroundTasks):
+    ip_address = get_remote_address(request)
+    user_agent = request.headers.get("user-agent", "Unknown Device")
+    
+    last_ip = user_doc.get("last_login_ip")
+    alerts_enabled = user_doc.get("login_alerts_enabled", True)
+    
+    if alerts_enabled and last_ip and last_ip != ip_address:
+        now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        background_tasks.add_task(send_login_alert_email, user_doc["email"], ip_address, user_agent, now_str)
+        
+    if last_ip != ip_address:
+        await db.users.update_one({"_id": user_doc["_id"]}, {"$set": {"last_login_ip": ip_address}})
+
 @router.post("/login", response_model=Token)
 @limiter.limit("10/minute")
-async def login(request: Request, user: UserLogin):
+async def login(request: Request, user: UserLogin, background_tasks: BackgroundTasks):
     """Authenticate and return JWT tokens."""
     db = get_db()
 
@@ -343,6 +358,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         name=current_user["name"],
         email=current_user["email"],
         role=current_user.get("role", "parent"),
+        login_alerts_enabled=current_user.get("login_alerts_enabled", True),
     )
 @router.put("/me", response_model=UserResponse)
 async def update_me(request: UserUpdate, current_user: dict = Depends(get_current_user)):
@@ -367,6 +383,7 @@ async def update_me(request: UserUpdate, current_user: dict = Depends(get_curren
         name=user_doc["name"],
         email=user_doc["email"],
         role=user_doc.get("role", "parent"),
+        login_alerts_enabled=user_doc.get("login_alerts_enabled", True),
     )
 
 
@@ -563,3 +580,23 @@ async def delete_my_account(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete account")
 
     return None
+
+@router.put("/settings/login-alerts", response_model=UserResponse)
+async def toggle_login_alerts(request: ToggleLoginAlertsRequest, current_user: dict = Depends(get_current_user)):
+    """Enable or disable login alerts."""
+    db = get_db()
+    
+    user_doc = await db.users.find_one_and_update(
+        {"_id": current_user["_id"]},
+        {"$set": {"login_alerts_enabled": request.enabled}},
+        return_document=True
+    )
+    
+    return UserResponse(
+        id=str(user_doc["_id"]),
+        name=user_doc["name"],
+        email=user_doc["email"],
+        role=user_doc.get("role", "parent"),
+        login_alerts_enabled=user_doc.get("login_alerts_enabled", True)
+    )
+

@@ -40,6 +40,7 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     role: str
+    login_alerts_enabled: bool = True
 
 
 class ChangePasswordRequest(BaseModel):
@@ -71,6 +72,9 @@ class ResetPasswordRequest(BaseModel):
 class VerifyEmailRequest(BaseModel):
     email: EmailStr
     otp: str = Field(..., min_length=6, max_length=6)
+
+class ToggleLoginAlertsRequest(BaseModel):
+    enabled: bool
 
 class RequestEmailUpdate(BaseModel):
     new_email: EmailStr

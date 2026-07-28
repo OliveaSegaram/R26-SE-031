@@ -102,6 +102,35 @@ def generate_otp(length: int = 6) -> str:
     """Generate a random numeric OTP."""
     return "".join(random.choices(string.digits, k=length))
 
+def send_login_alert_email(email_address: str, ip_address: str, user_agent: str, time_str: str):
+    """Sends an email notifying the user of a new login."""
+    try:
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <h2 style="color: #FF5A5F;">New Login Alert</h2>
+            <p>We noticed a new login to your account.</p>
+            <div style="background-color: #f4f4f4; padding: 15px; border-radius: 8px;">
+                <p><strong>Time:</strong> {time_str}</p>
+                <p><strong>IP Address:</strong> {ip_address}</p>
+                <p><strong>Device/Browser:</strong> {user_agent}</p>
+            </div>
+            <p>If this was you, you can safely ignore this email.</p>
+            <p style="color: #d9534f; font-weight: bold;">If this wasn't you, please change your password immediately.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #888;">This is an automated security alert.</p>
+        </div>
+        """
+
+        resend.Emails.send({
+            "from": "security@onboarding.dev",
+            "to": email_address,
+            "subject": "Security Alert: New login to your account",
+            "html": html_content
+        })
+        print(f"Login alert email sent to {email_address} for IP {ip_address}")
+    except Exception as e:
+        print(f"Failed to send login alert email: {str(e)}")
+
 def send_otp_email(email_address: str, otp: str):
     """
     Send the OTP via email using SMTP. 

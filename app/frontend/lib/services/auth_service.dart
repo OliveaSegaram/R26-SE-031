@@ -570,4 +570,27 @@ class AuthService {
     await prefs.remove('refresh_token');
     await prefs.remove('auth_provider');
   }
+  // Toggle Login Alerts
+  Future<Map<String, dynamic>> toggleLoginAlerts(bool enabled) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.put(
+      Uri.parse('$_baseUrl/settings/login-alerts'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'enabled': enabled}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['detail'] ?? 'Failed to update login alerts');
+    }
+  }
+
+
 }

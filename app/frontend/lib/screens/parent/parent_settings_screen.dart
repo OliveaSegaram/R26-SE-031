@@ -29,6 +29,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
   // Email preference toggles
   bool _progressEmails = true;
   bool _periodicUpdates = true;
+  bool _loginAlertsEnabled = true;
 
   @override
   void initState() {
@@ -49,6 +50,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
         if (profile != null) {
           _userName = profile['name'] ?? '';
           _userEmail = profile['email'] ?? '';
+          _loginAlertsEnabled = profile['login_alerts_enabled'] ?? true;
         }
       });
     }
@@ -63,6 +65,21 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
       return parts[0][0].toUpperCase();
     }
     return '?';
+  }
+
+  Future<void> _toggleLoginAlerts(bool value) async {
+    final previousValue = _loginAlertsEnabled;
+    setState(() => _loginAlertsEnabled = value);
+    try {
+      await AuthService().toggleLoginAlerts(value);
+    } catch (e) {
+      setState(() => _loginAlertsEnabled = previousValue);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update login alerts: $e')),
+        );
+      }
+    }
   }
 
   bool get _isSocialLogin =>
@@ -887,8 +904,8 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
         _buildNotifToggle(
           'login alerts',
           'get notified when your account is accessed from a new device.',
-          true,
-          (v) => _showComingSoon('Login alerts'),
+          _loginAlertsEnabled,
+          (v) => _toggleLoginAlerts(v),
         ),
         _buildNotifToggle(
           'learning progress',
