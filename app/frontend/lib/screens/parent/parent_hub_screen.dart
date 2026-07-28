@@ -26,6 +26,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
 
   bool _isLoading = true;
   String _parentName = '';
+  String? _profilePictureUrl;
   List<dynamic> _students = [];
 
   @override
@@ -50,6 +51,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
       setState(() {
         _isLoading = false;
         _parentName = profile?['name'] ?? 'parent';
+        _profilePictureUrl = profile?['profile_picture_url'];
         _students = students;
       });
       _fadeController.forward();
@@ -171,17 +173,29 @@ class _ParentHubScreenState extends State<ParentHubScreen>
                   offset: const Offset(0, 4),
                 ),
               ],
+              image: _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(
+                        _profilePictureUrl!.startsWith('http') 
+                            ? _profilePictureUrl! 
+                            : 'https://adaptedmind-auth-api.onrender.com$_profilePictureUrl'
+                      ),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
-            child: Center(
-              child: Text(
-                _parentName.isNotEmpty ? _parentName[0].toUpperCase() : 'P',
-                style: AppTypography.heading(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+            child: _profilePictureUrl == null || _profilePictureUrl!.isEmpty
+                ? Center(
+                    child: Text(
+                      _parentName.isNotEmpty ? _parentName[0].toUpperCase() : 'P',
+                      style: AppTypography.heading(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : null,
           ),
         ],
       ),

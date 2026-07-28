@@ -710,3 +710,22 @@ async def get_profile_picture(file_id: str):
         )
     except Exception:
         raise HTTPException(status_code=404, detail="Image not found")
+
+@router.delete("/profile/picture")
+async def delete_profile_picture(current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    fs = AsyncIOMotorGridFSBucket(db)
+    
+    old_pic_url = current_user.get("profile_picture_url")
+    if old_pic_url and "/api/v1/auth/profile/picture/" in old_pic_url:
+        old_file_id = old_pic_url.split("/")[-1]
+        try:
+            await fs.delete(ObjectId(old_file_id))
+        except Exception:
+            pass
+            
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"profile_picture_url": ""}}
+    )
+    return {"message": "Profile picture deleted successfully"}

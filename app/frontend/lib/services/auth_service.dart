@@ -20,7 +20,6 @@ class AuthService {
     // Cloud Server (Render):
     return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
   }
-
   // Helper to get device info
   Future<Map<String, String>> _getDeviceData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -610,7 +609,6 @@ class AuthService {
     }
   }
 
-
   // Upload Profile Picture
   Future<String> uploadProfilePicture(File imageFile) async {
     final token = await getAccessToken();
@@ -640,6 +638,23 @@ class AuthService {
       return data['profile_picture_url'];
     } else {
       throw Exception('Failed to upload profile picture: ${response.body}');
+    }
+  }
+
+  // Delete Profile Picture
+  Future<void> deleteProfilePicture() async {
+    final token = await getAccessToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.delete(
+      Uri.parse('$_baseUrl/profile/picture'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete profile picture: ${response.body}');
     }
   }
 }

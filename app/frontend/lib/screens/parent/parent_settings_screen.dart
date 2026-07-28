@@ -63,6 +63,70 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
 
 
   Future<void> _pickAndUploadImage() async {
+    if (_profilePictureUrl != null && _profilePictureUrl!.isNotEmpty) {
+      // Show bottom sheet to Change or Remove
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Profile Photo',
+                style: AppTypography.heading(fontSize: 18),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AppColors.calmBlue),
+                title: const Text('Change Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openPicker();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removePhoto();
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      );
+    } else {
+      _openPicker();
+    }
+  }
+  
+  Future<void> _removePhoto() async {
+    setState(() => _isUploading = true);
+    try {
+      await AuthService().deleteProfilePicture();
+      setState(() {
+        _profilePictureUrl = null;
+        _isUploading = false;
+      });
+    } catch (e) {
+      setState(() => _isUploading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to remove image: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _openPicker() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
     
