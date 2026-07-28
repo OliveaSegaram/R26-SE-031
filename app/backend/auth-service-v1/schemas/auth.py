@@ -43,6 +43,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: str
     login_alerts_enabled: bool = True
+    profile_picture_url: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
