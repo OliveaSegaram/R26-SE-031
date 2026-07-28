@@ -579,13 +579,14 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         // Mark as completed persistently
         await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
         
-        if (index == currentLevel && currentLevel < levels.length - 1) {
+        final nextLevelIndex = index + 1;
+        if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
           setState(() {
             _animatingFromLevel = currentLevel;
-            currentLevel++;
+            currentLevel = nextLevelIndex;
           });
           
-          // Start sequence
+          // Start sequence animation
           _unlockController.forward(from: 0.0).then((_) {
             if (mounted) {
               setState(() {
@@ -596,7 +597,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           
           _scrollToCurrentLevel();
         } else {
-          setState(() {});
+          _refreshCurrentLevel();
         }
       }
     } finally {

@@ -33,7 +33,8 @@ class _Activity2CompletePatternState extends State<Activity2CompletePattern> {
       _selectedOptionIndex = index;
     });
 
-    final bool isRight = (selectedOption == correctOption);
+    final bool isRight = (selectedOption == correctOption) ||
+        (currentRound['correct_index'] != null && index == currentRound['correct_index']);
     int score = isRight ? 100 : 0;
     context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
 
@@ -81,7 +82,11 @@ class _Activity2CompletePatternState extends State<Activity2CompletePattern> {
 
     final sequence = (currentRound['sequence'] as List?)?.map((e) => e?.toString()).toList() ?? ['🔴', '🔵', '🔴', null];
     final options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵'];
-    final correctOption = currentRound['correctOption']?.toString() ?? options.first;
+    final correctOption = currentRound['correctOption']?.toString() ??
+        currentRound['correct_option']?.toString() ??
+        (currentRound['correct_index'] != null && (currentRound['correct_index'] as int) < options.length
+            ? options[currentRound['correct_index'] as int]
+            : options.first);
 
     return Scaffold(
       backgroundColor: AppColors.cream,
