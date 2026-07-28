@@ -22,9 +22,9 @@ class UserUpdate(BaseModel):
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8)
     device_id: Optional[str] = None
-    device_name: Optional[str] = None = Field(..., min_length=8)
+    device_name: Optional[str] = None
 
 
 class Token(BaseModel):
