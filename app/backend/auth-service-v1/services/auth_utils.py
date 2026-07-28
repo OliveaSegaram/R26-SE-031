@@ -135,8 +135,10 @@ def send_login_alert_email(email_address: str, ip_address: str, user_agent: str,
             "content-type": "application/json"
         }
         
+        sender_email = os.getenv("SMTP_EMAIL", "sipsara.app.support@gmail.com")
+        
         payload = {
-            "sender": {"email": "security@sipsara.com", "name": "Sipsara Security"},
+            "sender": {"email": sender_email, "name": "Sipsara Security"},
             "to": [{"email": email_address}],
             "subject": "Security Alert: New login to your account",
             "htmlContent": html_content
