@@ -32,7 +32,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     'assets/images/solo_blue.png',
     'assets/images/solo_green.png',
     'assets/images/solo_pink.png',
-    'assets/images/solo_yellow.png',
+    'assets/images/solo_teal.png',
+    'assets/images/solo_orange.png',
+    'assets/images/solo_pink_up.png',
   ];
 
   final List<String> _limits = [
@@ -47,6 +49,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
   bool _isLoading = false;
   bool _isGoogleUser = false;
+  final ScrollController _avatarScrollController = ScrollController();
+
 
   @override
   void initState() {
@@ -63,6 +67,26 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     }
 
     _checkGoogleUser();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_avatarScrollController.hasClients) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
+          _avatarScrollController.animateTo(
+            120.0, 
+            duration: const Duration(milliseconds: 600), 
+            curve: Curves.easeOutSine,
+          ).then((_) {
+            if (!mounted) return;
+            _avatarScrollController.animateTo(
+              0.0, 
+              duration: const Duration(milliseconds: 600), 
+              curve: Curves.easeInSine,
+            );
+          });
+        });
+      }
+    });
   }
 
   Future<void> _checkGoogleUser() async {
@@ -121,6 +145,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       ),
                       const SizedBox(height: 16),
                       SingleChildScrollView(
+                        controller: _avatarScrollController,
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: _avatars.map((url) {
