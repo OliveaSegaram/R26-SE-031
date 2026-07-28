@@ -276,6 +276,15 @@ class AuthService {
       return 'Network Error: $e';
     }
   }
+  /// Cancel a pending signup
+  Future<void> cancelSignup(String email) async {
+    try {
+      await http.delete(Uri.parse('$_baseUrl/cancel-signup/$email'));
+    } catch (e) {
+      print('Cancel signup failed: $e');
+    }
+  }
+
   /// Helper to get the token
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
