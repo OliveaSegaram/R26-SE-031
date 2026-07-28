@@ -109,7 +109,7 @@ async def cancel_signup(email: str):
 @router.post("/verify-email", response_model=Token)
 
 @limiter.limit("5/minute")
-async def verify_email(request: Request, req: VerifyEmailRequest):
+async def verify_email(request: Request, req: VerifyEmailRequest, background_tasks: BackgroundTasks):
     """Verify email via OTP and return JWT tokens on success."""
     db = get_db()
     email = req.email.lower()
@@ -389,7 +389,7 @@ async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest, ba
 
 @router.post("/refresh", response_model=Token)
 @limiter.limit("10/minute")
-async def refresh_token_endpoint(request: Request, token_req: TokenRefreshRequest):
+async def refresh_token_endpoint(request: Request, token_req: TokenRefreshRequest, background_tasks: BackgroundTasks):
     """Exchange a refresh token for new access + refresh tokens."""
     decoded = verify_token(token_req.refresh_token)
     if not decoded or decoded.get("type") != "refresh":
