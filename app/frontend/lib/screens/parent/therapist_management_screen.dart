@@ -12,18 +12,34 @@ class TherapistManagementScreen extends StatefulWidget {
       _TherapistManagementScreenState();
 }
 
+import '../../services/auth_service.dart';
+
 class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
-  // Mock therapist data
-  final List<Map<String, dynamic>> _therapists = [
-    {
-      'name': 'Dr. Nishara Silva',
-      'clinic': 'Colombo Speech & Language Centre',
-      'specialization': 'Speech-Language Pathologist',
-      'child': 'Sami',
-      'connectedDate': 'Jul 10, 2026',
-      'status': 'active',
-    },
-  ];
+  List<dynamic> _therapists = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConnections();
+  }
+
+  Future<void> _loadConnections() async {
+    final connections = await AuthService().getConnections();
+    if (mounted) {
+      setState(() {
+        _therapists = connections.map((c) => {
+          'name': c['therapist_name'] ?? 'Unknown',
+          'clinic': c['clinic_name'] ?? 'Clinic',
+          'specialization': 'Specialist',
+          'child': c['student_name'] ?? 'Unknown',
+          'connectedDate': c['connected_at'],
+          'status': c['status'],
+        }).toList();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +70,9 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
             children: [
               _buildHeader(),
               const SizedBox(height: 24),
-              if (_therapists.isEmpty)
+              if (_isLoading)
+                const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+              else if (_therapists.isEmpty)
                 _buildEmptyState()
               else
                 ..._therapists.map((t) => _buildTherapistCard(t)),
