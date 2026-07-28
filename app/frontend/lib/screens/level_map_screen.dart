@@ -322,7 +322,10 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 2,
                           children: [
                             Text(
                               'ක්‍රියාකාරකම ${index + 1}',
@@ -332,10 +335,8 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                                 color: isCurrent ? AppColors.warmAmber : AppColors.textSecondary,
                               ),
                             ),
-                            if (isCompleted) ...[
-                              const SizedBox(width: 8),
+                            if (isCompleted)
                               _buildStarBadge(score, AppColors.gentleGreen),
-                            ],
                           ],
                         ),
                         const SizedBox(height: 4),
