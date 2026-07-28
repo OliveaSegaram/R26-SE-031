@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
 import '../connect_specialist_screen.dart';
@@ -12,7 +13,7 @@ class TherapistManagementScreen extends StatefulWidget {
       _TherapistManagementScreenState();
 }
 
-import '../../services/auth_service.dart';
+
 
 class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
   List<dynamic> _therapists = [];

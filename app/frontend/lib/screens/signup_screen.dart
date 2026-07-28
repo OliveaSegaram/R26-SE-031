@@ -26,6 +26,7 @@ class _SignUpScreenState extends State<SignUpScreen>
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  bool _isTherapist = false;
 
 
 
