@@ -440,39 +440,45 @@ class _LevelMapScreenState extends State<LevelMapScreen>
             ),
             if (isCompleted || (isCurrent && score > 0))
               Positioned(
-                bottom: 2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: bgColor,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: borderColor, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      )
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.star, color: Colors.white, size: 10),
-                      const SizedBox(width: 2),
-                      Text(
-                        '$score%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                bottom: 0,
+                child: _buildStarBadge(score, isCompleted ? AppColors.gentleGreen : AppColors.warmAmber),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStarBadge(int score, Color baseColor) {
+    int starCount = 1;
+    if (score >= 80) {
+      starCount = 3;
+    } else if (score >= 50) {
+      starCount = 2;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.warmAmber,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.orangeDark, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          )
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(
+          starCount,
+          (i) => const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 1.0),
+            child: Icon(Icons.star_rounded, color: Colors.white, size: 13),
+          ),
         ),
       ),
     );
