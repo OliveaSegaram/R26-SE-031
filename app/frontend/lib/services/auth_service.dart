@@ -1,7 +1,7 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +20,6 @@ class AuthService {
     // Cloud Server (Render):
     return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
   }
-
 
   // Helper to get device info
   Future<Map<String, String>> _getDeviceData() async {
@@ -50,7 +49,6 @@ class AuthService {
     
     return {'device_id': deviceId, 'device_name': deviceName};
   }
-
   /// Returns null on success, or an error message string on failure.
   Future<String?> login(String email, String password) async {
     try {
@@ -91,7 +89,6 @@ class AuthService {
       return 'Network Error: $e';
     }
   }
-
   /// Returns null on success, or an error message string on failure.
   Future<String?> loginWithGoogle() async {
     try {
@@ -107,7 +104,6 @@ class AuthService {
       if (idToken == null) {
         return 'Failed to get ID token from Google.';
       }
-
       // Send token to backend
       final deviceData = await _getDeviceData();
       final response = await http.post(
@@ -143,7 +139,6 @@ class AuthService {
       return 'Google Sign In Error: $e';
     }
   }
-
   /// Returns null on success, or an error message string on failure.
   Future<String?> loginWithMicrosoft() async {
     try {
@@ -176,7 +171,6 @@ class AuthService {
         } catch (_) {}
         return errMsg;
       }
-
       // Send token to backend
       final deviceData = await _getDeviceData();
       final response = await http.post(
@@ -212,7 +206,6 @@ class AuthService {
       return 'Microsoft Sign In Error: $e';
     }
   }
-
   /// Returns null on success, or an error message string on failure.
   Future<String?> signup(String name, String email, String password) async {
     try {
@@ -247,7 +240,6 @@ class AuthService {
       return 'Network Error: $e';
     }
   }
-
   /// Verify Email via OTP during Signup
   Future<String?> verifyEmail(String email, String otp) async {
     try {
@@ -285,7 +277,6 @@ class AuthService {
       return 'Network Error: $e';
     }
   }
-
   /// Connect a specialist to a student
   Future<String?> connectSpecialist(String clinicCode, String studentId) async {
     try {
@@ -314,19 +305,16 @@ class AuthService {
       return 'Network Error: $e';
     }
   }
-
   /// Helper to get the token
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('access_token');
   }
-
   /// Helper to get the auth provider
   Future<String> getAuthProvider() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('auth_provider') ?? 'local';
   }
-
   /// Get current user profile
   Future<Map<String, dynamic>?> getUserProfile() async {
     try {
@@ -349,7 +337,6 @@ class AuthService {
       return null;
     }
   }
-
   /// Update Profile (Name/Email)
   Future<String?> updateProfile({String? name, String? email}) async {
     try {
@@ -382,7 +369,6 @@ class AuthService {
       return 'Failed to connect to the server.';
     }
   }
-
   /// Request Email Update (Sends OTP)
   Future<String?> requestEmailUpdate(String newEmail) async {
     try {
@@ -408,7 +394,6 @@ class AuthService {
       return 'Failed to connect to the server.';
     }
   }
-
   /// Verify Email Update (Confirms OTP)
   Future<String?> verifyEmailUpdate(String newEmail, String otp) async {
     try {
@@ -441,7 +426,6 @@ class AuthService {
       return 'Failed to connect to the server.';
     }
   }
-
   /// Change Password
   Future<String?> changePassword(String oldPassword, String newPassword) async {
     try {
@@ -477,7 +461,6 @@ class AuthService {
       return 'Failed to connect to the server.';
     }
   }
-
   /// Request Password Reset
   Future<String?> requestPasswordReset(String email) async {
     try {
@@ -500,7 +483,6 @@ class AuthService {
       return 'Network Error: $e';
     }
   }
-
   /// Reset Password
   Future<String?> resetPassword(String email, String otp, String newPassword) async {
     try {
@@ -530,7 +512,6 @@ class AuthService {
       return 'Network Error: $e';
     }
   }
-
   /// Verify parent password
   Future<String?> verifyPassword(String password) async {
     try {
@@ -559,7 +540,6 @@ class AuthService {
       return 'Failed to connect to the server.';
     }
   }
-
   /// Delete Account
   Future<String?> deleteAccount() async {
     try {
@@ -583,7 +563,6 @@ class AuthService {
       return 'Failed to connect to the server.';
     }
   }
-
   /// Clear tokens (logout)
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
@@ -605,7 +584,6 @@ class AuthService {
         await AadOAuth(config).logout();
       } catch (_) {}
     }
-
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
     await prefs.remove('auth_provider');
@@ -633,4 +611,35 @@ class AuthService {
   }
 
 
+  // Upload Profile Picture
+  Future<String> uploadProfilePicture(File imageFile) async {
+    final token = await getAccessToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$_baseUrl/profile/picture'),
+    );
+    
+    request.headers.addAll({
+      'Authorization': 'Bearer $token',
+    });
+    
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'file',
+        imageFile.path,
+      ),
+    );
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['profile_picture_url'];
+    } else {
+      throw Exception('Failed to upload profile picture: ${response.body}');
+    }
+  }
 }

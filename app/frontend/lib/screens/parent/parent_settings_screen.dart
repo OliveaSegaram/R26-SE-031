@@ -1,3 +1,5 @@
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../welcome_screen.dart';
@@ -19,8 +21,10 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
     with TickerProviderStateMixin {
   // ── State ──
   bool _isLoading = true;
+  bool _isUploading = false;
   String _userName = '';
   String _userEmail = '';
+  String? _profilePictureUrl;
   String _authProvider = 'local';
   List<dynamic> _students = [];
   final Set<String> _deletingStudentIds = {};
@@ -51,8 +55,33 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
           _userName = profile['name'] ?? '';
           _userEmail = profile['email'] ?? '';
           _loginAlertsEnabled = profile['login_alerts_enabled'] ?? true;
+          _profilePictureUrl = profile['profile_picture_url'];
         }
       });
+    }
+  }
+
+
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    
+    if (pickedFile != null) {
+      setState(() => _isUploading = true);
+      try {
+        final url = await AuthService().uploadProfilePicture(File(pickedFile.path));
+        setState(() {
+          _profilePictureUrl = url;
+          _isUploading = false;
+        });
+      } catch (e) {
+        setState(() => _isUploading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload image: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -171,34 +200,86 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
       ),
       child: Column(
         children: [
-          // Avatar circle with initials
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF5A9DE0), Color(0xFF7DCE7D)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.calmBlue.withValues(alpha: 0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+          // Avatar circle with profile picture or initials
+          GestureDetector(
+            onTap: _pickAndUploadImage,
+            child: Stack(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF5A9DE0), Color(0xFF7DCE7D)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.calmBlue.withValues(alpha: 0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                    image: _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty
+                        ? DecorationImage(
+                            // Build the full URL if it's relative
+                            image: NetworkImage(
+                              _profilePictureUrl!.startsWith('http') 
+                                  ? _profilePictureUrl! 
+                                  : 'https://adaptedmind-auth-api.onrender.com$_profilePictureUrl'
+                            ),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: _profilePictureUrl == null || _profilePictureUrl!.isEmpty
+                      ? Center(
+                          child: Text(
+                            _initials,
+                            style: AppTypography.heading(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+                if (_isUploading)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.black45,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.calmBlue,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
                 ),
               ],
-            ),
-            child: Center(
-              child: Text(
-                _initials,
-                style: AppTypography.heading(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
             ),
           ),
           const SizedBox(height: 14),

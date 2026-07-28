@@ -21,6 +21,7 @@ dependencies:
   aad_oauth: ^1.0.1
   device_info_plus: ^12.4.0
   uuid: ^4.6.0
+  image_picker: ^1.2.3
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1

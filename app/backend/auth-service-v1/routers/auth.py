@@ -4,6 +4,10 @@ routers/auth.py
 Authentication endpoints: signup, login, refresh, me, change-password, verify-password.
 """
 
+from fastapi import UploadFile, File
+from fastapi.responses import StreamingResponse
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+from bson import ObjectId
 from fastapi import APIRouter, HTTPException, status, Depends, Request, BackgroundTasks
 from email_validator import validate_email, EmailNotValidError
 from datetime import datetime, timedelta
@@ -647,3 +651,61 @@ async def toggle_login_alerts(request: ToggleLoginAlertsRequest, current_user: d
         login_alerts_enabled=user_doc.get("login_alerts_enabled", True)
     )
 
+
+@router.post("/profile/picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    db = get_db()
+    fs = AsyncIOMotorGridFSBucket(db)
+    
+    # Optional: Delete old profile picture if exists
+    old_pic_url = current_user.get("profile_picture_url")
+    if old_pic_url and "/api/v1/auth/profile/picture/" in old_pic_url:
+        old_file_id = old_pic_url.split("/")[-1]
+        try:
+            await fs.delete(ObjectId(old_file_id))
+        except Exception:
+            pass
+            
+    # Upload new file
+    file_id = await fs.upload_from_stream(
+        file.filename,
+        file.file,
+        metadata={"contentType": file.content_type, "user_id": str(current_user["_id"])}
+    )
+    
+    # Determine the base URL dynamically or just use relative path
+    # Using relative path because frontend prepends base URL? Wait.
+    # Frontend base URL is /api/v1/auth. So we can just return the file_id.
+    # Actually, returning full path /api/v1/auth/profile/picture/{file_id} is better.
+    new_url = f"/api/v1/auth/profile/picture/{str(file_id)}"
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"profile_picture_url": new_url}}
+    )
+    
+    return {"message": "Profile picture updated", "profile_picture_url": new_url}
+
+@router.get("/profile/picture/{file_id}")
+async def get_profile_picture(file_id: str):
+    db = get_db()
+    fs = AsyncIOMotorGridFSBucket(db)
+    
+    try:
+        grid_out = await fs.open_download_stream(ObjectId(file_id))
+        
+        async def file_iterator():
+            while True:
+                chunk = await grid_out.readchunk()
+                if not chunk:
+                    break
+                yield chunk
+                
+        return StreamingResponse(
+            file_iterator(),
+            media_type=grid_out.metadata.get("contentType", "image/jpeg") if grid_out.metadata else "image/jpeg"
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail="Image not found")
