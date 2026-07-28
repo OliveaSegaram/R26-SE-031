@@ -160,42 +160,54 @@ class _ParentHubScreenState extends State<ParentHubScreen>
             ),
           ),
           // Parent avatar
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: AppColors.blueButtonGradient,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.calmBlue.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ParentSettingsScreen(),
                 ),
-              ],
-              image: _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty
-                  ? DecorationImage(
-                      image: NetworkImage(
-                        _profilePictureUrl!.startsWith('http') 
-                            ? _profilePictureUrl! 
-                            : 'https://adaptedmind-auth-api.onrender.com$_profilePictureUrl'
+              ).then((_) {
+                _loadData();
+              });
+            },
+            child: Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: AppColors.blueButtonGradient,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.calmBlue.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                image: _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(
+                          _profilePictureUrl!.startsWith('http') 
+                              ? _profilePictureUrl! 
+                              : 'https://adaptedmind-auth-api.onrender.com$_profilePictureUrl'
+                        ),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: _profilePictureUrl == null || _profilePictureUrl!.isEmpty
+                  ? Center(
+                      child: Text(
+                        _parentName.isNotEmpty ? _parentName[0].toUpperCase() : 'P',
+                        style: AppTypography.heading(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
                       ),
-                      fit: BoxFit.cover,
                     )
                   : null,
             ),
-            child: _profilePictureUrl == null || _profilePictureUrl!.isEmpty
-                ? Center(
-                    child: Text(
-                      _parentName.isNotEmpty ? _parentName[0].toUpperCase() : 'P',
-                      style: AppTypography.heading(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )
-                : null,
           ),
         ],
       ),
@@ -358,7 +370,9 @@ class _ParentHubScreenState extends State<ParentHubScreen>
             MaterialPageRoute(
               builder: (_) => const ParentSettingsScreen(),
             ),
-          );
+          ).then((_) {
+            _loadData();
+          });
         },
       },
     ];
