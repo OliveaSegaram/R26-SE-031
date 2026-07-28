@@ -25,6 +25,7 @@ class _SignInScreenState extends State<SignInScreen>
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  String _selectedRole = "Parent";
 
 
 
@@ -209,6 +210,52 @@ class _SignInScreenState extends State<SignInScreen>
                     ),
                     child: Column(
                       children: [
+                        // Role Toggle
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.cream,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
+                          child: Row(
+                            children: ["Parent", "Therapist"].map((role) {
+                              final isSelected = _selectedRole == role;
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _selectedRole = role),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? AppColors.calmBlue : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: isSelected ? [
+                                        BoxShadow(
+                                          color: AppColors.calmBlueDark.withValues(alpha: 0.2),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        )
+                                      ] : [],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        role,
+                                        style: AppTypography.body(
+                                          fontSize: 15,
+                                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
                         // Email input
                         TextFormField(
                           controller: _emailController,

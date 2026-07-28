@@ -26,7 +26,9 @@ class _SignUpScreenState extends State<SignUpScreen>
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
-  bool _isTherapist = false;
+  String _selectedRole = "Parent";
+  final _specializationController = TextEditingController();
+  final _clinicNameController = TextEditingController();
 
 
 
@@ -38,6 +40,8 @@ class _SignUpScreenState extends State<SignUpScreen>
   @override
   void dispose() {
     _nameController.dispose();
+    _specializationController.dispose();
+    _clinicNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -59,7 +63,9 @@ class _SignUpScreenState extends State<SignUpScreen>
       _nameController.text.trim(),
       _emailController.text.trim(),
       _passwordController.text,
-      role: _isTherapist ? "therapist" : "parent",
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
+      specialization: _selectedRole == "Therapist" ? _specializationController.text.trim() : null,
+      clinicName: _selectedRole == "Therapist" ? _clinicNameController.text.trim() : null,
     );
 
     if (!mounted) return;
@@ -84,7 +90,11 @@ class _SignUpScreenState extends State<SignUpScreen>
   Future<void> _onGoogleSignIn() async {
     setState(() => _isLoading = true);
 
-    final error = await AuthService().loginWithGoogle();
+    final error = await AuthService().loginWithGoogle(
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
+      specialization: _selectedRole == "Therapist" ? _specializationController.text.trim() : null,
+      clinicName: _selectedRole == "Therapist" ? _clinicNameController.text.trim() : null,
+    );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -106,7 +116,11 @@ class _SignUpScreenState extends State<SignUpScreen>
   Future<void> _onMicrosoftSignIn() async {
     setState(() => _isLoading = true);
     
-    final error = await AuthService().loginWithMicrosoft();
+    final error = await AuthService().loginWithMicrosoft(
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
+      specialization: _selectedRole == "Therapist" ? _specializationController.text.trim() : null,
+      clinicName: _selectedRole == "Therapist" ? _clinicNameController.text.trim() : null,
+    );
     
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -227,6 +241,51 @@ class _SignUpScreenState extends State<SignUpScreen>
                     ),
                     child: Column(
                       children: [
+                        // Role Toggle
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.cream,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
+                          child: Row(
+                            children: ["Parent", "Therapist"].map((role) {
+                              final isSelected = _selectedRole == role;
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _selectedRole = role),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? AppColors.calmBlue : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: isSelected ? [
+                                        BoxShadow(
+                                          color: AppColors.calmBlueDark.withValues(alpha: 0.2),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        )
+                                      ] : [],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        role,
+                                        style: AppTypography.body(
+                                          fontSize: 15,
+                                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         // Name
                         TextFormField(
                           controller: _nameController,
@@ -252,19 +311,36 @@ class _SignUpScreenState extends State<SignUpScreen>
 
                         const SizedBox(height: 16),
 
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _isTherapist,
-                              onChanged: (val) {
-                                setState(() => _isTherapist = val ?? false);
-                              },
-                              activeColor: AppColors.calmBlue,
-                            ),
-                            const Text('I am a Therapist / Specialist', style: TextStyle(color: AppColors.textPrimary)),
-                          ],
+                        
+                        // Dynamic Therapist Fields
+                        AnimatedCrossFade(
+                          firstChild: const SizedBox(height: 0, width: double.infinity),
+                          secondChild: Column(
+                            children: [
+                              TextFormField(
+                                controller: _specializationController,
+                                style: AppTypography.body(fontSize: 16),
+                                decoration: InputDecoration(
+                                  hintText: 'specialization (e.g. Speech Therapist)',
+                                  prefixIcon: const Icon(Icons.psychology_outlined),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _clinicNameController,
+                                style: AppTypography.body(fontSize: 16),
+                                decoration: InputDecoration(
+                                  hintText: 'clinic name (optional)',
+                                  prefixIcon: const Icon(Icons.local_hospital_outlined),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                          crossFadeState: _selectedRole == "Therapist" ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                          duration: const Duration(milliseconds: 300),
                         ),
-                        const SizedBox(height: 16),
+
 
                         // Password
                         TextFormField(

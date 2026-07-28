@@ -13,6 +13,8 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8, description="Password must be at least 8 characters long")
     role: Optional[str] = "parent"
+    specialization: Optional[str] = None
+    clinic_name: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
@@ -58,11 +60,17 @@ class GoogleLoginRequest(BaseModel):
     id_token: str
     device_id: Optional[str] = None
     device_name: Optional[str] = None
+    role: Optional[str] = "parent"
+    specialization: Optional[str] = None
+    clinic_name: Optional[str] = None
 
 class MicrosoftLoginRequest(BaseModel):
     access_token: str
     device_id: Optional[str] = None
     device_name: Optional[str] = None
+    role: Optional[str] = "parent"
+    specialization: Optional[str] = None
+    clinic_name: Optional[str] = None
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr

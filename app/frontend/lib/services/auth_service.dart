@@ -89,7 +89,7 @@ class AuthService {
     }
   }
   /// Returns null on success, or an error message string on failure.
-  Future<String?> loginWithGoogle() async {
+  Future<String?> loginWithGoogle({String role = "parent", String? specialization, String? clinicName}) async {
     try {
       await GoogleSignIn.instance.initialize(
         serverClientId: '733315696908-tpau04bmsk824olg6m0a3coanojl147v.apps.googleusercontent.com',
@@ -112,6 +112,9 @@ class AuthService {
           'id_token': idToken,
           'device_id': deviceData['device_id'],
           'device_name': deviceData['device_name'],
+          'role': role,
+          if (specialization != null) 'specialization': specialization,
+          if (clinicName != null) 'clinic_name': clinicName,
         }),
       );
 
@@ -139,7 +142,7 @@ class AuthService {
     }
   }
   /// Returns null on success, or an error message string on failure.
-  Future<String?> loginWithMicrosoft() async {
+  Future<String?> loginWithMicrosoft({String role = "parent", String? specialization, String? clinicName}) async {
     try {
       final Config config = Config(
         tenant: 'common', // We will keep 'common' so any Microsoft account can log in
@@ -179,6 +182,9 @@ class AuthService {
           'access_token': accessToken,
           'device_id': deviceData['device_id'],
           'device_name': deviceData['device_name'],
+          'role': role,
+          if (specialization != null) 'specialization': specialization,
+          if (clinicName != null) 'clinic_name': clinicName,
         }),
       );
 
@@ -206,7 +212,7 @@ class AuthService {
     }
   }
   /// Returns null on success, or an error message string on failure.
-  Future<String?> signup(String name, String email, String password, {String role = "parent"}) async {
+  Future<String?> signup(String name, String email, String password, {String role = "parent", String? specialization, String? clinicName}) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/signup'),
@@ -215,7 +221,9 @@ class AuthService {
           'name': name.trim(),
           'email': email.trim(),
           'password': password,
-          'role': 'parent',
+          'role': role,
+          if (specialization != null) 'specialization': specialization,
+          if (clinicName != null) 'clinic_name': clinicName,
         }),
       );
 

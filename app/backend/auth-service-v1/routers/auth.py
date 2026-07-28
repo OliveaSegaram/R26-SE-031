@@ -74,6 +74,8 @@ async def signup(request: Request, user: UserCreate, background_tasks: Backgroun
         "hashed_password": hashed_password,
         "role": user.role or "parent",
         "auth_provider": "local",
+        "specialization": user.specialization,
+        "clinic_name": user.clinic_name,
     }
 
     # Store OTP and pending user info
@@ -142,6 +144,11 @@ async def verify_email(request: Request, req: VerifyEmailRequest, background_tas
             "role": pending["role"],
             "is_verified": True
         }
+        
+        if pending.get("specialization"):
+            user_doc["specialization"] = pending["specialization"]
+        if pending.get("clinic_name"):
+            user_doc["clinic_name"] = pending["clinic_name"]
         
         if pending.get("role") == "specialist":
             import random
@@ -312,9 +319,19 @@ async def google_login(request: Request, login_req: GoogleLoginRequest, backgrou
             "name": name,
             "email": email,
             "hashed_password": None,
-            "role": "parent",
+            "role": login_req.role or "parent",
             "auth_provider": "google",
         }
+        if login_req.specialization:
+            user_doc["specialization"] = login_req.specialization
+        if login_req.clinic_name:
+            user_doc["clinic_name"] = login_req.clinic_name
+            
+        if user_doc["role"] == "specialist":
+            import random
+            import string
+            user_doc["clinic_code"] = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            
         result = await db.users.insert_one(user_doc)
         user_id = str(result.inserted_id)
     else:
@@ -366,9 +383,19 @@ async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest, ba
             "name": name,
             "email": email,
             "hashed_password": None,
-            "role": "parent",
+            "role": login_req.role or "parent",
             "auth_provider": "microsoft",
         }
+        if login_req.specialization:
+            user_doc["specialization"] = login_req.specialization
+        if login_req.clinic_name:
+            user_doc["clinic_name"] = login_req.clinic_name
+            
+        if user_doc["role"] == "specialist":
+            import random
+            import string
+            user_doc["clinic_code"] = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            
         result = await db.users.insert_one(user_doc)
         user_id = str(result.inserted_id)
     else:
