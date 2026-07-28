@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from bson.objectid import ObjectId
 
 from shared.database import get_db
-from schemas.students import StudentCreate, StudentUpdate, StudentResponse, AssessmentSubmit
+from schemas.students import StudentCreate, StudentUpdate, StudentResponse, AssessmentSubmit, ProgressSyncRequest
 from services.auth_utils import verify_password
 from dependencies import get_current_user
 
@@ -26,17 +26,16 @@ async def add_student(request: StudentCreate, current_user: dict = Depends(get_c
     db = get_db()
     parent_oid = current_user["_id"]  # This is always a BSON ObjectId from MongoDB
 
-    # 2. Check if username is taken globally
-    existing = await db.students.find_one({"username": request.username.lower()})
-    if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+    # 2. Check if username is taken globally (Disabled for this phase per user request)
+    # existing = await db.students.find_one({"username": request.username.lower()})
+    # if existing:
+    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
 
     # 3. Create student document — parent_id is stored as ObjectId for consistency
     student_doc = {
         "parent_id": parent_oid,
         "first_name": request.first_name,
         "last_name": request.last_name,
-        "username": request.username.lower(),
         "grade": "Grade 1",  # Locked to Grade 1
         "daily_limit": request.daily_limit,
         "assessment_results": request.assessment_results,
@@ -44,6 +43,8 @@ async def add_student(request: StudentCreate, current_user: dict = Depends(get_c
         "consent_given": request.consent_given,
         "consent_parent_name": request.consent_parent_name,
         "consent_date": request.consent_date,
+        "completed_activities": [],
+        "activity_scores": {},
     }
 
     result = await db.students.insert_one(student_doc)
@@ -52,11 +53,12 @@ async def add_student(request: StudentCreate, current_user: dict = Depends(get_c
         id=str(result.inserted_id),
         first_name=request.first_name,
         last_name=request.last_name,
-        username=request.username,
         grade="Grade 1",
         daily_limit=request.daily_limit,
         avatar_url=request.avatar_url,
         assessment_results=request.assessment_results,
+        completed_activities=[],
+        activity_scores={},
         assessment_completed=len(request.assessment_results) == 14,
     )
 
@@ -82,11 +84,12 @@ async def list_students(current_user: dict = Depends(get_current_user)):
             id=str(s["_id"]),
             first_name=s["first_name"],
             last_name=s["last_name"],
-            username=s["username"],
             grade=s.get("grade", "Grade 1"),
             daily_limit=s.get("daily_limit", "No Limit"),
             avatar_url=s.get("avatar_url"),
             assessment_results=assessment,
+            completed_activities=s.get("completed_activities", []),
+            activity_scores=s.get("activity_scores", {}),
             assessment_completed=len(assessment) == 14,
         ))
 
@@ -97,10 +100,6 @@ async def list_students(current_user: dict = Depends(get_current_user)):
 async def update_student(student_id: str, request: StudentUpdate, current_user: dict = Depends(get_current_user)):
     """Update a student's details. Only the owning parent can update."""
     provider = current_user.get("auth_provider", "local")
-    is_social = provider in ["google", "microsoft"] or not current_user.get("hashed_password")
-    if not is_social:
-        if not verify_password(request.parent_password, current_user["hashed_password"]):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect parent password")
 
     try:
         obj_id = ObjectId(student_id)
@@ -115,15 +114,9 @@ async def update_student(student_id: str, request: StudentUpdate, current_user: 
     if not existing_student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
 
-    # Check username collision (allow same username for same student)
-    existing_username = await db.students.find_one({"username": request.username.lower(), "_id": {"$ne": obj_id}})
-    if existing_username:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
-
     update_doc = {
         "first_name": request.first_name,
         "last_name": request.last_name,
-        "username": request.username.lower(),
         "grade": "Grade 1",  # Locked to Grade 1
         "daily_limit": request.daily_limit,
         "avatar_url": request.avatar_url,
@@ -137,11 +130,12 @@ async def update_student(student_id: str, request: StudentUpdate, current_user: 
         id=str(obj_id),
         first_name=request.first_name,
         last_name=request.last_name,
-        username=request.username,
         grade="Grade 1",
         daily_limit=request.daily_limit,
         avatar_url=request.avatar_url,
         assessment_results=assessment,
+        completed_activities=updated.get("completed_activities", []),
+        activity_scores=updated.get("activity_scores", {}),
         assessment_completed=len(assessment) == 14,
     )
 
@@ -171,10 +165,78 @@ async def submit_assessment(student_id: str, request: AssessmentSubmit, current_
         id=str(obj_id),
         first_name=existing_student["first_name"],
         last_name=existing_student["last_name"],
-        username=existing_student["username"],
         grade=existing_student.get("grade", "Grade 1"),
         daily_limit=existing_student.get("daily_limit", "No Limit"),
         avatar_url=existing_student.get("avatar_url"),
         assessment_results=request.assessment_results,
+        completed_activities=existing_student.get("completed_activities", []),
+        activity_scores=existing_student.get("activity_scores", {}),
         assessment_completed=True,
     )
+
+
+@router.patch("/students/{student_id}/progress", response_model=StudentResponse)
+async def sync_progress(student_id: str, request: ProgressSyncRequest, current_user: dict = Depends(get_current_user)):
+    """Sync progress data (completed activities and scores) to the database.
+
+    ISOLATION: Only the owning parent can sync progress for their student.
+    Uses $set to overwrite progress arrays — the Flutter app sends a union-merged
+    payload so no data is lost on the client side before calling this.
+    """
+    try:
+        obj_id = ObjectId(student_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid student ID")
+
+    db = get_db()
+    parent_oid = current_user["_id"]
+
+    # Ensure student belongs to THIS parent
+    existing_student = await db.students.find_one({"_id": obj_id, "parent_id": parent_oid})
+    if not existing_student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
+    await db.students.update_one(
+        {"_id": obj_id},
+        {"$set": {
+            "completed_activities": request.completed_activities,
+            "activity_scores": request.activity_scores,
+        }}
+    )
+
+    assessment = existing_student.get("assessment_results", [])
+    return StudentResponse(
+        id=str(obj_id),
+        first_name=existing_student["first_name"],
+        last_name=existing_student["last_name"],
+        grade=existing_student.get("grade", "Grade 1"),
+        daily_limit=existing_student.get("daily_limit", "No Limit"),
+        avatar_url=existing_student.get("avatar_url"),
+        assessment_results=assessment,
+        completed_activities=request.completed_activities,
+        activity_scores=request.activity_scores,
+        assessment_completed=len(assessment) == 14,
+    )
+
+
+@router.delete("/students/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_student(student_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a student. Only the owning parent can delete their student."""
+    try:
+        obj_id = ObjectId(student_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid student ID")
+
+    db = get_db()
+    parent_oid = current_user["_id"]
+
+    # Ensure student belongs to THIS parent
+    existing_student = await db.students.find_one({"_id": obj_id, "parent_id": parent_oid})
+    if not existing_student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
+    result = await db.students.delete_one({"_id": obj_id, "parent_id": parent_oid})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete student")
+
+    return None

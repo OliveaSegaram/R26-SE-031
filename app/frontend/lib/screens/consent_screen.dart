@@ -210,7 +210,7 @@ class _ConsentScreenState extends State<ConsentScreen>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Grade 1 • @${widget.studentData['username']}',
+                          'Grade 1 • @${widget.studentData['first_name']}',
                           style: AppTypography.caption(
                             fontSize: 13,
                             color: AppColors.textSecondary,

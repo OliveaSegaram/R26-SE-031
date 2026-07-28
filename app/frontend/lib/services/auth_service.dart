@@ -13,7 +13,7 @@ import '../main.dart'; // For globalNavigatorKey
 class AuthService {
   static String get _baseUrl {
     // Local Testing (using your Mac's IP address):
-    // return 'http://192.168.1.3:8000/api/v1/auth';
+    // return 'http://127.0.0.1:8015/api/v1/auth';
     
     // Cloud Server (Render):
     return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
@@ -310,6 +310,98 @@ class AuthService {
     }
   }
 
+  /// Update Profile (Name/Email)
+  Future<String?> updateProfile({String? name, String? email}) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final Map<String, dynamic> body = {};
+      if (name != null) body['name'] = name;
+      if (email != null) body['email'] = email;
+
+      final response = await http.put(
+        Uri.parse('$_baseUrl/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        }
+        return 'Failed to update profile.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Request Email Update (Sends OTP)
+  Future<String?> requestEmailUpdate(String newEmail) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/request-email-update'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'new_email': newEmail}),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Failed to request email update.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Verify Email Update (Confirms OTP)
+  Future<String?> verifyEmailUpdate(String newEmail, String otp) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/verify-email-update'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'new_email': newEmail,
+          'otp': otp,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', data['access_token']);
+        await prefs.setString('refresh_token', data['refresh_token']);
+        return null;
+      } else {
+        final data = jsonDecode(response.body);
+        return data['detail'] ?? 'Failed to verify email update.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
   /// Change Password
   Future<String?> changePassword(String oldPassword, String newPassword) async {
     try {
@@ -422,6 +514,30 @@ class AuthService {
           return data['detail'];
         }
         return 'Incorrect password.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Delete Account
+  Future<String?> deleteAccount() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 204) {
+        return null; // Success
+      } else {
+        return 'Failed to delete account. Status: ${response.statusCode}';
       }
     } catch (e) {
       return 'Failed to connect to the server.';

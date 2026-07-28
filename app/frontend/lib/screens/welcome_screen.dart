@@ -108,57 +108,37 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   Widget _buildPremiumTitle() {
     final String? sinhalaFontFamily = AppTypography.sinhala().fontFamily;
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // 1. Drop shadow for depth
-        Transform.translate(
-          offset: const Offset(0, 5),
-          child: Text(
-            'සිප්සර',
-            style: TextStyle(
-              fontFamily: sinhalaFontFamily,
-              fontSize: 68,
-              fontWeight: FontWeight.w900,
-              color: AppColors.calmBlue.withValues(alpha: 0.25),
+    // Style 2: Minimal Friendly
+    // "සිප්" in green, "සර" in blue, with a soft shadow.
+    return RichText(
+      text: TextSpan(
+        style: TextStyle(
+          fontFamily: sinhalaFontFamily,
+          fontSize: 72,
+          fontWeight: FontWeight.w900,
+          shadows: [
+            Shadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              offset: const Offset(0, 6),
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        children: [
+          TextSpan(
+            text: 'සිප්', // Sip
+            style: const TextStyle(
+              color: AppColors.gentleGreen,
             ),
           ),
-        ),
-        // 2. Thick Outer Border (Calm Blue to match the app theme)
-        Text(
-          'සිප්සර',
-          style: TextStyle(
-            fontFamily: sinhalaFontFamily,
-            fontSize: 68,
-            fontWeight: FontWeight.w900,
-            foreground: Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 10
-              ..color = AppColors.calmBlue,
-          ),
-        ),
-        // 3. Vibrant Inner Gradient Fill (Green/Yellow to pop against the blue)
-        ShaderMask(
-          shaderCallback: (bounds) {
-            return const LinearGradient(
-              colors: [Color(0xFFa8e063), Color(0xFF56ab2f)], // Vibrant leaf green
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ).createShader(
-              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-            );
-          },
-          child: Text(
-            'සිප්සර',
+          const TextSpan(
+            text: 'සර', // Sara
             style: TextStyle(
-              fontFamily: sinhalaFontFamily,
-              fontSize: 68,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
+              color: AppColors.calmBlue,
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

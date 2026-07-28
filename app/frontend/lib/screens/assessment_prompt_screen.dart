@@ -65,10 +65,7 @@ class _AssessmentPromptScreenState extends State<AssessmentPromptScreen>
   }
 
   void _skipForNow() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const ParentAccountScreen()),
-      (route) => false,
-    );
+    Navigator.of(context).pop();
   }
 
   @override

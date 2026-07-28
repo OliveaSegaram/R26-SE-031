@@ -1,0 +1,21 @@
+{
+  "id": "act_7",
+  "title": "හැඩතලවලට පාට කරමු",
+  "description": "උපදෙස් අනුව අදාළ හැඩතලයට නිවැරදි වර්ණය යොදන්න.",
+  "intro_text": "ලබා දී ඇති උපදෙස කියවා හෝ සවන් දී අදාළ හැඩතලයට ගැලපෙන වර්ණය තෝරා පාට කරන්න.",
+  "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/act_7_intro.mp3",
+  "telemetry_tags": ["shape_coloring", "fine_motor_visual"],
+  "template_type": "shape_coloring_game",
+  "rounds": [
+    {"shape_name": "වෘත්තය", "target_color_name": "රතු", "target_color_hex": "#FF0000", "palette": ["#FF0000", "#0000FF", "#00FF00"]},
+    {"shape_name": "චතුරස්‍රය", "target_color_name": "නිල්", "target_color_hex": "#0000FF", "palette": ["#FFFF00", "#0000FF", "#FF0000"]},
+    {"shape_name": "ත්‍රිකෝණය", "target_color_name": "කොළ", "target_color_hex": "#00FF00", "palette": ["#00FF00", "#FFA500", "#800080"]},
+    {"shape_name": "තාරකාව", "target_color_name": "කහ", "target_color_hex": "#FFFF00", "palette": ["#FFFF00", "#FF0000", "#0000FF"]},
+    {"shape_name": "වෘත්තය", "target_color_name": "දම්", "target_color_hex": "#800080", "palette": ["#800080", "#00FF00", "#FFFF00"]},
+    {"shape_name": "චතුරස්‍රය", "target_color_name": "තැඹිලි", "target_color_hex": "#FFA500", "palette": ["#FFA500", "#0000FF", "#FF0000"]},
+    {"shape_name": "ත්‍රිකෝණය", "target_color_name": "රතු", "target_color_hex": "#FF0000", "palette": ["#FF0000", "#00FF00", "#FFFF00"]},
+    {"shape_name": "තාරකාව", "target_color_name": "නිල්", "target_color_hex": "#0000FF", "palette": ["#0000FF", "#800080", "#FFA500"]},
+    {"shape_name": "වෘත්තය", "target_color_name": "කොළ", "target_color_hex": "#00FF00", "palette": ["#00FF00", "#FF0000", "#0000FF"]},
+    {"shape_name": "චතුරස්‍රය", "target_color_name": "කහ", "target_color_hex": "#FFFF00", "palette": ["#FFFF00", "#FFA500", "#800080"]}
+  ]
+}

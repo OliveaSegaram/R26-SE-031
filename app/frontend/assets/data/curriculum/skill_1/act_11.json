@@ -1,0 +1,21 @@
+{
+  "id": "act_11",
+  "title": "වචන අනුපිළිවෙලට සවන් දී රූප පිලිවෙලින් පෙළගස්වමු",
+  "description": "අසා ගන්නා ශබ්ද අනුපිළිවෙලට අනුව රූප පිළිවෙලින් තෝරන්න.",
+  "intro_text": "ශ්‍රව්‍ය උපදෙස් වලින් කියවෙන රූප අනුපිළිවෙලට සවන් දී එම පිළිවෙලටම රූප මත තට්ටු කර පෙළගස්වන්න.",
+  "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/act_11_intro.mp3",
+  "telemetry_tags": ["auditory_sequential_memory", "visual_sequencing"],
+  "template_type": "audio_sequence_game",
+  "rounds": [
+    {"audio_sequence": ["🔴", "🔵"], "options": ["🔴", "🔵", "🟢"], "correct_sequence": ["🔴", "🔵"]},
+    {"audio_sequence": ["⭐", "🌙"], "options": ["⭐", "🌙", "☀️"], "correct_sequence": ["⭐", "🌙"]},
+    {"audio_sequence": ["🍎", "🍌"], "options": ["🍎", "🍌", "🍇"], "correct_sequence": ["🍎", "🍌"]},
+    {"audio_sequence": ["🐶", "🐱"], "options": ["🐶", "🐱", "🐰"], "correct_sequence": ["🐶", "🐱"]},
+    {"audio_sequence": ["🔴", "🟢", "🔵"], "options": ["🔴", "🟢", "🔵", "🟡"], "correct_sequence": ["🔴", "🟢", "🔵"]},
+    {"audio_sequence": ["⭐", "🌙", "☀️"], "options": ["⭐", "🌙", "☀️", "☁️"], "correct_sequence": ["⭐", "🌙", "☀️"]},
+    {"audio_sequence": ["🚗", "🚌", "🚲"], "options": ["🚗", "🚌", "🚲", "✈️"], "correct_sequence": ["🚗", "🚌", "🚲"]},
+    {"audio_sequence": ["🍎", "🍌", "🍇"], "options": ["🍎", "🍌", "🍇", "🍊"], "correct_sequence": ["🍎", "🍌", "🍇"]},
+    {"audio_sequence": ["🐶", "🐱", "🐰"], "options": ["🐶", "🐱", "🐰", "🦊"], "correct_sequence": ["🐶", "🐱", "🐰"]},
+    {"audio_sequence": ["🔴", "🟡", "🟢", "🔵"], "options": ["🔴", "🟡", "🟢", "🔵"], "correct_sequence": ["🔴", "🟡", "🟢", "🔵"]}
+  ]
+}
