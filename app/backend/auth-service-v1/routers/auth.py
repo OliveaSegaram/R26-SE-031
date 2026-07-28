@@ -168,7 +168,7 @@ async def verify_email(request: Request, req: VerifyEmailRequest):
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
+    await _handle_login_alert(db, user_doc, request, background_tasks, None, None)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
@@ -264,7 +264,7 @@ async def login(request: Request, user: UserLogin, background_tasks: BackgroundT
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
+    await _handle_login_alert(db, user_doc, request, background_tasks, None, None)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/google", response_model=Token)
@@ -395,7 +395,7 @@ async def refresh_token_endpoint(request: Request, token_req: TokenRefreshReques
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
+    await _handle_login_alert(db, user_doc, request, background_tasks, None, None)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
@@ -504,7 +504,7 @@ async def verify_email_update(req: VerifyEmailUpdate, current_user: dict = Depen
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
+    await _handle_login_alert(db, user_doc, request, background_tasks, None, None)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
