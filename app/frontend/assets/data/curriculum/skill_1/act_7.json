@@ -1,0 +1,19 @@
+{
+  "id": "act_7",
+  "title": "හැඩතලවලට පාට කරමු",
+  "description": "පෙලෙටයෙන් වර්ණයක් තෝරා නිවැරදි හැඩතලයට පාට කරන්න.",
+  "telemetry_tags": ["fine_motor", "shape_coloring"],
+  "template_type": "coloring_game",
+  "rounds": [
+    {"shape": "🔵", "shape_name": "වෘත්තය (Circle)", "target_color": "#FF3B30", "color_name": "රතු පාට (Red)", "palette": ["#FF3B30", "#007AFF", "#FFCC00", "#34C759"], "correct_color_index": 0},
+    {"shape": "🟥", "shape_name": "චතුරස්‍රය (Square)", "target_color": "#007AFF", "color_name": "නිල් පාට (Blue)", "palette": ["#FF3B30", "#007AFF", "#FFCC00", "#34C759"], "correct_color_index": 1},
+    {"shape": "🔺", "shape_name": "ත්‍රිකෝණය (Triangle)", "target_color": "#FFCC00", "color_name": "කහ පාට (Yellow)", "palette": ["#FF3B30", "#007AFF", "#FFCC00", "#34C759"], "correct_color_index": 2},
+    {"shape": "⭐", "shape_name": "තරුව (Star)", "target_color": "#34C759", "color_name": "කොළ පාට (Green)", "palette": ["#FF3B30", "#007AFF", "#FFCC00", "#34C759"], "correct_color_index": 3},
+    {"shape": "🔷", "shape_name": "දියමන්තිය (Diamond)", "target_color": "#AF52DE", "color_name": "දම් පාට (Purple)", "palette": ["#AF52DE", "#FF9500", "#000000", "#8E8E93"], "correct_color_index": 0},
+    {"shape": "🔴", "shape_name": "වෘත්තය (Circle)", "target_color": "#FF9500", "color_name": "තැඹිලි පාට (Orange)", "palette": ["#AF52DE", "#FF9500", "#000000", "#8E8E93"], "correct_color_index": 1},
+    {"shape": "⬛", "shape_name": "චතුරස්‍රය (Square)", "target_color": "#000000", "color_name": "කළු පාට (Black)", "palette": ["#AF52DE", "#FF9500", "#000000", "#8E8E93"], "correct_color_index": 2},
+    {"shape": "🔺", "shape_name": "ත්‍රිකෝණය (Triangle)", "target_color": "#FF3B30", "color_name": "රතු පාට (Red)", "palette": ["#FF3B30", "#007AFF", "#FFCC00", "#34C759"], "correct_color_index": 0},
+    {"shape": "🔵", "shape_name": "වෘත්තය (Circle)", "target_color": "#007AFF", "color_name": "නිල් පාට (Blue)", "palette": ["#FF3B30", "#007AFF", "#FFCC00", "#34C759"], "correct_color_index": 1},
+    {"shape": "⭐", "shape_name": "තරුව (Star)", "target_color": "#FFCC00", "color_name": "කහ පාට (Yellow)", "palette": ["#FF3B30", "#007AFF", "#FFCC00", "#34C759"], "correct_color_index": 2}
+  ]
+}

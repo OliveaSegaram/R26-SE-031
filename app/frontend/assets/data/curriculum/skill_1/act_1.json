@@ -1,0 +1,19 @@
+{
+  "id": "act_1",
+  "title": "වෙනස් හැඩය සොයමු",
+  "description": "අනෙක් හැඩවලට වඩා වෙනස් හැඩය සොයා තෝරන්න.",
+  "telemetry_tags": ["visual_discrimination", "shape_recognition"],
+  "template_type": "odd_one_out_game",
+  "rounds": [
+    {"raw_text": "Find 🔵 among 🟥", "target": "🔵", "distractors": ["🟥"], "target_count": 1, "distractor_count": 3, "correct_index": 2},
+    {"raw_text": "Find 🔺 among 🔴", "target": "🔺", "distractors": ["🔴"], "target_count": 1, "distractor_count": 3, "correct_index": 1},
+    {"raw_text": "Find 🟩 among 🟡", "target": "🟩", "distractors": ["🟡"], "target_count": 1, "distractor_count": 3, "correct_index": 0},
+    {"raw_text": "Find ⭐ among 🔷", "target": "⭐", "distractors": ["🔷"], "target_count": 1, "distractor_count": 5, "correct_index": 3},
+    {"raw_text": "Find ⬛ among ⚪", "target": "⬛", "distractors": ["⚪"], "target_count": 1, "distractor_count": 5, "correct_index": 4},
+    {"raw_text": "Find 🔶 among 🔹", "target": "🔶", "distractors": ["🔹"], "target_count": 1, "distractor_count": 5, "correct_index": 2},
+    {"raw_text": "Find 🟣 among 🟧", "target": "🟣", "distractors": ["🟧"], "target_count": 1, "distractor_count": 7, "correct_index": 5},
+    {"raw_text": "Find 🔺 among 🔹", "target": "🔺", "distractors": ["🔹"], "target_count": 1, "distractor_count": 7, "correct_index": 1},
+    {"raw_text": "Find 🟢 among 🟥", "target": "🟢", "distractors": ["🟥"], "target_count": 1, "distractor_count": 7, "correct_index": 6},
+    {"raw_text": "Find ⭐ among ⚪", "target": "⭐", "distractors": ["⚪"], "target_count": 1, "distractor_count": 8, "correct_index": 3}
+  ]
+}

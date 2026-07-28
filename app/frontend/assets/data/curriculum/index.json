@@ -1,10 +1,10 @@
 [
   {
     "id": "skill_1",
-    "title": "Shape Recognition",
+    "title": "හැඩතල සහ වර්ණ හඳුනා ගනිමු.",
     "description": "Can you find the matching shapes? Let's explore! 🔍",
     "file_path": "skill_1.json",
-    "total_activities": 9,
+    "total_activities": 11,
     "image_path": "assets/images/skills/s0.png",
     "color_hex": "#4A90D9",
     "emoji": "🔷",

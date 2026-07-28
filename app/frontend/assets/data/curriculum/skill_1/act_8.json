@@ -1,0 +1,19 @@
+{
+  "id": "act_8",
+  "title": "රූපයට ගැලපෙන හිස්තැන පුරවමු",
+  "description": "රූප පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි රූපය තෝරන්න.",
+  "telemetry_tags": ["visual_completion", "missing_shape"],
+  "template_type": "fill_blank_game",
+  "rounds": [
+    {"sequence": ["🔴", "🔵", null, "🟢"], "options": ["🟡", "🟣", "🔴", "⭐"], "correctOption": "🟡", "correct_index": 0},
+    {"sequence": ["🟥", null, "🔺", "⭐"], "options": ["🟦", "🟩", "🟡", "⚪"], "correctOption": "🟦", "correct_index": 0},
+    {"sequence": ["🌸", "🌳", null, "🏫"], "options": ["🍎", "🐟", "🚗", "⭐"], "correctOption": "🍎", "correct_index": 0},
+    {"sequence": ["🚗", "🚌", null, "✈️"], "options": ["🚲", "⛵", "🐕", "📖"], "correctOption": "🚲", "correct_index": 0},
+    {"sequence": ["🍎", "🍌", null, "🍇"], "options": ["🍊", "🐱", "⚽", "🚗"], "correctOption": "🍊", "correct_index": 0},
+    {"sequence": ["🐶", "🐱", null, "🐰"], "options": ["🦊", "🍎", "📘", "🚌"], "correctOption": "🦊", "correct_index": 0},
+    {"sequence": ["☀️", "☁️", null, "🌧️"], "options": ["⚡", "🍕", "🚗", "🏀"], "correctOption": "⚡", "correct_index": 0},
+    {"sequence": ["🔴", "🔴", null, "🔵"], "options": ["🔴", "🟢", "🟡", "🟣"], "correctOption": "🔴", "correct_index": 0},
+    {"sequence": ["🔺", "🔺", null, "🟥"], "options": ["🔺", "🔵", "⭐", "🟢"], "correctOption": "🔺", "correct_index": 0},
+    {"sequence": ["⭐", "⭐", null, "🌙"], "options": ["⭐", "☀️", "☁️", "⚡"], "correctOption": "⭐", "correct_index": 0}
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "act_9",
+  "title": "වචනයට සවන් දී රූපය සොයමු",
+  "description": "අසා සිටින වචනයට/හැඩයට ගැලපෙන නිවැරදි රූපය තෝරන්න.",
+  "telemetry_tags": ["audio_visual_matching", "listening_skills"],
+  "template_type": "audio_image_match_game",
+  "rounds": [
+    {"audio_text": "වෘත්තය", "prompt": "වෘත්තය තෝරන්න (Circle)", "options": ["🔵", "🟥", "🔺", "⭐"], "correct_index": 0},
+    {"audio_text": "චතුරස්‍රය", "prompt": "චතුරස්‍රය තෝරන්න (Square)", "options": ["🔵", "🟥", "🔺", "⭐"], "correct_index": 1},
+    {"audio_text": "ත්‍රිකෝණය", "prompt": "ත්‍රිකෝණය තෝරන්න (Triangle)", "options": ["🔵", "🟥", "🔺", "⭐"], "correct_index": 2},
+    {"audio_text": "තරුව", "prompt": "තරුව තෝරන්න (Star)", "options": ["🔵", "🟥", "🔺", "⭐"], "correct_index": 3},
+    {"audio_text": "රතු පාට වෘත්තය", "prompt": "රතු පාට වෘත්තය තෝරන්න", "options": ["🔴", "🔵", "🟡", "🟢"], "correct_index": 0},
+    {"audio_text": "නිල් පාට චතුරස්‍රය", "prompt": "නිල් පාට චතුරස්‍රය තෝරන්න", "options": ["🔴", "🟦", "🟡", "🟢"], "correct_index": 1},
+    {"audio_text": "කහ පාට ත්‍රිකෝණය", "prompt": "කහ පාට ත්‍රිකෝණය තෝරන්න", "options": ["🔴", "🟦", "🟡", "🟢"], "correct_index": 2},
+    {"audio_text": "කොළ පාට තරුව", "prompt": "කොළ පාට තරුව තෝරන්න", "options": ["🔴", "🟦", "🟡", "🟢"], "correct_index": 3},
+    {"audio_text": "ඇපල් ගෙඩිය", "prompt": "ඇපල් ගෙඩිය තෝරන්න", "options": ["🍎", "🍌", "🍇", "🍊"], "correct_index": 0},
+    {"audio_text": "බලලා", "prompt": "බලලා තෝරන්න", "options": ["🐶", "🐱", "🐰", "🦊"], "correct_index": 1}
+  ]
+}

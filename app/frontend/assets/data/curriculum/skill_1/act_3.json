@@ -1,0 +1,19 @@
+{
+  "id": "act_3",
+  "title": "රටාව මතක තබා ගනිමු",
+  "description": "රටාව දෙස හොඳින් බලා මතක තබා ගෙන නැවත සකසන්න.",
+  "telemetry_tags": ["working_memory", "visual_pattern"],
+  "template_type": "pattern_memory_game",
+  "rounds": [
+    {"pattern": ["🔴", "🔵"], "options": ["🔴", "🔵", "🟢"], "show_seconds": 3},
+    {"pattern": ["⭐", "🌙", "☀️"], "options": ["⭐", "🌙", "☀️", "☁️"], "show_seconds": 4},
+    {"pattern": ["🟥", "🟩", "🟦"], "options": ["🟥", "🟩", "🟦", "🟨"], "show_seconds": 4},
+    {"pattern": ["🔺", "⚪", "🔺", "⚪"], "options": ["🔺", "⚪", "⬛"], "show_seconds": 5},
+    {"pattern": ["🟣", "🟡", "🟢", "🔴"], "options": ["🟣", "🟡", "🟢", "🔴"], "show_seconds": 5},
+    {"pattern": ["🔷", "🔶", "🔷", "🔶"], "options": ["🔷", "🔶", "🔻"], "show_seconds": 5},
+    {"pattern": ["🍎", "🍌", "🍇"], "options": ["🍎", "🍌", "🍇", "🍊"], "show_seconds": 4},
+    {"pattern": ["🐶", "🐱", "🐰", "🦊"], "options": ["🐶", "🐱", "🐰", "🦊"], "show_seconds": 6},
+    {"pattern": ["🔴", "🟢", "🔵", "🟡", "🟣"], "options": ["🔴", "🟢", "🔵", "🟡", "🟣"], "show_seconds": 6},
+    {"pattern": ["⭐", "🟥", "🔵", "🟢", "🔺"], "options": ["⭐", "🟥", "🔵", "🟢", "🔺"], "show_seconds": 7}
+  ]
+}

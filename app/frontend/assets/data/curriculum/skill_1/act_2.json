@@ -1,0 +1,19 @@
+{
+  "id": "act_2",
+  "title": "රටාව සම්පූර්ණ කරමු",
+  "description": "ඊළඟට පැමිණෙන හැඩය හෝ වර්ණය තෝරා රටාව සම්පූර්ණ කරන්න.",
+  "telemetry_tags": ["pattern_recognition", "visual_logic"],
+  "template_type": "pattern_game",
+  "rounds": [
+    {"sequence": ["🔴", "🔵", "🔴", null], "options": ["🔴", "🔵"], "correctOption": "🔵", "correct_index": 1},
+    {"sequence": ["🟢", "⭐", "🟢", null], "options": ["🟢", "⭐"], "correctOption": "⭐", "correct_index": 1},
+    {"sequence": ["🔴", "🔵", "🟢", "🔴", "🔵", null], "options": ["🔴", "🔵", "🟢"], "correctOption": "🟢", "correct_index": 2},
+    {"sequence": ["🟥", "🟥", "🟦", "🟥", "🟥", null], "options": ["🟥", "🟦"], "correctOption": "🟦", "correct_index": 1},
+    {"sequence": ["⭐", "🌙", "⭐", "🌙", "⭐", null], "options": ["⭐", "🌙", "☀️"], "correctOption": "🌙", "correct_index": 1},
+    {"sequence": ["🟡", "🟢", "🟡", "🟢", "🟡", null], "options": ["🟡", "🟢", "🔴"], "correctOption": "🟢", "correct_index": 1},
+    {"sequence": ["🔺", "🟦", "🟢", "🔺", "🟦", null], "options": ["🔺", "🟦", "🟢"], "correctOption": "🟢", "correct_index": 2},
+    {"sequence": ["🟣", "🟣", "🟧", "🟣", "🟣", null], "options": ["🟣", "🟧"], "correctOption": "🟧", "correct_index": 1},
+    {"sequence": ["△", "□", "○", "△", "□", null], "options": ["△", "□", "○"], "correctOption": "○", "correct_index": 2},
+    {"sequence": ["🔴", "🟡", "🔵", "🔴", "🟡", null], "options": ["🔴", "🟡", "🔵"], "correctOption": "🔵", "correct_index": 2}
+  ]
+}
