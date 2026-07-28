@@ -170,4 +170,95 @@ class StudentService {
       return 'Failed to connect to the server.';
     }
   }
+
+  /// Sync progress data to the backend for an existing student.
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> syncProgress(String studentId, List<String> completedActivities, Map<String, int> activityScores) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.patch(
+        Uri.parse('$_baseUrl/students/$studentId/progress'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'completed_activities': completedActivities,
+          'activity_scores': activityScores,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        }
+        return 'Failed to sync progress.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Submit telemetry session data to the backend.
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> submitTelemetry(Map<String, dynamic> payload) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/telemetry'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 201) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        }
+        return 'Failed to submit telemetry.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Fetch the ML-generated cognitive analytics profile for a student.
+  ///
+  /// Returns a Map with cognitive indices, risk assessment, and
+  /// intervention recommendations on success, or an empty Map on failure.
+  ///
+  /// Accessible by: parent (who owns the student) or a connected specialist.
+  Future<Map<String, dynamic>> getCognitiveAnalytics(String studentId) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return {};
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/telemetry/$studentId/analytics'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      return {};
+    } catch (e) {
+      return {};
+    }
+  }
 }

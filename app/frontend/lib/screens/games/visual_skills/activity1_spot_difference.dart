@@ -45,14 +45,16 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
     super.initState();
     final node = widget.activityNode ?? _defaultNode;
     _rounds = node.rounds.map((roundData) {
-      final target = roundData['target'] as String;
-      // Taking the first distractor for MVP, though the array can have multiple
-      final distractor = (roundData['distractors'] as List).first as String;
-      final totalCount = (roundData['target_count'] as int) + (roundData['distractor_count'] as int);
-      final correctIndex = roundData['correct_index'] as int;
+      final target = roundData['target']?.toString() ?? '🌸';
+      final distractorList = roundData['distractors'] as List? ?? ['🌳'];
+      final distractor = distractorList.first?.toString() ?? '🌳';
+      final totalCount = ((roundData['target_count'] as int?) ?? 1) + ((roundData['distractor_count'] as int?) ?? 2);
+      final correctIndex = (roundData['correct_index'] as int?) ?? 0;
 
       List<String> items = List.filled(totalCount, distractor);
-      items[correctIndex] = target;
+      if (correctIndex < items.length) {
+        items[correctIndex] = target;
+      }
 
       return SpotDifferenceRound(items: items, correctIndex: correctIndex);
     }).toList();
@@ -107,12 +109,16 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
   @override
   Widget build(BuildContext context) {
     final currentRound = _rounds[_currentRoundIndex];
+    final titleText = widget.activityNode?.title ?? 'වෙනස් හැඩය සොයමු';
+    final instructionText = (widget.activityNode?.description != null && widget.activityNode!.description.isNotEmpty)
+        ? widget.activityNode!.description
+        : 'අනෙක් හැඩවලට වඩා වෙනස් හැඩය තෝරන්න';
     
     return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
         title: Text(
-          'වෙනස් රූපය සොයන්න',
+          titleText,
           style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white),
         ),
         backgroundColor: AppColors.primary,
@@ -157,7 +163,7 @@ class _Activity1SpotDifferenceState extends State<Activity1SpotDifference> {
                         ),
                         SizedBox(height: isSmallScreen ? 16 : 24),
                         Text(
-                          'වෙනස් රූපය තෝරන්න',
+                          instructionText,
                           style: AppTypography.sinhala(fontSize: isSmallScreen ? 20 : 24, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                           textAlign: TextAlign.center,
                         ),

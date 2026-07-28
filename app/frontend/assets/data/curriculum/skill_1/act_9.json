@@ -1,0 +1,21 @@
+{
+  "id": "act_9",
+  "title": "වචනයට සවන් දී රූපය සොයමු",
+  "description": "ශබ්දයට සවන් දී අදාළ රූපය හෝ හැඩය තෝරන්න.",
+  "intro_text": "ලබා දෙන ශ්‍රව්‍ය ශබ්දයට හෝ වචනයට හොඳින් සවන් දී ඊට අදාළ නිවැරදි රූපය තෝරන්න.",
+  "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/act_9_intro.mp3",
+  "telemetry_tags": ["auditory_visual_integration", "word_picture_matching"],
+  "template_type": "audio_image_search_game",
+  "rounds": [
+    {"audio_prompt": "රතු පාට වෘත්තය", "options": ["🔴", "🔵", "🟢"], "correct_index": 0},
+    {"audio_prompt": "නිල් පාට චතුරස්‍රය", "options": ["🟨", "🟦", "🟥"], "correct_index": 1},
+    {"audio_prompt": "කහ පාට තාරකාව", "options": ["⭐", "🌙", "☀️"], "correct_index": 0},
+    {"audio_prompt": "කොළ පාට ත්‍රිකෝණය", "options": ["🔺", "🟩", "🟢"], "correct_index": 1},
+    {"audio_prompt": "ඇපල් ගෙඩිය", "options": ["🍎", "🍌", "🍇"], "correct_index": 0},
+    {"audio_prompt": "කෙසෙල් ගෙඩිය", "options": ["🍎", "🍌", "🍊"], "correct_index": 1},
+    {"audio_prompt": "බල්ලා", "options": ["🐶", "🐱", "🐰"], "correct_index": 0},
+    {"audio_prompt": "පූසා", "options": ["🐶", "🐱", "🦊"], "correct_index": 1},
+    {"audio_prompt": "කාර් එක", "options": ["🚗", "🚌", "🚲"], "correct_index": 0},
+    {"audio_prompt": "බෝලය", "options": ["⚽", "🏀", "🎾"], "correct_index": 0}
+  ]
+}

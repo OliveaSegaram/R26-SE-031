@@ -1,66 +1,89 @@
 import 'package:flutter/material.dart';
 import '../../models/curriculum_models.dart';
 import '../../widgets/telemetry_wrapper.dart';
-import 'visual_skills/activity1_spot_difference.dart';
-import 'visual_skills/activity2_pattern.dart';
-import 'visual_skills/activity3_missing_picture.dart';
-import 'visual_skills/activity4_visual_memory.dart';
-import 'visual_skills/activity5_category_sorting.dart';
-import 'visual_skills/activity6_hidden_shape.dart';
-import 'visual_skills/activity7_size_ordering.dart';
-import 'visual_skills/activity8_position.dart';
-import 'visual_skills/activity9_sequence.dart';
-import 'visual_skills/activity10_shadow_match.dart';
 
+// Skill 1 Dedicated Game Screens
+import 'visual_skills/skill_1/activity1_odd_shape.dart';
+import 'visual_skills/skill_1/activity2_complete_pattern.dart';
+import 'visual_skills/skill_1/activity3_remember_pattern.dart';
+import 'visual_skills/skill_1/activity4_non_matching_image.dart';
+import 'visual_skills/skill_1/activity5_direction_recognition.dart';
+import 'visual_skills/skill_1/activity6_color_matching.dart';
+import 'visual_skills/skill_1/activity7_shape_coloring.dart';
+import 'visual_skills/skill_1/activity8_fill_blank.dart';
+import 'visual_skills/skill_1/activity9_audio_image_search.dart';
+import 'visual_skills/skill_1/activity10_identical_match.dart';
+import 'visual_skills/skill_1/activity11_audio_sequence.dart';
+
+/// Central factory for constructing dynamic game screen instances based on template_type.
 class GameFactory {
   static Widget buildGame(ActivityNode node) {
     Widget gameContent;
+
     switch (node.templateType) {
-      case 'hidden_picture_game':
-        gameContent = Activity1SpotDifference(activityNode: node);
-        break;
-      case 'pattern_game':
-        gameContent = Activity2Pattern(activityNode: node);
-        break;
-      case 'missing_picture_game':
-        gameContent = Activity3MissingPicture(activityNode: node);
-        break;
-      case 'memory_game':
-        gameContent = Activity4VisualMemory(activityNode: node);
-        break;
-      case 'sorting_game':
-        gameContent = Activity5CategorySorting(activityNode: node);
-        break;
-      case 'matching_game':
-        gameContent = Activity10ShadowMatch(activityNode: node);
-        break;
+      // --- Skill 1 Dedicated Templates ---
       case 'odd_one_out_game':
-        gameContent = Activity6HiddenShape(activityNode: node); // Reusing hidden shape for odd one out
+      case 'hidden_picture_game':
+        gameContent = Activity1OddShape(activityNode: node);
         break;
-      case 'maze_game':
-        gameContent = Activity8Position(activityNode: node); // Reusing position generic MCQ
+
+      case 'pattern_game':
+        gameContent = Activity2CompletePattern(activityNode: node);
         break;
-      case 'reading_game':
+
+      case 'pattern_memory_game':
+      case 'memory_game':
+        gameContent = Activity3RememberPattern(activityNode: node);
+        break;
+
+      case 'non_matching_image_game':
+        gameContent = Activity4NonMatchingImage(activityNode: node);
+        break;
+
+      case 'direction_game':
+        gameContent = Activity5DirectionRecognition(activityNode: node);
+        break;
+
+      case 'color_match_game':
+        gameContent = Activity6ColorMatching(activityNode: node);
+        break;
+
+      case 'coloring_game':
+        gameContent = Activity7ShapeColoring(activityNode: node);
+        break;
+
+      case 'fill_blank_game':
+      case 'missing_picture_game':
+        gameContent = Activity8FillBlank(activityNode: node);
+        break;
+
+      case 'audio_image_match_game':
       case 'audio_game':
       case 'generic_mcq_game':
-        // Activity 8 provides a generic question + options layout which is perfect for fallbacks
-        gameContent = Activity8Position(activityNode: node);
+      case 'reading_game':
+        gameContent = Activity9AudioImageSearch(activityNode: node);
         break;
-      
-      // Fallback for unimplemented templates
+
+      case 'identical_match_game':
+      case 'matching_game':
+        gameContent = Activity10IdenticalMatch(activityNode: node);
+        break;
+
+      case 'audio_sequence_game':
+      case 'sorting_game':
+      case 'sequence_game':
+        gameContent = Activity11AudioSequence(activityNode: node);
+        break;
+
+      // Fallback for unhandled template types
       default:
-        gameContent = Scaffold(
-          appBar: AppBar(title: Text(node.title)),
-          body: Center(
-            child: Text('Template "${node.templateType}" is not yet implemented.'),
-          ),
-        );
+        gameContent = Activity1OddShape(activityNode: node);
     }
 
     return TelemetryWrapper(
       activityNode: node,
       onRoundComplete: (score) {
-        // Handled dynamically via the wrapper 
+        // Handled dynamically via TelemetryWrapperState
       },
       child: gameContent,
     );

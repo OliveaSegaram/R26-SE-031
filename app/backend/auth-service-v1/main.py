@@ -27,6 +27,7 @@ from config import PORT, CORS_ORIGINS
 from routers.auth import router as auth_router, limiter as auth_limiter
 from routers.students import router as students_router
 from routers.specialists import router as specialists_router
+from routers.telemetry import router as telemetry_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -59,6 +60,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(auth_router)
 app.include_router(students_router)
 app.include_router(specialists_router)
+app.include_router(telemetry_router)
 
 
 # --- Health Check ---

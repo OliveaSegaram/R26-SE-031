@@ -1,15 +1,18 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../theme/app_theme.dart';
+import '../models/dashboard_config.dart';
 import 'level_map_screen.dart';
+import 'skill_intro_screen.dart';
 import 'select_student_screen.dart';
 import 'parent/parent_hub_screen.dart';
 import 'character_shop_screen.dart';
 import 'progress_analytics_screen.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
+
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
 /// calm blue accents, 16pt+ text.
@@ -22,23 +25,13 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen>
-    with TickerProviderStateMixin {
-  
-  // Navigation State
-  int _navIndex = 0; // 0: Home, 1: Shop, 2: Progress, 3: Settings
-
+class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
-
-  final List<Map<String, dynamic>> _navItems = [
-    {'label': 'home', 'icon': FontAwesomeIcons.houseChimney, 'color': AppColors.calmBlue},
-    {'label': 'shop', 'icon': FontAwesomeIcons.store, 'color': AppColors.softCoral},
-    {'label': 'progress', 'icon': FontAwesomeIcons.trophy, 'color': AppColors.warmAmber},
-    {'label': 'parents', 'icon': FontAwesomeIcons.userGroup, 'color': AppColors.gentleGreen},
-  ];
-
   CurriculumIndex? _curriculum;
+  int _activeNavIndex = 0; // 0: home, 1: shop, 2: progress, 3: parents
+  int _streak = 0;
+  DashboardConfig? _dashConfig;
 
   @override
   void initState() {
@@ -52,15 +45,28 @@ class _DashboardScreenState extends State<DashboardScreen>
       curve: Curves.easeOut,
     );
     _fadeController.forward();
+
     _loadCurriculum();
+    _loadStreak();
+    _loadDashboardConfig();
+  }
+
+  Future<void> _loadDashboardConfig() async {
+    final cfg = await DashboardConfig.load();
+    if (mounted) setState(() => _dashConfig = cfg);
+  }
+
+  Future<void> _loadStreak() async {
+    final streak = ProgressService().currentStreak;
+    if (mounted) setState(() => _streak = streak);
   }
 
   Future<void> _loadCurriculum() async {
-    try {
-      final data = await CurriculumIndex.load();
-      if (mounted) setState(() => _curriculum = data);
-    } catch (e) {
-      print('Error loading curriculum: $e');
+    final curr = await CurriculumIndex.load();
+    if (mounted) {
+      setState(() {
+        _curriculum = curr;
+      });
     }
   }
 
@@ -72,7 +78,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final studentName = widget.studentData?['first_name'] ?? 'learner';
+    final studentName = widget.studentData?['name'] ?? 'Student';
     final avatarUrl = widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png';
 
     return Scaffold(
@@ -83,17 +89,36 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header (Avatar Profile + Welcome Message perfectly aligned)
+              // Header (Avatar Profile + Welcome Message)
               _buildHeader(studentName, avatarUrl),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Custom Top Navigation Bar (replaces the old category filters)
+              // Custom Top Navigation Bar
               _buildTopNavBar(),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Skill cards grid
+              // Section Header: "learning path"
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Text(
+                      '🚀 learning path',
+                      style: AppTypography.heading(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Skill cards list
               Expanded(
                 child: _curriculum == null 
                   ? const Center(child: CircularProgressIndicator())
@@ -107,61 +132,106 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildHeader(String name, String avatarUrl) {
+    final config = _dashConfig;
+    final hour = DateTime.now().hour;
+    final greeting = config != null
+        ? config.greetingFor(hour, name)
+        : (hour < 12 ? 'Good morning, $name! ☀️' : hour < 17 ? 'Good afternoon, $name! 🌤️' : 'Good evening, $name! 🌙');
+    final subtitle = _streak > 1 ? (config?.subtitleFor(_streak) ?? '🔥 $_streak day streak! Keep going!') : '';
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Left Side: Welcome Text
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'hello, $name!',
-                style: AppTypography.heading(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+          // Left Side: Dynamic greeting
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  greeting,
+                  style: AppTypography.heading(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "let's continue learning today",
-                style: AppTypography.body(
-                  fontSize: 15,
-                  color: AppColors.textSecondary,
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: AppTypography.body(
+                      fontSize: 14,
+                      color: AppColors.softCoral,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // Right Side: Streak badge + Avatar
+          Row(
+            children: [
+              if (_streak > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.warmAmber.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: AppColors.warmAmber.withValues(alpha: 0.4),
+                        width: 1.8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🔥', style: TextStyle(fontSize: 18)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$_streak',
+                        style: AppTypography.heading(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.warmAmber,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const SelectStudentScreen()),
+                  );
+                },
+                child: Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.calmBlue, width: 2.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.calmBlue.withValues(alpha: 0.25),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(avatarUrl, fit: BoxFit.cover),
+                  ),
                 ),
               ),
             ],
-          ),
-          
-          // Right Side: Avatar Profile
-          GestureDetector(
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const SelectStudentScreen()),
-              );
-            },
-            child: Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.calmBlue, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.calmBlue.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.asset(avatarUrl, fit: BoxFit.cover),
-              ),
-            ),
           ),
         ],
       ),
@@ -172,91 +242,63 @@ class _DashboardScreenState extends State<DashboardScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: List.generate(_navItems.length, (index) {
           final item = _navItems[index];
-          final isSelected = _navIndex == index;
+          final isSelected = _activeNavIndex == index;
           final color = item['color'] as Color;
 
-          return GestureDetector(
-            onTap: () {
-              setState(() => _navIndex = index);
-              
-              // Handle Navigation Actions
-              Future.delayed(const Duration(milliseconds: 200), () {
-                if (!mounted) return;
-                
-                if (index == 3) { // Settings routes to Parent Screen
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ParentHubScreen()));
-                  setState(() => _navIndex = 0);
-                } else if (index == 1) { // Shop routes to Character Shop
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CharacterShopScreen()));
-                  setState(() => _navIndex = 0);
-                } else if (index == 2) { // Progress routes to Analytics Screen
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => ProgressAnalyticsScreen(studentData: widget.studentData)));
-                  setState(() => _navIndex = 0);
-                } else if (index != 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${item['label']} coming soon!'),
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                    ),
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _activeNavIndex = index);
+                final route = item['route'] as Widget?;
+                if (route != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => route),
                   );
-                  setState(() => _navIndex = 0);
                 }
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
-              width: 78,
-              height: 84,
-              margin: EdgeInsets.only(
-                top: isSelected ? 4 : 8,
-                bottom: isSelected ? 12 : 8,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected ? color : AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isSelected ? color : AppColors.borderLight,
-                  width: 2,
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 8),
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: AppColors.shadow,
-                          blurRadius: 4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FaIcon(
-                    item['icon'],
-                    size: 28,
-                    color: isSelected ? Colors.white : color.withValues(alpha: 0.8),
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? color : AppColors.cardSurface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? color : AppColors.borderLight,
+                    width: isSelected ? 2.5 : 1.5,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    item['label'] as String,
-                    style: AppTypography.caption(
-                      fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                      color: isSelected ? Colors.white : AppColors.textSecondary,
+                  boxShadow: [
+                    BoxShadow(
+                      color: isSelected
+                          ? color.withValues(alpha: 0.35)
+                          : AppColors.shadow.withValues(alpha: 0.08),
+                      blurRadius: isSelected ? 12 : 6,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FaIcon(
+                      item['icon'] as FaIconData,
+                      size: 24,
+                      color: isSelected ? Colors.white : color.withValues(alpha: 0.85),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      item['label'] as String,
+                      style: AppTypography.caption(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -266,146 +308,390 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildSkillsGrid() {
-    return GridView.builder(
+    final config = _dashConfig;
+    return ListView.separated(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.82,
-      ),
       itemCount: _curriculum!.skills.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final skill = _curriculum!.skills[index];
-        // Cycle colors for MVP aesthetics
-        final colors = [AppColors.calmBlue, AppColors.gentleGreen, AppColors.warmAmber, AppColors.softCoral];
-        return _buildHeroSkillCard(skill, colors[index % colors.length]);
+
+        final String? prevSkillId = index > 0 ? _curriculum!.skills[index - 1].id : null;
+        final int prevTotal = index > 0 ? _curriculum!.skills[index - 1].totalActivities : 0;
+
+        final bool isUnlocked = ProgressService().isSkillUnlocked(
+          index,
+          skill.id,
+          prevSkillId,
+          prevTotal,
+        );
+
+        return _AnimatedSkillCard(
+          skill: skill,
+          color: skill.color,
+          imagePath: skill.imagePath,
+          studentData: widget.studentData,
+          isLocked: !isUnlocked,
+          dashConfig: config,
+          onReturn: () {
+            if (mounted) setState(() {});
+          },
+        );
       },
     );
   }
 
-  // Highly visual "Hero Image" card layout
-  Widget _buildHeroSkillCard(SkillSummary skill, Color color) {
-    // Dynamic progress from ProgressService
-    final progress = ProgressService().getSkillProgress(skill.id, skill.totalActivities);
+  static const List<Map<String, dynamic>> _navItems = [
+    {
+      'label': 'home',
+      'icon': FontAwesomeIcons.house,
+      'color': AppColors.calmBlue,
+      'route': null,
+    },
+    {
+      'label': 'shop',
+      'icon': FontAwesomeIcons.store,
+      'color': AppColors.softCoral,
+      'route': CharacterShopScreen(),
+    },
+    {
+      'label': 'progress',
+      'icon': FontAwesomeIcons.trophy,
+      'color': AppColors.warmAmber,
+      'route': ProgressAnalyticsScreen(),
+    },
+    {
+      'label': 'parents',
+      'icon': FontAwesomeIcons.userGroup,
+      'color': AppColors.gentleGreen,
+      'route': ParentHubScreen(),
+    },
+  ];
+}
 
-    return GestureDetector(
-      onTap: () async {
-        try {
-          final skillDetail = await SkillDetail.load(skill.file);
-          if (!mounted) return;
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LevelMapScreen(
-                skillMap: skillDetail,
-                studentData: widget.studentData,
-              ),
-            ),
-          );
-          // Refresh progress upon return
-          if (mounted) setState(() {});
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load ${skill.title}: $e')));
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.borderLight, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+class _AnimatedSkillCard extends StatefulWidget {
+  final SkillSummary skill;
+  final Color color;
+  final String imagePath;
+  final Map<String, dynamic>? studentData;
+  final bool isLocked;
+  final DashboardConfig? dashConfig;
+  final VoidCallback onReturn;
+
+  const _AnimatedSkillCard({
+    required this.skill,
+    required this.color,
+    required this.imagePath,
+    this.studentData,
+    this.isLocked = false,
+    this.dashConfig,
+    required this.onReturn,
+  });
+
+  @override
+  State<_AnimatedSkillCard> createState() => _AnimatedSkillCardState();
+}
+
+class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.025).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cfg = widget.dashConfig;
+    final maxStars = cfg?.progress.maxStars ?? 5;
+    final progress = ProgressService().getSkillProgress(widget.skill.id, widget.skill.totalActivities);
+    final filledStars = (progress * maxStars).round();
+
+    final cardContent = Container(
+      height: 145,
+      decoration: BoxDecoration(
+        color: widget.isLocked
+            ? AppColors.cardSurface.withValues(alpha: 0.85)
+            : AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: widget.isLocked
+              ? AppColors.borderLight
+              : widget.color.withValues(alpha: 0.9),
+          width: widget.isLocked ? 2 : 3.5,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Top Half: Custom Hero Image
-            Expanded(
-              flex: 5,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-                child: Image.asset(
-                  'assets/images/skills/s0.png', // Hardcoded fallback for now
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: color.withValues(alpha: 0.1),
-                    child: Icon(Icons.auto_awesome_rounded, color: color, size: 40),
+        boxShadow: [
+          BoxShadow(
+            color: widget.isLocked
+                ? AppColors.shadow.withValues(alpha: 0.08)
+                : widget.color.withValues(alpha: 0.22),
+            blurRadius: widget.isLocked ? 8 : 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Left: Hero image (120px wide) with greyscale lock filter when locked
+          SizedBox(
+            width: 120,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.horizontal(left: Radius.circular(20)),
+                  child: ColorFiltered(
+                    colorFilter: widget.isLocked
+                        ? const ColorFilter.matrix([
+                            0.2126, 0.7152, 0.0722, 0, 0,
+                            0.2126, 0.7152, 0.0722, 0, 0,
+                            0.2126, 0.7152, 0.0722, 0, 0,
+                            0, 0, 0, 1, 0,
+                          ])
+                        : const ColorFilter.mode(
+                            Colors.transparent, BlendMode.multiply),
+                    child: Image.asset(
+                      widget.imagePath,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: widget.color.withValues(alpha: 0.1),
+                        child: Icon(Icons.auto_awesome_rounded,
+                            color: widget.color, size: 48),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            
-            // Bottom Half: English Title and Progress Bar
-            Expanded(
-              flex: 5,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Title
-                    Text(
-                      skill.title,
-                      style: AppTypography.heading(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        height: 1.2,
+
+                // Lock Overlay when locked
+                if (widget.isLocked)
+                  ClipRRect(
+                    borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(20)),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.28),
+                      child: const Center(
+                        child: Icon(Icons.lock_rounded,
+                            color: Colors.white, size: 36),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    
-                    // Progress Indicator
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'progress',
-                              style: AppTypography.caption(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              '${(progress * 100).round()}%',
-                              style: AppTypography.caption(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: color,
-                              ),
-                            ),
-                          ],
+                  ),
+              ],
+            ),
+          ),
+
+          // Right Content Area: Title, audio button, big stars & Play/Try button
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Title + Audio speaker button row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.skill.title,
+                          style: AppTypography.heading(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                            color: widget.isLocked
+                                ? AppColors.textSecondary
+                                : AppColors.textPrimary,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 6),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            backgroundColor: AppColors.borderLight,
-                            color: color,
-                            minHeight: 8,
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () async {
+                          final url = widget.skill.audioUrl;
+                          if (url.isNotEmpty) {
+                            try {
+                              await _audioPlayer.stop();
+                              if (url.startsWith('http://') || url.startsWith('https://')) {
+                                await _audioPlayer.play(UrlSource(url));
+                              } else {
+                                final cleanPath = url.replaceFirst('assets/', '');
+                                await _audioPlayer.play(AssetSource(cleanPath));
+                              }
+                            } catch (e) {
+                              debugPrint('Error playing custom skill audio: $e');
+                            }
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: widget.color.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.volume_up_rounded,
+                            color: widget.color,
+                            size: 19,
                           ),
                         ),
+                      ),
+                    ],
+                  ),
+
+                  // Bottom Action Row: FittedBox with mainAxisSize: MainAxisSize.min prevents right overflow on narrow screens
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Stars Row
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(
+                            maxStars,
+                            (i) => Padding(
+                              padding: const EdgeInsets.only(right: 2),
+                              child: Icon(
+                                i < filledStars
+                                    ? Icons.star_rounded
+                                    : Icons.star_outline_rounded,
+                                color: i < filledStars
+                                    ? AppColors.warmAmber
+                                    : AppColors.borderLight,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        // Chunky 3D Play / Try Button
+                        if (!widget.isLocked)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 7),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  widget.color,
+                                  widget.color.withValues(alpha: 0.85),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: widget.color.withValues(alpha: 0.4),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.play_arrow_rounded,
+                                    color: Colors.white, size: 18),
+                                SizedBox(width: 3),
+                                Text(
+                                  'Play',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 13,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.warmAmber.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: AppColors.warmAmber, width: 1.5),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.lock_open_rounded,
+                                    color: AppColors.warmAmber, size: 15),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'Try',
+                                  style: AppTypography.heading(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.warmAmber,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: GestureDetector(
+        onTap: () async {
+          try {
+            final skillDetail = await SkillDetail.load(widget.skill.file);
+            if (!mounted) return;
+
+            final bool isIntroSeen = ProgressService().isSkillIntroSeen(skillDetail.id);
+            final Widget targetScreen = isIntroSeen
+                ? LevelMapScreen(skillMap: skillDetail, studentData: widget.studentData)
+                : SkillIntroScreen(skillMap: skillDetail, studentData: widget.studentData);
+
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => targetScreen),
+            );
+            widget.onReturn();
+          } catch (e) {
+            debugPrint('Error loading skill detail: $e');
+          }
+        },
+        child: cardContent,
       ),
     );
   }

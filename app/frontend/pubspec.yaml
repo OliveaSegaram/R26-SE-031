@@ -19,6 +19,7 @@ dependencies:
   intl: ^0.19.0
   google_sign_in: ^7.2.0
   aad_oauth: ^1.0.1
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
@@ -38,7 +39,9 @@ flutter:
     - assets/images/skills/
     - assets/thumbnails/
     - assets/audio/
+    - assets/data/
     - assets/data/curriculum/
+    - assets/data/curriculum/skill_1/
 
 flutter_icons:
   android: true

@@ -1,0 +1,14 @@
+{
+  "greeting": {
+    "morning": "Good morning, {name}! ☀️",
+    "afternoon": "Good afternoon, {name}! 🌤️",
+    "evening": "Good evening, {name}! 🌙"
+  },
+  "streak": {
+    "multi_day_label": "day streak! Keep going! 🔥",
+    "zero_label": ""
+  },
+  "progress": {
+    "max_stars": 5
+  }
+}
