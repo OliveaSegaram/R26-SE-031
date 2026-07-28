@@ -1447,11 +1447,11 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                     controller: controller,
                     keyboardType: TextInputType.number,
                     maxLength: 6,
-                    style: AppTypography.body(fontSize: 20, letterSpacing: 4),
+                    style: AppTypography.body(fontSize: 20).copyWith(letterSpacing: 4),
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
                       hintText: '000000',
-                      hintStyle: AppTypography.body(color: AppColors.textHint, letterSpacing: 4),
+                      hintStyle: AppTypography.body(color: AppColors.textHint).copyWith(letterSpacing: 4),
                       filled: true,
                       fillColor: AppColors.slateBg.withValues(alpha: 0.4),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
