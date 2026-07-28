@@ -102,7 +102,7 @@ def generate_otp(length: int = 6) -> str:
     """Generate a random numeric OTP."""
     return "".join(random.choices(string.digits, k=length))
 
-def send_login_alert_email(email_address: str, ip_address: str, user_agent: str, time_str: str):
+def send_login_alert_email(email_address: str, ip_address: str, device_name: str, time_str: str):
     """Sends an email notifying the user of a new login."""
     try:
         html_content = f"""
@@ -112,7 +112,7 @@ def send_login_alert_email(email_address: str, ip_address: str, user_agent: str,
             <div style="background-color: #f4f4f4; padding: 15px; border-radius: 8px;">
                 <p><strong>Time:</strong> {time_str}</p>
                 <p><strong>IP Address:</strong> {ip_address}</p>
-                <p><strong>Device/Browser:</strong> {user_agent}</p>
+                <p><strong>Device:</strong> {device_name}</p>
             </div>
             <p>If this was you, you can safely ignore this email.</p>
             <p style="color: #d9534f; font-weight: bold;">If this wasn't you, please change your password immediately.</p>

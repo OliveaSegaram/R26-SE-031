@@ -22,7 +22,9 @@ class UserUpdate(BaseModel):
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=8)
+    password: str
+    device_id: Optional[str] = None
+    device_name: Optional[str] = None = Field(..., min_length=8)
 
 
 class Token(BaseModel):
@@ -53,9 +55,13 @@ class VerifyPasswordRequest(BaseModel):
 
 class GoogleLoginRequest(BaseModel):
     id_token: str
+    device_id: Optional[str] = None
+    device_name: Optional[str] = None
 
 class MicrosoftLoginRequest(BaseModel):
     access_token: str
+    device_id: Optional[str] = None
+    device_name: Optional[str] = None
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr

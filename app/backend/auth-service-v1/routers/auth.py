@@ -164,30 +164,59 @@ async def verify_email(request: Request, req: VerifyEmailRequest):
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks)
+    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 
-async def _handle_login_alert(db, user_doc, request: Request, background_tasks: BackgroundTasks):
+async def _handle_login_alert(db, user_doc, request: Request, background_tasks: BackgroundTasks, device_id: str = None, device_name: str = None):
     # Try to get the real IP if behind a proxy like Render
     forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        ip_address = forwarded_for.split(",")[0].strip()
-    else:
-        ip_address = request.client.host if request.client else "Unknown IP"
+    ip_address = forwarded_for.split(",")[0].strip() if forwarded_for else (request.client.host if request.client else "Unknown IP")
 
-    user_agent = request.headers.get("user-agent", "Unknown Device")
-    
-    last_ip = user_doc.get("last_login_ip")
-    alerts_enabled = user_doc.get("login_alerts_enabled", True)
-    
-    if alerts_enabled and last_ip and last_ip != ip_address:
-        now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        background_tasks.add_task(send_login_alert_email, user_doc["email"], ip_address, user_agent, now_str)
+    # Fallback to User-Agent if device_name not provided by frontend
+    if not device_name:
+        device_name = request.headers.get("user-agent", "Unknown Device")
         
-    if last_ip != ip_address:
+    if not device_id:
+        # Fallback to legacy IP-based logic for older app versions
+        last_ip = user_doc.get("last_login_ip")
+        alerts_enabled = user_doc.get("login_alerts_enabled", True)
+        
+        if alerts_enabled and last_ip and last_ip != ip_address:
+            now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            background_tasks.add_task(send_login_alert_email, user_doc["email"], ip_address, device_name, now_str)
+            
+        if last_ip != ip_address:
+            await db.users.update_one({"_id": user_doc["_id"]}, {"$set": {"last_login_ip": ip_address}})
+        return
+
+    # Modern Device-Based Logic
+    alerts_enabled = user_doc.get("login_alerts_enabled", True)
+    known_devices = user_doc.get("known_devices", [])
+    
+    # Check if this device is recognized
+    is_known = any(d.get("device_id") == device_id for d in known_devices)
+    
+    if not is_known:
+        if alerts_enabled and len(known_devices) > 0:
+            now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            background_tasks.add_task(send_login_alert_email, user_doc["email"], ip_address, device_name, now_str)
+            
+        # Add to known devices
+        new_device_entry = {
+            "device_id": device_id,
+            "device_name": device_name,
+            "first_seen": datetime.utcnow()
+        }
+        await db.users.update_one(
+            {"_id": user_doc["_id"]},
+            {"$push": {"known_devices": new_device_entry}, "$set": {"last_login_ip": ip_address}}
+        )
+    else:
+        # Update last_login_ip anyway
         await db.users.update_one({"_id": user_doc["_id"]}, {"$set": {"last_login_ip": ip_address}})
+
 
 @router.post("/login", response_model=Token)
 @limiter.limit("10/minute")
@@ -231,7 +260,7 @@ async def login(request: Request, user: UserLogin, background_tasks: BackgroundT
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks)
+    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/google", response_model=Token)
@@ -285,7 +314,7 @@ async def google_login(request: Request, login_req: GoogleLoginRequest, backgrou
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks)
+    await _handle_login_alert(db, user_doc, request, background_tasks, login_req.device_id, login_req.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/microsoft", response_model=Token)
@@ -339,7 +368,7 @@ async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest, ba
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks)
+    await _handle_login_alert(db, user_doc, request, background_tasks, login_req.device_id, login_req.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/refresh", response_model=Token)
@@ -362,7 +391,7 @@ async def refresh_token_endpoint(request: Request, token_req: TokenRefreshReques
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks)
+    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
@@ -470,7 +499,7 @@ async def verify_email_update(req: VerifyEmailUpdate, current_user: dict = Depen
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks)
+    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 

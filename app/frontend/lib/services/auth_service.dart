@@ -1,3 +1,5 @@
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:uuid/uuid.dart';
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -19,6 +21,36 @@ class AuthService {
     return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
   }
 
+
+  // Helper to get device info
+  Future<Map<String, String>> _getDeviceData() async {
+    final prefs = await SharedPreferences.getInstance();
+    String deviceId = prefs.getString('device_id') ?? '';
+    if (deviceId.isEmpty) {
+      deviceId = const Uuid().v4();
+      await prefs.setString('device_id', deviceId);
+    }
+    
+    String deviceName = 'Unknown Device';
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        deviceName = iosInfo.name;
+      } else if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        deviceName = '${androidInfo.brand} ${androidInfo.model}';
+      } else if (Platform.isMacOS) {
+        final macInfo = await deviceInfo.macOsInfo;
+        deviceName = macInfo.computerName;
+      }
+    } catch (e) {
+      // fallback
+    }
+    
+    return {'device_id': deviceId, 'device_name': deviceName};
+  }
+
   /// Returns null on success, or an error message string on failure.
   Future<String?> login(String email, String password) async {
     try {
@@ -28,6 +60,8 @@ class AuthService {
         body: jsonEncode({
           'email': email.trim(),
           'password': password,
+          'device_id': (await _getDeviceData())['device_id'],
+          'device_name': (await _getDeviceData())['device_name'],
         }),
       );
 
@@ -75,11 +109,14 @@ class AuthService {
       }
 
       // Send token to backend
+      final deviceData = await _getDeviceData();
       final response = await http.post(
         Uri.parse('$_baseUrl/google'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'id_token': idToken,
+          'device_id': deviceData['device_id'],
+          'device_name': deviceData['device_name'],
         }),
       );
 
@@ -141,11 +178,14 @@ class AuthService {
       }
 
       // Send token to backend
+      final deviceData = await _getDeviceData();
       final response = await http.post(
         Uri.parse('$_baseUrl/microsoft'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'access_token': accessToken,
+          'device_id': deviceData['device_id'],
+          'device_name': deviceData['device_name'],
         }),
       );
 
