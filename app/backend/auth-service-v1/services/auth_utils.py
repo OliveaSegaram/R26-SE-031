@@ -120,16 +120,37 @@ def send_login_alert_email(email_address: str, ip_address: str, user_agent: str,
             <p style="font-size: 12px; color: #888;">This is an automated security alert.</p>
         </div>
         """
-
-        resend.Emails.send({
-            "from": "security@onboarding.dev",
-            "to": email_address,
+        import os
+        import requests
+        
+        api_key = os.getenv("BREVO_API_KEY")
+        if not api_key:
+            print("Warning: BREVO_API_KEY not found. Login alert email not sent.")
+            return
+            
+        url = "https://api.brevo.com/v3/smtp/email"
+        headers = {
+            "accept": "application/json",
+            "api-key": api_key,
+            "content-type": "application/json"
+        }
+        
+        payload = {
+            "sender": {"email": "security@sipsara.com", "name": "Sipsara Security"},
+            "to": [{"email": email_address}],
             "subject": "Security Alert: New login to your account",
-            "html": html_content
-        })
-        print(f"Login alert email sent to {email_address} for IP {ip_address}")
+            "htmlContent": html_content
+        }
+        
+        response = requests.post(url, headers=headers, json=payload)
+        
+        if response.status_code in [200, 201, 202]:
+            print(f"Login alert email sent to {email_address} for IP {ip_address}")
+        else:
+            print(f"Failed to send login alert email: {response.text}")
+            
     except Exception as e:
-        print(f"Failed to send login alert email: {str(e)}")
+        print(f"Failed to send login alert email Exception: {str(e)}")
 
 def send_otp_email(email_address: str, otp: str):
     """
