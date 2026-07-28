@@ -252,6 +252,20 @@ class _SignUpScreenState extends State<SignUpScreen>
 
                         const SizedBox(height: 16),
 
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _isTherapist,
+                              onChanged: (val) {
+                                setState(() => _isTherapist = val ?? false);
+                              },
+                              activeColor: AppColors.calmBlue,
+                            ),
+                            const Text('I am a Therapist / Specialist', style: TextStyle(color: AppColors.textPrimary)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
                         // Password
                         TextFormField(
                           controller: _passwordController,
