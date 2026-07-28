@@ -14,6 +14,8 @@ class StudentCreate(BaseModel):
     grade: str = "Grade 1"  # Locked to Grade 1 for this app
     daily_limit: str = "No Limit"
     assessment_results: list[bool] = []
+    completed_activities: list[str] = []
+    activity_scores: dict[str, int] = {}
     avatar_url: Optional[str] = None
     consent_given: bool = False
     consent_parent_name: Optional[str] = None
@@ -40,4 +42,10 @@ class StudentResponse(BaseModel):
     daily_limit: str
     avatar_url: Optional[str] = None
     assessment_results: list[bool] = []
+    completed_activities: list[str] = []
+    activity_scores: dict[str, int] = {}
     assessment_completed: bool = False
+
+class ProgressSyncRequest(BaseModel):
+    completed_activities: list[str]
+    activity_scores: dict[str, int]

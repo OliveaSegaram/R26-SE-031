@@ -93,8 +93,9 @@ class _SignUpScreenState extends State<SignUpScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
-      Navigator.of(context).pushReplacement(
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const CharacterIntroScreen()),
+        (Route<dynamic> route) => false,
       );
     }
   }
@@ -114,8 +115,9 @@ class _SignUpScreenState extends State<SignUpScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
-      Navigator.of(context).pushReplacement(
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const CharacterIntroScreen()),
+        (Route<dynamic> route) => false,
       );
     }
   }

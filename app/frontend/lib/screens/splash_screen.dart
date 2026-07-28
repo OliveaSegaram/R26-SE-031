@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'welcome_screen.dart';
+import 'select_student_screen.dart';
+import '../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -41,9 +43,25 @@ class _SplashScreenState extends State<SplashScreen>
     // Start text animation
     _animationController.forward();
 
-    // Navigate to welcome screen after 3.5 seconds
-    Future.delayed(const Duration(milliseconds: 3500), () {
-      if (mounted) {
+    // Navigate based on auth status after 3.5 seconds
+    Future.delayed(const Duration(milliseconds: 3500), () async {
+      if (!mounted) return;
+      final token = await AuthService().getAccessToken();
+      if (!mounted) return;
+
+      if (token != null) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const SelectStudentScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 800),
+          ),
+        );
+      } else {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>

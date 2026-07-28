@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class CurriculumIndex {
@@ -25,15 +26,29 @@ class SkillSummary {
   final String icon;
   final String file;
   final int totalActivities;
+  final String imagePath;
+  final String colorHex;
+  final String emoji;
+  final String audioUrl;
 
   SkillSummary({
-    required this.id, 
-    required this.title, 
-    required this.subtitle, 
-    required this.icon, 
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
     required this.file,
     this.totalActivities = 0,
+    this.imagePath = 'assets/images/skills/s0.png',
+    this.colorHex = '#4A90D9',
+    this.emoji = '⭐',
+    this.audioUrl = '',
   });
+
+  /// Parses the colorHex string (e.g. "#4A90D9") into a Flutter Color.
+  Color get color {
+    final hex = colorHex.replaceFirst('#', '');
+    return Color(int.parse('FF$hex', radix: 16));
+  }
 
   factory SkillSummary.fromJson(Map<String, dynamic> json) {
     return SkillSummary(
@@ -43,6 +58,10 @@ class SkillSummary {
       icon: json['icon'] ?? 'assets/images/skills/s0.png',
       file: json['file_path'] ?? json['file'] ?? '',
       totalActivities: json['total_activities'] ?? 0,
+      imagePath: json['image_path'] ?? 'assets/images/skills/s0.png',
+      colorHex: json['color_hex'] ?? '#4A90D9',
+      emoji: json['emoji'] ?? '⭐',
+      audioUrl: json['audio_url'] ?? json['audio_path'] ?? json['audio'] ?? '',
     );
   }
 }
@@ -50,64 +69,106 @@ class SkillSummary {
 class SkillDetail {
   final String id;
   final String title;
+  final String introText;
+  final String audioUrl;
   final List<ActivityNode> activities;
 
-  SkillDetail({required this.id, required this.title, required this.activities});
+  SkillDetail({
+    required this.id,
+    required this.title,
+    this.introText = '',
+    this.audioUrl = '',
+    required this.activities,
+  });
 
   factory SkillDetail.fromJson(dynamic decodedJson, String fallbackId, String fallbackTitle) {
     if (decodedJson is List) {
       if (decodedJson.isNotEmpty &&
           decodedJson.first is Map &&
           (decodedJson.first as Map).containsKey('activities')) {
-        // Root is a list wrapping the skill object: [{ id, title, activities: [...] }]
         final skillMap = decodedJson.first as Map<String, dynamic>;
         final String id = skillMap['id']?.toString() ?? fallbackId;
         final String title = skillMap['title']?.toString() ?? fallbackTitle;
+        final String introText = skillMap['intro_text']?.toString() ?? skillMap['description']?.toString() ?? '';
+        final String audioUrl = skillMap['audio_url']?.toString() ?? skillMap['intro_audio_url']?.toString() ?? '';
         final List<dynamic> activitiesList = skillMap['activities'] as List<dynamic>? ?? [];
         return SkillDetail(
           id: id,
           title: title,
+          introText: introText,
+          audioUrl: audioUrl,
           activities: activitiesList
               .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
               .toList(),
         );
       } else {
-        // Root is a direct list of activity nodes
         return SkillDetail(
           id: fallbackId,
           title: fallbackTitle,
+          introText: '',
+          audioUrl: '',
           activities: decodedJson
               .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
               .toList(),
         );
       }
     } else if (decodedJson is Map) {
-      // Root is a single skill object: { id, title, activities: [...] }
       final skillMap = decodedJson as Map<String, dynamic>;
       final String id = skillMap['id']?.toString() ?? fallbackId;
       final String title = skillMap['title']?.toString() ?? fallbackTitle;
+      final String introText = skillMap['intro_text']?.toString() ?? skillMap['description']?.toString() ?? '';
+      final String audioUrl = skillMap['audio_url']?.toString() ?? skillMap['intro_audio_url']?.toString() ?? '';
       final List<dynamic> activitiesList = skillMap['activities'] as List<dynamic>? ?? [];
       return SkillDetail(
         id: id,
         title: title,
+        introText: introText,
+        audioUrl: audioUrl,
         activities: activitiesList
             .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
             .toList(),
       );
     }
 
-    return SkillDetail(id: fallbackId, title: fallbackTitle, activities: []);
+    return SkillDetail(id: fallbackId, title: fallbackTitle, introText: '', audioUrl: '', activities: []);
   }
 
   static Future<SkillDetail> load(String fileName) async {
     final String response = await rootBundle.loadString('assets/data/curriculum/$fileName');
-    return SkillDetail.fromJson(json.decode(response), fileName.replaceAll('.json', ''), 'Skill Details');
+    final skillDetail = SkillDetail.fromJson(json.decode(response), fileName.replaceAll('.json', ''), 'Skill Details');
+
+    List<ActivityNode> resolvedActivities = [];
+    for (var activity in skillDetail.activities) {
+      if (activity.filePath.isNotEmpty) {
+        try {
+          final String actResponse = await rootBundle.loadString('assets/data/curriculum/${activity.filePath}');
+          final Map<String, dynamic> actJson = json.decode(actResponse);
+          resolvedActivities.add(ActivityNode.fromJson(actJson));
+        } catch (e) {
+          resolvedActivities.add(activity);
+        }
+      } else {
+        resolvedActivities.add(activity);
+      }
+    }
+
+    return SkillDetail(
+      id: skillDetail.id,
+      title: skillDetail.title,
+      introText: skillDetail.introText,
+      audioUrl: skillDetail.audioUrl,
+      activities: resolvedActivities,
+    );
   }
 }
 
 class ActivityNode {
   final String id;
   final String title;
+  final String description;
+  final String introText;
+  final String audioUrl;
+  final String filePath;
   final List<String> telemetryTags;
   final String templateType;
   final List<Map<String, dynamic>> rounds;
@@ -115,6 +176,10 @@ class ActivityNode {
   ActivityNode({
     required this.id, 
     required this.title, 
+    this.description = '',
+    this.introText = '',
+    this.audioUrl = '',
+    this.filePath = '',
     required this.telemetryTags, 
     required this.templateType, 
     required this.rounds
@@ -124,6 +189,10 @@ class ActivityNode {
     return ActivityNode(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      introText: json['intro_text']?.toString() ?? json['description']?.toString() ?? '',
+      audioUrl: json['audio_url']?.toString() ?? json['intro_audio_url']?.toString() ?? '',
+      filePath: json['file_path']?.toString() ?? '',
       telemetryTags: json['telemetry_tags'] != null
           ? List<String>.from(json['telemetry_tags'] as Iterable)
           : <String>[],
