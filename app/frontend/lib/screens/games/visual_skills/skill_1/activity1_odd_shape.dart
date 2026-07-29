@@ -8,7 +8,8 @@ import '../../../../models/curriculum_models.dart';
 /// Template: odd_one_out_game
 class Activity1OddShape extends StatefulWidget {
   final ActivityNode? activityNode;
-  const Activity1OddShape({super.key, this.activityNode});
+  final bool isRemedial;
+  const Activity1OddShape({super.key, this.activityNode, this.isRemedial = false});
 
   @override
   State<Activity1OddShape> createState() => _Activity1OddShapeState();
@@ -66,12 +67,17 @@ class _Activity1OddShapeState extends State<Activity1OddShape> {
 
   @override
   Widget build(BuildContext context) {
-    final rounds = widget.activityNode?.rounds ?? [];
+    var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('වෙනස් හැඩය සොයමු')),
         body: const Center(child: Text('No rounds available.')),
       );
+    }
+    
+    // Anti-fatigue: limit to 5 rounds maximum
+    if (rounds.length > 5) {
+      rounds = rounds.sublist(0, 5);
     }
 
     final currentRound = rounds[_currentRoundIndex];
@@ -80,8 +86,15 @@ class _Activity1OddShapeState extends State<Activity1OddShape> {
 
     final target = currentRound['target']?.toString() ?? '🔵';
     final distractor = (currentRound['distractors'] as List?)?.first?.toString() ?? '🟥';
-    final totalCount = ((currentRound['target_count'] as int?) ?? 1) + ((currentRound['distractor_count'] as int?) ?? 3);
-    final correctIndex = (currentRound['correct_index'] as int?) ?? 0;
+    
+    int distractorCount = (currentRound['distractor_count'] as int?) ?? 3;
+    if (widget.isRemedial && distractorCount > 2) {
+      distractorCount = 2; // Cap distractors for remedial students
+    }
+    final totalCount = ((currentRound['target_count'] as int?) ?? 1) + distractorCount;
+    
+    // Ensure correct index is within bounds if we shrunk the grid
+    final correctIndex = ((currentRound['correct_index'] as int?) ?? 0) % totalCount;
 
     List<String> items = List.filled(totalCount, distractor);
     if (correctIndex < items.length) {
@@ -119,10 +132,26 @@ class _Activity1OddShapeState extends State<Activity1OddShape> {
                 borderRadius: BorderRadius.circular(4),
               ),
               const SizedBox(height: 24),
-              Text(
-                instructionText,
-                style: AppTypography.sinhala(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                textAlign: TextAlign.center,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      instructionText,
+                      style: AppTypography.sinhala(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.volume_up_rounded, color: AppColors.calmBlue, size: 28),
+                    onPressed: () async {
+                      context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+                      if (widget.activityNode?.audioUrl != null && widget.activityNode!.audioUrl.isNotEmpty) {
+                        await _audioPlayer.play(UrlSource(widget.activityNode!.audioUrl));
+                      }
+                    },
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
 

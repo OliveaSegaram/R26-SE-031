@@ -8,7 +8,8 @@ import '../../../../models/curriculum_models.dart';
 /// Template: color_match_game
 class Activity6ColorMatching extends StatefulWidget {
   final ActivityNode? activityNode;
-  const Activity6ColorMatching({super.key, this.activityNode});
+  final bool isRemedial;
+  const Activity6ColorMatching({super.key, this.activityNode, this.isRemedial = false});
 
   @override
   State<Activity6ColorMatching> createState() => _Activity6ColorMatchingState();
@@ -67,20 +68,34 @@ class _Activity6ColorMatchingState extends State<Activity6ColorMatching> {
 
   @override
   Widget build(BuildContext context) {
-    final rounds = widget.activityNode?.rounds ?? [];
+    var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('වර්ණයට ගැලපෙන රූපය')),
         body: const Center(child: Text('No rounds available.')),
       );
     }
+    
+    if (rounds.length > 5) {
+      rounds = rounds.sublist(0, 5);
+    }
 
     final currentRound = rounds[_currentRoundIndex];
     final titleText = widget.activityNode?.title ?? 'වර්ණයට ගැලපෙන රූපය හඳුනා ගනිමු';
     final targetColor = currentRound['target_color']?.toString() ?? '🔴';
     final colorName = currentRound['target_color_name']?.toString() ?? 'රතු පාට (Red)';
-    final options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵', '🟡', '🟢'];
-    final correctIndex = (currentRound['correct_index'] as int?) ?? 0;
+    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵', '🟡', '🟢'];
+    var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
+    
+    if (widget.isRemedial && options.length > 2) {
+      // Reduce distractors to max 1 + 1 correct = 2 options total
+      final correctItem = options[correctIndex];
+      var distractors = options.where((item) => item != correctItem).toList();
+      if (distractors.isNotEmpty) distractors = distractors.sublist(0, 1);
+      options = [correctItem, ...distractors];
+      options.shuffle();
+      correctIndex = options.indexOf(correctItem);
+    }
 
     return Scaffold(
       backgroundColor: AppColors.cream,

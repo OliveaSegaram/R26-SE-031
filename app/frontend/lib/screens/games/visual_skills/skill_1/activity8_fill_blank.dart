@@ -8,7 +8,8 @@ import '../../../../models/curriculum_models.dart';
 /// Template: fill_blank_game
 class Activity8FillBlank extends StatefulWidget {
   final ActivityNode? activityNode;
-  const Activity8FillBlank({super.key, this.activityNode});
+  final bool isRemedial;
+  const Activity8FillBlank({super.key, this.activityNode, this.isRemedial = false});
 
   @override
   State<Activity8FillBlank> createState() => _Activity8FillBlankState();
@@ -67,12 +68,16 @@ class _Activity8FillBlankState extends State<Activity8FillBlank> {
 
   @override
   Widget build(BuildContext context) {
-    final rounds = widget.activityNode?.rounds ?? [];
+    var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('හිස්තැන පුරවමු')),
         body: const Center(child: Text('No rounds available.')),
       );
+    }
+    
+    if (rounds.length > 5) {
+      rounds = rounds.sublist(0, 5);
     }
 
     final currentRound = rounds[_currentRoundIndex];
@@ -80,8 +85,16 @@ class _Activity8FillBlankState extends State<Activity8FillBlank> {
     final instructionText = widget.activityNode?.description ?? 'රූප පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි රූපය තෝරන්න.';
 
     final sequence = (currentRound['sequence'] as List?)?.map((e) => e?.toString()).toList() ?? ['🔴', '🔵', null, '🟢'];
-    final options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🟡', '🟣', '🔴', '⭐'];
+    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🟡', '🟣', '🔴', '⭐'];
     final correctOption = currentRound['correctOption']?.toString() ?? options.first;
+    
+    if (widget.isRemedial && options.length > 2) {
+      // Reduce distractors to max 1 + 1 correct = 2 options total
+      var distractors = options.where((item) => item != correctOption).toList();
+      if (distractors.isNotEmpty) distractors = distractors.sublist(0, 1);
+      options = [correctOption, ...distractors];
+      options.shuffle();
+    }
 
     return Scaffold(
       backgroundColor: AppColors.cream,

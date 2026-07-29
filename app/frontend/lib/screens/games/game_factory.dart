@@ -24,7 +24,7 @@ class GameFactory {
       // --- Skill 1 Dedicated Templates ---
       case 'odd_one_out_game':
       case 'hidden_picture_game':
-        gameContent = Activity1OddShape(activityNode: node);
+        gameContent = Activity1OddShape(activityNode: node, isRemedial: isRemedial);
         break;
 
       case 'pattern_game':

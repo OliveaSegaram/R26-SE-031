@@ -9,7 +9,8 @@ import '../../../../services/tts_service.dart';
 /// Template: audio_image_match_game
 class Activity9AudioImageSearch extends StatefulWidget {
   final ActivityNode? activityNode;
-  const Activity9AudioImageSearch({super.key, this.activityNode});
+  final bool isRemedial;
+  const Activity9AudioImageSearch({super.key, this.activityNode, this.isRemedial = false});
 
   @override
   State<Activity9AudioImageSearch> createState() => _Activity9AudioImageSearchState();
@@ -86,19 +87,33 @@ class _Activity9AudioImageSearchState extends State<Activity9AudioImageSearch> {
 
   @override
   Widget build(BuildContext context) {
-    final rounds = widget.activityNode?.rounds ?? [];
+    var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('වචනයට සවන් දී රූපය සොයමු')),
         body: const Center(child: Text('No rounds available.')),
       );
     }
+    
+    if (rounds.length > 5) {
+      rounds = rounds.sublist(0, 5);
+    }
 
     final currentRound = rounds[_currentRoundIndex];
     final titleText = widget.activityNode?.title ?? 'වචනයට සවන් දී රූපය සොයමු';
     final promptText = currentRound['prompt']?.toString() ?? 'අසා සිටින රූපය තෝරන්න';
-    final options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
-    final correctIndex = (currentRound['correct_index'] as int?) ?? 0;
+    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
+    var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
+    
+    if (widget.isRemedial && options.length > 2) {
+      // Reduce distractors to max 1 + 1 correct = 2 options total
+      final correctItem = options[correctIndex];
+      var distractors = options.where((item) => item != correctItem).toList();
+      if (distractors.isNotEmpty) distractors = distractors.sublist(0, 1);
+      options = [correctItem, ...distractors];
+      options.shuffle();
+      correctIndex = options.indexOf(correctItem);
+    }
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -134,7 +149,10 @@ class _Activity9AudioImageSearchState extends State<Activity9AudioImageSearch> {
 
               // Spoken Audio Prompt Button
               GestureDetector(
-                onTap: _playAudioPrompt,
+                onTap: () {
+                  context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+                  _playAudioPrompt();
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   decoration: BoxDecoration(
