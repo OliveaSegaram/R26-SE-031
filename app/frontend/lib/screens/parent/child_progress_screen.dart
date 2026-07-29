@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
+import '../../services/student_service.dart';
 import 'skill_detail_progress_screen.dart';
 
 /// Child Progress Screen — Visual dashboard showing a specific child's
@@ -20,6 +21,13 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
+  bool _isLoading = true;
+  List<double> _weeklyMinutes = [0, 0, 0, 0, 0, 0, 0];
+  List<Map<String, dynamic>> _skills = [];
+  int _totalActivities = 0;
+
+  final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +40,114 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
       curve: Curves.easeOut,
     );
     _fadeController.forward();
+    _loadTelemetryData();
+  }
+  
+  Future<void> _loadTelemetryData() async {
+    final studentId = widget.studentData['id'] ?? widget.studentData['_id'];
+    if (studentId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    
+    final sessions = await StudentService().getTelemetry(studentId.toString());
+    
+    _processTelemetryData(sessions);
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  void _processTelemetryData(List<dynamic> sessions) {
+    // 1. Calculate Weekly Minutes (Monday - Sunday)
+    final now = DateTime.now();
+    final List<double> weeklyMins = List.filled(7, 0.0);
+    
+    // Group events by activity name to calculate accuracy and progress
+    final Map<String, List<int>> activityScores = {};
+    int totalActs = 0;
+
+    for (final session in sessions) {
+      // Parse session duration and map to weekday
+      final submittedAtStr = session['submitted_at'] as String?;
+      if (submittedAtStr != null) {
+        final submittedAt = DateTime.tryParse(submittedAtStr);
+        if (submittedAt != null) {
+          // Check if it's within the last 7 days
+          final diff = now.difference(submittedAt).inDays;
+          if (diff < 7) {
+            // Dart weekday is 1(Mon) to 7(Sun)
+            final dayIndex = submittedAt.weekday - 1; 
+            final durationSecs = session['session_duration_seconds'] as int? ?? 0;
+            weeklyMins[dayIndex] += (durationSecs / 60.0);
+          }
+        }
+      }
+
+      // Parse events
+      final events = session['events'] as List<dynamic>? ?? [];
+      for (final ev in events) {
+        final activityName = ev['activity_name'] as String? ?? 'Unknown';
+        final score = ev['score'] as int? ?? 0;
+        
+        if (!activityScores.containsKey(activityName)) {
+          activityScores[activityName] = [];
+        }
+        activityScores[activityName]!.add(score);
+        totalActs++;
+      }
+    }
+
+    _weeklyMinutes = weeklyMins;
+    _totalActivities = totalActs;
+
+    // 2. Map activity scores to the _skills list
+    // In a full implementation, we'd map 'activityName' back to 'Skill ID' using Curriculum,
+    // but here we just show the distinct activities as skills for the dashboard.
+    _skills = activityScores.entries.map((entry) {
+      final name = entry.key;
+      final scores = entry.value;
+      final avgScore = scores.isNotEmpty ? scores.reduce((a, b) => a + b) / scores.length : 0.0;
+      
+      // Determine an icon and color based on name (mocking styling for dynamic names)
+      dynamic icon = FontAwesomeIcons.gamepad;
+      Color color = AppColors.calmBlue;
+      if (name.contains('visual') || name.contains('picture')) {
+        icon = FontAwesomeIcons.eye;
+        color = AppColors.softCoral;
+      } else if (name.contains('sound') || name.contains('audio')) {
+        icon = FontAwesomeIcons.volumeHigh;
+        color = AppColors.gentleGreen;
+      } else if (name.contains('word') || name.contains('letter')) {
+        icon = FontAwesomeIcons.font;
+        color = AppColors.warmAmber;
+      }
+
+      return {
+        'name': name.replaceAll('_', ' ').toUpperCase(),
+        'icon': icon,
+        'color': color,
+        'progress': (avgScore / 100.0).clamp(0.0, 1.0),
+        'accuracy': avgScore.round(),
+        'levels': '${scores.length} rounds',
+        'lastPlayed': 'recent', // could parse exact date if needed
+      };
+    }).toList();
+
+    // Fallback if no telemetry yet
+    if (_skills.isEmpty) {
+      _skills = [
+         {
+          'name': 'No activities played yet',
+          'icon': FontAwesomeIcons.ghost,
+          'color': AppColors.borderLight,
+          'progress': 0.0,
+          'accuracy': 0,
+          'levels': '0 rounds',
+          'lastPlayed': 'never',
+        }
+      ];
+    }
   }
 
   @override
@@ -39,59 +155,6 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
     _fadeController.dispose();
     super.dispose();
   }
-
-  // Mock data for skills
-  List<Map<String, dynamic>> get _skills => [
-        {
-          'name': 'Letter Recognition',
-          'icon': FontAwesomeIcons.font,
-          'color': AppColors.calmBlue,
-          'progress': 0.75,
-          'accuracy': 82,
-          'levels': '6/8',
-          'lastPlayed': 'today',
-        },
-        {
-          'name': 'Vowel Sounds',
-          'icon': FontAwesomeIcons.volumeHigh,
-          'color': AppColors.gentleGreen,
-          'progress': 0.60,
-          'accuracy': 78,
-          'levels': '3/5',
-          'lastPlayed': 'yesterday',
-        },
-        {
-          'name': 'Word Building',
-          'icon': FontAwesomeIcons.puzzlePiece,
-          'color': AppColors.warmAmber,
-          'progress': 0.40,
-          'accuracy': 70,
-          'levels': '2/5',
-          'lastPlayed': '2 days ago',
-        },
-        {
-          'name': 'Shape Tracking',
-          'icon': FontAwesomeIcons.shapes,
-          'color': AppColors.softCoral,
-          'progress': 0.90,
-          'accuracy': 92,
-          'levels': '9/10',
-          'lastPlayed': 'today',
-        },
-        {
-          'name': 'Syllable Training',
-          'icon': FontAwesomeIcons.music,
-          'color': Colors.purple,
-          'progress': 0.30,
-          'accuracy': 65,
-          'levels': '2/7',
-          'lastPlayed': '3 days ago',
-        },
-      ];
-
-  // Mock weekly data (minutes per day: Mon–Sun)
-  final List<double> _weeklyMinutes = [25, 15, 30, 0, 20, 35, 10];
-  final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +168,9 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SafeArea(
-          child: SingleChildScrollView(
+          child: _isLoading 
+            ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+            : SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,7 +270,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _buildMiniStat(FontAwesomeIcons.gamepad, '47', 'activities',
+          _buildMiniStat(FontAwesomeIcons.gamepad, '$_totalActivities', 'activities',
               AppColors.calmBlue),
           const SizedBox(width: 10),
           _buildMiniStat(FontAwesomeIcons.bullseye, '78%', 'accuracy',

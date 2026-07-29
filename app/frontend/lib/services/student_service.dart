@@ -234,6 +234,29 @@ class StudentService {
     }
   }
 
+  /// Fetch raw telemetry session history for a student.
+  Future<List<dynamic>> getTelemetry(String studentId) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return [];
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/telemetry/$studentId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   /// Fetch the ML-generated cognitive analytics profile for a student.
   ///
   /// Returns a Map with cognitive indices, risk assessment, and

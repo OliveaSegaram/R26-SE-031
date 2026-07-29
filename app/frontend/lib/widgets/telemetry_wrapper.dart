@@ -123,19 +123,23 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   }
 
   /// Called by individual game activities when a round is completed.
-  void completeRound(int score) {
+  void completeRound(int baseScore) {
     _roundStopwatch.stop();
     final totalRoundLatency = _roundStopwatch.elapsedMilliseconds;
 
-    _totalScore += score;
+    // Nuanced Scoring: Apply penalties for cognitive effort struggles
+    int penalty = (_misclickCount * 5) + (_hesitationCount * 2);
+    int finalRoundScore = (baseScore - penalty).clamp(0, 100);
+
+    _totalScore += finalRoundScore;
     _roundsCompletedTotal++;
 
     // Build and log the rich telemetry event
     final event = TelemetryEvent(
       activityName: widget.activityNode.templateType,
       roundNumber: _currentRound,
-      isCorrect: score > 0,
-      score: score,
+      isCorrect: finalRoundScore > 0,
+      score: finalRoundScore,
       timestamp: DateTime.now(),
       firstTouchLatencyMs: _firstTouchLatencyMs >= 0 ? _firstTouchLatencyMs : 0,
       totalRoundLatencyMs: totalRoundLatency,
@@ -144,13 +148,13 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       touchPath: List.unmodifiable(_currentTouchPath),
     );
 
-    TelemetryService().broadcastRoundComplete(score, totalRoundLatency);
+    TelemetryService().broadcastRoundComplete(finalRoundScore, totalRoundLatency);
     TelemetryService().logInteraction(event);
 
     debugPrint(
       'TELEMETRY: Round $_currentRound | '
-      'Correct: ${score > 0} | '
-      'Score: $score | '
+      'Correct: ${finalRoundScore > 0} | '
+      'Score: $finalRoundScore | '
       'First-Touch: ${event.firstTouchLatencyMs}ms | '
       'Total: ${totalRoundLatency}ms | '
       'Misclicks: $_misclickCount | '
@@ -159,7 +163,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     );
 
     // Forward to game loop
-    widget.onRoundComplete(score);
+    widget.onRoundComplete(finalRoundScore);
 
     // Reset for next round
     _currentRound++;
