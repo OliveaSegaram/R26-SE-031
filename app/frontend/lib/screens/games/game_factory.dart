@@ -17,7 +17,7 @@ import 'visual_skills/skill_1/activity11_audio_sequence.dart';
 
 /// Central factory for constructing dynamic game screen instances based on template_type.
 class GameFactory {
-  static Widget buildGame(ActivityNode node) {
+  static Widget buildGame(ActivityNode node, {bool isRemedial = false}) {
     Widget gameContent;
 
     switch (node.templateType) {

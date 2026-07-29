@@ -248,6 +248,55 @@ class ProgressService {
     return 0;
   }
 
+  // --- Failure Tracking (Dynamic Difficulty Adjustment) ---
+  
+  static const String _keyFailureCountPrefix = 'failures_'; // + studentId
+
+  Future<void> incrementFailureCount(String skillId, String activityId) async {
+    final prefs = await _ensurePrefs();
+    final key = '$_keyFailureCountPrefix$currentStudentId';
+    
+    String? failsJson = prefs.getString(key);
+    Map<String, dynamic> fails = {};
+    if (failsJson != null) {
+      try {
+        fails = json.decode(failsJson);
+      } catch (_) {}
+    }
+    
+    final actKey = '${skillId}_$activityId';
+    fails[actKey] = (fails[actKey] ?? 0) + 1;
+    
+    await prefs.setString(key, json.encode(fails));
+  }
+  
+  int getFailureCount(String skillId, String activityId) {
+    final key = '$_keyFailureCountPrefix$currentStudentId';
+    String? failsJson = _prefs?.getString(key);
+    if (failsJson == null) return 0;
+    
+    try {
+      Map<String, dynamic> fails = json.decode(failsJson);
+      final val = fails['${skillId}_$activityId'];
+      if (val is num) return val.toInt();
+    } catch (_) {}
+    return 0;
+  }
+  
+  Future<void> resetFailureCount(String skillId, String activityId) async {
+    final prefs = await _ensurePrefs();
+    final key = '$_keyFailureCountPrefix$currentStudentId';
+    
+    String? failsJson = prefs.getString(key);
+    if (failsJson != null) {
+      try {
+        Map<String, dynamic> fails = json.decode(failsJson);
+        fails.remove('${skillId}_$activityId');
+        await prefs.setString(key, json.encode(fails));
+      } catch (_) {}
+    }
+  }
+
   // --- Streak Tracking ---
 
   int get currentStreak {
