@@ -1,4 +1,7 @@
+import 'dart:math';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import '../services/telemetry_service.dart';
 import '../services/telemetry/plugins/voice_analysis_plugin.dart';
 import '../services/telemetry/plugins/eye_tracking_plugin.dart';
@@ -41,7 +44,11 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   int _firstTouchLatencyMs = -1;    // -1 = no touch received yet this round
   int _misclickCount = 0;
   int _hesitationCount = 0;
+  int _audioReplayCount = 0;
+  double _maxDeviceMotion = 0.0;
   bool _firstTouchRecorded = false;
+  
+  StreamSubscription<UserAccelerometerEvent>? _accelSub;
 
   // ---- Session accumulators ----
   int _totalScore = 0;
@@ -58,6 +65,14 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     _hesitationStopwatch = Stopwatch()..start();
     _initPluginsOnce();
 
+    _accelSub = userAccelerometerEventStream().listen((event) {
+      // Calculate magnitude of acceleration vector
+      double magnitude = sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
+      if (magnitude > _maxDeviceMotion) {
+        _maxDeviceMotion = magnitude;
+      }
+    });
+
     TelemetryService().broadcastRoundStart(
       widget.activityNode.templateType,
       _currentRound,
@@ -67,9 +82,37 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
   @override
   void dispose() {
+    _accelSub?.cancel();
+    if (_roundStopwatch.isRunning && _roundsCompletedTotal < widget.activityNode.rounds.length) {
+      // The wrapper was disposed before the game finished natively -> Abandonment
+      _logAbandonment();
+    }
     _roundStopwatch.stop();
     _hesitationStopwatch.stop();
     super.dispose();
+  }
+
+  void _logAbandonment() {
+    _roundStopwatch.stop();
+    final totalRoundLatency = _roundStopwatch.elapsedMilliseconds;
+    
+    final event = TelemetryEvent(
+      activityName: widget.activityNode.templateType,
+      roundNumber: _currentRound,
+      isCorrect: false,
+      score: 0,
+      timestamp: DateTime.now(),
+      firstTouchLatencyMs: _firstTouchLatencyMs,
+      totalRoundLatencyMs: totalRoundLatency,
+      misclickCount: _misclickCount,
+      hesitationCount: _hesitationCount,
+      audioReplayCount: _audioReplayCount,
+      maxDeviceMotion: _maxDeviceMotion,
+      isAbandoned: true, // FLAG SET!
+      touchPath: List.unmodifiable(_currentTouchPath),
+    );
+    TelemetryService().logInteraction(event);
+    debugPrint('TELEMETRY: ACTIVITY ABANDONED AT ROUND $_currentRound');
   }
 
   void _initPluginsOnce() {
@@ -122,6 +165,12 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     debugPrint('TELEMETRY: Misclick recorded (total: $_misclickCount).');
   }
 
+  /// Game activities should call this when the child replays an audio instruction.
+  void logAudioReplay() {
+    _audioReplayCount++;
+    debugPrint('TELEMETRY: Audio replay recorded (total: $_audioReplayCount).');
+  }
+
   /// Called by individual game activities when a round is completed.
   void completeRound(int baseScore) {
     _roundStopwatch.stop();
@@ -145,6 +194,9 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       totalRoundLatencyMs: totalRoundLatency,
       misclickCount: _misclickCount,
       hesitationCount: _hesitationCount,
+      audioReplayCount: _audioReplayCount,
+      maxDeviceMotion: _maxDeviceMotion,
+      isAbandoned: false,
       touchPath: List.unmodifiable(_currentTouchPath),
     );
 
@@ -159,6 +211,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       'Total: ${totalRoundLatency}ms | '
       'Misclicks: $_misclickCount | '
       'Hesitations: $_hesitationCount | '
+      'Audio Replays: $_audioReplayCount | '
       'Touch points: ${_currentTouchPath.length}',
     );
 
@@ -172,6 +225,8 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     _firstTouchRecorded = false;
     _misclickCount = 0;
     _hesitationCount = 0;
+    _audioReplayCount = 0;
+    _maxDeviceMotion = 0.0;
     _roundStopwatch.reset();
     _roundStopwatch.start();
     _hesitationStopwatch.reset();
