@@ -64,7 +64,7 @@ async def connect_specialist(request: ConnectSpecialistRequest, current_user: di
         
     student = await db.students.find_one({
         "_id": student_obj_id,
-        "parent_id": str(current_user["_id"])
+        "parent_id": current_user["_id"]
     })
     
     if not student:
