@@ -7,6 +7,8 @@ import '../services/auth_service.dart';
 import 'reset_password_screen.dart';
 import 'select_student_screen.dart';
 import 'onboarding_screen.dart';
+import 'therapist/therapist_dashboard_screen.dart';
+
 
 class OtpScreen extends StatefulWidget {
   final String email;
@@ -102,10 +104,21 @@ class _OtpScreenState extends State<OtpScreen> {
         );
       } else {
         if (widget.isSignup) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-            (route) => false,
-          );
+          final profile = await AuthService().getUserProfile();
+          if (!mounted) return;
+          final isTherapist = profile != null && profile['role'] == 'specialist';
+          
+          if (isTherapist) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const TherapistDashboardScreen()),
+              (route) => false,
+            );
+          } else {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+              (route) => false,
+            );
+          }
         } else {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const SelectStudentScreen()),

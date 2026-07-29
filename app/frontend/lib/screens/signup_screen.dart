@@ -106,8 +106,12 @@ class _SignUpScreenState extends State<SignUpScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
+      final profile = await AuthService().getUserProfile();
+      if (!mounted) return;
+      final isTherapist = profile != null && profile['role'] == 'specialist';
+      
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const CharacterIntroScreen()),
+        MaterialPageRoute(builder: (context) => isTherapist ? const TherapistDashboardScreen() : const CharacterIntroScreen()),
         (Route<dynamic> route) => false,
       );
     }
@@ -132,8 +136,12 @@ class _SignUpScreenState extends State<SignUpScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
+      final profile = await AuthService().getUserProfile();
+      if (!mounted) return;
+      final isTherapist = profile != null && profile['role'] == 'specialist';
+      
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const CharacterIntroScreen()),
+        MaterialPageRoute(builder: (_) => isTherapist ? const TherapistDashboardScreen() : const CharacterIntroScreen()),
         (Route<dynamic> route) => false,
       );
     }
