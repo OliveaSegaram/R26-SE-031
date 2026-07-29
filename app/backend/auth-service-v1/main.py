@@ -62,6 +62,7 @@ app.include_router(auth_router)
 app.include_router(students_router)
 app.include_router(specialists_router)
 app.include_router(telemetry_router)
+app.include_router(therapist_router)
 
 
 # --- Health Check ---

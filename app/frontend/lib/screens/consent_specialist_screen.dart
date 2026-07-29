@@ -125,7 +125,10 @@ class _ConsentSpecialistScreenState extends State<ConsentSpecialistScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.circle, size: 8, color: AppColors.calmBlue),
+          const Padding(
+            padding: EdgeInsets.only(top: 6.0),
+            child: Icon(Icons.circle, size: 8, color: AppColors.calmBlue),
+          ),
           const SizedBox(width: 12),
           Expanded(child: Text(text, style: AppTypography.body(fontSize: 14, color: AppColors.textPrimary))),
         ],
