@@ -254,6 +254,13 @@ async def login(request: Request, user: UserLogin, background_tasks: BackgroundT
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
+    if user_doc.get("role") != user.role:
+        expected = "Therapist" if user_doc.get("role") == "specialist" else "Parent"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This email is registered as a {expected}. Please select {expected} to log in."
+        )
 
     if user_doc.get("auth_provider", "local") != "local" or not user_doc.get("hashed_password"):
         raise HTTPException(
@@ -313,6 +320,20 @@ async def google_login(request: Request, login_req: GoogleLoginRequest, backgrou
     # Check if user already exists
     user_doc = await db.users.find_one({"email": email})
     
+    if user_doc and user_doc.get("role") != login_req.role:
+        expected = "Therapist" if user_doc.get("role") == "specialist" else "Parent"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This email is registered as a {expected}. Please select {expected} to log in."
+        )
+        
+    if user_doc and user_doc.get("role") != login_req.role:
+        expected = "Therapist" if user_doc.get("role") == "specialist" else "Parent"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This email is registered as a {expected}. Please select {expected} to log in."
+        )
+        
     if not user_doc:
         # Implicitly sign up the user
         user_doc = {
@@ -377,6 +398,20 @@ async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest, ba
     # Check if user already exists
     user_doc = await db.users.find_one({"email": email})
     
+    if user_doc and user_doc.get("role") != login_req.role:
+        expected = "Therapist" if user_doc.get("role") == "specialist" else "Parent"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This email is registered as a {expected}. Please select {expected} to log in."
+        )
+        
+    if user_doc and user_doc.get("role") != login_req.role:
+        expected = "Therapist" if user_doc.get("role") == "specialist" else "Parent"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This email is registered as a {expected}. Please select {expected} to log in."
+        )
+        
     if not user_doc:
         # Implicitly sign up the user
         user_doc = {

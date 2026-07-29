@@ -27,6 +27,7 @@ class UserLogin(BaseModel):
     password: str = Field(..., min_length=8)
     device_id: Optional[str] = None
     device_name: Optional[str] = None
+    role: str
 
 
 class Token(BaseModel):

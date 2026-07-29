@@ -54,6 +54,7 @@ class _SignInScreenState extends State<SignInScreen>
     final error = await AuthService().login(
       _emailController.text.trim(),
       _passwordController.text,
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
     );
 
     if (!mounted) return;
@@ -66,7 +67,7 @@ class _SignInScreenState extends State<SignInScreen>
     } else {
       final profile = await AuthService().getUserProfile();
       if (!mounted) return;
-      final isTherapist = profile != null && profile['role'] == 'therapist';
+      final isTherapist = profile != null && profile['role'] == 'specialist';
       
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen()),
@@ -78,7 +79,9 @@ class _SignInScreenState extends State<SignInScreen>
   Future<void> _onGoogleSignIn() async {
     setState(() => _isLoading = true);
 
-    final error = await AuthService().loginWithGoogle();
+    final error = await AuthService().loginWithGoogle(
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
+    );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -100,7 +103,9 @@ class _SignInScreenState extends State<SignInScreen>
   Future<void> _onMicrosoftSignIn() async {
     setState(() => _isLoading = true);
     
-    final error = await AuthService().loginWithMicrosoft();
+    final error = await AuthService().loginWithMicrosoft(
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
+    );
     
     if (!mounted) return;
     setState(() => _isLoading = false);

@@ -49,7 +49,7 @@ class AuthService {
     return {'device_id': deviceId, 'device_name': deviceName};
   }
   /// Returns null on success, or an error message string on failure.
-  Future<String?> login(String email, String password) async {
+  Future<String?> login(String email, String password, {String role = "parent"}) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/login'),
@@ -59,6 +59,7 @@ class AuthService {
           'password': password,
           'device_id': (await _getDeviceData())['device_id'],
           'device_name': (await _getDeviceData())['device_name'],
+          'role': role,
         }),
       );
 
