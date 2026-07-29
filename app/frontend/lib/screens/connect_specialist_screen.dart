@@ -58,7 +58,7 @@ class _ConnectSpecialistScreenState extends State<ConnectSpecialistScreen> {
       setState(() {
         _students = students;
         if (_students.isNotEmpty) {
-          _selectedStudentId = _students.first['_id'];
+          _selectedStudentId = _students.first['id'];
         }
         _isLoading = false;
       });
@@ -146,7 +146,7 @@ class _ConnectSpecialistScreenState extends State<ConnectSpecialistScreen> {
                           isExpanded: true,
                           items: _students.map((student) {
                             return DropdownMenuItem<String>(
-                              value: student['_id'],
+                              value: student['id'],
                               child: Text(student['first_name'] ?? 'student', style: AppTypography.body(fontSize: 16)),
                             );
                           }).toList(),
