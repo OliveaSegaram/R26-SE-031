@@ -10,7 +10,9 @@
 		<true/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
-	</dict>
+	    <key>NSCameraUsageDescription</key>
+    <string>This app needs camera access to scan QR codes</string>
+</dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app needs access to your local network to connect to the backend during development.</string>
 	<key>NSBonjourServices</key>
@@ -48,7 +50,9 @@
 			<array>
 				<string>com.googleusercontent.apps.733315696908-p1b7u8vgcdkfj08kss6r9u0b5mgvt1uo</string>
 			</array>
-		</dict>
+		    <key>NSCameraUsageDescription</key>
+    <string>This app needs camera access to scan QR codes</string>
+</dict>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
@@ -69,10 +73,16 @@
 					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
 					<key>UISceneStoryboardFile</key>
 					<string>Main</string>
-				</dict>
+				    <key>NSCameraUsageDescription</key>
+    <string>This app needs camera access to scan QR codes</string>
+</dict>
 			</array>
-		</dict>
-	</dict>
+		    <key>NSCameraUsageDescription</key>
+    <string>This app needs camera access to scan QR codes</string>
+</dict>
+	    <key>NSCameraUsageDescription</key>
+    <string>This app needs camera access to scan QR codes</string>
+</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -92,5 +102,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+    <key>NSCameraUsageDescription</key>
+    <string>This app needs camera access to scan QR codes</string>
 </dict>
 </plist>

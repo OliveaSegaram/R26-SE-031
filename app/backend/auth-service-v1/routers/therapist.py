@@ -47,14 +47,14 @@ async def connect_specialist(request: ConnectSpecialistRequest, current_user: di
     """Parent submits a clinic code to link a student to a therapist."""
     db = get_db()
     
-    # 1. Find the clinic code
-    code_doc = await db.clinic_codes.find_one({
-        "clinic_code": request.clinic_code.upper(),
-        "expires_at": {"$gt": datetime.utcnow()}
+    # 1. Find the clinic code from users collection
+    therapist = await db.users.find_one({
+        "role": "specialist",
+        "clinic_code": request.clinic_code.upper()
     })
     
-    if not code_doc:
-        raise HTTPException(status_code=404, detail="Invalid or expired clinic code")
+    if not therapist:
+        raise HTTPException(status_code=404, detail="Invalid clinic code. Please check with your specialist.")
         
     # 2. Verify the student belongs to the current user (parent)
     try:
@@ -70,14 +70,11 @@ async def connect_specialist(request: ConnectSpecialistRequest, current_user: di
     if not student:
         raise HTTPException(status_code=404, detail="Student not found or access denied")
         
-    # 3. Get therapist details
-    therapist = await db.users.find_one({"_id": code_doc["therapist_id"]})
-    if not therapist:
-        raise HTTPException(status_code=404, detail="Therapist account no longer exists")
-        
+    # 3. Get therapist details (already have it)
+    
     # 4. Create the connection
     connection = {
-        "therapist_id": str(code_doc["therapist_id"]),
+        "therapist_id": str(therapist["_id"]),
         "student_id": request.student_id,
         "parent_id": str(current_user["_id"]),
         "status": "active",
@@ -118,7 +115,7 @@ async def get_connections(current_user: dict = Depends(get_current_user)):
     db = get_db()
     
     query = {}
-    if current_user.get("role") == "therapist":
+    if current_user.get("role") == "specialist":
         query["therapist_id"] = str(current_user["_id"])
     else:
         query["parent_id"] = str(current_user["_id"])

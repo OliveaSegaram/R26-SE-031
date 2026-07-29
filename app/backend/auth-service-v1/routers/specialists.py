@@ -13,6 +13,24 @@ from schemas.specialist import SpecialistConnectRequest, SpecialistConnectRespon
 
 router = APIRouter(prefix="/api/v1/specialists", tags=["Specialists"])
 
+
+@router.get("/lookup/{clinic_code}")
+async def lookup_specialist(clinic_code: str):
+    db = get_db()
+    specialist = await db.users.find_one({"role": "specialist", "clinic_code": clinic_code.upper()})
+    
+    if not specialist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Specialist not found. Please check the code."
+        )
+        
+    return {
+        "name": specialist.get("name"),
+        "clinic_name": specialist.get("clinic_name"),
+        "specialization": specialist.get("specialization")
+    }
+
 @router.post("/connect", response_model=SpecialistConnectResponse)
 async def connect_specialist(req: SpecialistConnectRequest, current_user: dict = Depends(get_current_user)):
     db = get_db()

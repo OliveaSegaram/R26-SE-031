@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../services/auth_service.dart';
 import '../welcome_screen.dart';
 
@@ -149,7 +150,30 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen> {
                           ],
 
                           if (_profile!['clinic_code'] != null) ...[
+                            const SizedBox(height: 20),
+                            Text(
+                              'have parents scan this QR code',
+                              style: AppTypography.caption(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                             const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.borderLight),
+                              ),
+                              child: QrImageView(
+                                data: _profile!['clinic_code'],
+                                version: QrVersions.auto,
+                                size: 140.0,
+                                foregroundColor: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                               decoration: BoxDecoration(
@@ -163,7 +187,7 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen> {
                                   const Icon(Icons.vpn_key_rounded, size: 16, color: AppColors.gentleGreen),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'clinic code: ',
+                                    'or enter code: ',
                                     style: AppTypography.caption(
                                       fontSize: 13,
                                       color: AppColors.textSecondary,
@@ -178,14 +202,6 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen> {
                                     ),
                                   ),
                                 ],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'share this code with parents to connect',
-                              style: AppTypography.caption(
-                                fontSize: 12,
-                                color: AppColors.textHint,
                               ),
                             ),
                           ],
