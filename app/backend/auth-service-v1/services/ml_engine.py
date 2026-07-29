@@ -20,7 +20,7 @@ class CognitiveLoadClassifier:
     def classify(telemetry_history: List[Dict[str, Any]]) -> str:
         """
         Classify the student's current cognitive load.
-        Valid outputs: "ENGAGED", "FRUSTRATED", "OVERWHELMED"
+        Valid outputs: "ENGAGED", "FRUSTRATED", "OVERWHELMED", or struggling
         """
         if not telemetry_history:
             return "ENGAGED"
