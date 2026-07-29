@@ -9,7 +9,7 @@ from dependencies import get_current_user
 from shared.database import get_db
 from schemas.therapist import ConnectionCode, TherapistConnectionResponse, ConnectSpecialistRequest
 
-router = APIRouter(prefix="/therapist", tags=["therapist"])
+router = APIRouter(prefix="/api/v1/auth/therapist", tags=["therapist"])
 
 def generate_clinic_code(length=6):
     chars = string.ascii_uppercase + string.digits
