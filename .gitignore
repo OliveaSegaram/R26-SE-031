@@ -115,3 +115,4 @@ migrate_working_dir/
 **/generated_plugin_registrant.cc
 **/generated_plugins.cmake
 
+/test-sample-data
