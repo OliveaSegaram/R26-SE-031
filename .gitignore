@@ -111,4 +111,7 @@ test_summary.txt
 migrate_working_dir/
 /app/frontend/macos
 /app/frontend/windows
-/app/frontend/windows
+**/GeneratedPluginRegistrant.swift
+**/generated_plugin_registrant.cc
+**/generated_plugins.cmake
+
