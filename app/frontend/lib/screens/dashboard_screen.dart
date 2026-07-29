@@ -686,6 +686,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
               context,
               MaterialPageRoute(builder: (context) => targetScreen),
             );
+            if (!mounted) return;
             widget.onReturn();
           } catch (e) {
             debugPrint('Error loading skill detail: $e');

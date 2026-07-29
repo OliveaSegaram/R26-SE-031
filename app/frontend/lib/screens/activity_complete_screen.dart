@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/curriculum_models.dart';
+import 'telemetry_debug_screen.dart';
 
 class ActivityCompleteScreen extends StatelessWidget {
   final ActivityNode activityNode;
@@ -30,6 +31,17 @@ class ActivityCompleteScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.cream,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const TelemetryDebugScreen()),
+          );
+        },
+        backgroundColor: AppColors.primary,
+        mini: true,
+        child: const Icon(Icons.bug_report, color: Colors.white),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),

@@ -9,7 +9,8 @@ import '../../../../models/curriculum_models.dart';
 /// Template: pattern_memory_game
 class Activity3RememberPattern extends StatefulWidget {
   final ActivityNode? activityNode;
-  const Activity3RememberPattern({super.key, this.activityNode});
+  final bool isRemedial;
+  const Activity3RememberPattern({super.key, this.activityNode, this.isRemedial = false});
 
   @override
   State<Activity3RememberPattern> createState() => _Activity3RememberPatternState();
@@ -38,8 +39,13 @@ class _Activity3RememberPatternState extends State<Activity3RememberPattern> {
     super.dispose();
   }
 
+  List<dynamic> get _rounds {
+    var r = widget.activityNode?.rounds ?? [];
+    return r.length > 5 ? r.sublist(0, 5) : r;
+  }
+
   void _startMemorizeTimer() {
-    final rounds = widget.activityNode?.rounds ?? [];
+    final rounds = _rounds;
     if (rounds.isEmpty) return;
 
     final currentRound = rounds[_currentRoundIndex];
@@ -116,7 +122,7 @@ class _Activity3RememberPatternState extends State<Activity3RememberPattern> {
 
   @override
   Widget build(BuildContext context) {
-    final rounds = widget.activityNode?.rounds ?? [];
+    final rounds = _rounds;
     if (rounds.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('රටාව මතක තබා ගනිමු')),
@@ -127,7 +133,18 @@ class _Activity3RememberPatternState extends State<Activity3RememberPattern> {
     final currentRound = rounds[_currentRoundIndex];
     final titleText = widget.activityNode?.title ?? 'රටාව මතක තබා ගනිමු';
     final targetPattern = (currentRound['pattern'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵'];
-    final options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵', '🟢'];
+    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵', '🟢'];
+
+    if (widget.isRemedial && options.length > 2) {
+      // Reduce distractors: Keep only items in the target pattern + 1 distractor (if any)
+      final requiredItems = targetPattern.toSet();
+      final distractors = options.where((o) => !requiredItems.contains(o)).toList();
+      options = requiredItems.toList();
+      if (distractors.isNotEmpty) {
+        options.add(distractors.first);
+      }
+      options.shuffle();
+    }
 
     return Scaffold(
       backgroundColor: AppColors.cream,

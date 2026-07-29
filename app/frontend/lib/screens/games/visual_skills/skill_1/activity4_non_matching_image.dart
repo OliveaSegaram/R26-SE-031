@@ -8,7 +8,8 @@ import '../../../../models/curriculum_models.dart';
 /// Template: non_matching_image_game
 class Activity4NonMatchingImage extends StatefulWidget {
   final ActivityNode? activityNode;
-  const Activity4NonMatchingImage({super.key, this.activityNode});
+  final bool isRemedial;
+  const Activity4NonMatchingImage({super.key, this.activityNode, this.isRemedial = false});
 
   @override
   State<Activity4NonMatchingImage> createState() => _Activity4NonMatchingImageState();
@@ -67,19 +68,33 @@ class _Activity4NonMatchingImageState extends State<Activity4NonMatchingImage> {
 
   @override
   Widget build(BuildContext context) {
-    final rounds = widget.activityNode?.rounds ?? [];
+    var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('නොගැලපෙන රූපය සොයාමු')),
         body: const Center(child: Text('No rounds available.')),
       );
     }
+    
+    if (rounds.length > 5) {
+      rounds = rounds.sublist(0, 5);
+    }
 
     final currentRound = rounds[_currentRoundIndex];
     final titleText = widget.activityNode?.title ?? 'නොගැලපෙන රූපය සොයාමු';
     final instructionText = widget.activityNode?.description ?? 'අනෙක් රූප කාණ්ඩයට නොගැලපෙන රූපය තෝරන්න.';
-    final items = (currentRound['items'] as List?)?.map((e) => e.toString()).toList() ?? ['🍎', '🍌', '🍇', '🚗'];
-    final correctIndex = (currentRound['correct_index'] as int?) ?? 3;
+    var items = (currentRound['items'] as List?)?.map((e) => e.toString()).toList() ?? ['🍎', '🍌', '🍇', '🚗'];
+    var correctIndex = (currentRound['correct_index'] as int?) ?? 3;
+    
+    if (widget.isRemedial && items.length > 3) {
+      // Reduce distractors to max 2 + 1 correct = 3 items total
+      final correctItem = items[correctIndex];
+      var distractors = items.where((item) => item != correctItem).toList();
+      distractors = distractors.sublist(0, 2);
+      items = [correctItem, ...distractors];
+      items.shuffle();
+      correctIndex = items.indexOf(correctItem);
+    }
 
     return Scaffold(
       backgroundColor: AppColors.cream,

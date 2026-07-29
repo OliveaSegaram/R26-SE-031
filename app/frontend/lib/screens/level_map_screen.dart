@@ -8,6 +8,7 @@ import '../services/progress_service.dart';
 import '../services/tts_service.dart';
 import 'games/game_factory.dart';
 import 'activity_complete_screen.dart';
+import '../services/telemetry_service.dart';
 
 /// Level Map Screen
 /// Dyslexia-accessible: calm blue header, gentle green/warm amber nodes,
@@ -322,7 +323,10 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 2,
                           children: [
                             Text(
                               'ක්‍රියාකාරකම ${index + 1}',
@@ -332,10 +336,8 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                                 color: isCurrent ? AppColors.warmAmber : AppColors.textSecondary,
                               ),
                             ),
-                            if (isCompleted) ...[
-                              const SizedBox(width: 8),
+                            if (isCompleted)
                               _buildStarBadge(score, AppColors.gentleGreen),
-                            ],
                           ],
                         ),
                         const SizedBox(height: 4),
@@ -698,6 +700,14 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       borderWidth = 2;
     }
 
+    final int fails = ProgressService().getFailureCount(widget.skillMap.id, level.id);
+    final bool isRemedial = fails >= 2 && (isCurrent || isCompleted);
+    
+    if (isRemedial) {
+      borderColor = AppColors.softCoral;
+      borderWidth = 4;
+    }
+
     if (type == 'star') {
       size = 56;
     } else if (type == 'trophy') {
@@ -892,7 +902,15 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         return;
       }
 
-      Widget nextScreen = GameFactory.buildGame(level);
+      // DDA: Check if this is a remedial attempt
+      final fails = ProgressService().getFailureCount(widget.skillMap.id, level.id);
+      final bool isRemedial = fails >= 2;
+
+      Widget nextScreen = GameFactory.buildGame(level, isRemedial: isRemedial);
+      
+      // Start a new telemetry session for this activity
+      TelemetryService().startSession();
+      TelemetryService().startActivity(level.title);
 
       final result = await Navigator.push(
         context,
@@ -903,6 +921,17 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       int scoreToSave = 100;
       if (result != null && result is int) {
         scoreToSave = result;
+      }
+      
+      // Submit the telemetry session that was recorded during this activity
+      final studentId = ProgressService().currentStudentId;
+      await TelemetryService().endSessionAndSubmit(studentId);
+
+      // DDA: Update failure count
+      if (scoreToSave < 40) {
+        await ProgressService().incrementFailureCount(widget.skillMap.id, level.id);
+      } else if (scoreToSave >= 40 && fails > 0) {
+        await ProgressService().resetFailureCount(widget.skillMap.id, level.id);
       }
 
       // Mark level as completed persistently

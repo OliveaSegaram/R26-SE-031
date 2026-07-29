@@ -8,7 +8,8 @@ import '../../../../models/curriculum_models.dart';
 /// Template: coloring_game
 class Activity7ShapeColoring extends StatefulWidget {
   final ActivityNode? activityNode;
-  const Activity7ShapeColoring({super.key, this.activityNode});
+  final bool isRemedial;
+  const Activity7ShapeColoring({super.key, this.activityNode, this.isRemedial = false});
 
   @override
   State<Activity7ShapeColoring> createState() => _Activity7ShapeColoringState();
@@ -82,12 +83,16 @@ class _Activity7ShapeColoringState extends State<Activity7ShapeColoring> {
 
   @override
   Widget build(BuildContext context) {
-    final rounds = widget.activityNode?.rounds ?? [];
+    var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('හැඩතලවලට පාට කරමු')),
         body: const Center(child: Text('No rounds available.')),
       );
+    }
+    
+    if (rounds.length > 5) {
+      rounds = rounds.sublist(0, 5);
     }
 
     final currentRound = rounds[_currentRoundIndex];
@@ -95,8 +100,18 @@ class _Activity7ShapeColoringState extends State<Activity7ShapeColoring> {
     final shapeSymbol = currentRound['shape']?.toString() ?? '🔵';
     final shapeName = currentRound['shape_name']?.toString() ?? 'වෘත්තය (Circle)';
     final colorName = currentRound['color_name']?.toString() ?? 'රතු පාට (Red)';
-    final paletteHex = (currentRound['palette'] as List?)?.map((e) => e.toString()).toList() ?? ['#FF3B30', '#007AFF', '#FFCC00', '#34C759'];
-    final correctColorIndex = (currentRound['correct_color_index'] as int?) ?? 0;
+    var paletteHex = (currentRound['palette'] as List?)?.map((e) => e.toString()).toList() ?? ['#FF3B30', '#007AFF', '#FFCC00', '#34C759'];
+    var correctColorIndex = (currentRound['correct_color_index'] as int?) ?? 0;
+    
+    if (widget.isRemedial && paletteHex.length > 2) {
+      // Reduce distractors to max 1 + 1 correct = 2 options total
+      final correctItem = paletteHex[correctColorIndex];
+      var distractors = paletteHex.where((item) => item != correctItem).toList();
+      if (distractors.isNotEmpty) distractors = distractors.sublist(0, 1);
+      paletteHex = [correctItem, ...distractors];
+      paletteHex.shuffle();
+      correctColorIndex = paletteHex.indexOf(correctItem);
+    }
 
     return Scaffold(
       backgroundColor: AppColors.cream,

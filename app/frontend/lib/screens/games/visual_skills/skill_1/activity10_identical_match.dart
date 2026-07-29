@@ -8,7 +8,8 @@ import '../../../../models/curriculum_models.dart';
 /// Template: identical_match_game
 class Activity10IdenticalMatch extends StatefulWidget {
   final ActivityNode? activityNode;
-  const Activity10IdenticalMatch({super.key, this.activityNode});
+  final bool isRemedial;
+  const Activity10IdenticalMatch({super.key, this.activityNode, this.isRemedial = false});
 
   @override
   State<Activity10IdenticalMatch> createState() => _Activity10IdenticalMatchState();
@@ -95,18 +96,33 @@ class _Activity10IdenticalMatchState extends State<Activity10IdenticalMatch> {
 
   @override
   Widget build(BuildContext context) {
-    final rounds = widget.activityNode?.rounds ?? [];
+    var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('එක සමාන රූප හඳුනා ගනිමු')),
         body: const Center(child: Text('No rounds available.')),
       );
     }
+    
+    if (rounds.length > 5) {
+      rounds = rounds.sublist(0, 5);
+    }
 
     final currentRound = rounds[_currentRoundIndex];
     final titleText = widget.activityNode?.title ?? 'එක සමාන රූප හඳුනා ගනිමු';
-    final instructionText = widget.activityNode?.description ?? 'එක හා සමාන රූප යුගල සොයා ගළපන්න.';
-    final options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔵', '🟥'];
+    final instructionText = widget.activityNode?.description ?? 'එකිනෙකට සමාන රූප යුගල වශයෙන් තෝරන්න.';
+    var gridItems = (currentRound['grid_items'] as List?)?.map((e) => e.toString()).toList() ?? ['🍎', '🍌', '🍎', '🍌'];
+    
+    if (widget.isRemedial && gridItems.length > 4) {
+      // Reduce the grid size for remedial students (e.g. from 6 to 4 items)
+      // Make sure we have exactly pairs.
+      final uniqueItems = gridItems.toSet().toList();
+      if (uniqueItems.length > 2) {
+        final allowedItems = uniqueItems.sublist(0, 2);
+        gridItems = [...allowedItems, ...allowedItems];
+        gridItems.shuffle();
+      }
+    }
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -158,13 +174,13 @@ class _Activity10IdenticalMatchState extends State<Activity10IdenticalMatch> {
                       mainAxisSpacing: 16,
                       childAspectRatio: 1.1,
                     ),
-                    itemCount: options.length,
+                    itemCount: gridItems.length,
                     itemBuilder: (context, index) {
                       final isMatched = _matchedIndices.contains(index);
                       final isSelected = (_firstSelectedIndex == index);
 
                       return GestureDetector(
-                        onTap: () => _onCardTapped(index, options, rounds.length),
+                        onTap: () => _onCardTapped(index, gridItems, rounds.length),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
                           decoration: BoxDecoration(
@@ -189,7 +205,7 @@ class _Activity10IdenticalMatchState extends State<Activity10IdenticalMatch> {
                           child: Center(
                             child: isMatched
                                 ? const Icon(Icons.check_circle_rounded, color: AppColors.gentleGreen, size: 52)
-                                : Text(options[index], style: const TextStyle(fontSize: 56)),
+                                : Text(gridItems[index], style: const TextStyle(fontSize: 56)),
                           ),
                         ),
                       );
