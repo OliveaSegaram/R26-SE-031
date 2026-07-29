@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import '../services/progress_service.dart';
 import '../services/student_service.dart';
 
 class CurriculumIndex {
@@ -140,7 +141,8 @@ class SkillDetail {
     
     try {
       // 1. Try fetching from CMS backend first
-      final url = Uri.parse('http://10.0.2.2:8015/api/v1/auth/activities/$skillId');
+      final studentId = ProgressService().currentStudentId;
+      final url = Uri.parse('http://10.0.2.2:8015/api/v1/auth/activities/$skillId?student_id=$studentId');
       final res = await http.get(url).timeout(const Duration(seconds: 3));
       if (res.statusCode == 200) {
         final decoded = json.decode(res.body);
