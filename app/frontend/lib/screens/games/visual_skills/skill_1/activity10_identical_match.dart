@@ -174,13 +174,13 @@ class _Activity10IdenticalMatchState extends State<Activity10IdenticalMatch> {
                       mainAxisSpacing: 16,
                       childAspectRatio: 1.1,
                     ),
-                    itemCount: options.length,
+                    itemCount: gridItems.length,
                     itemBuilder: (context, index) {
                       final isMatched = _matchedIndices.contains(index);
                       final isSelected = (_firstSelectedIndex == index);
 
                       return GestureDetector(
-                        onTap: () => _onCardTapped(index, options, rounds.length),
+                        onTap: () => _onCardTapped(index, gridItems, rounds.length),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
                           decoration: BoxDecoration(
@@ -205,7 +205,7 @@ class _Activity10IdenticalMatchState extends State<Activity10IdenticalMatch> {
                           child: Center(
                             child: isMatched
                                 ? const Icon(Icons.check_circle_rounded, color: AppColors.gentleGreen, size: 52)
-                                : Text(options[index], style: const TextStyle(fontSize: 56)),
+                                : Text(gridItems[index], style: const TextStyle(fontSize: 56)),
                           ),
                         ),
                       );
