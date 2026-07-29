@@ -1,52 +1,26 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Query
+from typing import Optional
+from shared.database import get_db
+from services.ml_engine import CognitiveLoadClassifier
 
 router = APIRouter(
     prefix="/api/v1/auth/activities",
     tags=["Activities CMS"]
 )
 
-# Mocked CMS database for activities
-MOCK_ACTIVITIES_DB = {
-    "visual_processing": {
-        "id": "visual_processing",
-        "title": "Visual Processing",
-        "intro_text": "Let's play some visual games!",
-        "audio_url": "",
-        "activities": [
-            {
-                "id": "act_1",
-                "title": "Odd One Out",
-                "template_type": "odd_one_out_game",
-                "audio_url": "",
-                "rounds": [
-                    {"image": "url_to_image", "target": "apple"}
-                ]
-            },
-            {
-                "id": "act_2",
-                "title": "Complete Pattern",
-                "template_type": "pattern_game",
-                "audio_url": "",
-                "rounds": []
-            },
-            {
-                "id": "act_3",
-                "title": "Pattern Memory",
-                "template_type": "pattern_memory_game",
-                "audio_url": "",
-                "rounds": []
-            }
-        ]
-    }
-}
-
 @router.get("/{skill_id}")
-async def get_activities_for_skill(skill_id: str):
+async def get_activities_for_skill(
+    skill_id: str,
+    student_id: Optional[str] = Query(None, description="Optional Student ID for ML dynamic adaptation")
+):
     """
     Returns the dynamic JSON configuration for all activities within a skill.
-    This replaces hardcoded Flutter JSON assets, enabling over-the-air updates.
+    Fetches directly from the MongoDB CMS collection.
+    If student_id is provided, intercepts and rewrites payload dynamically via ML.
     """
-    skill_data = MOCK_ACTIVITIES_DB.get(skill_id)
+    db = get_db()
+    skill_data = await db["curriculum"].find_one({"id": skill_id}, {"_id": 0})
+    
     if not skill_data:
         # For now, return an empty structure so the app doesn't crash on unmocked skills
         return {
@@ -54,5 +28,17 @@ async def get_activities_for_skill(skill_id: str):
             "title": skill_id.replace("_", " ").title(),
             "activities": []
         }
+        
+    # --- ML Engine Interception ---
+    if student_id:
+        # Fetch the last 10 telemetry events for this student to determine load
+        cursor = db.telemetry_events.find({"student_id": student_id}).sort("submitted_at", -1).limit(10)
+        recent_telemetry = await cursor.to_list(length=10)
+        
+        classification = CognitiveLoadClassifier.classify(recent_telemetry)
+        skill_data = CognitiveLoadClassifier.adapt_curriculum(skill_data, classification)
+        
+        # Inject classification into the metadata so frontend can trace it if needed
+        skill_data["ml_classification"] = classification
     
     return skill_data
