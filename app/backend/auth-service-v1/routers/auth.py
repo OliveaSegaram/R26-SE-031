@@ -483,6 +483,9 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         role=current_user.get("role", "parent"),
         login_alerts_enabled=current_user.get("login_alerts_enabled", True),
         profile_picture_url=current_user.get("profile_picture_url"),
+        clinic_code=current_user.get("clinic_code"),
+        specialization=current_user.get("specialization"),
+        clinic_name=current_user.get("clinic_name"),
     )
 @router.put("/me", response_model=UserResponse)
 async def update_me(request: UserUpdate, current_user: dict = Depends(get_current_user)):

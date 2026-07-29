@@ -47,6 +47,9 @@ class UserResponse(BaseModel):
     role: str
     login_alerts_enabled: bool = True
     profile_picture_url: Optional[str] = None
+    clinic_code: Optional[str] = None
+    specialization: Optional[str] = None
+    clinic_name: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
