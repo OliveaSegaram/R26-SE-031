@@ -10,14 +10,14 @@ class TherapistDashboardScreen extends StatefulWidget {
   const TherapistDashboardScreen({super.key});
 
   @override
-  State<TherapistDashboardScreen> createState() => _TherapistDashboardScreenState();
+  State<TherapistDashboardScreen> createState() =>
+      _TherapistDashboardScreenState();
 }
 
 class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
   int _currentIndex = 0;
   Map<String, dynamic>? _profile;
-
-
+  List<dynamic> _connections = [];
 
   @override
   void initState() {
@@ -27,7 +27,13 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
 
   Future<void> _loadProfile() async {
     final profile = await AuthService().getUserProfile();
-    if (mounted) setState(() => _profile = profile);
+    final connections = await AuthService().getConnections();
+    if (mounted) {
+      setState(() {
+        _profile = profile;
+        _connections = connections;
+      });
+    }
   }
 
   @override
@@ -38,6 +44,7 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
         children: [
           _DashboardHome(
             profile: _profile,
+            connections: _connections,
             onProfileTap: () => setState(() => _currentIndex = 3),
           ),
           const TherapistStudentsScreen(),
@@ -66,7 +73,12 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
               children: [
                 _buildNavItem(0, Icons.dashboard_rounded, 'home'),
                 _buildNavItem(1, Icons.people_outline_rounded, 'students'),
-                _buildNavItem(2, Icons.chat_bubble_outline_rounded, 'messages', badgeCount: 3),
+                _buildNavItem(
+                  2,
+                  Icons.chat_bubble_outline_rounded,
+                  'messages',
+                  badgeCount: 3,
+                ),
                 _buildNavItem(3, Icons.person_outline_rounded, 'profile'),
               ],
             ),
@@ -76,7 +88,12 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label, {int badgeCount = 0}) {
+  Widget _buildNavItem(
+    int index,
+    IconData icon,
+    String label, {
+    int badgeCount = 0,
+  }) {
     final isSelected = _currentIndex == index;
     return GestureDetector(
       onTap: () {
@@ -96,7 +113,9 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.calmBlue.withValues(alpha: 0.1) : Colors.transparent,
+                    color: isSelected
+                        ? AppColors.calmBlue.withValues(alpha: 0.1)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -110,7 +129,10 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
                     top: 2,
                     right: 0,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.softCoral,
                         borderRadius: BorderRadius.circular(8),
@@ -145,9 +167,60 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
 
 // ─── Dashboard Home (Tab 0) ───
 class _DashboardHome extends StatelessWidget {
+  Widget _buildComingSoonOverlay({required Widget child}) {
+    return Stack(
+      children: [
+        Opacity(opacity: 0.3, child: IgnorePointer(child: child)),
+        Positioned.fill(
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.calmBlueDark.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.rocket_launch_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Coming Soon',
+                    style: AppTypography.caption(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   final Map<String, dynamic>? profile;
   final VoidCallback? onProfileTap;
-  const _DashboardHome({super.key, this.profile, this.onProfileTap});
+  final List<dynamic>? connections;
+  const _DashboardHome({
+    super.key,
+    this.profile,
+    this.onProfileTap,
+    this.connections,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -165,8 +238,9 @@ class _DashboardHome extends StatelessWidget {
               Builder(
                 builder: (context) {
                   final name = profile?['name'] ?? 'Doctor';
-                  final profilePicUrl = profile?['profile_picture_url'] as String?;
-                  
+                  final profilePicUrl =
+                      profile?['profile_picture_url'] as String?;
+
                   // Extract initials safely
                   final parts = name.trim().split(' ');
                   String initials = '?';
@@ -210,17 +284,21 @@ class _DashboardHome extends StatelessWidget {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.calmBlue.withValues(alpha: 0.3),
+                                color: AppColors.calmBlue.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
                             ],
-                            image: profilePicUrl != null && profilePicUrl.isNotEmpty
+                            image:
+                                profilePicUrl != null &&
+                                    profilePicUrl.isNotEmpty
                                 ? DecorationImage(
                                     image: NetworkImage(
                                       profilePicUrl.startsWith('http')
                                           ? profilePicUrl
-                                          : 'https://adaptedmind-auth-api.onrender.com$profilePicUrl'
+                                          : 'https://adaptedmind-auth-api.onrender.com$profilePicUrl',
                                     ),
                                     fit: BoxFit.cover,
                                   )
@@ -230,7 +308,10 @@ class _DashboardHome extends StatelessWidget {
                               ? Center(
                                   child: Text(
                                     initials,
-                                    style: AppTypography.heading(fontSize: 20, color: Colors.white),
+                                    style: AppTypography.heading(
+                                      fontSize: 20,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 )
                               : null,
@@ -241,132 +322,282 @@ class _DashboardHome extends StatelessWidget {
                 },
               ),
 
-              const SizedBox(height: 24),
-
-              // Quick Stats Row
-              Row(
-                children: [
-                  _buildQuickStat('12', 'students', Icons.people_outline_rounded, AppColors.calmBlue),
-                  const SizedBox(width: 10),
-                  _buildQuickStat('3', 'today', Icons.event_available_rounded, AppColors.gentleGreen),
-                  const SizedBox(width: 10),
-                  _buildQuickStat('76%', 'avg score', Icons.insights_rounded, AppColors.warmAmber),
-                  const SizedBox(width: 10),
-                  _buildQuickStat('3', 'messages', Icons.mail_outline_rounded, AppColors.softCoral),
-                ],
+              const SizedBox(height: 32),
+              Text(
+                'assigned students',
+                style: AppTypography.heading(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
-
-              const SizedBox(height: 28),
-
-              // Needs Attention
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'needs attention',
-                    style: AppTypography.heading(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+              const SizedBox(height: 12),
+              if (connections == null || connections!.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.slateBg.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderBlue),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'No students assigned yet.',
+                      style: AppTypography.body(color: AppColors.textSecondary),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                )
+              else
+                ...connections!.map((conn) {
+                  final studentName = conn['student_name'] ?? 'Unknown Student';
+                  final initials = studentName.isNotEmpty
+                      ? studentName[0].toUpperCase()
+                      : '?';
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.softCoral.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.shadow.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      border: Border.all(color: AppColors.borderBlue),
                     ),
-                    child: Text(
-                      '2 flagged',
-                      style: AppTypography.caption(
-                        fontSize: 11,
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.calmBlue.withValues(
+                            alpha: 0.2,
+                          ),
+                          child: Text(
+                            initials,
+                            style: AppTypography.heading(
+                              fontSize: 20,
+                              color: AppColors.calmBlue,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                studentName,
+                                style: AppTypography.heading(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Connected on: ${conn['connected_at'] != null ? conn['connected_at'].split('T')[0] : 'Recently'}',
+                                style: AppTypography.caption(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.gentleGreen.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            conn['status'] ?? 'Active',
+                            style: AppTypography.caption(
+                              color: AppColors.gentleGreen,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+
+              const SizedBox(height: 32),
+
+              _buildComingSoonOverlay(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Quick Stats Row
+                    Row(
+                      children: [
+                        _buildQuickStat(
+                          '12',
+                          'students',
+                          Icons.people_outline_rounded,
+                          AppColors.calmBlue,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildQuickStat(
+                          '3',
+                          'today',
+                          Icons.event_available_rounded,
+                          AppColors.gentleGreen,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildQuickStat(
+                          '76%',
+                          'avg score',
+                          Icons.insights_rounded,
+                          AppColors.warmAmber,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildQuickStat(
+                          '3',
+                          'messages',
+                          Icons.mail_outline_rounded,
+                          AppColors.softCoral,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // Needs Attention
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'needs attention',
+                          style: AppTypography.heading(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.softCoral.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '2 flagged',
+                            style: AppTypography.caption(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.softCoral,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildAlertCard(
+                      context,
+                      name: 'Dinuka Bandara',
+                      avatar: '👦',
+                      issue: 'comprehension score dropped 18% this week',
+                      risk: 'At Risk',
+                      progress: 42,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildAlertCard(
+                      context,
+                      name: 'Ishara Gamage',
+                      avatar: '👧',
+                      issue: 'no sessions completed in 6 days',
+                      risk: 'At Risk',
+                      progress: 50,
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // Recent Activity
+                    Text(
+                      'recent activity',
+                      style: AppTypography.heading(
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.softCoral,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-              _buildAlertCard(
-                context,
-                name: 'Dinuka Bandara',
-                avatar: '👦',
-                issue: 'comprehension score dropped 18% this week',
-                risk: 'At Risk',
-                progress: 42,
-              ),
-              const SizedBox(height: 10),
-              _buildAlertCard(
-                context,
-                name: 'Ishara Gamage',
-                avatar: '👧',
-                issue: 'no sessions completed in 6 days',
-                risk: 'At Risk',
-                progress: 50,
-              ),
+                    _buildActivityItem(
+                      icon: Icons.emoji_events_rounded,
+                      color: AppColors.warmAmber,
+                      title: 'Nethmi Silva reached Level 5!',
+                      subtitle: '2 hours ago',
+                    ),
+                    _buildActivityItem(
+                      icon: Icons.chat_rounded,
+                      color: AppColors.calmBlue,
+                      title: 'New message from Kumari Perera',
+                      subtitle: '3 hours ago',
+                    ),
+                    _buildActivityItem(
+                      icon: Icons.check_circle_rounded,
+                      color: AppColors.gentleGreen,
+                      title: 'Kavitha completed phonics session',
+                      subtitle: 'Yesterday at 4:30 PM',
+                    ),
+                    _buildActivityItem(
+                      icon: Icons.trending_up_rounded,
+                      color: AppColors.gentleGreen,
+                      title: 'Tharindu\'s fluency improved 12%',
+                      subtitle: 'Yesterday at 2:15 PM',
+                    ),
+                    _buildActivityItem(
+                      icon: Icons.person_add_rounded,
+                      color: AppColors.calmBlue,
+                      title: 'New student connected: Ishara G.',
+                      subtitle: '2 days ago',
+                    ),
 
-              const SizedBox(height: 28),
+                    const SizedBox(height: 28),
 
-              // Recent Activity
-              Text(
-                'recent activity',
-                style: AppTypography.heading(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                    // Today's Schedule
+                    Text(
+                      'today\'s schedule',
+                      style: AppTypography.heading(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildScheduleItem(
+                      '9:00 AM',
+                      'Kavitha Perera',
+                      'Phonological Awareness',
+                      AppColors.calmBlue,
+                    ),
+                    _buildScheduleItem(
+                      '10:30 AM',
+                      'Ashan Fernando',
+                      'Reading Fluency',
+                      AppColors.gentleGreen,
+                    ),
+                    _buildScheduleItem(
+                      '2:00 PM',
+                      'Nethmi Silva',
+                      'Comprehension',
+                      AppColors.warmAmber,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-
-              _buildActivityItem(
-                icon: Icons.emoji_events_rounded,
-                color: AppColors.warmAmber,
-                title: 'Nethmi Silva reached Level 5!',
-                subtitle: '2 hours ago',
-              ),
-              _buildActivityItem(
-                icon: Icons.chat_rounded,
-                color: AppColors.calmBlue,
-                title: 'New message from Kumari Perera',
-                subtitle: '3 hours ago',
-              ),
-              _buildActivityItem(
-                icon: Icons.check_circle_rounded,
-                color: AppColors.gentleGreen,
-                title: 'Kavitha completed phonics session',
-                subtitle: 'Yesterday at 4:30 PM',
-              ),
-              _buildActivityItem(
-                icon: Icons.trending_up_rounded,
-                color: AppColors.gentleGreen,
-                title: 'Tharindu\'s fluency improved 12%',
-                subtitle: 'Yesterday at 2:15 PM',
-              ),
-              _buildActivityItem(
-                icon: Icons.person_add_rounded,
-                color: AppColors.calmBlue,
-                title: 'New student connected: Ishara G.',
-                subtitle: '2 days ago',
-              ),
-
-              const SizedBox(height: 28),
-
-              // Today's Schedule
-              Text(
-                'today\'s schedule',
-                style: AppTypography.heading(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              _buildScheduleItem('9:00 AM', 'Kavitha Perera', 'Phonological Awareness', AppColors.calmBlue),
-              _buildScheduleItem('10:30 AM', 'Ashan Fernando', 'Reading Fluency', AppColors.gentleGreen),
-              _buildScheduleItem('2:00 PM', 'Nethmi Silva', 'Comprehension', AppColors.warmAmber),
 
               const SizedBox(height: 40),
             ],
@@ -376,7 +607,12 @@ class _DashboardHome extends StatelessWidget {
     );
   }
 
-  static Widget _buildQuickStat(String value, String label, IconData icon, Color color) {
+  static Widget _buildQuickStat(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
@@ -460,7 +696,9 @@ class _DashboardHome extends StatelessWidget {
                 color: AppColors.slateBg,
                 shape: BoxShape.circle,
               ),
-              child: Center(child: Text(avatar, style: const TextStyle(fontSize: 20))),
+              child: Center(
+                child: Text(avatar, style: const TextStyle(fontSize: 20)),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -554,7 +792,12 @@ class _DashboardHome extends StatelessWidget {
     );
   }
 
-  static Widget _buildScheduleItem(String time, String student, String type, Color color) {
+  static Widget _buildScheduleItem(
+    String time,
+    String student,
+    String type,
+    Color color,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),

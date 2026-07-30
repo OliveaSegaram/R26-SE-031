@@ -115,7 +115,7 @@ async def get_connections(current_user: dict = Depends(get_current_user)):
     db = get_db()
     
     query = {}
-    if current_user.get("role") == "specialist":
+    if current_user.get("role") in ["specialist", "therapist"]:
         query["therapist_id"] = str(current_user["_id"])
     else:
         query["parent_id"] = str(current_user["_id"])
@@ -151,7 +151,7 @@ async def disconnect_specialist(connection_id: str, current_user: dict = Depends
     # We should ensure the user has permission to delete this connection.
     # It must belong to either the parent or the therapist.
     query = {"_id": ObjectId(connection_id)}
-    if current_user.get("role") == "specialist":
+    if current_user.get("role") in ["specialist", "therapist"]:
         query["therapist_id"] = str(current_user["_id"])
     else:
         query["parent_id"] = str(current_user["_id"])
