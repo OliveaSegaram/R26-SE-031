@@ -129,12 +129,20 @@ async def get_connections(current_user: dict = Depends(get_current_user)):
         student = await db.students.find_one({"_id": ObjectId(conn["student_id"])})
         therapist = await db.users.find_one({"_id": ObjectId(conn["therapist_id"])})
         
+        parent = None
+        if student and "parent_id" in student:
+            parent = await db.users.find_one({"_id": ObjectId(student["parent_id"])})
+        
         result.append(TherapistConnectionResponse(
             id=str(conn["_id"]),
             therapist_id=conn["therapist_id"],
             student_id=conn["student_id"],
             student_name=student.get("first_name") if student else "Unknown",
+            student_profile_picture=student.get("profile_picture") if student else None,
             therapist_name=therapist.get("name") if therapist else "Unknown",
+            parent_name=parent.get("name") if parent else None,
+            parent_email=parent.get("email") if parent else None,
+            parent_profile_picture=parent.get("profile_picture_url") if parent else None,
             clinic_name="AdaptedMind Clinic",
             status=conn["status"],
             connected_at=conn["connected_at"]

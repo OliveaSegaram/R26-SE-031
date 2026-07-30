@@ -15,6 +15,10 @@ class TherapistConnectionResponse(BaseModel):
     student_id: str
     student_name: Optional[str] = None
     therapist_name: Optional[str] = None
+    parent_name: Optional[str] = None
+    parent_email: Optional[str] = None
+    parent_profile_picture: Optional[str] = None
+    student_profile_picture: Optional[str] = None
     clinic_name: Optional[str] = None
     status: str = "active"
     connected_at: datetime
