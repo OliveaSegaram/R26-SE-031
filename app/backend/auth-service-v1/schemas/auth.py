@@ -20,6 +20,8 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=50)
     email: Optional[EmailStr] = None
+    specialization: Optional[str] = None
+    clinic_name: Optional[str] = None
 
 
 class UserLogin(BaseModel):

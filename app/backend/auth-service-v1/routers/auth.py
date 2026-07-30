@@ -495,6 +495,10 @@ async def update_me(request: UserUpdate, current_user: dict = Depends(get_curren
     update_data = {}
     if request.name is not None:
         update_data["name"] = request.name.strip()
+    if request.specialization is not None:
+        update_data["specialization"] = request.specialization.strip()
+    if request.clinic_name is not None:
+        update_data["clinic_name"] = request.clinic_name.strip()
         
     if update_data:
         user_doc = await db.users.find_one_and_update(
@@ -511,6 +515,10 @@ async def update_me(request: UserUpdate, current_user: dict = Depends(get_curren
         email=user_doc["email"],
         role=user_doc.get("role", "parent"),
         login_alerts_enabled=user_doc.get("login_alerts_enabled", True),
+        profile_picture_url=user_doc.get("profile_picture_url"),
+        clinic_code=user_doc.get("clinic_code"),
+        specialization=user_doc.get("specialization"),
+        clinic_name=user_doc.get("clinic_name"),
     )
 
 
