@@ -55,6 +55,22 @@
           {"palette": ["yellow_triangle", "blue_circle", "green_square"], "shapes": ["triangle", "circle", "square", "triangle"]},
           {"palette": ["red_square", "blue_square", "green_square"], "shapes": ["square", "square", "square", "square"]}
         ]
+      },
+      {
+        "id": "demo_4",
+        "title": "Sinhala Letter Builder",
+        "description": "Listen to the voiced letter and select the correct base letter and vowel modifier.",
+        "intro_audio_url": "",
+        "file_path": "",
+        "telemetry_tags": ["sinhala", "phonics", "letter_building"],
+        "template_type": "sinhala_letter_builder_demo",
+        "rounds": [
+          {"target": "කා", "correct_akura": "ක", "correct_pillam": "ා", "distractor_akuras": ["ග", "ට", "ප"], "distractor_pillams": ["ි", "ු", "ෙ"]},
+          {"target": "ගි", "correct_akura": "ග", "correct_pillam": "ි", "distractor_akuras": ["ක", "ම", "ර"], "distractor_pillams": ["ා", "ී", "ු"]},
+          {"target": "රු", "correct_akura": "ර", "correct_pillam": "ු", "distractor_akuras": ["ල", "ව", "ස"], "distractor_pillams": ["ා", "ි", "ූ"]},
+          {"target": "තෙ", "correct_akura": "ත", "correct_pillam": "ෙ", "distractor_akuras": ["ප", "ද", "න"], "distractor_pillams": ["ේ", "ො", "ා"]},
+          {"target": "පො", "correct_akura": "ප", "correct_pillam": "ො", "distractor_akuras": ["බ", "ම", "ය"], "distractor_pillams": ["ෝ", "ෙ", "ා"]}
+        ]
       }
     ]
   }

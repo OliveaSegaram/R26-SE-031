@@ -19,6 +19,7 @@ import 'visual_skills/skill_1/activity11_audio_sequence.dart';
 import 'demo/demo_shadow_match.dart';
 import 'demo/demo_math_substitution.dart';
 import 'demo/demo_shape_pattern.dart';
+import 'demo/demo_sinhala_letter_builder.dart';
 
 /// Central factory for constructing dynamic game screen instances based on template_type.
 class GameFactory {
@@ -35,6 +36,9 @@ class GameFactory {
         break;
       case 'shape_pattern_demo':
         gameContent = DemoShapePattern(activityNode: node);
+        break;
+      case 'sinhala_letter_builder_demo':
+        gameContent = DemoSinhalaLetterBuilder(activityNode: node);
         break;
 
       // --- Skill 1 Dedicated Templates ---
