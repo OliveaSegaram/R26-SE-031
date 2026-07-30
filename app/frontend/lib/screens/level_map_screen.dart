@@ -180,7 +180,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
               physics: const BouncingScrollPhysics(),
               child: SizedBox(
                 width: screenWidth,
-                height: levels.length * 120.0 + 160,
+                height: max(MediaQuery.of(context).size.height, levels.length * 120.0 + 160),
                 child: Stack(
                   children: [
                     // Full Background Image
@@ -189,7 +189,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                         'assets/images/backgrounds/map_bg.png',
                         fit: BoxFit.cover,
                         width: screenWidth,
-                        height: levels.length * 120.0 + 160,
+                        height: max(MediaQuery.of(context).size.height, levels.length * 120.0 + 160),
                       ),
                     ),
 

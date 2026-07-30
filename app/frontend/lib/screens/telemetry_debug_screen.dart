@@ -36,37 +36,102 @@ class _TelemetryDebugScreenState extends State<TelemetryDebugScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildSummaryCards(),
-                  const SizedBox(height: 24),
-                  _buildCharts(),
-                  const SizedBox(height: 24),
-                  _buildDataTable(),
+                  _buildCurrentActivitySection(),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24.0),
+                    child: Divider(thickness: 2),
+                  ),
+                  _buildOverallSkillSection(),
                 ],
               ),
             ),
     );
   }
 
-  Widget _buildSummaryCards() {
-    final now = DateTime.now();
-    final abandonedCount = _events.where((e) => e.isAbandoned).length;
-    final totalRounds = _events.length;
+  Widget _buildCurrentActivitySection() {
+    final currentActivityName = _events.last.activityName;
+    final currentEvents = _events.where((e) => e.activityName == currentActivityName).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          "Current Activity: $currentActivityName",
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+        ),
+        const SizedBox(height: 16),
+        _buildSummaryCards(currentEvents),
+        const SizedBox(height: 24),
+        _buildCharts(currentEvents, "Activity"),
+        const SizedBox(height: 24),
+        _buildDataTable(currentEvents),
+      ],
+    );
+  }
+
+  Widget _buildOverallSkillSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          "Overall Skill Performance",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+        ),
+        const SizedBox(height: 16),
+        _buildSummaryCards(_events),
+        const SizedBox(height: 24),
+        _buildCharts(_events, "Overall"),
+        const SizedBox(height: 24),
+        _buildDataTable(_events),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCards(List<TelemetryEvent> events) {
+    final abandonedCount = events.where((e) => e.isAbandoned).length;
+    final totalRounds = events.length;
     
     int totalLatency = 0;
-    for (var e in _events) {
+    int totalAudioReplays = 0;
+    final activityStarts = <String, int>{};
+    
+    for (var e in events) {
       totalLatency += e.totalRoundLatencyMs;
+      totalAudioReplays += e.audioReplayCount;
+      if (e.roundNumber == 1) {
+        activityStarts[e.activityName] = (activityStarts[e.activityName] ?? 0) + 1;
+      }
     }
     final avgLatency = totalRounds > 0 ? (totalLatency / totalRounds / 1000).toStringAsFixed(1) : '0';
 
-    return Row(
+    int activityReplays = 0;
+    for (var starts in activityStarts.values) {
+      if (starts > 1) {
+        activityReplays += (starts - 1);
+      }
+    }
+
+    return Column(
       children: [
-        _summaryCard('Date & Time', DateFormat('yyyy-MM-dd HH:mm').format(now), Icons.calendar_today),
-        const SizedBox(width: 8),
-        _summaryCard('Rounds Logged', '$totalRounds', Icons.gamepad),
-        const SizedBox(width: 8),
-        _summaryCard('Avg Time (s)', avgLatency, Icons.timer),
-        const SizedBox(width: 8),
-        _summaryCard('Abandonments', '$abandonedCount', Icons.exit_to_app, color: AppColors.softCoral),
+        Row(
+          children: [
+            _summaryCard('Rounds', '$totalRounds', Icons.gamepad),
+            const SizedBox(width: 8),
+            _summaryCard('Avg Time (s)', avgLatency, Icons.timer),
+            const SizedBox(width: 8),
+            _summaryCard('Act. Replays', '$activityReplays', Icons.replay_circle_filled, color: AppColors.primary),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _summaryCard('Abandonments', '$abandonedCount', Icons.exit_to_app, color: AppColors.softCoral),
+            const SizedBox(width: 8),
+            _summaryCard('Audio Replays', '$totalAudioReplays', Icons.volume_up, color: AppColors.warmAmber),
+            const SizedBox(width: 8),
+            const Expanded(child: SizedBox()),
+          ],
+        )
       ],
     );
   }
@@ -92,60 +157,90 @@ class _TelemetryDebugScreenState extends State<TelemetryDebugScreen> {
     );
   }
 
-  Widget _buildCharts() {
-    if (_events.length < 2) {
+  Widget _buildCharts(List<TelemetryEvent> events, String titlePrefix) {
+    if (events.length < 2) {
       return const Text("Need at least 2 rounds to show charts.");
     }
 
     final scoreSpots = <FlSpot>[];
     final latencySpots = <FlSpot>[];
     
-    for (int i = 0; i < _events.length; i++) {
-      scoreSpots.add(FlSpot(i.toDouble(), _events[i].score.toDouble()));
-      latencySpots.add(FlSpot(i.toDouble(), _events[i].totalRoundLatencyMs / 1000.0));
+    for (int i = 0; i < events.length; i++) {
+      scoreSpots.add(FlSpot(i.toDouble(), events[i].score.toDouble()));
+      latencySpots.add(FlSpot(i.toDouble(), events[i].totalRoundLatencyMs / 1000.0));
     }
 
-    return Container(
-      height: 300,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        children: [
-          const Text("Score vs Time (s)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 16),
-          Expanded(
-            child: LineChart(
-              LineChartData(
-                minY: 0,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: scoreSpots,
-                    isCurved: true,
-                    color: AppColors.gentleGreen,
-                    barWidth: 3,
-                    dotData: const FlDotData(show: true),
-                  ),
-                  LineChartBarData(
-                    spots: latencySpots,
-                    isCurved: true,
-                    color: AppColors.warmAmber,
-                    barWidth: 3,
-                    dotData: const FlDotData(show: true),
-                  ),
-                ],
-              ),
-            ),
+    return Column(
+      children: [
+        Container(
+          height: 200,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderLight),
           ),
-        ],
-      ),
+          child: Column(
+            children: [
+              Text("$titlePrefix Score", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 16),
+              Expanded(
+                child: LineChart(
+                  LineChartData(
+                    minY: 0,
+                    maxY: 100,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: scoreSpots,
+                        isCurved: false,
+                        color: AppColors.gentleGreen,
+                        barWidth: 3,
+                        dotData: const FlDotData(show: true),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          height: 200,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: Column(
+            children: [
+              Text("$titlePrefix Latency (s)", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 16),
+              Expanded(
+                child: LineChart(
+                  LineChartData(
+                    minY: 0,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: latencySpots,
+                        isCurved: false,
+                        color: AppColors.warmAmber,
+                        barWidth: 3,
+                        dotData: const FlDotData(show: true),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildDataTable() {
+  Widget _buildDataTable(List<TelemetryEvent> events) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -166,7 +261,7 @@ class _TelemetryDebugScreenState extends State<TelemetryDebugScreen> {
             DataColumn(label: Text('Max Motion')),
             DataColumn(label: Text('Abandoned')),
           ],
-          rows: _events.map((e) {
+          rows: events.map((e) {
             return DataRow(
               cells: [
                 DataCell(Text(e.activityName)),
