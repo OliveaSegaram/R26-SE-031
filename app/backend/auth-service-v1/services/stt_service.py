@@ -1,6 +1,3 @@
-import torch
-from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
-import librosa
 import io
 import soundfile as sf
 import tempfile
@@ -10,7 +7,10 @@ MODEL_NAME = "AqeelShafy7/Whisper-Sinhala_Audio_to_Text"
 
 class STTService:
     def __init__(self):
-        # The model will download on the first initialization
+        import torch
+        from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq
+        
+        self.torch = torch
         self.processor = AutoProcessor.from_pretrained(MODEL_NAME)
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(MODEL_NAME)
         self.model.eval()
@@ -19,6 +19,7 @@ class STTService:
         """
         Process the uploaded audio bytes, resample to 16kHz, and transcribe to Sinhala text.
         """
+        import librosa
         try:
             # Save bytes to a temp file to let librosa handle format decoding easily
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
@@ -34,7 +35,7 @@ class STTService:
                 
             inputs = self.processor(audio_data, sampling_rate=16000, return_tensors="pt")
             
-            with torch.no_grad():
+            with self.torch.no_grad():
                 output = self.model.generate(**inputs)
                 
             return self.processor.batch_decode(output, skip_special_tokens=True)[0]
