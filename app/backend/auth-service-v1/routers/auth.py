@@ -74,6 +74,8 @@ async def signup(request: Request, user: UserCreate, background_tasks: Backgroun
         "hashed_password": hashed_password,
         "role": user.role or "parent",
         "auth_provider": "local",
+        "specialization": user.specialization,
+        "clinic_name": user.clinic_name,
     }
 
     # Store OTP and pending user info
@@ -95,9 +97,21 @@ async def signup(request: Request, user: UserCreate, background_tasks: Backgroun
 
 from schemas.auth import VerifyEmailRequest
 
+
+@router.delete("/cancel-signup/{email}")
+async def cancel_signup(email: str):
+    db = get_db()
+    email = email.lower()
+    user = await db.users.find_one({"email": email})
+    if user and user.get("is_verified"):
+        return {"status": "already verified"}
+    await db.otps.delete_one({"email": email})
+    return {"status": "deleted"}
+
 @router.post("/verify-email", response_model=Token)
+
 @limiter.limit("5/minute")
-async def verify_email(request: Request, req: VerifyEmailRequest):
+async def verify_email(request: Request, req: VerifyEmailRequest, background_tasks: BackgroundTasks):
     """Verify email via OTP and return JWT tokens on success."""
     db = get_db()
     email = req.email.lower()
@@ -130,6 +144,11 @@ async def verify_email(request: Request, req: VerifyEmailRequest):
             "role": pending["role"],
             "is_verified": True
         }
+        
+        if pending.get("specialization"):
+            user_doc["specialization"] = pending["specialization"]
+        if pending.get("clinic_name"):
+            user_doc["clinic_name"] = pending["clinic_name"]
         
         if pending.get("role") == "specialist":
             import random
@@ -168,7 +187,7 @@ async def verify_email(request: Request, req: VerifyEmailRequest):
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
+    await _handle_login_alert(db, user_doc, request, background_tasks, None, None)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
@@ -235,6 +254,13 @@ async def login(request: Request, user: UserLogin, background_tasks: BackgroundT
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
+    if user_doc.get("role") != user.role:
+        expected = "Therapist" if user_doc.get("role") == "specialist" else "Parent"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This email is registered as a {expected}. Please select {expected} to log in."
+        )
 
     if user_doc.get("auth_provider", "local") != "local" or not user_doc.get("hashed_password"):
         raise HTTPException(
@@ -264,7 +290,7 @@ async def login(request: Request, user: UserLogin, background_tasks: BackgroundT
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
+    await _handle_login_alert(db, user_doc, request, background_tasks, None, None)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 @router.post("/google", response_model=Token)
@@ -294,15 +320,39 @@ async def google_login(request: Request, login_req: GoogleLoginRequest, backgrou
     # Check if user already exists
     user_doc = await db.users.find_one({"email": email})
     
+    if user_doc and user_doc.get("role") != login_req.role:
+        expected = "Therapist" if user_doc.get("role") == "specialist" else "Parent"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This email is registered as a {expected}. Please select {expected} to log in."
+        )
+        
+    if user_doc and user_doc.get("role") != login_req.role:
+        expected = "Therapist" if user_doc.get("role") == "specialist" else "Parent"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This email is registered as a {expected}. Please select {expected} to log in."
+        )
+        
     if not user_doc:
         # Implicitly sign up the user
         user_doc = {
             "name": name,
             "email": email,
             "hashed_password": None,
-            "role": "parent",
+            "role": login_req.role or "parent",
             "auth_provider": "google",
         }
+        if login_req.specialization:
+            user_doc["specialization"] = login_req.specialization
+        if login_req.clinic_name:
+            user_doc["clinic_name"] = login_req.clinic_name
+            
+        if user_doc["role"] == "specialist":
+            import random
+            import string
+            user_doc["clinic_code"] = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            
         result = await db.users.insert_one(user_doc)
         user_id = str(result.inserted_id)
     else:
@@ -348,15 +398,39 @@ async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest, ba
     # Check if user already exists
     user_doc = await db.users.find_one({"email": email})
     
+    if user_doc and user_doc.get("role") != login_req.role:
+        expected = "Therapist" if user_doc.get("role") == "specialist" else "Parent"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This email is registered as a {expected}. Please select {expected} to log in."
+        )
+        
+    if user_doc and user_doc.get("role") != login_req.role:
+        expected = "Therapist" if user_doc.get("role") == "specialist" else "Parent"
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"This email is registered as a {expected}. Please select {expected} to log in."
+        )
+        
     if not user_doc:
         # Implicitly sign up the user
         user_doc = {
             "name": name,
             "email": email,
             "hashed_password": None,
-            "role": "parent",
+            "role": login_req.role or "parent",
             "auth_provider": "microsoft",
         }
+        if login_req.specialization:
+            user_doc["specialization"] = login_req.specialization
+        if login_req.clinic_name:
+            user_doc["clinic_name"] = login_req.clinic_name
+            
+        if user_doc["role"] == "specialist":
+            import random
+            import string
+            user_doc["clinic_code"] = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            
         result = await db.users.insert_one(user_doc)
         user_id = str(result.inserted_id)
     else:
@@ -377,7 +451,7 @@ async def microsoft_login(request: Request, login_req: MicrosoftLoginRequest, ba
 
 @router.post("/refresh", response_model=Token)
 @limiter.limit("10/minute")
-async def refresh_token_endpoint(request: Request, token_req: TokenRefreshRequest):
+async def refresh_token_endpoint(request: Request, token_req: TokenRefreshRequest, background_tasks: BackgroundTasks):
     """Exchange a refresh token for new access + refresh tokens."""
     decoded = verify_token(token_req.refresh_token)
     if not decoded or decoded.get("type") != "refresh":
@@ -395,7 +469,7 @@ async def refresh_token_endpoint(request: Request, token_req: TokenRefreshReques
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
+    await _handle_login_alert(db, user_doc, request, background_tasks, None, None)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
@@ -409,6 +483,9 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         role=current_user.get("role", "parent"),
         login_alerts_enabled=current_user.get("login_alerts_enabled", True),
         profile_picture_url=current_user.get("profile_picture_url"),
+        clinic_code=current_user.get("clinic_code"),
+        specialization=current_user.get("specialization"),
+        clinic_name=current_user.get("clinic_name"),
     )
 @router.put("/me", response_model=UserResponse)
 async def update_me(request: UserUpdate, current_user: dict = Depends(get_current_user)):
@@ -418,6 +495,10 @@ async def update_me(request: UserUpdate, current_user: dict = Depends(get_curren
     update_data = {}
     if request.name is not None:
         update_data["name"] = request.name.strip()
+    if request.specialization is not None:
+        update_data["specialization"] = request.specialization.strip()
+    if request.clinic_name is not None:
+        update_data["clinic_name"] = request.clinic_name.strip()
         
     if update_data:
         user_doc = await db.users.find_one_and_update(
@@ -434,6 +515,10 @@ async def update_me(request: UserUpdate, current_user: dict = Depends(get_curren
         email=user_doc["email"],
         role=user_doc.get("role", "parent"),
         login_alerts_enabled=user_doc.get("login_alerts_enabled", True),
+        profile_picture_url=user_doc.get("profile_picture_url"),
+        clinic_code=user_doc.get("clinic_code"),
+        specialization=user_doc.get("specialization"),
+        clinic_name=user_doc.get("clinic_name"),
     )
 
 
@@ -504,7 +589,7 @@ async def verify_email_update(req: VerifyEmailUpdate, current_user: dict = Depen
     refresh_token = create_refresh_token(data=token_data)
 
 
-    await _handle_login_alert(db, user_doc, request, background_tasks, user.device_id, user.device_name)
+    await _handle_login_alert(db, user_doc, request, background_tasks, None, None)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 

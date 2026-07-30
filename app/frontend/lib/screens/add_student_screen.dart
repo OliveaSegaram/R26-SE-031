@@ -319,16 +319,19 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                                       'avatar_url': _selectedAvatarUrl,
                                     };
 
-                                    if (widget.editStudentData == null) {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => ConsentScreen(
-                                            studentData: studentData,
+                                      if (widget.editStudentData == null) {
+                                        final result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ConsentScreen(
+                                              studentData: studentData,
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    } else {
+                                        );
+                                        if (result == true && mounted) {
+                                          Navigator.pop(context);
+                                        }
+                                      } else {
                                       setState(() {
                                         _isLoading = true;
                                       });

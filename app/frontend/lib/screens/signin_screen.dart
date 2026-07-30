@@ -5,6 +5,7 @@ import '../widgets/monster_character.dart';
 import '../services/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'select_student_screen.dart';
+import 'therapist/therapist_dashboard_screen.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -24,6 +25,7 @@ class _SignInScreenState extends State<SignInScreen>
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  String _selectedRole = "Parent";
 
 
 
@@ -52,6 +54,7 @@ class _SignInScreenState extends State<SignInScreen>
     final error = await AuthService().login(
       _emailController.text.trim(),
       _passwordController.text,
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
     );
 
     if (!mounted) return;
@@ -62,8 +65,12 @@ class _SignInScreenState extends State<SignInScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
+      final profile = await AuthService().getUserProfile();
+      if (!mounted) return;
+      final isTherapist = profile != null && profile['role'] == 'specialist';
+      
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const SelectStudentScreen()),
+        MaterialPageRoute(builder: (context) => isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen()),
         (Route<dynamic> route) => false,
       );
     }
@@ -72,7 +79,9 @@ class _SignInScreenState extends State<SignInScreen>
   Future<void> _onGoogleSignIn() async {
     setState(() => _isLoading = true);
 
-    final error = await AuthService().loginWithGoogle();
+    final error = await AuthService().loginWithGoogle(
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
+    );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -84,8 +93,12 @@ class _SignInScreenState extends State<SignInScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
+      final profile = await AuthService().getUserProfile();
+      if (!mounted) return;
+      final isTherapist = profile != null && profile['role'] == 'specialist';
+      
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const SelectStudentScreen()),
+        MaterialPageRoute(builder: (_) => isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen()),
         (Route<dynamic> route) => false,
       );
     }
@@ -94,7 +107,9 @@ class _SignInScreenState extends State<SignInScreen>
   Future<void> _onMicrosoftSignIn() async {
     setState(() => _isLoading = true);
     
-    final error = await AuthService().loginWithMicrosoft();
+    final error = await AuthService().loginWithMicrosoft(
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
+    );
     
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -106,8 +121,12 @@ class _SignInScreenState extends State<SignInScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
+      final profile = await AuthService().getUserProfile();
+      if (!mounted) return;
+      final isTherapist = profile != null && profile['role'] == 'specialist';
+      
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const SelectStudentScreen()),
+        MaterialPageRoute(builder: (_) => isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen()),
         (Route<dynamic> route) => false,
       );
     }
@@ -204,6 +223,52 @@ class _SignInScreenState extends State<SignInScreen>
                     ),
                     child: Column(
                       children: [
+                        // Role Toggle
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.cream,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
+                          child: Row(
+                            children: ["Parent", "Therapist"].map((role) {
+                              final isSelected = _selectedRole == role;
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _selectedRole = role),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? AppColors.calmBlue : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: isSelected ? [
+                                        BoxShadow(
+                                          color: AppColors.calmBlueDark.withValues(alpha: 0.2),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        )
+                                      ] : [],
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        role,
+                                        style: AppTypography.body(
+                                          fontSize: 15,
+                                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
                         // Email input
                         TextFormField(
                           controller: _emailController,

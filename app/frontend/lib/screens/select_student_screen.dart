@@ -145,11 +145,12 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
           const Spacer(),
           // Settings / Parent account
           GestureDetector(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ParentHubScreen()),
               );
+              _loadStudents();
             },
             child: Container(
               width: 52,
@@ -327,11 +328,12 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
         text: 'add student',
         icon: Icons.person_add_rounded,
         gradient: AppColors.greenGradient,
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddStudentScreen()),
           );
+          _loadStudents();
         },
       ),
     );

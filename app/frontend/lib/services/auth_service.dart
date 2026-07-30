@@ -49,7 +49,7 @@ class AuthService {
     return {'device_id': deviceId, 'device_name': deviceName};
   }
   /// Returns null on success, or an error message string on failure.
-  Future<String?> login(String email, String password) async {
+  Future<String?> login(String email, String password, {String role = "parent"}) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/login'),
@@ -59,6 +59,7 @@ class AuthService {
           'password': password,
           'device_id': (await _getDeviceData())['device_id'],
           'device_name': (await _getDeviceData())['device_name'],
+          'role': role,
         }),
       );
 
@@ -89,7 +90,7 @@ class AuthService {
     }
   }
   /// Returns null on success, or an error message string on failure.
-  Future<String?> loginWithGoogle() async {
+  Future<String?> loginWithGoogle({String role = "parent", String? specialization, String? clinicName}) async {
     try {
       await GoogleSignIn.instance.initialize(
         serverClientId: '733315696908-tpau04bmsk824olg6m0a3coanojl147v.apps.googleusercontent.com',
@@ -112,6 +113,9 @@ class AuthService {
           'id_token': idToken,
           'device_id': deviceData['device_id'],
           'device_name': deviceData['device_name'],
+          'role': role,
+          if (specialization != null) 'specialization': specialization,
+          if (clinicName != null) 'clinic_name': clinicName,
         }),
       );
 
@@ -139,7 +143,7 @@ class AuthService {
     }
   }
   /// Returns null on success, or an error message string on failure.
-  Future<String?> loginWithMicrosoft() async {
+  Future<String?> loginWithMicrosoft({String role = "parent", String? specialization, String? clinicName}) async {
     try {
       final Config config = Config(
         tenant: 'common', // We will keep 'common' so any Microsoft account can log in
@@ -179,6 +183,9 @@ class AuthService {
           'access_token': accessToken,
           'device_id': deviceData['device_id'],
           'device_name': deviceData['device_name'],
+          'role': role,
+          if (specialization != null) 'specialization': specialization,
+          if (clinicName != null) 'clinic_name': clinicName,
         }),
       );
 
@@ -206,7 +213,7 @@ class AuthService {
     }
   }
   /// Returns null on success, or an error message string on failure.
-  Future<String?> signup(String name, String email, String password) async {
+  Future<String?> signup(String name, String email, String password, {String role = "parent", String? specialization, String? clinicName}) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/signup'),
@@ -215,7 +222,9 @@ class AuthService {
           'name': name.trim(),
           'email': email.trim(),
           'password': password,
-          'role': 'parent',
+          'role': role,
+          if (specialization != null) 'specialization': specialization,
+          if (clinicName != null) 'clinic_name': clinicName,
         }),
       );
 
@@ -276,34 +285,15 @@ class AuthService {
       return 'Network Error: $e';
     }
   }
-  /// Connect a specialist to a student
-  Future<String?> connectSpecialist(String clinicCode, String studentId) async {
+  /// Cancel a pending signup
+  Future<void> cancelSignup(String email) async {
     try {
-      final token = await getAccessToken();
-      if (token == null) return 'Not authenticated';
-
-      final response = await http.post(
-        Uri.parse('https://sipsara-auth-api.onrender.com/api/v1/specialists/connect'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'clinic_code': clinicCode,
-          'student_id': studentId,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        return null; // Success
-      } else {
-        final data = jsonDecode(response.body);
-        return data['detail'] ?? 'Failed to connect specialist.';
-      }
+      await http.delete(Uri.parse('$_baseUrl/cancel-signup/$email'));
     } catch (e) {
-      return 'Network Error: $e';
+      print('Cancel signup failed: $e');
     }
   }
+
   /// Helper to get the token
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -337,7 +327,7 @@ class AuthService {
     }
   }
   /// Update Profile (Name/Email)
-  Future<String?> updateProfile({String? name, String? email}) async {
+  Future<String?> updateProfile({String? name, String? email, String? specialization, String? clinicName}) async {
     try {
       final token = await getAccessToken();
       if (token == null) return 'Not authenticated.';
@@ -345,6 +335,8 @@ class AuthService {
       final Map<String, dynamic> body = {};
       if (name != null) body['name'] = name;
       if (email != null) body['email'] = email;
+      if (specialization != null) body['specialization'] = specialization;
+      if (clinicName != null) body['clinic_name'] = clinicName;
 
       final response = await http.put(
         Uri.parse('$_baseUrl/me'),
@@ -608,7 +600,6 @@ class AuthService {
       throw Exception(error['detail'] ?? 'Failed to update login alerts');
     }
   }
-
   // Upload Profile Picture
   Future<String> uploadProfilePicture(File imageFile) async {
     final token = await getAccessToken();
@@ -640,7 +631,6 @@ class AuthService {
       throw Exception('Failed to upload profile picture: ${response.body}');
     }
   }
-
   // Delete Profile Picture
   Future<void> deleteProfilePicture() async {
     final token = await getAccessToken();
@@ -655,6 +645,81 @@ class AuthService {
 
     if (response.statusCode != 200) {
       throw Exception('Failed to delete profile picture: ${response.body}');
+    }
+  }
+  // Connect Specialist
+  Future<String?> connectSpecialist(String clinicCode, String studentId) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'Not authenticated';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/therapist/connect'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'clinic_code': clinicCode,
+          'student_id': studentId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return null;
+      } else {
+        final body = jsonDecode(response.body);
+        return body['detail'] ?? 'Failed to connect';
+      }
+    } catch (e) {
+      return e.toString();
+    }
+  }
+  // Disconnect a specialist
+  Future<String?> disconnectSpecialist(String connectionId) async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return 'No auth token';
+
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/therapist/disconnect/$connectionId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return null; // success
+      }
+      
+      final data = jsonDecode(response.body);
+      return data['detail'] ?? 'Failed to disconnect';
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // Get Therapist Connections
+  Future<List<dynamic>> getConnections() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) return [];
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/therapist/connections'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 }

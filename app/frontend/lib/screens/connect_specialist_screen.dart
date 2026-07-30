@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
 import '../services/student_service.dart';
 import 'consent_specialist_screen.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 class ConnectSpecialistScreen extends StatefulWidget {
   const ConnectSpecialistScreen({super.key});
@@ -23,13 +24,48 @@ class _ConnectSpecialistScreenState extends State<ConnectSpecialistScreen> {
     _loadStudents();
   }
 
+  void _openQrScanner() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: const IconThemeData(color: AppColors.textPrimary),
+            title: Text('scan clinic code', style: AppTypography.heading(fontSize: 18)),
+          ),
+          body: Builder(
+            builder: (context) {
+              bool hasScanned = false;
+              return MobileScanner(
+                onDetect: (capture) {
+                  if (hasScanned) return;
+                  final List<Barcode> barcodes = capture.barcodes;
+                  for (final barcode in barcodes) {
+                    if (barcode.rawValue != null && barcode.rawValue!.length == 6) {
+                      hasScanned = true;
+                      _codeController.text = barcode.rawValue!;
+                      Navigator.pop(context); // Close scanner
+                      break;
+                    }
+                  }
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _loadStudents() async {
     final students = await StudentService().getStudents();
     if (mounted) {
       setState(() {
         _students = students;
         if (_students.isNotEmpty) {
-          _selectedStudentId = _students.first['_id'];
+          _selectedStudentId = _students.first['id'];
         }
         _isLoading = false;
       });
@@ -89,6 +125,16 @@ class _ConnectSpecialistScreenState extends State<ConnectSpecialistScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () => _openQrScanner(),
+                      icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.calmBlue),
+                      label: Text('or scan QR code', style: AppTypography.button(fontSize: 14, color: AppColors.calmBlue)),
+                    ),
+                  ),
+                  
                   const SizedBox(height: 24),
                   
                   if (_students.isNotEmpty) ...[
@@ -107,7 +153,7 @@ class _ConnectSpecialistScreenState extends State<ConnectSpecialistScreen> {
                           isExpanded: true,
                           items: _students.map((student) {
                             return DropdownMenuItem<String>(
-                              value: student['_id'],
+                              value: student['id'],
                               child: Text(student['first_name'] ?? 'student', style: AppTypography.body(fontSize: 16)),
                             );
                           }).toList(),

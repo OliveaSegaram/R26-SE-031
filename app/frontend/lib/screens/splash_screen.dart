@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'welcome_screen.dart';
+import 'therapist/therapist_dashboard_screen.dart';
 import 'select_student_screen.dart';
 import '../services/auth_service.dart';
 
@@ -50,10 +51,15 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted) return;
 
       if (token != null) {
+        final profile = await AuthService().getUserProfile();
+        if (!mounted) return;
+        
+        final isTherapist = profile != null && profile['role'] == 'therapist';
+        
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                const SelectStudentScreen(),
+                isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);

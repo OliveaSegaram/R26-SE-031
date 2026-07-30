@@ -32,6 +32,16 @@ class _ParentHubScreenState extends State<ParentHubScreen>
   List<dynamic> _students = [];
   String? _selectedAssessmentStudentId;
 
+  String get _initials {
+    final parts = _parentName.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      return parts[0][0].toUpperCase();
+    }
+    return 'P';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -206,7 +216,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
               child: _profilePictureUrl == null || _profilePictureUrl!.isEmpty
                   ? Center(
                       child: Text(
-                        _parentName.isNotEmpty ? _parentName[0].toUpperCase() : 'P',
+                        _initials,
                         style: AppTypography.heading(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,

@@ -8,6 +8,7 @@ import '../add_student_screen.dart';
 import '../dashboard_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/student_service.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 /// Parent Account Screen — Frontend Redesign with World-Class UX
 class ParentSettingsScreen extends StatefulWidget {
@@ -362,11 +363,11 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
               if (_isSocialLogin)
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
-                  child: Icon(
+                  child: FaIcon(
                     _authProvider == 'google'
-                        ? Icons.g_mobiledata_rounded
-                        : Icons.window_rounded,
-                    size: 18,
+                        ? FontAwesomeIcons.google
+                        : FontAwesomeIcons.microsoft,
+                    size: 14,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -1849,126 +1850,188 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
     );
   }
 
-  void _showDeleteStudentDialog(
-      Map<String, dynamic> student) async {
-    final studentName = student['first_name'] ?? 'this student';
-    final studentId = student['id'];
-
+  void _showDeleteStudentDialog(Map<String, dynamic> student) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) {
-        bool isDeleting = false;
-        String? deleteError;
+      builder: (ctx) => _DeleteStudentDialog(
+        student: student,
+        onDeleted: () {
+          // Trigger the magic disappear effect!
+          setState(() {
+            _deletingStudentIds.add(student['id']);
+          });
 
-        return StatefulBuilder(builder: (ctx, setDialogState) {
-          return AlertDialog(
-            backgroundColor: AppColors.warmWhite,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20)),
-            title: Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded,
-                    color: Colors.redAccent, size: 28),
-                const SizedBox(width: 12),
-                Text('delete student?',
-                    style: AppTypography.heading(
-                        fontSize: 20, color: Colors.redAccent)),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'are you absolutely sure you want to delete $studentName? this action cannot be undone and all learning progress will be lost permanently.',
-                  style: AppTypography.body(
-                      fontSize: 15, color: AppColors.textPrimary),
-                ),
-                if (deleteError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(deleteError!,
-                        style: AppTypography.body(
-                            fontSize: 13, color: Colors.redAccent)),
-                  ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed:
-                    isDeleting ? null : () => Navigator.pop(ctx),
-                child: Text('cancel',
-                    style: AppTypography.body(
-                        fontSize: 14,
-                        color: AppColors.textSecondary)),
-              ),
-              ElevatedButton(
-                onPressed: isDeleting
-                    ? null
-                    : () async {
-                        setDialogState(() {
-                          isDeleting = true;
-                          deleteError = null;
-                        });
+          // Wait for the poof animation to finish before removing from list
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (!mounted) return;
+            setState(() {
+              _students.removeWhere((s) => s['id'] == student['id']);
+              _deletingStudentIds.remove(student['id']);
+            });
+          });
+        },
+      ),
+    );
+  }
+}
 
-                        final error = await StudentService()
-                            .deleteStudent(studentId);
+class _DeleteStudentDialog extends StatefulWidget {
+  final Map<String, dynamic> student;
+  final VoidCallback onDeleted;
 
-                        if (error != null) {
-                          setDialogState(() {
-                            isDeleting = false;
-                            deleteError = error;
-                          });
-                        } else {
-                          if (!ctx.mounted) return;
-                          Navigator.pop(ctx); // Close dialog first
+  const _DeleteStudentDialog({
+    required this.student,
+    required this.onDeleted,
+  });
 
-                          // Trigger the magic disappear effect!
-                          this.setState(() {
-                            _deletingStudentIds.add(studentId);
-                          });
+  @override
+  State<_DeleteStudentDialog> createState() => _DeleteStudentDialogState();
+}
 
-                          // Wait for the poof animation to finish before removing from list
-                          await Future.delayed(
-                              const Duration(milliseconds: 500));
+class _DeleteStudentDialogState extends State<_DeleteStudentDialog> {
+  bool _isDeleting = false;
+  String? _deleteError;
+  bool? _isConnected;
 
-                          if (!mounted) return;
-                          this.setState(() {
-                            _students.removeWhere(
-                                (s) => s['id'] == studentId);
-                            _deletingStudentIds.remove(studentId);
-                          });
+  @override
+  void initState() {
+    super.initState();
+    _checkConnections();
+  }
 
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  '$studentName deleted successfully.'),
-                              backgroundColor:
-                                  AppColors.gentleGreen,
-                            ),
-                          );
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: isDeleting
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2))
-                    : Text('delete forever',
-                        style: AppTypography.button(fontSize: 14)),
-              ),
-            ],
-          );
+  Future<void> _checkConnections() async {
+    try {
+      final connections = await AuthService().getConnections();
+      if (!mounted) return;
+      setState(() {
+        _isConnected = connections.any((c) {
+          final cId = c['student_id']?.toString() ?? '';
+          final sId = widget.student['id']?.toString() ?? 'unknown';
+          
+          // Fallback to name matching if the hosted backend doesn't return student_id
+          final cName = c['student_name']?.toString() ?? '';
+          final sName = widget.student['first_name']?.toString() ?? 'unknown';
+          
+          return (cId.isNotEmpty && cId == sId) || (cName.isNotEmpty && cName == sName);
         });
-      },
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isConnected = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final studentName = widget.student['first_name'] ?? 'this student';
+    final studentId = widget.student['id'];
+
+    return AlertDialog(
+      backgroundColor: AppColors.warmWhite,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 28),
+          const SizedBox(width: 12),
+          Text('delete student?', style: AppTypography.heading(fontSize: 20, color: Colors.redAccent)),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'are you absolutely sure you want to delete $studentName? this action cannot be undone and all learning progress will be lost permanently.',
+            style: AppTypography.body(fontSize: 15, color: AppColors.textPrimary),
+          ),
+          if (_isConnected == null)
+            const Padding(
+              padding: EdgeInsets.only(top: 16),
+              child: SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warmAmber),
+              ),
+            ),
+          if (_isConnected == true)
+            Container(
+              margin: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.warmAmber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.warmAmber.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.warning_amber_rounded, size: 20, color: AppColors.warmAmber),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'this student is connected to a therapist. deleting them will permanently break that connection.',
+                      style: AppTypography.body(fontSize: 14, color: AppColors.textPrimary).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (_deleteError != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(_deleteError!, style: AppTypography.body(fontSize: 13, color: Colors.redAccent)),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isDeleting ? null : () => Navigator.pop(context),
+          child: Text('cancel', style: AppTypography.body(fontSize: 14, color: AppColors.textSecondary)),
+        ),
+        ElevatedButton(
+          onPressed: _isDeleting
+              ? null
+              : () async {
+                  setState(() {
+                    _isDeleting = true;
+                    _deleteError = null;
+                  });
+
+                  final error = await StudentService().deleteStudent(studentId);
+
+                  if (!mounted) return;
+                  if (error != null) {
+                    setState(() {
+                      _isDeleting = false;
+                      _deleteError = error;
+                    });
+                  } else {
+                    Navigator.pop(context); // Close dialog
+                    widget.onDeleted();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('$studentName deleted successfully.'),
+                        backgroundColor: AppColors.gentleGreen,
+                      ),
+                    );
+                  }
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.redAccent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: _isDeleting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                )
+              : Text('delete', style: AppTypography.button(fontSize: 14)),
+        ),
+      ],
     );
   }
 
