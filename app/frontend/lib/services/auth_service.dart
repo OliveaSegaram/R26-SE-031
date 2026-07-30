@@ -327,7 +327,7 @@ class AuthService {
     }
   }
   /// Update Profile (Name/Email)
-  Future<String?> updateProfile({String? name, String? email}) async {
+  Future<String?> updateProfile({String? name, String? email, String? specialization, String? clinicName}) async {
     try {
       final token = await getAccessToken();
       if (token == null) return 'Not authenticated.';
@@ -335,6 +335,8 @@ class AuthService {
       final Map<String, dynamic> body = {};
       if (name != null) body['name'] = name;
       if (email != null) body['email'] = email;
+      if (specialization != null) body['specialization'] = specialization;
+      if (clinicName != null) body['clinic_name'] = clinicName;
 
       final response = await http.put(
         Uri.parse('$_baseUrl/me'),
