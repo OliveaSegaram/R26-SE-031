@@ -193,13 +193,13 @@ class _AssessmentPromptScreenState extends State<AssessmentPromptScreen>
                         const SizedBox(height: 8),
 
                         // Benefits row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 10,
+                          runSpacing: 10,
                           children: [
                             _buildBenefitChip(Icons.auto_awesome_rounded, 'personalized'),
-                            const SizedBox(width: 10),
                             _buildBenefitChip(Icons.timer_rounded, '2 min'),
-                            const SizedBox(width: 10),
                             _buildBenefitChip(Icons.lock_rounded, 'private'),
                           ],
                         ),

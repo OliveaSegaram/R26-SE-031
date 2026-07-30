@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from bson.objectid import ObjectId
 
 from shared.database import get_db
-from schemas.students import StudentCreate, StudentUpdate, StudentResponse, AssessmentSubmit, ProgressSyncRequest
+from schemas.students import StudentCreate, StudentUpdate, StudentResponse, AssessmentSubmit, ProgressSyncRequest, ComprehensiveAssessmentSubmit
 from services.auth_utils import verify_password
 from dependencies import get_current_user
 
@@ -39,6 +39,7 @@ async def add_student(request: StudentCreate, current_user: dict = Depends(get_c
         "grade": "Grade 1",  # Locked to Grade 1
         "daily_limit": request.daily_limit,
         "assessment_results": request.assessment_results,
+        "comprehensive_assessment_results": request.comprehensive_assessment_results,
         "avatar_url": request.avatar_url,
         "consent_given": request.consent_given,
         "consent_parent_name": request.consent_parent_name,
@@ -57,6 +58,7 @@ async def add_student(request: StudentCreate, current_user: dict = Depends(get_c
         daily_limit=request.daily_limit,
         avatar_url=request.avatar_url,
         assessment_results=request.assessment_results,
+        comprehensive_assessment_results=request.comprehensive_assessment_results,
         completed_activities=[],
         activity_scores={},
         assessment_completed=len(request.assessment_results) == 14,
@@ -88,6 +90,7 @@ async def list_students(current_user: dict = Depends(get_current_user)):
             daily_limit=s.get("daily_limit", "No Limit"),
             avatar_url=s.get("avatar_url"),
             assessment_results=assessment,
+            comprehensive_assessment_results=s.get("comprehensive_assessment_results", {}),
             completed_activities=s.get("completed_activities", []),
             activity_scores=s.get("activity_scores", {}),
             assessment_completed=len(assessment) == 14,
@@ -134,6 +137,7 @@ async def update_student(student_id: str, request: StudentUpdate, current_user: 
         daily_limit=request.daily_limit,
         avatar_url=request.avatar_url,
         assessment_results=assessment,
+        comprehensive_assessment_results=updated.get("comprehensive_assessment_results", {}),
         completed_activities=updated.get("completed_activities", []),
         activity_scores=updated.get("activity_scores", {}),
         assessment_completed=len(assessment) == 14,
@@ -169,6 +173,7 @@ async def submit_assessment(student_id: str, request: AssessmentSubmit, current_
         daily_limit=existing_student.get("daily_limit", "No Limit"),
         avatar_url=existing_student.get("avatar_url"),
         assessment_results=request.assessment_results,
+        comprehensive_assessment_results=existing_student.get("comprehensive_assessment_results", {}),
         completed_activities=existing_student.get("completed_activities", []),
         activity_scores=existing_student.get("activity_scores", {}),
         assessment_completed=True,
@@ -213,6 +218,7 @@ async def sync_progress(student_id: str, request: ProgressSyncRequest, current_u
         daily_limit=existing_student.get("daily_limit", "No Limit"),
         avatar_url=existing_student.get("avatar_url"),
         assessment_results=assessment,
+        comprehensive_assessment_results=existing_student.get("comprehensive_assessment_results", {}),
         completed_activities=request.completed_activities,
         activity_scores=request.activity_scores,
         assessment_completed=len(assessment) == 14,
@@ -240,3 +246,45 @@ async def delete_student(student_id: str, current_user: dict = Depends(get_curre
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete student")
 
     return None
+
+
+@router.patch("/students/{student_id}/comprehensive-assessment/{category}", response_model=StudentResponse)
+async def submit_comprehensive_assessment(student_id: str, category: str, request: ComprehensiveAssessmentSubmit, current_user: dict = Depends(get_current_user)):
+    """Submit comprehensive assessment results for a specific category. Only the owning parent can do this."""
+    try:
+        obj_id = ObjectId(student_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid student ID")
+
+    db = get_db()
+    parent_oid = current_user["_id"]
+
+    # Ensure student belongs to THIS parent
+    existing_student = await db.students.find_one({"_id": obj_id, "parent_id": parent_oid})
+    if not existing_student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
+    # Update the specific category within comprehensive_assessment_results
+    update_field = f"comprehensive_assessment_results.{category}"
+    await db.students.update_one(
+        {"_id": obj_id},
+        {"$set": {update_field: request.assessment_results}}
+    )
+
+    # Fetch updated student to return full response
+    updated_student = await db.students.find_one({"_id": obj_id})
+    assessment = updated_student.get("assessment_results", [])
+    
+    return StudentResponse(
+        id=str(obj_id),
+        first_name=updated_student["first_name"],
+        last_name=updated_student["last_name"],
+        grade=updated_student.get("grade", "Grade 1"),
+        daily_limit=updated_student.get("daily_limit", "No Limit"),
+        avatar_url=updated_student.get("avatar_url"),
+        assessment_results=assessment,
+        comprehensive_assessment_results=updated_student.get("comprehensive_assessment_results", {}),
+        completed_activities=updated_student.get("completed_activities", []),
+        activity_scores=updated_student.get("activity_scores", {}),
+        assessment_completed=len(assessment) == 14,
+    )

@@ -14,6 +14,7 @@ class StudentCreate(BaseModel):
     grade: str = "Grade 1"  # Locked to Grade 1 for this app
     daily_limit: str = "No Limit"
     assessment_results: list[bool] = []
+    comprehensive_assessment_results: dict[str, list[bool]] = {}
     completed_activities: list[str] = []
     activity_scores: dict[str, int] = {}
     avatar_url: Optional[str] = None
@@ -33,6 +34,9 @@ class StudentUpdate(BaseModel):
 class AssessmentSubmit(BaseModel):
     assessment_results: list[bool] = Field(..., min_length=14, max_length=14)
 
+class ComprehensiveAssessmentSubmit(BaseModel):
+    assessment_results: list[bool]
+
 
 class StudentResponse(BaseModel):
     id: str
@@ -42,6 +46,7 @@ class StudentResponse(BaseModel):
     daily_limit: str
     avatar_url: Optional[str] = None
     assessment_results: list[bool] = []
+    comprehensive_assessment_results: dict[str, list[bool]] = {}
     completed_activities: list[str] = []
     activity_scores: dict[str, int] = {}
     assessment_completed: bool = False

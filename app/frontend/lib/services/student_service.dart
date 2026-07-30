@@ -171,6 +171,36 @@ class StudentService {
     }
   }
 
+  /// Submit comprehensive assessment results for a specific category.
+  /// Returns null on success, or an error message string on failure.
+  Future<String?> submitComprehensiveAssessment(String studentId, String category, List<bool> assessmentResults) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.patch(
+        Uri.parse('$_baseUrl/students/$studentId/comprehensive-assessment/$category'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'assessment_results': assessmentResults}),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        }
+        return 'Failed to submit comprehensive assessment.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
+
   /// Sync progress data to the backend for an existing student.
   /// Returns null on success, or an error message string on failure.
   Future<String?> syncProgress(String studentId, List<String> completedActivities, Map<String, int> activityScores) async {
