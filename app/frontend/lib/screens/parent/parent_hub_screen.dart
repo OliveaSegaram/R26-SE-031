@@ -8,6 +8,8 @@ import 'child_progress_screen.dart';
 import 'therapist_management_screen.dart';
 import 'notifications_screen.dart';
 import 'parent_settings_screen.dart';
+import '../comprehensive_assessment_screen.dart';
+import '../comprehensive_results_screen.dart';
 
 /// Parent Hub Screen — The heart of the parent experience.
 /// A beautifully designed central dashboard showing children overview,
@@ -28,6 +30,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
   String _parentName = '';
   String? _profilePictureUrl;
   List<dynamic> _students = [];
+  String? _selectedAssessmentStudentId;
 
   @override
   void initState() {
@@ -53,6 +56,9 @@ class _ParentHubScreenState extends State<ParentHubScreen>
         _parentName = profile?['name'] ?? 'parent';
         _profilePictureUrl = profile?['profile_picture_url'];
         _students = students;
+        if (_students.isNotEmpty && _selectedAssessmentStudentId == null) {
+          _selectedAssessmentStudentId = _students.first['id'];
+        }
       });
       _fadeController.forward();
     }
@@ -86,6 +92,8 @@ class _ParentHubScreenState extends State<ParentHubScreen>
                       _buildNavigationGrid(),
                       const SizedBox(height: 28),
                       _buildChildrenSection(),
+                      const SizedBox(height: 32),
+                      _buildComprehensiveAssessmentsSection(),
                       const SizedBox(height: 32),
                     ],
                   ),
@@ -450,6 +458,189 @@ class _ParentHubScreenState extends State<ParentHubScreen>
             ..._students.map((student) =>
                 _buildChildCard(student as Map<String, dynamic>)),
         ],
+      ),
+    );
+  }
+
+  // ─── Comprehensive Assessments Section ───
+  Widget _buildComprehensiveAssessmentsSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'comprehensive assessments',
+            style: AppTypography.heading(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.calmBlue,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildComprehensiveAssessmentsContent(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComprehensiveAssessmentsContent() {
+    if (_students.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+        decoration: BoxDecoration(
+          color: AppColors.cardSurface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Column(
+          children: [
+            FaIcon(FontAwesomeIcons.fileSignature,
+                size: 48, color: AppColors.textHint),
+            const SizedBox(height: 16),
+            Text(
+              'add a student to take assessments.',
+              style: AppTypography.body(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.borderLight, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Dropdown
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppColors.slateBg.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedAssessmentStudentId ?? _students.first['id'],
+                isExpanded: true,
+                icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.calmBlue),
+                style: AppTypography.body(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      _selectedAssessmentStudentId = newValue;
+                    });
+                  }
+                },
+                items: _students.map<DropdownMenuItem<String>>((student) {
+                  return DropdownMenuItem<String>(
+                    value: student['id'],
+                    child: Text(student['first_name'] ?? 'Unknown'),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          
+          _buildAssessmentCategoryCard('basic', 'මූලික ඩිස්ලෙක්සියා පරීක්ෂණය', Icons.psychology_rounded),
+          _buildAssessmentCategoryCard('reading', 'කියවීම හා දෘශ්‍ය සංජානන අපහසුතා', Icons.menu_book_rounded),
+          _buildAssessmentCategoryCard('writing', 'ලිවීම සම්බන්ධ අපහසුතා', Icons.edit_rounded),
+          _buildAssessmentCategoryCard('other', 'වෙනත් සම්බන්ධ අපහසුතා', Icons.more_horiz_rounded),
+
+          const SizedBox(height: 12),
+          // View Results
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                if (_selectedAssessmentStudentId != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ComprehensiveResultsScreen(
+                        studentId: _selectedAssessmentStudentId!,
+                        studentName: _students.firstWhere((s) => s['id'] == _selectedAssessmentStudentId)['first_name'] ?? 'Student',
+                      ),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.analytics_rounded, size: 18),
+              label: Text('view results', style: AppTypography.body(fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.calmBlue,
+                side: const BorderSide(color: AppColors.calmBlue),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssessmentCategoryCard(String category, String title, IconData icon) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: AppColors.warmWhite,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            if (_selectedAssessmentStudentId != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ComprehensiveAssessmentScreen(
+                    studentId: _selectedAssessmentStudentId!,
+                    category: category,
+                  ),
+                ),
+              );
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.borderLight),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: AppColors.calmBlue, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTypography.body(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textHint, size: 14),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
