@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
-import '../../../../services/tts_service.dart';
 import 'dart:math';
 
 class DemoSinhalaLetterBuilder extends StatefulWidget {
@@ -25,6 +25,7 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
   List<String> _currentPillams = [];
   
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final FlutterTts _flutterTts = FlutterTts();
   final Random _random = Random();
 
   @override
@@ -66,16 +67,18 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
   Future<void> _speakTarget() async {
     final roundData = widget.activityNode.rounds[_currentRoundIndex];
     final target = roundData['target'] as String;
-    await TtsService().speak(target);
+    
+    await _flutterTts.setLanguage("si-LK");
+    await _flutterTts.setSpeechRate(0.4); // Slowed down for kids
+    await _flutterTts.speak(target);
   }
   
   Future<void> _playChime(bool success) async {
     try {
       final assetPath = success
-          ? 'assets/audio/correct_chime.mp3'
-          : 'assets/audio/wrong_buzzer.mp3';
-      await _audioPlayer.setAsset(assetPath);
-      await _audioPlayer.play();
+          ? 'audio/correct.mp3'
+          : 'audio/wrong.mp3';
+      await _audioPlayer.play(AssetSource(assetPath));
     } catch (e) {
       debugPrint('Audio play error: $e');
     }
@@ -88,24 +91,27 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
     final correctAkura = roundData['correct_akura'] as String;
     final correctPillam = roundData['correct_pillam'] as String;
 
-    final telemetry = TelemetryWrapper.of(context);
+    final telemetry = context.findAncestorStateOfType<TelemetryWrapperState>();
     
     if (_selectedAkura == correctAkura && _selectedPillam == correctPillam) {
       await _playChime(true);
-      telemetry?.recordAttempt(true);
       
       setState(() {
         if (_currentRoundIndex < widget.activityNode.rounds.length - 1) {
+          telemetry?.completeRound(100);
           _currentRoundIndex++;
           _setupRound();
-          _speakTarget();
+          Future.delayed(const Duration(milliseconds: 1000), () {
+            if (mounted) _speakTarget();
+          });
         } else {
-          telemetry?.completeActivity();
+          telemetry?.completeRound(100);
+          telemetry?.completeActivity(context);
         }
       });
     } else {
       await _playChime(false);
-      telemetry?.recordAttempt(false);
+      telemetry?.recordMisclick();
       
       setState(() {
         _selectedAkura = null;
