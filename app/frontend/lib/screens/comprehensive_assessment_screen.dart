@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../models/comprehensive_assessment_questions.dart';
-import '../widgets/monster_character.dart';
 import '../widgets/gradient_button.dart';
-import '../widgets/pressable_game_button.dart';
 import '../services/student_service.dart';
 
 class ComprehensiveAssessmentScreen extends StatefulWidget {
@@ -28,17 +26,6 @@ class _ComprehensiveAssessmentScreenState extends State<ComprehensiveAssessmentS
 
   late List<bool?> _answers;
   late List<ComprehensiveQuestion> _questions;
-
-  final List<String> _monsterImages = [
-    'assets/images/solo_blue.png',
-    'assets/images/solo_orange.png',
-    'assets/images/solo_green.png',
-    'assets/images/solo_teal.png',
-    'assets/images/solo_pink.png',
-    'assets/images/solo_yellow.png',
-    'assets/images/solo_yellow_straight.png',
-    'assets/images/solo_pink_up.png',
-  ];
 
   @override
   void initState() {
@@ -246,97 +233,115 @@ class _ComprehensiveAssessmentScreenState extends State<ComprehensiveAssessmentS
   }
 
   Widget _buildQuestionCard(ComprehensiveQuestion question, int index) {
-    return AnimatedBuilder(
-      animation: _pageController,
-      builder: (context, child) {
-        double value = 1.0;
-        if (_pageController.position.haveDimensions) {
-          value = _pageController.page! - index;
-          value = (1 - (value.abs() * 0.15)).clamp(0.85, 1.0);
-        }
-        
-        return Center(
-          child: Transform.scale(
-            scale: value,
-            child: child,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowMedium,
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-        decoration: BoxDecoration(
-          color: AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(36),
-          border: Border.all(color: AppColors.borderBlue, width: 2),
-          boxShadow: [
-            const BoxShadow(
-              color: AppColors.shadowMedium,
-              blurRadius: 24,
-              offset: Offset(0, 12),
+        ],
+      ),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'ප්‍රශ්නය ${index + 1}',
+              style: AppTypography.caption(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.left,
             ),
-            BoxShadow(
-              color: AppColors.calmBlue.withValues(alpha: 0.05),
-              blurRadius: 32,
-              spreadRadius: 8,
+            const SizedBox(height: 16),
+            Text(
+              question.text,
+              style: AppTypography.body(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 40),
+            _buildFormalOptionButton(
+              text: 'ඔව් (Yes)',
+              icon: Icons.check_circle_outline_rounded,
+              isSelected: _answers[index] == true,
+              activeColor: AppColors.gentleGreen,
+              onTap: () => _onOptionSelected(index, true),
+            ),
+            const SizedBox(height: 16),
+            _buildFormalOptionButton(
+              text: 'නැත (No)',
+              icon: Icons.cancel_outlined,
+              isSelected: _answers[index] == false,
+              activeColor: AppColors.softCoral,
+              onTap: () => _onOptionSelected(index, false),
             ),
           ],
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isSmall = constraints.maxHeight < 540;
-            final monsterSize = isSmall ? 110.0 : 150.0;
-            final spacing = isSmall ? 16.0 : 28.0;
-            final fontSize = isSmall ? 18.0 : 21.0;
+      ),
+    );
+  }
 
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.symmetric(horizontal: isSmall ? 16 : 24, vertical: isSmall ? 16 : 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  MonsterCharacter(
-                    size: monsterSize,
-                    animation: MonsterAnimation.idle,
-                    imagePath: _monsterImages[index % _monsterImages.length],
-                  ),
-                  
-                  SizedBox(height: spacing),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      question.text,
-                      textAlign: TextAlign.center,
-                      style: AppTypography.heading(
-                        fontSize: fontSize,
-                        color: AppColors.calmBlueDark,
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: spacing),
-
-                  PressableGameButton(
-                    text: 'ඔව් (Yes)',
-                    icon: Icons.check_circle_outline_rounded,
-                    isSelected: _answers[index] == true,
-                    onTap: () => _onOptionSelected(index, true),
-                    activeColor: AppColors.gentleGreen,
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  PressableGameButton(
-                    text: 'නැත (No)',
-                    icon: Icons.cancel_outlined,
-                    isSelected: _answers[index] == false,
-                    onTap: () => _onOptionSelected(index, false),
-                    activeColor: AppColors.softCoral,
-                  ),
-                ],
+  Widget _buildFormalOptionButton({
+    required String text,
+    required IconData icon,
+    required bool isSelected,
+    required Color activeColor,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: isSelected ? activeColor.withValues(alpha: 0.1) : AppColors.cream,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: isSelected ? activeColor : AppColors.borderLight,
+              width: isSelected ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? activeColor : AppColors.textSecondary,
+                size: 24,
               ),
-            );
-          },
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  text,
+                  style: AppTypography.body(
+                    fontSize: 16,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? activeColor : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: activeColor,
+                  size: 20,
+                ),
+            ],
+          ),
         ),
       ),
     );
