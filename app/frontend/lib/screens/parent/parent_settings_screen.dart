@@ -1854,6 +1854,15 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
     final studentName = student['first_name'] ?? 'this student';
     final studentId = student['id'];
 
+    // Check connections first
+    bool isConnected = false;
+    try {
+      final connections = await AuthService().getConnections();
+      isConnected = connections.any((c) => c['student_id'] == studentId);
+    } catch (_) {}
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1881,7 +1890,8 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'are you absolutely sure you want to delete $studentName? this action cannot be undone and all learning progress will be lost permanently.',
+                  'are you absolutely sure you want to delete $studentName? this action cannot be undone and all learning progress will be lost permanently.'
+                  '${isConnected ? '\n\n⚠️ this student is connected with a therapist. deleting the student will permanently disconnect them.' : ''}',
                   style: AppTypography.body(
                       fontSize: 15, color: AppColors.textPrimary),
                 ),

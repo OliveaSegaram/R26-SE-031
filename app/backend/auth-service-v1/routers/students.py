@@ -239,4 +239,7 @@ async def delete_student(student_id: str, current_user: dict = Depends(get_curre
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete student")
 
+    # Cascade delete therapist connections for this student
+    await db.therapist_connections.delete_many({"student_id": str(obj_id)})
+
     return None

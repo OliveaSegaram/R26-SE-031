@@ -4,6 +4,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
 import '../connect_specialist_screen.dart';
 
+import 'package:intl/intl.dart';
+
 /// Therapist Management Screen — View, manage, and disconnect therapists.
 class TherapistManagementScreen extends StatefulWidget {
   const TherapistManagementScreen({super.key});
@@ -18,6 +20,7 @@ class TherapistManagementScreen extends StatefulWidget {
 class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
   List<dynamic> _therapists = [];
   bool _isLoading = true;
+  final Set<String> _disconnectingIds = {};
 
   @override
   void initState() {
@@ -29,14 +32,23 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
     final connections = await AuthService().getConnections();
     if (mounted) {
       setState(() {
-        _therapists = connections.map((c) => {
-          'id': c['id'],
-          'name': c['therapist_name'] ?? 'Unknown',
-          'clinic': c['clinic_name'] ?? 'Clinic',
-          'specialization': 'Specialist',
-          'child': c['student_name'] ?? 'Unknown',
-          'connectedDate': c['connected_at'],
-          'status': c['status'],
+        _therapists = connections.map((c) {
+          String formattedDate = 'Unknown';
+          if (c['connected_at'] != null) {
+            try {
+              final dt = DateTime.parse(c['connected_at'].toString());
+              formattedDate = DateFormat('MMMM d, yyyy').format(dt);
+            } catch (_) {}
+          }
+          return {
+            'id': c['id'],
+            'name': c['therapist_name'] ?? 'Unknown',
+            'clinic': c['clinic_name'] ?? 'Clinic',
+            'specialization': 'Specialist',
+            'child': c['student_name'] ?? 'Unknown',
+            'connectedDate': formattedDate,
+            'status': c['status'],
+          };
         }).toList();
         _isLoading = false;
       });
@@ -79,7 +91,18 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
               else if (_therapists.isEmpty)
                 _buildEmptyState()
               else
-                ..._therapists.map((t) => _buildTherapistCard(t)),
+                ..._therapists.map((t) {
+                  final bool isDisconnecting = _disconnectingIds.contains(t['id']);
+                  return AnimatedOpacity(
+                    duration: const Duration(milliseconds: 400),
+                    opacity: isDisconnecting ? 0.0 : 1.0,
+                    child: AnimatedScale(
+                      duration: const Duration(milliseconds: 400),
+                      scale: isDisconnecting ? 0.8 : 1.0,
+                      child: _buildTherapistCard(t),
+                    ),
+                  );
+                }),
               const SizedBox(height: 80), // FAB clearance
             ],
           ),
@@ -404,16 +427,30 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
               
               final connectionId = therapist['id'] as String?;
               if (connectionId != null) {
+                // Trigger the magic disappear effect!
+                setState(() {
+                  _disconnectingIds.add(connectionId);
+                });
+
                 final error = await AuthService().disconnectSpecialist(connectionId);
                 
                 if (!mounted) return;
                 if (error != null) {
+                  // Revert the disappearing effect if it fails
+                  setState(() {
+                    _disconnectingIds.remove(connectionId);
+                  });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('failed to disconnect: $error'), backgroundColor: AppColors.softCoral),
                   );
                 } else {
+                  // Wait for the poof animation to finish before removing from list
+                  await Future.delayed(const Duration(milliseconds: 500));
+
+                  if (!mounted) return;
                   setState(() {
                     _therapists.removeWhere((t) => t['id'] == connectionId);
+                    _disconnectingIds.remove(connectionId);
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

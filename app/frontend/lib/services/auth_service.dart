@@ -676,7 +676,7 @@ class AuthService {
   // Disconnect a specialist
   Future<String?> disconnectSpecialist(String connectionId) async {
     try {
-      final token = await _getToken();
+      final token = await getAccessToken();
       if (token == null) return 'No auth token';
 
       final response = await http.delete(
