@@ -72,6 +72,7 @@ app.include_router(stt_router)
 app.include_router(tts_router)
 
 # Mount static folder for audio files
+os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
