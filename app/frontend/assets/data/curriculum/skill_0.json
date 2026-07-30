@@ -1,0 +1,61 @@
+[
+  {
+    "id": "skill_0",
+    "title": "Demo Activities",
+    "intro_text": "Welcome to the demo activities!",
+    "intro_audio_url": "",
+    "activities": [
+      {
+        "id": "demo_1",
+        "title": "Shadow Matching",
+        "description": "Drag each shape and drop it on the matching shadow.",
+        "intro_audio_url": "",
+        "file_path": "",
+        "telemetry_tags": ["shadow_match", "visual_discrimination"],
+        "template_type": "shadow_match_demo",
+        "rounds": [
+          {"items": ["goat", "whale", "crown", "device"], "shadows": ["goat", "whale", "crown", "device"]},
+          {"items": ["dog", "cat", "bird", "fish"], "shadows": ["dog", "cat", "bird", "fish"]},
+          {"items": ["apple", "banana", "grape", "orange"], "shadows": ["apple", "banana", "grape", "orange"]},
+          {"items": ["car", "bus", "train", "plane"], "shadows": ["car", "bus", "train", "plane"]},
+          {"items": ["sun", "moon", "star", "cloud"], "shadows": ["sun", "moon", "star", "cloud"]},
+          {"items": ["book", "pencil", "ruler", "bag"], "shadows": ["book", "pencil", "ruler", "bag"]}
+        ]
+      },
+      {
+        "id": "demo_2",
+        "title": "Math Substitution",
+        "description": "Match the objects to their numbers.",
+        "intro_audio_url": "",
+        "file_path": "",
+        "telemetry_tags": ["math", "substitution"],
+        "template_type": "math_substitution_demo",
+        "rounds": [
+          {"sequence": ["sandwich", "sandwich", "emoji", "emoji"], "values": {"sandwich": 6, "emoji": 2}},
+          {"sequence": ["apple", "apple", "apple", "star"], "values": {"apple": 3, "star": 5}},
+          {"sequence": ["car", "bike", "car", "bike"], "values": {"car": 4, "bike": 2}},
+          {"sequence": ["cat", "dog", "dog", "cat"], "values": {"cat": 1, "dog": 8}},
+          {"sequence": ["sun", "sun", "moon", "star"], "values": {"sun": 7, "moon": 9, "star": 3}},
+          {"sequence": ["flower", "tree", "flower", "tree"], "values": {"flower": 5, "tree": 10}}
+        ]
+      },
+      {
+        "id": "demo_3",
+        "title": "Shape Pattern",
+        "description": "Complete the shape pattern.",
+        "intro_audio_url": "",
+        "file_path": "",
+        "telemetry_tags": ["pattern", "sequencing"],
+        "template_type": "shape_pattern_demo",
+        "rounds": [
+          {"palette": ["green_square", "orange_circle", "purple_triangle"], "shapes": ["square", "circle", "square", "circle"]},
+          {"palette": ["blue_star", "red_heart", "yellow_sun"], "shapes": ["star", "star", "heart", "heart"]},
+          {"palette": ["pink_circle", "green_triangle", "blue_square"], "shapes": ["circle", "triangle", "square", "circle"]},
+          {"palette": ["orange_star", "purple_moon", "red_circle"], "shapes": ["star", "moon", "circle", "star"]},
+          {"palette": ["yellow_triangle", "blue_circle", "green_square"], "shapes": ["triangle", "circle", "square", "triangle"]},
+          {"palette": ["red_square", "blue_square", "green_square"], "shapes": ["square", "square", "square", "square"]}
+        ]
+      }
+    ]
+  }
+]

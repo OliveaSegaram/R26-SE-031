@@ -15,12 +15,28 @@ import 'visual_skills/skill_1/activity9_audio_image_search.dart';
 import 'visual_skills/skill_1/activity10_identical_match.dart';
 import 'visual_skills/skill_1/activity11_audio_sequence.dart';
 
+// Demo Games
+import 'demo/demo_shadow_match.dart';
+import 'demo/demo_math_substitution.dart';
+import 'demo/demo_shape_pattern.dart';
+
 /// Central factory for constructing dynamic game screen instances based on template_type.
 class GameFactory {
   static Widget buildGame(ActivityNode node, {bool isRemedial = false}) {
     Widget gameContent;
 
     switch (node.templateType) {
+      // --- Demo Games ---
+      case 'shadow_match_demo':
+        gameContent = DemoShadowMatch(activityNode: node);
+        break;
+      case 'math_substitution_demo':
+        gameContent = DemoMathSubstitution(activityNode: node);
+        break;
+      case 'shape_pattern_demo':
+        gameContent = DemoShapePattern(activityNode: node);
+        break;
+
       // --- Skill 1 Dedicated Templates ---
       case 'odd_one_out_game':
       case 'hidden_picture_game':
