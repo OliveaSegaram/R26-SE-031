@@ -35,16 +35,23 @@ class _ConnectSpecialistScreenState extends State<ConnectSpecialistScreen> {
             iconTheme: const IconThemeData(color: AppColors.textPrimary),
             title: Text('scan clinic code', style: AppTypography.heading(fontSize: 18)),
           ),
-          body: MobileScanner(
-            onDetect: (capture) {
-              final List<Barcode> barcodes = capture.barcodes;
-              for (final barcode in barcodes) {
-                if (barcode.rawValue != null && barcode.rawValue!.length == 6) {
-                  _codeController.text = barcode.rawValue!;
-                  Navigator.pop(context); // Close scanner
-                  break;
-                }
-              }
+          body: Builder(
+            builder: (context) {
+              bool hasScanned = false;
+              return MobileScanner(
+                onDetect: (capture) {
+                  if (hasScanned) return;
+                  final List<Barcode> barcodes = capture.barcodes;
+                  for (final barcode in barcodes) {
+                    if (barcode.rawValue != null && barcode.rawValue!.length == 6) {
+                      hasScanned = true;
+                      _codeController.text = barcode.rawValue!;
+                      Navigator.pop(context); // Close scanner
+                      break;
+                    }
+                  }
+                },
+              );
             },
           ),
         ),

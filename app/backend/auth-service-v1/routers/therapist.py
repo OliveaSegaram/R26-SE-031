@@ -142,3 +142,23 @@ async def get_connections(current_user: dict = Depends(get_current_user)):
         
     return result
 
+
+@router.delete("/disconnect/{connection_id}")
+async def disconnect_specialist(connection_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a connection permanently."""
+    db = get_db()
+    
+    # We should ensure the user has permission to delete this connection.
+    # It must belong to either the parent or the therapist.
+    query = {"_id": ObjectId(connection_id)}
+    if current_user.get("role") == "specialist":
+        query["therapist_id"] = str(current_user["_id"])
+    else:
+        query["parent_id"] = str(current_user["_id"])
+        
+    result = await db.therapist_connections.delete_one(query)
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Connection not found or permission denied.")
+        
+    return {"message": "Connection successfully deleted."}

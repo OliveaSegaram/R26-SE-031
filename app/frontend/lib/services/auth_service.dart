@@ -673,6 +673,31 @@ class AuthService {
       return e.toString();
     }
   }
+  // Disconnect a specialist
+  Future<String?> disconnectSpecialist(String connectionId) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return 'No auth token';
+
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/therapist/disconnect/$connectionId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return null; // success
+      }
+      
+      final data = jsonDecode(response.body);
+      return data['detail'] ?? 'Failed to disconnect';
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   // Get Therapist Connections
   Future<List<dynamic>> getConnections() async {
     try {

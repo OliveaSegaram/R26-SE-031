@@ -30,6 +30,7 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
     if (mounted) {
       setState(() {
         _therapists = connections.map((c) => {
+          'id': c['id'],
           'name': c['therapist_name'] ?? 'Unknown',
           'clinic': c['clinic_name'] ?? 'Clinic',
           'specialization': 'Specialist',
@@ -47,13 +48,15 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
     return Scaffold(
       backgroundColor: AppColors.cream,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => const ConnectSpecialistScreen(),
             ),
           );
+          // Reload the list of therapists when we come back!
+          _loadConnections();
         },
         backgroundColor: AppColors.calmBlue,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
@@ -395,17 +398,31 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
                     fontSize: 14, color: AppColors.textSecondary)),
           ),
           ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _therapists.remove(therapist);
-              });
+            onPressed: () async {
+              // Optimistically close dialog
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('therapist disconnected'),
-                  backgroundColor: AppColors.softCoral,
-                ),
-              );
+              
+              final connectionId = therapist['id'] as String?;
+              if (connectionId != null) {
+                final error = await AuthService().disconnectSpecialist(connectionId);
+                
+                if (!mounted) return;
+                if (error != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('failed to disconnect: $error'), backgroundColor: AppColors.softCoral),
+                  );
+                } else {
+                  setState(() {
+                    _therapists.removeWhere((t) => t['id'] == connectionId);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('therapist disconnected'),
+                      backgroundColor: AppColors.softCoral,
+                    ),
+                  );
+                }
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.softCoral,

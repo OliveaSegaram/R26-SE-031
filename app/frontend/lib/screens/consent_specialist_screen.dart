@@ -40,7 +40,9 @@ class _ConsentSpecialistScreenState extends State<ConsentSpecialistScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('successfully connected!'), backgroundColor: AppColors.calmBlue),
       );
-      Navigator.popUntil(context, (route) => route.isFirst);
+      // Pop ConsentSpecialistScreen AND ConnectSpecialistScreen
+      int count = 0;
+      Navigator.popUntil(context, (route) => count++ == 2);
     }
   }
 
