@@ -17,12 +17,7 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
   int _currentIndex = 0;
   Map<String, dynamic>? _profile;
 
-  final List<Widget> _screens = [
-    const _DashboardHome(),
-    const TherapistStudentsScreen(),
-    const TherapistMessagesScreen(),
-    const TherapistProfileScreen(),
-  ];
+
 
   @override
   void initState() {
@@ -40,7 +35,15 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: [
+          _DashboardHome(
+            profile: _profile,
+            onProfileTap: () => setState(() => _currentIndex = 3),
+          ),
+          const TherapistStudentsScreen(),
+          const TherapistMessagesScreen(),
+          const TherapistProfileScreen(),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -76,7 +79,10 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
   Widget _buildNavItem(int index, IconData icon, String label, {int badgeCount = 0}) {
     final isSelected = _currentIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () {
+        setState(() => _currentIndex = index);
+        if (index == 0) _loadProfile(); // Refresh when switching to home tab
+      },
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 72,
@@ -139,7 +145,9 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
 
 // ─── Dashboard Home (Tab 0) ───
 class _DashboardHome extends StatelessWidget {
-  const _DashboardHome();
+  final Map<String, dynamic>? profile;
+  final VoidCallback? onProfileTap;
+  const _DashboardHome({super.key, this.profile, this.onProfileTap});
 
   @override
   Widget build(BuildContext context) {
@@ -154,10 +162,20 @@ class _DashboardHome extends StatelessWidget {
               const SizedBox(height: 24),
 
               // Welcome Header
-              FutureBuilder<Map<String, dynamic>?>(
-                future: AuthService().getUserProfile(),
-                builder: (context, snapshot) {
-                  final name = snapshot.data?['name'] ?? 'Doctor';
+              Builder(
+                builder: (context) {
+                  final name = profile?['name'] ?? 'Doctor';
+                  final profilePicUrl = profile?['profile_picture_url'] as String?;
+                  
+                  // Extract initials safely
+                  final parts = name.trim().split(' ');
+                  String initials = '?';
+                  if (parts.length >= 2) {
+                    initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+                  } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+                    initials = parts[0][0].toUpperCase();
+                  }
+
                   return Row(
                     children: [
                       Expanded(
@@ -182,25 +200,40 @@ class _DashboardHome extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: AppColors.blueButtonGradient,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.calmBlue.withValues(alpha: 0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            (name as String)[0].toUpperCase(),
-                            style: AppTypography.heading(fontSize: 20, color: Colors.white),
+                      GestureDetector(
+                        onTap: onProfileTap,
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            gradient: AppColors.blueButtonGradient,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.calmBlue.withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                            image: profilePicUrl != null && profilePicUrl.isNotEmpty
+                                ? DecorationImage(
+                                    image: NetworkImage(
+                                      profilePicUrl.startsWith('http')
+                                          ? profilePicUrl
+                                          : 'https://adaptedmind-auth-api.onrender.com$profilePicUrl'
+                                    ),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                           ),
+                          child: profilePicUrl == null || profilePicUrl.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    initials,
+                                    style: AppTypography.heading(fontSize: 20, color: Colors.white),
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
                     ],
