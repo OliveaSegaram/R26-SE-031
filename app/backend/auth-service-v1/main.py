@@ -29,6 +29,9 @@ from routers.students import router as students_router
 from routers.specialists import router as specialists_router
 from routers.telemetry import router as telemetry_router
 from routers.activities import router as activities_router
+from routers.stt import router as stt_router
+from routers.tts import router as tts_router
+from fastapi.staticfiles import StaticFiles
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -63,6 +66,11 @@ app.include_router(students_router)
 app.include_router(specialists_router)
 app.include_router(telemetry_router)
 app.include_router(activities_router)
+app.include_router(stt_router)
+app.include_router(tts_router)
+
+# Mount static folder for audio files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # --- Health Check ---
