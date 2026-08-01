@@ -115,18 +115,12 @@ async def verify_email(request: Request, req: VerifyEmailRequest, background_tas
     """Verify email via OTP and return JWT tokens on success."""
     db = get_db()
     email = req.email.lower()
+    db = get_db()
     
-    # Master OTP Bypass for Development
-    if req.otp == "000000":
-        # Find the most recent OTP record for this email
-        otp_record = await db.otps.find_one({"email": email}, sort=[("created_at", -1)])
-        if not otp_record:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No pending signup found for this email.")
-    else:
-        # Find OTP normally
-        otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
-        if not otp_record:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP.")
+    # Find OTP normally
+    otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
+    if not otp_record:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP.")
         
     from datetime import datetime
     if datetime.utcnow() > otp_record["expires_at"]:
@@ -240,6 +234,30 @@ async def _handle_login_alert(db, user_doc, request: Request, background_tasks: 
         # Update last_login_ip anyway
         await db.users.update_one({"_id": user_doc["_id"]}, {"$set": {"last_login_ip": ip_address}})
 
+
+
+from schemas.auth import ForgotPasswordRequest
+@router.post("/resend-otp")
+async def resend_otp(request: Request, req: ForgotPasswordRequest, background_tasks: BackgroundTasks):
+    """Resend OTP for either signup or forgot password."""
+    email = req.email.lower()
+    db = get_db()
+    otp_record = await db.otps.find_one({"email": email})
+    if not otp_record:
+        # If no record exists, just return success to avoid email enumeration
+        return {"message": "OTP resent successfully."}
+        
+    from services.auth_utils import generate_otp, send_otp_email
+    from datetime import datetime, timedelta
+    otp = generate_otp()
+    
+    await db.otps.update_one(
+        {"email": email},
+        {"$set": {"otp": otp, "expires_at": datetime.utcnow() + timedelta(minutes=10)}}
+    )
+    
+    background_tasks.add_task(send_otp_email, email, otp)
+    return {"message": "OTP resent successfully."}
 
 @router.post("/login", response_model=Token)
 @limiter.limit("10/minute")
@@ -557,15 +575,9 @@ async def verify_email_update(req: VerifyEmailUpdate, current_user: dict = Depen
     db = get_db()
     new_email = req.new_email.strip().lower()
 
-    if req.otp == "000000":
-        # Master bypass for testing
-        otp_record = await db.otps.find_one({"email": new_email}, sort=[("created_at", -1)])
-        if not otp_record:
-            raise HTTPException(status_code=400, detail="OTP not found or expired")
-    else:
-        otp_record = await db.otps.find_one({"email": new_email, "otp": req.otp})
-        if not otp_record:
-            raise HTTPException(status_code=400, detail="Invalid OTP")
+    otp_record = await db.otps.find_one({"email": new_email, "otp": req.otp})
+    if not otp_record:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
 
     if datetime.utcnow() > otp_record["expires_at"]:
         raise HTTPException(status_code=400, detail="OTP expired")
@@ -633,6 +645,7 @@ async def forgot_password(request: Request, req: ForgotPasswordRequest):
     """Initiate password reset process."""
     db = get_db()
     email = req.email.lower()
+    db = get_db()
     
     user = await db.users.find_one({"email": email})
     if not user:
@@ -671,18 +684,12 @@ async def reset_password(request: Request, req: ResetPasswordRequest):
     """Reset the password using the OTP."""
     db = get_db()
     email = req.email.lower()
+    db = get_db()
     
-    # Master OTP Bypass for Development
-    if req.otp == "000000":
-        # Find the most recent OTP record for this email
-        otp_record = await db.otps.find_one({"email": email}, sort=[("created_at", -1)])
-        if not otp_record:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No pending reset found for this email.")
-    else:
-        # Find OTP normally
-        otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
-        if not otp_record:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP.")
+    # Find OTP normally
+    otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
+    if not otp_record:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP.")
         
     if datetime.utcnow() > otp_record["expires_at"]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired.")

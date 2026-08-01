@@ -249,6 +249,22 @@ class AuthService {
     }
   }
   /// Verify Email via OTP during Signup
+
+  Future<String?> resendOtp(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/resend-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      if (response.statusCode == 200) {
+        return null;
+      }
+      return jsonDecode(response.body)['detail'] ?? 'Failed to resend OTP';
+    } catch (e) {
+      return 'Network error: $e';
+    }
+  }
   Future<String?> verifyEmail(String email, String otp) async {
     try {
       final response = await http.post(

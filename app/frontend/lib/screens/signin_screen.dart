@@ -8,6 +8,7 @@ import 'select_student_screen.dart';
 import 'therapist/therapist_dashboard_screen.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
+import '../widgets/sliding_role_toggle.dart';
 
 /// Sign-In Screen
 /// Dyslexia-accessible: crème background, warm white inputs, 18pt+ text,
@@ -145,42 +146,45 @@ class _SignInScreenState extends State<SignInScreen>
                 children: [
                   const SizedBox(height: 12),
 
-                  // Back button
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardSurface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderLight),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.calmBlueDark.withValues(alpha: 0.15),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                            spreadRadius: -2,
+                  Stack(
+                    alignment: Alignment.topCenter,
+                    children: [
+                      // Mascot Centered (same position but higher up)
+                      MonsterCharacter(
+                        size: 110,
+                        animation: MonsterAnimation.wave,
+                        imagePath: 'assets/images/mascot_blue_jumping.png',
+                      ),
+                      // Back Button on the left
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppColors.cardSurface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.borderLight),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.calmBlueDark.withValues(alpha: 0.15),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                  spreadRadius: -2,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_rounded,
+                              color: AppColors.textPrimary,
+                              size: 22,
+                            ),
                           ),
-                        ],
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: AppColors.textPrimary,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // Character
-                  Center(
-                    child: MonsterCharacter(
-                      size: 110,
-                      animation: MonsterAnimation.wave,
-                      imagePath: 'assets/images/mascot_blue_jumping.png',
-                    ),
+                    ],
                   ),
 
                   const SizedBox(height: 20),
@@ -223,49 +227,14 @@ class _SignInScreenState extends State<SignInScreen>
                     ),
                     child: Column(
                       children: [
-                        // Role Toggle
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.cream,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.borderLight),
-                          ),
-                          child: Row(
-                            children: ["Parent", "Therapist"].map((role) {
-                              final isSelected = _selectedRole == role;
-                              return Expanded(
-                                child: GestureDetector(
-                                  onTap: () => setState(() => _selectedRole = role),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                    decoration: BoxDecoration(
-                                      color: isSelected ? AppColors.calmBlue : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: isSelected ? [
-                                        BoxShadow(
-                                          color: AppColors.calmBlueDark.withValues(alpha: 0.2),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        )
-                                      ] : [],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        role,
-                                        style: AppTypography.body(
-                                          fontSize: 15,
-                                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                          color: isSelected ? Colors.white : AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
+                        // Sliding Premium Role Toggle
+                        SlidingRoleToggle(
+                          selectedRole: _selectedRole,
+                          onChanged: (role) {
+                            setState(() {
+                              _selectedRole = role;
+                            });
+                          },
                         ),
                         const SizedBox(height: 16),
                         
