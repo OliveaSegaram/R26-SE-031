@@ -115,6 +115,8 @@ async def verify_email(request: Request, req: VerifyEmailRequest, background_tas
     """Verify email via OTP and return JWT tokens on success."""
     db = get_db()
     email = req.email.lower()
+    from database import get_db
+    db = get_db()
     
     # Find OTP normally
     otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
@@ -240,6 +242,8 @@ from schemas.auth import ForgotPasswordRequest
 async def resend_otp(request: Request, req: ForgotPasswordRequest, background_tasks: BackgroundTasks):
     """Resend OTP for either signup or forgot password."""
     email = req.email.lower()
+    from database import get_db
+    db = get_db()
     otp_record = await db.otps.find_one({"email": email})
     if not otp_record:
         # If no record exists, just return success to avoid email enumeration
@@ -643,6 +647,8 @@ async def forgot_password(request: Request, req: ForgotPasswordRequest):
     """Initiate password reset process."""
     db = get_db()
     email = req.email.lower()
+    from database import get_db
+    db = get_db()
     
     user = await db.users.find_one({"email": email})
     if not user:
@@ -681,6 +687,8 @@ async def reset_password(request: Request, req: ResetPasswordRequest):
     """Reset the password using the OTP."""
     db = get_db()
     email = req.email.lower()
+    from database import get_db
+    db = get_db()
     
     # Find OTP normally
     otp_record = await db.otps.find_one({"email": email, "otp": req.otp})
