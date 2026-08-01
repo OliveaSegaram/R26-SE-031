@@ -185,16 +185,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                               color: AppColors.calmBlueDark, size: 20),
                         ),
                       ),
-                      // 1-Click Demo Bypass Button
-                      IconButton(
-                        icon: const Icon(Icons.bug_report, color: AppColors.textHint),
-                        onPressed: () {
-                          _nameController.text = "Demo User";
-                          _emailController.text = "demo_${DateTime.now().millisecondsSinceEpoch}@sipsara.com";
-                          _passwordController.text = "password123";
-                          _onSignUp();
-                        },
-                      ),
+
                     ],
                   ),
 

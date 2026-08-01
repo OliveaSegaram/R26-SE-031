@@ -33,21 +33,10 @@ class _OtpScreenState extends State<OtpScreen> {
     super.initState();
     _startTimer();
 
-    // Request focus automatically, unless it's a demo bypass
-    if (widget.email.startsWith('demo_')) {
-      // Auto-fill and auto-verify for demo users
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _otpController.text = "000000";
-          _verifyOtp();
-        }
-      });
-    } else {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) _focusNode.requestFocus();
-      });
-
-    }
+    // Request focus automatically
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) _focusNode.requestFocus();
+    });
   }
 
   void _startTimer() {
