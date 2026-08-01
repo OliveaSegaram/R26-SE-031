@@ -234,6 +234,28 @@ async def _handle_login_alert(db, user_doc, request: Request, background_tasks: 
         await db.users.update_one({"_id": user_doc["_id"]}, {"$set": {"last_login_ip": ip_address}})
 
 
+
+@router.post("/resend-otp")
+async def resend_otp(request: Request, req: ForgotPasswordRequest, background_tasks: BackgroundTasks):
+    """Resend OTP for either signup or forgot password."""
+    email = req.email.lower()
+    otp_record = await db.otps.find_one({"email": email})
+    if not otp_record:
+        # If no record exists, just return success to avoid email enumeration
+        return {"message": "OTP resent successfully."}
+        
+    from services.auth_utils import generate_otp, send_otp_email
+    from datetime import datetime, timedelta
+    otp = generate_otp()
+    
+    await db.otps.update_one(
+        {"email": email},
+        {"$set": {"otp": otp, "expires_at": datetime.utcnow() + timedelta(minutes=10)}}
+    )
+    
+    background_tasks.add_task(send_otp_email, email, otp)
+    return {"message": "OTP resent successfully."}
+
 @router.post("/login", response_model=Token)
 @limiter.limit("10/minute")
 async def login(request: Request, user: UserLogin, background_tasks: BackgroundTasks):
