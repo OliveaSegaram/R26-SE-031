@@ -235,6 +235,7 @@ async def _handle_login_alert(db, user_doc, request: Request, background_tasks: 
 
 
 
+from schemas.auth import ForgotPasswordRequest
 @router.post("/resend-otp")
 async def resend_otp(request: Request, req: ForgotPasswordRequest, background_tasks: BackgroundTasks):
     """Resend OTP for either signup or forgot password."""
