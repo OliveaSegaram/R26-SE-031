@@ -159,45 +159,45 @@ class _SignUpScreenState extends State<SignUpScreen>
                 children: [
                   const SizedBox(height: 12),
 
-                  // Header Row with Back Button and Demo Bug
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Stack(
+                    alignment: Alignment.topCenter,
                     children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: AppColors.cardSurface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.borderLight),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.calmBlueDark.withValues(alpha: 0.15),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                                spreadRadius: -2,
-                              ),
-                            ],
+                      // Mascot Centered (same position but higher up)
+                      MonsterCharacter(
+                        size: 100,
+                        animation: MonsterAnimation.excited,
+                        imagePath: 'assets/images/solo_green.png',
+                      ),
+                      // Back Button on the left
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppColors.cardSurface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.borderLight),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.calmBlueDark.withValues(alpha: 0.15),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                  spreadRadius: -2,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: AppColors.calmBlueDark,
+                              size: 20,
+                            ),
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new_rounded,
-                              color: AppColors.calmBlueDark, size: 20),
                         ),
                       ),
-
                     ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Character
-                  Center(
-                    child: MonsterCharacter(
-                      size: 100,
-                      animation: MonsterAnimation.excited,
-                      imagePath: 'assets/images/solo_green.png',
-                    ),
                   ),
 
                   const SizedBox(height: 16),
