@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
@@ -54,17 +55,38 @@ class _ComprehensiveAssessmentSelectionScreenState extends State<ComprehensiveAs
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
-        : CustomScrollView(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          // Map Background
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/backgrounds/map_bg.png'),
+                fit: BoxFit.cover,
+                opacity: 0.9,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                color: AppColors.cream.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          
+          _isLoading 
+            ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+            : CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
               SliverAppBar(
                 expandedHeight: 220.0,
                 floating: false,
                 pinned: true,
-                backgroundColor: Colors.white,
+                backgroundColor: Colors.transparent,
                 elevation: 0,
                 systemOverlayStyle: SystemUiOverlayStyle.dark,
                 leading: GestureDetector(
@@ -72,7 +94,7 @@ class _ComprehensiveAssessmentSelectionScreenState extends State<ComprehensiveAs
                   child: Container(
                     margin: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: Colors.white.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 22),
@@ -81,11 +103,7 @@ class _ComprehensiveAssessmentSelectionScreenState extends State<ComprehensiveAs
                 flexibleSpace: FlexibleSpaceBar(
                   background: Container(
                     decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFFE0F2FE), Colors.white],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
+                      color: Colors.transparent,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -205,6 +223,8 @@ class _ComprehensiveAssessmentSelectionScreenState extends State<ComprehensiveAs
               ),
             ],
           ),
+        ],
+      ),
     );
   }
 
