@@ -9,6 +9,7 @@ import '../services/progress_service.dart';
 import 'dashboard_screen.dart';
 import 'add_student_screen.dart';
 import 'parent/parent_hub_screen.dart';
+import 'assessment_prompt_screen.dart';
 
 /// Select Student Screen
 /// Dyslexia-accessible: calm blue header, warm white student cards,
@@ -231,6 +232,9 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
         final student = _students[index] as Map<String, dynamic>;
         final isSelected = _selectedIndex == index;
         final avatarUrl = student['avatar_url'] ?? 'assets/images/solo_blue.png';
+        
+        final Map<String, dynamic> compResults = (student['comprehensive_assessment_results'] as Map?)?.cast<String, dynamic>() ?? {};
+        final bool needsScreening = compResults.length < 4;
 
         return GestureDetector(
           onTap: () async {
@@ -304,15 +308,87 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 4),
-                // Grade
-                Text(
-                  student['grade'] ?? '',
-                  style: AppTypography.caption(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
+                const SizedBox(height: 8),
+                // Button
+                if (needsScreening)
+                  GestureDetector(
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AssessmentPromptScreen(
+                            studentId: student['id'],
+                            studentName: student['first_name'] ?? 'student',
+                            avatarUrl: avatarUrl,
+                          ),
+                        ),
+                      );
+                      _loadStudents(); // Reload data after returning
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFD97706).withValues(alpha: 0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.assignment_late_rounded, size: 14, color: Colors.white),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Pending',
+                            style: AppTypography.caption(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.greenGradient,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.gentleGreen.withValues(alpha: 0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle_rounded, size: 14, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Ready',
+                          style: AppTypography.caption(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
           ),
