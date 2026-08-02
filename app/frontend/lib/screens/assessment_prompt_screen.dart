@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
-import 'assessment_screen.dart';
+import 'comprehensive_assessment_selection_screen.dart';
 import 'parent_account_screen.dart';
 
 /// Friendly prompt screen shown after a student is successfully saved.
@@ -59,7 +59,10 @@ class _AssessmentPromptScreenState extends State<AssessmentPromptScreen>
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => AssessmentScreen(studentId: widget.studentId),
+        builder: (context) => ComprehensiveAssessmentSelectionScreen(
+          studentId: widget.studentId,
+          studentName: widget.studentName,
+        ),
       ),
     );
   }
