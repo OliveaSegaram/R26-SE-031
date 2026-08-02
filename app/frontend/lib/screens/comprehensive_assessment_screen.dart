@@ -135,16 +135,21 @@ class _ComprehensiveAssessmentScreenState extends State<ComprehensiveAssessmentS
     return Scaffold(
       body: Stack(
         children: [
+          // Map Background
           Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.calmBlue.withValues(alpha: 0.1),
-                  AppColors.cream,
-                  AppColors.mintBg,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/backgrounds/map_bg.png'),
+                fit: BoxFit.cover,
+                opacity: 0.9,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                color: AppColors.cream.withValues(alpha: 0.7),
               ),
             ),
           ),
