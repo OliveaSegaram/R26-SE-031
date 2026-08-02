@@ -184,7 +184,7 @@ class _AssessmentPromptScreenState extends State<AssessmentPromptScreen>
                         const SizedBox(height: 10),
 
                         Text(
-                          'A quick 2-minute screening helps us understand ${widget.studentName}\'s unique learning style and tailor activities just for them.',
+                          'A quick 2-minute evaluation helps us understand ${widget.studentName}\'s unique learning style and tailor activities just for them.',
                           textAlign: TextAlign.center,
                           style: AppTypography.body(
                             fontSize: 14,
@@ -214,7 +214,7 @@ class _AssessmentPromptScreenState extends State<AssessmentPromptScreen>
 
                   // CTA Buttons
                   GradientButton(
-                    text: 'start screening',
+                    text: 'start assessment',
                     icon: Icons.play_arrow_rounded,
                     gradient: AppColors.blueButtonGradient,
                     onPressed: _startAssessment,

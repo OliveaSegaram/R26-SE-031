@@ -852,7 +852,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                                         size: 13, color: AppColors.warmAmber),
                                     const SizedBox(width: 4),
                                     Text(
-                                      'Screening',
+                                      'Pending',
                                       style: AppTypography.caption(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
