@@ -87,7 +87,7 @@ flutter run
 │   │   ├── assets/      # Images, audio, and curriculum data
 │   │   └── pubspec.yaml # Flutter dependencies
 │   ├── backend/         # Backend Services
-│       └── api/         # FastAPI Application (renamed from auth-service-v1)
+│       └── api/         # FastAPI Application (api)
 │           ├── routers/ # API Endpoints
 │           ├── schemas/ # Pydantic Data Models
 │           └── services/# Business Logic & ML Models
