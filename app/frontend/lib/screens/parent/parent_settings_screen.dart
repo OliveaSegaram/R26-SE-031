@@ -764,8 +764,8 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
         ...displayStudents.map((student) {
           final bool isDeleting =
               _deletingStudentIds.contains(student['id']);
-          final bool needsScreening =
-              student['assessment_completed'] != true;
+          final Map<String, dynamic> compResults = (student['comprehensive_assessment_results'] as Map?)?.cast<String, dynamic>() ?? {};
+          final bool needsScreening = compResults.length < 4;
 
           return AnimatedOpacity(
             duration: const Duration(milliseconds: 400),
