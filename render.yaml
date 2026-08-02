@@ -3,8 +3,8 @@ services:
     name: adaptedmind-auth-api
     plan: free
     env: python
-    buildCommand: "pip install -r app/backend/auth-service-v1/requirements.txt"
-    startCommand: "cd app/backend/auth-service-v1 && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    buildCommand: "pip install -r app/backend/api/requirements.txt"
+    startCommand: "cd app/backend/api && uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PORT
         value: 8015
