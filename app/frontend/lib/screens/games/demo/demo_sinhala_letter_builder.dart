@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import '../../../../models/curriculum_models.dart';
+import '../../../../services/tts_service.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import 'dart:math';
 
@@ -25,7 +25,7 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
   List<String> _currentPillams = [];
   
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final FlutterTts _flutterTts = FlutterTts();
+
   final Random _random = Random();
 
   @override
@@ -68,9 +68,7 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
     final roundData = widget.activityNode.rounds[_currentRoundIndex];
     final target = roundData['target'] as String;
     
-    await _flutterTts.setLanguage("si-LK");
-    await _flutterTts.setSpeechRate(0.4); // Slowed down for kids
-    await _flutterTts.speak(target);
+    await TtsService().speak(target);
   }
   
   Future<void> _playChime(bool success) async {
