@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../welcome_screen.dart';
 import '../assessment_prompt_screen.dart';
+import '../comprehensive_assessment_selection_screen.dart';
 import '../add_student_screen.dart';
 import '../dashboard_screen.dart';
 import '../../services/auth_service.dart';
@@ -763,8 +764,8 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
         ...displayStudents.map((student) {
           final bool isDeleting =
               _deletingStudentIds.contains(student['id']);
-          final bool needsScreening =
-              student['assessment_completed'] != true;
+          final Map<String, dynamic> compResults = (student['comprehensive_assessment_results'] as Map?)?.cast<String, dynamic>() ?? {};
+          final bool needsScreening = compResults.length < 4;
 
           return AnimatedOpacity(
             duration: const Duration(milliseconds: 400),
@@ -851,7 +852,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                                         size: 13, color: AppColors.warmAmber),
                                     const SizedBox(width: 4),
                                     Text(
-                                      'Screening',
+                                      'Pending',
                                       style: AppTypography.caption(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
@@ -863,28 +864,43 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                               ),
                             )
                           else
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AppColors.gentleGreen.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.check_circle_rounded,
-                                      size: 13, color: AppColors.gentleGreen),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Completed',
-                                    style: AppTypography.caption(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.gentleGreen,
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ComprehensiveAssessmentSelectionScreen(
+                                      studentId: student['id'],
+                                      studentName:
+                                          student['first_name'] ?? 'Student',
                                     ),
                                   ),
-                                ],
+                                ).then((_) => _loadData());
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.gentleGreen.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.check_circle_rounded,
+                                        size: 13, color: AppColors.gentleGreen),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Completed',
+                                      style: AppTypography.caption(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.gentleGreen,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           // Action 2: Edit

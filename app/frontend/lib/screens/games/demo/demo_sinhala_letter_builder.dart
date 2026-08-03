@@ -95,6 +95,7 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
     
     if (_selectedAkura == correctAkura && _selectedPillam == correctPillam) {
       await _playChime(true);
+      telemetry?.completeRound(100);
       
       setState(() {
         if (_currentRoundIndex < widget.activityNode.rounds.length - 1) {
@@ -105,7 +106,6 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
             if (mounted) _speakTarget();
           });
         } else {
-          telemetry?.completeRound(100);
           telemetry?.completeActivity(context);
         }
       });

@@ -32,6 +32,10 @@ class TelemetryWrapper extends StatefulWidget {
 
   @override
   State<TelemetryWrapper> createState() => TelemetryWrapperState();
+
+  static TelemetryWrapperState? of(BuildContext context) {
+    return context.findAncestorStateOfType<TelemetryWrapperState>();
+  }
 }
 
 class TelemetryWrapperState extends State<TelemetryWrapper> {
