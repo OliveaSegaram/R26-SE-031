@@ -32,14 +32,14 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
   // 8 cute 3D claymorphic characters to cycle through!
   final List<String> _monsterImages = [
-    'assets/images/solo_blue.png',
-    'assets/images/solo_orange.png',
-    'assets/images/solo_green.png',
-    'assets/images/solo_teal.png',
-    'assets/images/solo_pink.png',
-    'assets/images/solo_yellow.png',
-    'assets/images/solo_yellow_straight.png',
-    'assets/images/solo_pink_up.png',
+    'assets/images/mascots/solo_blue.png',
+    'assets/images/mascots/solo_orange.png',
+    'assets/images/mascots/solo_green.png',
+    'assets/images/mascots/solo_teal.png',
+    'assets/images/mascots/solo_pink.png',
+    'assets/images/mascots/solo_yellow.png',
+    'assets/images/mascots/solo_yellow_straight.png',
+    'assets/images/mascots/solo_pink_up.png',
   ];
 
   @override

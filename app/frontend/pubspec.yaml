@@ -40,6 +40,9 @@ flutter:
   assets:
     - assets/images/
     - assets/images/backgrounds/
+    - assets/images/branding/
+    - assets/images/mascots/
+    - assets/images/shape_recognition/
     - assets/images/skills/
     - assets/thumbnails/
     - assets/audio/
@@ -50,6 +53,6 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/images/app_icon.png"
+  image_path: "assets/images/branding/app_icon.png"
   min_sdk_android: 21
   remove_alpha_ios: true

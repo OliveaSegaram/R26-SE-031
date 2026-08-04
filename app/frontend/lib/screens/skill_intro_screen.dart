@@ -115,7 +115,7 @@ class _SkillIntroScreenState extends State<SkillIntroScreen> {
                     ),
                   ),
                   Image.asset(
-                    'assets/images/solo_blue.png',
+                    'assets/images/mascots/solo_blue.png',
                     height: 140,
                     fit: BoxFit.contain,
                   ),
