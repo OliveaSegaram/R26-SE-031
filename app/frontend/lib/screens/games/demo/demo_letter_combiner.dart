@@ -5,18 +5,17 @@ import '../../../../services/tts_service.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import 'dart:math';
 
-class DemoSinhalaLetterBuilder extends StatefulWidget {
+class DemoLetterCombiner extends StatefulWidget {
   final ActivityNode activityNode;
 
-  const DemoSinhalaLetterBuilder({Key? key, required this.activityNode})
+  const DemoLetterCombiner({Key? key, required this.activityNode})
       : super(key: key);
 
   @override
-  State<DemoSinhalaLetterBuilder> createState() =>
-      _DemoSinhalaLetterBuilderState();
+  State<DemoLetterCombiner> createState() => _DemoLetterCombinerState();
 }
 
-class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
+class _DemoLetterCombinerState extends State<DemoLetterCombiner> {
   int _currentRoundIndex = 0;
   String? _selectedAkura;
   String? _selectedPillam;
@@ -25,17 +24,12 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
   List<String> _currentPillams = [];
   
   final AudioPlayer _audioPlayer = AudioPlayer();
-
   final Random _random = Random();
 
   @override
   void initState() {
     super.initState();
     _setupRound();
-    // Wait for the build to complete before speaking to prevent state issues
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _speakTarget();
-    });
   }
   
   @override
@@ -64,18 +58,16 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
     _selectedPillam = null;
   }
   
-  Future<void> _speakTarget() async {
+  Future<void> _playPronunciation() async {
+    // Currently uses TTS, but ready for recorded audio if needed
     final roundData = widget.activityNode.rounds[_currentRoundIndex];
     final target = roundData['target'] as String;
-    
     await TtsService().speak(target);
   }
   
   Future<void> _playChime(bool success) async {
     try {
-      final assetPath = success
-          ? 'audio/correct.mp3'
-          : 'audio/wrong.mp3';
+      final assetPath = success ? 'audio/correct.mp3' : 'audio/wrong.mp3';
       await _audioPlayer.play(AssetSource(assetPath));
     } catch (e) {
       debugPrint('Audio play error: $e');
@@ -97,12 +89,8 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
       
       setState(() {
         if (_currentRoundIndex < widget.activityNode.rounds.length - 1) {
-          telemetry?.completeRound(100);
           _currentRoundIndex++;
           _setupRound();
-          Future.delayed(const Duration(milliseconds: 1000), () {
-            if (mounted) _speakTarget();
-          });
         } else {
           telemetry?.completeActivity(context);
         }
@@ -125,10 +113,10 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4F8),
+      backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
         title: Text(widget.activityNode.title),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.indigo,
       ),
       body: SafeArea(
         child: Padding(
@@ -136,28 +124,28 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 20),
-              // Big Speaker Button
+              const SizedBox(height: 10),
+              // Big Speaker Button in the center
               Center(
                 child: GestureDetector(
-                  onTap: _speakTarget,
+                  onTap: _playPronunciation,
                   child: Container(
-                    padding: const EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(40),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
+                          color: Colors.indigo.withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
                     child: const Icon(
-                      Icons.volume_up,
-                      size: 80,
-                      color: Colors.blueAccent,
+                      Icons.volume_up_rounded,
+                      size: 90,
+                      color: Colors.indigo,
                     ),
                   ),
                 ),
@@ -165,51 +153,16 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
               const SizedBox(height: 20),
               const Center(
                 child: Text(
-                  'Listen and build the letter!',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              // Combined Letter Display
-              Center(
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.blueAccent.withOpacity(0.5), 
-                      width: 2
-                    ),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    (_selectedAkura ?? '') + (_selectedPillam ?? ''),
-                    style: TextStyle(
-                      fontSize: 60,
-                      fontWeight: FontWeight.bold,
-                      color: (_selectedAkura != null && _selectedPillam != null) 
-                          ? Colors.blueAccent 
-                          : Colors.grey,
-                    ),
-                  ),
+                  'Tap to hear the sound',
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
                 ),
               ),
               const SizedBox(height: 30),
               
               // Akura Selection
               const Text(
-                '1. Select Base Letter (Akura):',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                'Select Akura (Letter):',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -227,12 +180,12 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
                 )).toList(),
               ),
               
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
               
               // Pillam Selection
               const Text(
-                '2. Select Vowel Modifier (Pillam):',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                'Select Pilla (Modifier):',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -258,18 +211,18 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
                     ? _checkAnswer
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.green.shade600,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
                 child: const Text(
-                  'Check Answer',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  'Check Match',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
             ],
           ),
         ),
@@ -285,21 +238,21 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 70,
-        height: 70,
+        width: 75,
+        height: 75,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.orangeAccent : Colors.white,
-          borderRadius: BorderRadius.circular(15),
+          color: isSelected ? Colors.indigoAccent : Colors.white,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? Colors.deepOrange : Colors.grey.shade300,
+            color: isSelected ? Colors.indigo : Colors.grey.shade400,
             width: 3,
           ),
           boxShadow: [
             if (!isSelected)
-              const BoxShadow(
-                color: Colors.black12,
-                blurRadius: 4,
-                offset: Offset(2, 2),
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.3),
+                blurRadius: 5,
+                offset: const Offset(0, 3),
               ),
           ],
         ),
@@ -307,7 +260,7 @@ class _DemoSinhalaLetterBuilderState extends State<DemoSinhalaLetterBuilder> {
         child: Text(
           text,
           style: TextStyle(
-            fontSize: 36,
+            fontSize: 38,
             fontWeight: FontWeight.bold,
             color: isSelected ? Colors.white : Colors.black87,
           ),
