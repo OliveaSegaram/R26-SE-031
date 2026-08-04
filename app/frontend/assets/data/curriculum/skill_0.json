@@ -71,6 +71,48 @@
           {"target": "තෙ", "correct_akura": "ත", "correct_pillam": "ෙ", "distractor_akuras": ["ප", "ද", "න"], "distractor_pillams": ["ේ", "ො", "ා"]},
           {"target": "පො", "correct_akura": "ප", "correct_pillam": "ො", "distractor_akuras": ["බ", "ම", "ය"], "distractor_pillams": ["ෝ", "ෙ", "ා"]}
         ]
+      },
+      {
+        "id": "demo_5",
+        "title": "Letter Combiner",
+        "description": "Combine the Akura and Pilla to build the letter.",
+        "intro_audio_url": "",
+        "file_path": "",
+        "telemetry_tags": ["sinhala", "phonics", "letter_building"],
+        "template_type": "letter_combiner_demo",
+        "rounds": [
+          {"target": "කා", "correct_akura": "ක", "correct_pillam": "ා", "distractor_akuras": ["ග", "ට", "ප"], "distractor_pillams": ["ි", "ු", "ෙ"]},
+          {"target": "ගි", "correct_akura": "ග", "correct_pillam": "ි", "distractor_akuras": ["ක", "ම", "ර"], "distractor_pillams": ["ා", "ී", "ු"]}
+        ]
+      },
+      {
+        "id": "demo_6",
+        "title": "Icon Spotting",
+        "description": "Spot the correct icon among distractors.",
+        "intro_audio_url": "",
+        "file_path": "",
+        "telemetry_tags": ["visual_skills", "recognizing"],
+        "template_type": "icon_spotting_demo",
+        "rounds": [
+          {"target": "🌸", "distractors": ["🌳", "🍎"], "total_count": 5},
+          {"target": "🐟", "distractors": ["🐦", "🐕"], "total_count": 8},
+          {"target": "🔴", "distractors": ["🔵", "🟢"], "total_count": 10},
+          {"target": "⭐", "distractors": ["🌙", "☀️"], "total_count": 12}
+        ]
+      },
+      {
+        "id": "demo_7",
+        "title": "Sentence Spotting",
+        "description": "Read the sentence and find the highlighted object.",
+        "intro_audio_url": "",
+        "file_path": "",
+        "telemetry_tags": ["reading_comprehension", "recognizing"],
+        "template_type": "sentence_object_spotting_demo",
+        "rounds": [
+          {"sentence_start": "ලස්සන ", "highlighted_word": "සඳ", "sentence_end": " පායයි.", "target_icon": "🌙", "distractors": ["☀️", "⭐", "☁️"], "total_count": 4},
+          {"sentence_start": "ඒ ", "highlighted_word": "ගස", "sentence_end": " උසයි.", "target_icon": "🌳", "distractors": ["🌸", "🍎", "🌺"], "total_count": 4},
+          {"sentence_start": "පුංචි ", "highlighted_word": "මාළු", "sentence_end": " පීනයි.", "target_icon": "🐟", "distractors": ["🐦", "🐕", "🐢"], "total_count": 5}
+        ]
       }
     ]
   }
