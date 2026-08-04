@@ -40,7 +40,6 @@ flutter:
   assets:
     - assets/images/
     - assets/images/backgrounds/
-    - assets/images/cards/
     - assets/images/skills/
     - assets/thumbnails/
     - assets/audio/
