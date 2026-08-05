@@ -8,7 +8,8 @@ import '../../../../models/curriculum_models.dart';
 /// Template: pattern_game
 class Activity2CompletePattern extends StatefulWidget {
   final ActivityNode? activityNode;
-  const Activity2CompletePattern({super.key, this.activityNode});
+  final bool isRemedial;
+  const Activity2CompletePattern({super.key, this.activityNode, this.isRemedial = false});
 
   @override
   State<Activity2CompletePattern> createState() => _Activity2CompletePatternState();
@@ -67,12 +68,17 @@ class _Activity2CompletePatternState extends State<Activity2CompletePattern> {
 
   @override
   Widget build(BuildContext context) {
-    final rounds = widget.activityNode?.rounds ?? [];
+    var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('රටාව සම්පූර්ණ කරමු')),
         body: const Center(child: Text('No rounds available.')),
       );
+    }
+    
+    // Anti-fatigue: limit to 5 rounds maximum
+    if (rounds.length > 5) {
+      rounds = rounds.sublist(0, 5);
     }
 
     final currentRound = rounds[_currentRoundIndex];
@@ -80,7 +86,25 @@ class _Activity2CompletePatternState extends State<Activity2CompletePattern> {
     final instructionText = widget.activityNode?.description ?? 'ඊළඟට පැමිණෙන හැඩය තෝරා රටාව සම්පූර්ණ කරන්න.';
 
     final sequence = (currentRound['sequence'] as List?)?.map((e) => e?.toString()).toList() ?? ['🔴', '🔵', '🔴', null];
-    final options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵'];
+    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵'];
+    
+    // Dynamic Remedial Adjustment: Cap distractors
+    if (widget.isRemedial && options.length > 2) {
+      // Keep only 2 options. Ensure the correct option is one of them.
+      final correctAnswer = currentRound['correctOption']?.toString() ??
+        currentRound['correct_option']?.toString() ??
+        (currentRound['correct_index'] != null && (currentRound['correct_index'] as int) < options.length
+            ? options[currentRound['correct_index'] as int]
+            : options.first);
+            
+      options = options.where((opt) => opt == correctAnswer).toList();
+      final distractors = (currentRound['options'] as List?)?.map((e) => e.toString()).where((opt) => opt != correctAnswer).toList() ?? [];
+      
+      while (options.length < 2 && distractors.isNotEmpty) {
+        options.add(distractors.removeAt(0));
+      }
+      options.shuffle();
+    }
     final correctOption = currentRound['correctOption']?.toString() ??
         currentRound['correct_option']?.toString() ??
         (currentRound['correct_index'] != null && (currentRound['correct_index'] as int) < options.length

@@ -4,6 +4,8 @@ import 'welcome_screen.dart';
 import 'assessment_prompt_screen.dart';
 import 'add_student_screen.dart';
 import 'dashboard_screen.dart';
+import 'comprehensive_assessment_screen.dart';
+import 'comprehensive_results_screen.dart';
 import '../services/auth_service.dart';
 import '../services/student_service.dart';
 
@@ -25,6 +27,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
   List<dynamic> _students = [];
   final Set<String> _deletingStudentIds = {};
   bool _showAllStudents = false;
+  String? _selectedAssessmentStudentId;
 
   // Email preference toggles
   bool _progressEmails = true;
@@ -47,6 +50,9 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
       setState(() {
         _isLoading = false;
         _students = students;
+        if (_students.isNotEmpty && _selectedAssessmentStudentId == null) {
+          _selectedAssessmentStudentId = _students.first['id'];
+        }
         _authProvider = provider;
         if (profile != null) {
           _userName = profile['name'] ?? '';
@@ -274,6 +280,12 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
                     )
                   : null,
               child: _buildStudentsContent(),
+            ),
+            _divider(),
+            _buildExpansionSection(
+              icon: Icons.assignment_rounded,
+              title: 'comprehensive assessments',
+              child: _buildComprehensiveAssessmentsContent(),
             ),
             _divider(),
             _buildExpansionSection(
@@ -563,6 +575,141 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
           ),
         ),
       ],
+    );
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //  COMPREHENSIVE ASSESSMENTS CONTENT
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Widget _buildComprehensiveAssessmentsContent() {
+    if (_students.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: Text(
+            'add a student to take assessments.',
+            style: AppTypography.body(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Dropdown to select child
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: AppColors.slateBg.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedAssessmentStudentId ?? _students.first['id'],
+              isExpanded: true,
+              icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.calmBlue),
+              style: AppTypography.body(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedAssessmentStudentId = newValue;
+                  });
+                }
+              },
+              items: _students.map<DropdownMenuItem<String>>((student) {
+                return DropdownMenuItem<String>(
+                  value: student['id'],
+                  child: Text(student['first_name'] ?? 'Unknown'),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+
+        // Categories
+        _buildAssessmentCategoryCard('basic', 'මූලික ඩිස්ලෙක්සියා පරීක්ෂණය', Icons.psychology_rounded),
+        _buildAssessmentCategoryCard('reading', 'කියවීම හා දෘශ්‍ය සංජානන සම්බන්ධ අපහසුතා', Icons.menu_book_rounded),
+        _buildAssessmentCategoryCard('writing', 'ලිවීම සම්බන්ධ අපහසුතා', Icons.edit_rounded),
+        _buildAssessmentCategoryCard('other', 'වෙනත් සම්බන්ධ අපහසුතා', Icons.more_horiz_rounded),
+
+        const SizedBox(height: 12),
+        // View Results
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              if (_selectedAssessmentStudentId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ComprehensiveResultsScreen(
+                      studentId: _selectedAssessmentStudentId!,
+                      studentName: _students.firstWhere((s) => s['id'] == _selectedAssessmentStudentId)['first_name'] ?? 'Student',
+                    ),
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.analytics_rounded, size: 18),
+            label: Text('view results', style: AppTypography.body(fontWeight: FontWeight.w600)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.calmBlue,
+              side: const BorderSide(color: AppColors.calmBlue),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAssessmentCategoryCard(String category, String title, IconData icon) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: AppColors.warmWhite,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            if (_selectedAssessmentStudentId != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ComprehensiveAssessmentScreen(
+                    studentId: _selectedAssessmentStudentId!,
+                    category: category,
+                  ),
+                ),
+              );
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.borderLight),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: AppColors.calmBlue, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTypography.body(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textHint, size: 14),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

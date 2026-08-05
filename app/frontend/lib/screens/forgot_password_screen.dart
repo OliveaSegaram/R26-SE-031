@@ -58,71 +58,132 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 20.0),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image/Icon
-              Center(
-                child: Image.asset(
-                  'assets/images/monster_pink.png',
-                  height: 120,
-                  fit: BoxFit.contain,
+              // Back Button
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.cardSurface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.borderLight),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppColors.textPrimary,
+                    size: 20,
+                  ),
                 ),
               ),
-              
-              const SizedBox(height: 40),
-              
-              Text(
-                'forgot password?',
-                style: AppTypography.heading(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+              const SizedBox(height: 32),
+
+              // Premium Icon Container
+              Center(
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.cardSurface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.borderLight, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.calmBlue.withValues(alpha: 0.15),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      )
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.lock_reset_rounded,
+                      size: 48,
+                      color: AppColors.calmBlue,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Headings
+              Center(
+                child: Text(
+                  'forgot password?',
+                  style: AppTypography.heading(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                'Don\'t worry! Enter the email address associated with your account, and we\'ll send you a pin to reset it.',
-                style: AppTypography.body(
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
-              ),
-              
-              const SizedBox(height: 32),
-              
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                style: AppTypography.body(fontSize: 16),
-                decoration: const InputDecoration(
-                  hintText: 'email address',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-              ),
-              
-              const SizedBox(height: 40),
-              
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
-                  : GradientButton(
-                      text: 'send code',
-                      onPressed: _submitEmail,
-                      icon: Icons.send_rounded,
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    "Don't worry! Enter your email and we'll send a pin to reset it.",
+                    textAlign: TextAlign.center,
+                    style: AppTypography.body(
+                      fontSize: 15,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
                     ),
-              const SizedBox(height: 20), // Extra padding at bottom for keyboard
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Form Container
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.cardSurface,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppColors.borderLight),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.calmBlueDark.withValues(alpha: 0.08),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                      spreadRadius: -4,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: AppTypography.body(fontSize: 15),
+                      decoration: const InputDecoration(
+                        hintText: 'email address',
+                        prefixIcon: Icon(Icons.email_outlined, size: 20),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: GradientButton(
+                  text: _isLoading ? 'sending code...' : 'send code',
+                  onPressed: _isLoading ? () {} : _submitEmail,
+                  icon: Icons.send_rounded,
+                ),
+              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),

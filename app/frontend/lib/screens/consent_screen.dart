@@ -80,7 +80,7 @@ class _ConsentScreenState extends State<ConsentScreen>
       );
     } else {
       // Student saved! Navigate to assessment prompt
-      Navigator.pushReplacement(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => AssessmentPromptScreen(
@@ -90,6 +90,7 @@ class _ConsentScreenState extends State<ConsentScreen>
           ),
         ),
       );
+      if (mounted) Navigator.pop(context, true);
     }
   }
 

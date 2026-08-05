@@ -109,3 +109,10 @@ test_summary.txt
 .svn/
 .swiftpm/
 migrate_working_dir/
+/app/frontend/macos
+/app/frontend/windows
+**/GeneratedPluginRegistrant.swift
+**/generated_plugin_registrant.cc
+**/generated_plugins.cmake
+
+/test-sample-data

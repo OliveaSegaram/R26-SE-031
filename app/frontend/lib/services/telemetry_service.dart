@@ -47,6 +47,15 @@ class TelemetryEvent {
 
   /// Number of >2s pauses with no screen touch (hesitation / reading difficulty)
   final int hesitationCount;
+  
+  /// Number of times the student replayed the audio instruction
+  final int audioReplayCount;
+
+  /// Maximum absolute device acceleration vector magnitude during the round
+  final double maxDeviceMotion;
+
+  /// True if the user exited the activity before completing all rounds
+  final bool isAbandoned;
 
   /// Normalized (x%, y%) touch path captured during the round
   final List<TouchPoint> touchPath;
@@ -61,6 +70,9 @@ class TelemetryEvent {
     required this.totalRoundLatencyMs,
     required this.misclickCount,
     required this.hesitationCount,
+    required this.audioReplayCount,
+    required this.maxDeviceMotion,
+    required this.isAbandoned,
     required this.touchPath,
   });
 
@@ -74,6 +86,9 @@ class TelemetryEvent {
         'total_round_latency_ms': totalRoundLatencyMs,
         'misclick_count': misclickCount,
         'hesitation_count': hesitationCount,
+        'audio_replay_count': audioReplayCount,
+        'max_device_motion': maxDeviceMotion,
+        'is_abandoned': isAbandoned,
         'touch_path': touchPath.map((p) => p.toJson()).toList(),
       };
 }
@@ -90,6 +105,9 @@ class TelemetryService {
 
   final List<TelemetryEvent> _sessionEvents = [];
   DateTime? _sessionStartTime;
+  
+  /// Expose the session events for debugging and the temporary dashboard
+  List<TelemetryEvent> get sessionEvents => List.unmodifiable(_sessionEvents);
 
   // Plugin Management
   final List<ITelemetryPlugin> _plugins = [];

@@ -5,8 +5,10 @@ import '../widgets/monster_character.dart';
 import '../services/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'select_student_screen.dart';
+import 'therapist/therapist_dashboard_screen.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
+import '../widgets/sliding_role_toggle.dart';
 
 /// Sign-In Screen
 /// Dyslexia-accessible: crème background, warm white inputs, 18pt+ text,
@@ -24,6 +26,7 @@ class _SignInScreenState extends State<SignInScreen>
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  String _selectedRole = "Parent";
 
 
 
@@ -52,6 +55,7 @@ class _SignInScreenState extends State<SignInScreen>
     final error = await AuthService().login(
       _emailController.text.trim(),
       _passwordController.text,
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
     );
 
     if (!mounted) return;
@@ -62,8 +66,12 @@ class _SignInScreenState extends State<SignInScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
+      final profile = await AuthService().getUserProfile();
+      if (!mounted) return;
+      final isTherapist = profile != null && profile['role'] == 'specialist';
+      
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const SelectStudentScreen()),
+        MaterialPageRoute(builder: (context) => isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen()),
         (Route<dynamic> route) => false,
       );
     }
@@ -72,7 +80,9 @@ class _SignInScreenState extends State<SignInScreen>
   Future<void> _onGoogleSignIn() async {
     setState(() => _isLoading = true);
 
-    final error = await AuthService().loginWithGoogle();
+    final error = await AuthService().loginWithGoogle(
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
+    );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -84,8 +94,12 @@ class _SignInScreenState extends State<SignInScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
+      final profile = await AuthService().getUserProfile();
+      if (!mounted) return;
+      final isTherapist = profile != null && profile['role'] == 'specialist';
+      
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const SelectStudentScreen()),
+        MaterialPageRoute(builder: (_) => isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen()),
         (Route<dynamic> route) => false,
       );
     }
@@ -94,7 +108,9 @@ class _SignInScreenState extends State<SignInScreen>
   Future<void> _onMicrosoftSignIn() async {
     setState(() => _isLoading = true);
     
-    final error = await AuthService().loginWithMicrosoft();
+    final error = await AuthService().loginWithMicrosoft(
+      role: _selectedRole == "Therapist" ? "specialist" : "parent",
+    );
     
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -106,8 +122,12 @@ class _SignInScreenState extends State<SignInScreen>
         SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
       );
     } else {
+      final profile = await AuthService().getUserProfile();
+      if (!mounted) return;
+      final isTherapist = profile != null && profile['role'] == 'specialist';
+      
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const SelectStudentScreen()),
+        MaterialPageRoute(builder: (_) => isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen()),
         (Route<dynamic> route) => false,
       );
     }
@@ -126,42 +146,45 @@ class _SignInScreenState extends State<SignInScreen>
                 children: [
                   const SizedBox(height: 12),
 
-                  // Back button
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardSurface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderLight),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.calmBlueDark.withValues(alpha: 0.15),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                            spreadRadius: -2,
+                  Stack(
+                    alignment: Alignment.topCenter,
+                    children: [
+                      // Mascot Centered (same position but higher up)
+                      MonsterCharacter(
+                        size: 110,
+                        animation: MonsterAnimation.wave,
+                        imagePath: 'assets/images/mascot_blue_jumping.png',
+                      ),
+                      // Back Button on the left
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppColors.cardSurface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.borderLight),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.calmBlueDark.withValues(alpha: 0.15),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                  spreadRadius: -2,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_rounded,
+                              color: AppColors.textPrimary,
+                              size: 22,
+                            ),
                           ),
-                        ],
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: AppColors.textPrimary,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // Character
-                  Center(
-                    child: MonsterCharacter(
-                      size: 110,
-                      animation: MonsterAnimation.wave,
-                      imagePath: 'assets/images/mascot_blue_jumping.png',
-                    ),
+                    ],
                   ),
 
                   const SizedBox(height: 20),
@@ -204,6 +227,17 @@ class _SignInScreenState extends State<SignInScreen>
                     ),
                     child: Column(
                       children: [
+                        // Sliding Premium Role Toggle
+                        SlidingRoleToggle(
+                          selectedRole: _selectedRole,
+                          onChanged: (role) {
+                            setState(() {
+                              _selectedRole = role;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        
                         // Email input
                         TextFormField(
                           controller: _emailController,

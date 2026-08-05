@@ -1,6 +1,8 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import '../services/progress_service.dart';
+import '../services/student_service.dart';
 
 class CurriculumIndex {
   final List<SkillSummary> skills;
@@ -134,8 +136,31 @@ class SkillDetail {
   }
 
   static Future<SkillDetail> load(String fileName) async {
-    final String response = await rootBundle.loadString('assets/data/curriculum/$fileName');
-    final skillDetail = SkillDetail.fromJson(json.decode(response), fileName.replaceAll('.json', ''), 'Skill Details');
+    final skillId = fileName.replaceAll('.json', '');
+    String responseData = '';
+    
+    try {
+      // 1. Try fetching from CMS backend first
+      final studentId = ProgressService().currentStudentId;
+      final url = Uri.parse('http://10.0.2.2:8015/api/v1/auth/activities/$skillId?student_id=$studentId');
+      final res = await http.get(url).timeout(const Duration(seconds: 3));
+      if (res.statusCode == 200) {
+        final decoded = json.decode(res.body);
+        // If it's a valid skill with activities, use it
+        if (decoded is Map && decoded.containsKey('activities') && (decoded['activities'] as List).isNotEmpty) {
+          responseData = res.body;
+        }
+      }
+    } catch (e) {
+      // Ignore network errors and fallback to local
+    }
+
+    // 2. Fallback to local hardcoded JSON if backend failed or returned empty
+    if (responseData.isEmpty) {
+      responseData = await rootBundle.loadString('assets/data/curriculum/$fileName');
+    }
+
+    final skillDetail = SkillDetail.fromJson(json.decode(responseData), skillId, 'Skill Details');
 
     List<ActivityNode> resolvedActivities = [];
     for (var activity in skillDetail.activities) {

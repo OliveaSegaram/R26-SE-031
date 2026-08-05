@@ -9,7 +9,8 @@ import '../../../../services/tts_service.dart';
 /// Template: audio_sequence_game
 class Activity11AudioSequence extends StatefulWidget {
   final ActivityNode? activityNode;
-  const Activity11AudioSequence({super.key, this.activityNode});
+  final bool isRemedial;
+  const Activity11AudioSequence({super.key, this.activityNode, this.isRemedial = false});
 
   @override
   State<Activity11AudioSequence> createState() => _Activity11AudioSequenceState();
@@ -35,8 +36,13 @@ class _Activity11AudioSequenceState extends State<Activity11AudioSequence> {
     super.dispose();
   }
 
+  List<dynamic> get _rounds {
+    var r = widget.activityNode?.rounds ?? [];
+    return r.length > 5 ? r.sublist(0, 5) : r;
+  }
+
   void _playAudioPrompt() {
-    final rounds = widget.activityNode?.rounds ?? [];
+    final rounds = _rounds;
     if (rounds.isEmpty) return;
 
     final currentRound = rounds[_currentRoundIndex];
@@ -96,7 +102,7 @@ class _Activity11AudioSequenceState extends State<Activity11AudioSequence> {
 
   @override
   Widget build(BuildContext context) {
-    final rounds = widget.activityNode?.rounds ?? [];
+    final rounds = _rounds;
     if (rounds.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('වචන අනුපිළිවෙලින් පෙළගස්වමු')),
@@ -106,8 +112,19 @@ class _Activity11AudioSequenceState extends State<Activity11AudioSequence> {
 
     final currentRound = rounds[_currentRoundIndex];
     final titleText = widget.activityNode?.title ?? 'වචන අනුපිළිවෙලින් පෙළගස්වමු';
-    final targetSequence = (currentRound['sequence'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵', '🟡'];
-    final options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵', '🟡'];
+    final targetSequence = (currentRound['target_sequence'] as List?)?.map((e) => e.toString()).toList() ?? (currentRound['sequence'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵', '🟡'];
+    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵', '🟡', '🟢', '🟣'];
+
+    if (widget.isRemedial && options.length > targetSequence.length) {
+      // Keep only required items + 1 distractor
+      final requiredItems = targetSequence.toSet();
+      final distractors = options.where((o) => !requiredItems.contains(o)).toList();
+      options = requiredItems.toList();
+      if (distractors.isNotEmpty) {
+        options.add(distractors.first);
+      }
+      options.shuffle();
+    }
     final audioPrompt = currentRound['audio_prompt']?.toString() ?? 'අනුපිළිවෙලට සවන් දෙන්න';
 
     return Scaffold(
@@ -144,7 +161,10 @@ class _Activity11AudioSequenceState extends State<Activity11AudioSequence> {
 
               // Audio Sequence Button
               GestureDetector(
-                onTap: _playAudioPrompt,
+                onTap: () {
+                  context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+                  _playAudioPrompt();
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   decoration: BoxDecoration(

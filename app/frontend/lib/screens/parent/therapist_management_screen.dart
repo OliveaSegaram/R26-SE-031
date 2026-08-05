@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../services/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
 import '../connect_specialist_screen.dart';
+
+import 'package:intl/intl.dart';
 
 /// Therapist Management Screen — View, manage, and disconnect therapists.
 class TherapistManagementScreen extends StatefulWidget {
@@ -12,31 +15,60 @@ class TherapistManagementScreen extends StatefulWidget {
       _TherapistManagementScreenState();
 }
 
+
+
 class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
-  // Mock therapist data
-  final List<Map<String, dynamic>> _therapists = [
-    {
-      'name': 'Dr. Nishara Silva',
-      'clinic': 'Colombo Speech & Language Centre',
-      'specialization': 'Speech-Language Pathologist',
-      'child': 'Sami',
-      'connectedDate': 'Jul 10, 2026',
-      'status': 'active',
-    },
-  ];
+  List<dynamic> _therapists = [];
+  bool _isLoading = true;
+  final Set<String> _disconnectingIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConnections();
+  }
+
+  Future<void> _loadConnections() async {
+    final connections = await AuthService().getConnections();
+    if (mounted) {
+      setState(() {
+        _therapists = connections.map((c) {
+          String formattedDate = 'Unknown';
+          if (c['connected_at'] != null) {
+            try {
+              final dt = DateTime.parse(c['connected_at'].toString());
+              formattedDate = DateFormat('MMMM d, yyyy').format(dt);
+            } catch (_) {}
+          }
+          return {
+            'id': c['id'],
+            'name': c['therapist_name'] ?? 'Unknown',
+            'clinic': c['clinic_name'] ?? 'Clinic',
+            'specialization': 'Specialist',
+            'child': c['student_name'] ?? 'Unknown',
+            'connectedDate': formattedDate,
+            'status': c['status'],
+          };
+        }).toList();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.cream,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => const ConnectSpecialistScreen(),
             ),
           );
+          // Reload the list of therapists when we come back!
+          _loadConnections();
         },
         backgroundColor: AppColors.calmBlue,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
@@ -54,10 +86,23 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
             children: [
               _buildHeader(),
               const SizedBox(height: 24),
-              if (_therapists.isEmpty)
+              if (_isLoading)
+                const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+              else if (_therapists.isEmpty)
                 _buildEmptyState()
               else
-                ..._therapists.map((t) => _buildTherapistCard(t)),
+                ..._therapists.map((t) {
+                  final bool isDisconnecting = _disconnectingIds.contains(t['id']);
+                  return AnimatedOpacity(
+                    duration: const Duration(milliseconds: 400),
+                    opacity: isDisconnecting ? 0.0 : 1.0,
+                    child: AnimatedScale(
+                      duration: const Duration(milliseconds: 400),
+                      scale: isDisconnecting ? 0.8 : 1.0,
+                      child: _buildTherapistCard(t),
+                    ),
+                  );
+                }),
               const SizedBox(height: 80), // FAB clearance
             ],
           ),
@@ -376,17 +421,45 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
                     fontSize: 14, color: AppColors.textSecondary)),
           ),
           ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _therapists.remove(therapist);
-              });
+            onPressed: () async {
+              // Optimistically close dialog
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('therapist disconnected'),
-                  backgroundColor: AppColors.softCoral,
-                ),
-              );
+              
+              final connectionId = therapist['id'] as String?;
+              if (connectionId != null) {
+                // Trigger the magic disappear effect!
+                setState(() {
+                  _disconnectingIds.add(connectionId);
+                });
+
+                final error = await AuthService().disconnectSpecialist(connectionId);
+                
+                if (!mounted) return;
+                if (error != null) {
+                  // Revert the disappearing effect if it fails
+                  setState(() {
+                    _disconnectingIds.remove(connectionId);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('failed to disconnect: $error'), backgroundColor: AppColors.softCoral),
+                  );
+                } else {
+                  // Wait for the poof animation to finish before removing from list
+                  await Future.delayed(const Duration(milliseconds: 500));
+
+                  if (!mounted) return;
+                  setState(() {
+                    _therapists.removeWhere((t) => t['id'] == connectionId);
+                    _disconnectingIds.remove(connectionId);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('therapist disconnected'),
+                      backgroundColor: AppColors.softCoral,
+                    ),
+                  );
+                }
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.softCoral,

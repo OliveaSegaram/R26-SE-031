@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
@@ -6,6 +7,8 @@ import '../services/auth_service.dart';
 import 'reset_password_screen.dart';
 import 'select_student_screen.dart';
 import 'onboarding_screen.dart';
+import 'therapist/therapist_dashboard_screen.dart';
+
 
 class OtpScreen extends StatefulWidget {
   final String email;
@@ -18,38 +21,85 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
+
   final TextEditingController _otpController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isLoading = false;
+  Timer? _timer;
+  int _secondsRemaining = 60;
 
   @override
   void initState() {
     super.initState();
-    // Request focus automatically, unless it's a demo bypass
-    if (widget.email.startsWith('demo_')) {
-      // Auto-fill and auto-verify for demo users
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _otpController.text = "000000";
-          _verifyOtp();
-        }
-      });
-    } else {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (mounted) _focusNode.requestFocus();
-      });
-    }
+    _startTimer();
+
+    // Request focus automatically
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
+
+  void _startTimer() {
+    _secondsRemaining = 60;
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (_secondsRemaining > 0) {
+        setState(() {
+          _secondsRemaining--;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
+
     _otpController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
+
+
+  Future<void> _resendOtp() async {
+    setState(() => _isLoading = true);
+    
+    final error = await AuthService().resendOtp(widget.email);
+    
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: AppColors.softCoral),
+      );
+    } else {
+      setState(() {
+        _otpController.clear();
+        _secondsRemaining = 60;
+        _startTimer();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('A new OTP has been sent to your email.'), backgroundColor: AppColors.gentleGreen),
+      );
+    }
+  }
+
   Future<void> _verifyOtp() async {
+
+    if (_secondsRemaining == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OTP expired. Please tap Resend to get a new code.'), backgroundColor: AppColors.softCoral),
+      );
+      return;
+    }
+
     String otp = _otpController.text;
+
     if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter all 6 digits.'), backgroundColor: AppColors.softCoral),
@@ -69,10 +119,21 @@ class _OtpScreenState extends State<OtpScreen> {
         );
       } else {
         if (widget.isSignup) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-            (route) => false,
-          );
+          final profile = await AuthService().getUserProfile();
+          if (!mounted) return;
+          final isTherapist = profile != null && profile['role'] == 'specialist';
+          
+          if (isTherapist) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const TherapistDashboardScreen()),
+              (route) => false,
+            );
+          } else {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+              (route) => false,
+            );
+          }
         } else {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const SelectStudentScreen()),
@@ -90,135 +151,246 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'check your email',
-                style: AppTypography.heading(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              RichText(
-                text: TextSpan(
-                  style: AppTypography.body(
-                    fontSize: 16,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
-                  children: [
-                    const TextSpan(text: 'We\'ve sent a 6-digit code to '),
-                    TextSpan(
-                      text: widget.email,
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (widget.isSignup) {
+          AuthService().cancelSignup(widget.email);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.cream,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Back Button
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.cardSurface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderLight),
                     ),
-                    const TextSpan(text: '. Enter it below to verify your account.'),
-                  ],
+                    child: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: AppColors.textPrimary,
+                      size: 20,
+                    ),
+                  ),
                 ),
-              ),
-              
-              const SizedBox(height: 40),
-              
-              // World-Class OTP Input (Single Hidden TextField + Visual Boxes)
-              GestureDetector(
-                onTap: () {
-                  FocusScope.of(context).requestFocus(_focusNode);
-                },
-                child: Stack(
-                  children: [
-                    // Hidden TextField that controls the actual keyboard
-                    Opacity(
-                      opacity: 0.0,
-                      child: TextField(
-                        controller: _otpController,
-                        focusNode: _focusNode,
-                        keyboardType: TextInputType.number,
-                        maxLength: 6,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        onChanged: (value) {
-                          setState(() {}); // Rebuild to update UI boxes
-                          if (value.length == 6) {
-                            _focusNode.unfocus();
-                            _verifyOtp(); // Auto-verify when 6 digits are entered
-                          }
-                        },
+                const SizedBox(height: 24),
+
+                // Premium Icon Container
+                Center(
+                  child: Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: AppColors.cardSurface,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.borderLight, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.calmBlue.withValues(alpha: 0.15),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        )
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.mark_email_unread_rounded,
+                        size: 40,
+                        color: AppColors.calmBlue,
                       ),
                     ),
-                    
-                    // Visual Boxes
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(6, (index) {
-                        String currentDigit = '';
-                        if (index < _otpController.text.length) {
-                          currentDigit = _otpController.text[index];
-                        }
-                        
-                        bool isFocused = index == _otpController.text.length || 
-                                       (index == 5 && _otpController.text.length == 6);
-                        
-                        return Container(
-                          width: 45,
-                          height: 55,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: AppColors.cardSurface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isFocused ? AppColors.calmBlue : AppColors.borderLight,
-                              width: 2,
-                            ),
-                            boxShadow: isFocused ? [
-                              BoxShadow(
-                                color: AppColors.calmBlue.withValues(alpha: 0.2),
-                                blurRadius: 8,
-                                spreadRadius: 2,
-                              )
-                            ] : [],
-                          ),
-                          child: Text(
-                            currentDigit,
-                            style: AppTypography.heading(
-                              fontSize: 24, 
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              
-              const SizedBox(height: 40),
-              
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
-                  : GradientButton(
-                      text: 'verify',
-                      onPressed: _verifyOtp,
-                      icon: Icons.check_circle_outline,
+                const SizedBox(height: 24),
+
+                // Headings
+                Center(
+                  child: Text(
+                    'check your email',
+                    style: AppTypography.heading(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
                     ),
-              const SizedBox(height: 20), // Extra padding for keyboard
-            ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: AppTypography.body(
+                        fontSize: 15,
+                        color: AppColors.textSecondary,
+                        height: 1.5,
+                      ),
+                      children: [
+                        const TextSpan(text: "We've sent a 6-digit code to\n"),
+                        TextSpan(
+                          text: widget.email,
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        ),
+                        const TextSpan(text: '.\nEnter it below to verify your account.'),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // Form Container for OTP Boxes
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardSurface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.borderLight),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.calmBlueDark.withValues(alpha: 0.08),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                        spreadRadius: -4,
+                      ),
+                    ],
+                  ),
+                  child: GestureDetector(
+                    onTap: () {
+                      FocusScope.of(context).requestFocus(_focusNode);
+                    },
+                    child: Stack(
+                      children: [
+                        // Hidden TextField
+                        Opacity(
+                          opacity: 0.0,
+                          child: TextField(
+                            controller: _otpController,
+                            autofillHints: const [AutofillHints.oneTimeCode],
+                            focusNode: _focusNode,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            onChanged: (value) {
+                              setState(() {}); 
+                              if (value.length == 6) {
+                                _focusNode.unfocus();
+                                _verifyOtp();
+                              }
+                            },
+                          ),
+                        ),
+                        
+                        // Visual Boxes
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: List.generate(6, (index) {
+                            String currentDigit = '';
+                            if (index < _otpController.text.length) {
+                              currentDigit = _otpController.text[index];
+                            }
+                            
+                            bool isFocused = index == _otpController.text.length || 
+                                           (index == 5 && _otpController.text.length == 6);
+                            
+                            return Container(
+                              width: 40,
+                              height: 50,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: AppColors.cardSurface,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isFocused ? AppColors.calmBlue : AppColors.borderLight,
+                                  width: 2,
+                                ),
+                                boxShadow: isFocused ? [
+                                  BoxShadow(
+                                    color: AppColors.calmBlue.withValues(alpha: 0.2),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  )
+                                ] : [],
+                              ),
+                              child: Text(
+                                currentDigit,
+                                style: AppTypography.heading(
+                                  fontSize: 22, 
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+
+                // Resend Timer/Button
+                Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      if (_secondsRemaining == 0 && !_isLoading) {
+                        _resendOtp();
+                      }
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _secondsRemaining > 0 ? AppColors.cream : AppColors.calmBlue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _secondsRemaining > 0 ? AppColors.borderLight : AppColors.calmBlue,
+                          width: _secondsRemaining > 0 ? 1 : 2,
+                        ),
+                      ),
+                      child: Text(
+                        _secondsRemaining > 0
+                            ? 'resend code in 0:${_secondsRemaining.toString().padLeft(2, '0')}'
+                            : 'Resend OTP now',
+                        style: AppTypography.body(
+                          fontSize: 15,
+                          color: _secondsRemaining > 0 ? AppColors.textSecondary : AppColors.calmBlue,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+                
+                SizedBox(
+                  height: 48,
+                  width: double.infinity,
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+                      : GradientButton(
+                          text: 'verify code',
+                          onPressed: _verifyOtp,
+                          icon: Icons.check_circle_outline,
+                        ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
