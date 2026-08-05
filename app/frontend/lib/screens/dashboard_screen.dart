@@ -79,7 +79,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final studentName = widget.studentData?['name'] ?? 'Student';
-    final avatarUrl = widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png';
+    final avatarUrl = widget.studentData?['avatar_url'] ?? 'assets/images/mascots/solo_blue.png';
 
     return Scaffold(
       backgroundColor: AppColors.cream,

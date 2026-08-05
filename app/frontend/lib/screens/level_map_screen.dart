@@ -852,7 +852,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
               height: 60,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage(widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png'),
+                  image: AssetImage(widget.studentData?['avatar_url'] ?? 'assets/images/mascots/solo_blue.png'),
                   fit: BoxFit.contain,
                 ),
                 boxShadow: [

@@ -95,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: AppColors.calmBlue,
       body: SizedBox.expand(
         child: Image.asset(
-          'assets/images/splash_bg.png',
+          'assets/images/branding/splash_bg.png',
           fit: BoxFit.cover,
           alignment: Alignment.center,
         ),

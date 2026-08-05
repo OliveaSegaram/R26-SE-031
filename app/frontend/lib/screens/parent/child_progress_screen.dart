@@ -161,7 +161,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
     final name = widget.studentData['first_name'] ?? 'student';
     final grade = widget.studentData['grade'] ?? 'n/a';
     final avatar =
-        widget.studentData['avatar_url'] ?? 'assets/images/solo_blue.png';
+        widget.studentData['avatar_url'] ?? 'assets/images/mascots/solo_blue.png';
 
     return Scaffold(
       backgroundColor: AppColors.cream,

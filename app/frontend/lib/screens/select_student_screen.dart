@@ -193,7 +193,7 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
           const MonsterCharacter(
             size: 150,
             animation: MonsterAnimation.curious,
-            imagePath: 'assets/images/solo_green.png',
+            imagePath: 'assets/images/mascots/solo_green.png',
           ),
           const SizedBox(height: 20),
           Text(
@@ -231,7 +231,7 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
       itemBuilder: (context, index) {
         final student = _students[index] as Map<String, dynamic>;
         final isSelected = _selectedIndex == index;
-        final avatarUrl = student['avatar_url'] ?? 'assets/images/solo_blue.png';
+        final avatarUrl = student['avatar_url'] ?? 'assets/images/mascots/solo_blue.png';
         
         final Map<String, dynamic> compResults = (student['comprehensive_assessment_results'] as Map?)?.cast<String, dynamic>() ?? {};
         final bool needsScreening = compResults.length < 4;

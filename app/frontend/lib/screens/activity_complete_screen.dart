@@ -64,7 +64,7 @@ class ActivityCompleteScreen extends StatelessWidget {
                     ),
                   ),
                   Image.asset(
-                    'assets/images/solo_blue.png',
+                    'assets/images/mascots/solo_blue.png',
                     height: 130,
                     fit: BoxFit.contain,
                   ),

@@ -503,7 +503,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
   Widget _buildChildCard(Map<String, dynamic> student) {
     final name = student['first_name'] ?? 'student';
     final grade = student['grade'] ?? 'n/a';
-    final avatar = student['avatar_url'] ?? 'assets/images/solo_blue.png';
+    final avatar = student['avatar_url'] ?? 'assets/images/mascots/solo_blue.png';
 
     // Mock data
     const int streak = 5;

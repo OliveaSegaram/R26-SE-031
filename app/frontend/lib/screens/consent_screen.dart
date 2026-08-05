@@ -194,7 +194,7 @@ class _ConsentScreenState extends State<ConsentScreen>
                       radius: 24,
                       backgroundColor: AppColors.cream,
                       backgroundImage: AssetImage(
-                        widget.studentData['avatar_url'] ?? 'assets/images/solo_blue.png',
+                        widget.studentData['avatar_url'] ?? 'assets/images/mascots/solo_blue.png',
                       ),
                     ),
                     const SizedBox(width: 14),

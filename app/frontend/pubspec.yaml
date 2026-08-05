@@ -40,9 +40,14 @@ flutter:
   assets:
     - assets/images/
     - assets/images/backgrounds/
-    - assets/images/cards/
-    - assets/images/characters/
-    - assets/images/icons/
+    - assets/images/branding/
+    - assets/images/mascots/
+    - assets/images/activity_icons/
+    - assets/images/activity_icons/animals/
+    - assets/images/activity_icons/fruits_food/
+    - assets/images/activity_icons/everyday_objects/
+    - assets/images/activity_icons/vehicles/
+    - assets/images/activity_icons/nature/
     - assets/images/skills/
     - assets/thumbnails/
     - assets/audio/
@@ -53,6 +58,6 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/images/app_icon.png"
+  image_path: "assets/images/branding/app_icon.png"
   min_sdk_android: 21
   remove_alpha_ios: true

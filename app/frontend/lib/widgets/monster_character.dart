@@ -14,7 +14,7 @@ class MonsterCharacter extends StatefulWidget {
     this.size = 200,
     this.animation = MonsterAnimation.idle,
     this.showBody = true,
-    this.imagePath = 'assets/images/solo_yellow.png',
+    this.imagePath = 'assets/images/mascots/solo_yellow.png',
   });
 
   @override

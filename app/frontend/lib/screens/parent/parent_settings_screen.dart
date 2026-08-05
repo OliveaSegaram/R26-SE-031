@@ -805,7 +805,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                             backgroundColor: AppColors.cream,
                             backgroundImage: AssetImage(
                                 student['avatar_url'] ??
-                                    'assets/images/solo_blue.png'),
+                                    'assets/images/mascots/solo_blue.png'),
                           ),
                           const SizedBox(width: 14),
                           Expanded(

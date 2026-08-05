@@ -26,15 +26,15 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
   String? _selectedGrade = 'Grade 1';
   String? _selectedDailyLimit = 'No Limit';
-  String _selectedAvatarUrl = 'assets/images/solo_blue.png';
+  String _selectedAvatarUrl = 'assets/images/mascots/solo_blue.png';
 
   final List<String> _avatars = [
-    'assets/images/solo_blue.png',
-    'assets/images/solo_green.png',
-    'assets/images/solo_pink.png',
-    'assets/images/solo_teal.png',
-    'assets/images/solo_orange.png',
-    'assets/images/solo_pink_up.png',
+    'assets/images/mascots/solo_blue.png',
+    'assets/images/mascots/solo_green.png',
+    'assets/images/mascots/solo_pink.png',
+    'assets/images/mascots/solo_teal.png',
+    'assets/images/mascots/solo_orange.png',
+    'assets/images/mascots/solo_pink_up.png',
   ];
 
   final List<String> _limits = [
@@ -63,7 +63,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           widget.editStudentData!['daily_limit'] ?? 'No Limit';
       _selectedAvatarUrl =
           widget.editStudentData!['avatar_url'] ??
-          'assets/images/solo_blue.png';
+          'assets/images/mascots/solo_blue.png';
     }
 
     _checkGoogleUser();
