@@ -46,39 +46,49 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Navigate based on auth status after 3.5 seconds
     Future.delayed(const Duration(milliseconds: 3500), () async {
-      if (!mounted) return;
-      final token = await AuthService().getAccessToken();
-      if (!mounted) return;
-
-      if (token != null) {
-        final profile = await AuthService().getUserProfile();
+      try {
         if (!mounted) return;
-        
-        final isTherapist = profile != null && profile['role'] == 'therapist';
-        
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 800),
-          ),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const WelcomeScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 800),
-          ),
-        );
+        final token = await AuthService().getAccessToken();
+        if (!mounted) return;
+
+        if (token != null) {
+          final profile = await AuthService().getUserProfile();
+          if (!mounted) return;
+          
+          final isTherapist = profile != null && profile['role'] == 'therapist';
+          
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  isTherapist ? const TherapistDashboardScreen() : const SelectStudentScreen(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 800),
+            ),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const WelcomeScreen(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 800),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Splash Screen Error: $e');
+        // Fallback navigation if something completely fails
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+          );
+        }
       }
     });
   }

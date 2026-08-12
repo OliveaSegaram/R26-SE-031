@@ -227,7 +227,16 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                     ],
                   ),
                   child: ClipOval(
-                    child: Image.asset(avatarUrl, fit: BoxFit.cover),
+                    child: Image.asset(
+                      avatarUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'assets/images/mascots/solo_blue.png',
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),

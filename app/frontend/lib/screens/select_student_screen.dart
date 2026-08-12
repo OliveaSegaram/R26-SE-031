@@ -294,6 +294,13 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
                     child: Image.asset(
                       avatarUrl,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback to default avatar if the asset is not found
+                        return Image.asset(
+                          'assets/images/mascots/solo_blue.png',
+                          fit: BoxFit.cover,
+                        );
+                      },
                     ),
                   ),
                 ),
