@@ -44,19 +44,22 @@ class _SplashScreenState extends State<SplashScreen>
     // Start text animation
     _animationController.forward();
 
-    // Navigate based on auth status after 3.5 seconds
-    Future.delayed(const Duration(milliseconds: 3500), () async {
+    // Navigate based on auth status after minimal splash duration
+    Future.delayed(const Duration(milliseconds: 2000), () async {
       try {
         if (!mounted) return;
         final token = await AuthService().getAccessToken();
         if (!mounted) return;
 
         if (token != null) {
-          final profile = await AuthService().getUserProfile();
+          // Use cached role first so we don't wait 30s for Render server cold boot
+          final cachedRole = await AuthService().getCachedRole();
+          final isTherapist = cachedRole == 'therapist';
+          
+          // We can let getUserProfile run in the background if we want, but no need to await it here
+          AuthService().getUserProfile().then((_) {}).catchError((_) {});
+
           if (!mounted) return;
-          
-          final isTherapist = profile != null && profile['role'] == 'therapist';
-          
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>

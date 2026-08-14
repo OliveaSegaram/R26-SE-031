@@ -48,11 +48,21 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
   }
 
   Future<void> _loadStudents() async {
-    final students = await StudentService().getStudents();
+    // 1. Instantly load from cache to eliminate the loading spinner
+    final cachedStudents = await StudentService().getCachedStudents();
+    if (mounted && cachedStudents.isNotEmpty) {
+      setState(() {
+        _isLoading = false;
+        _students = cachedStudents;
+      });
+    }
+
+    // 2. Fetch fresh data in the background (will update cache automatically)
+    final freshStudents = await StudentService().getStudents();
     if (mounted) {
       setState(() {
         _isLoading = false;
-        _students = students;
+        _students = freshStudents;
       });
     }
   }
