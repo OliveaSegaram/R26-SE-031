@@ -67,15 +67,34 @@ class StudentService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as List<dynamic>;
+        final students = jsonDecode(response.body) as List<dynamic>;
+        // Cache the students for instant loading next time
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('cached_students_list', jsonEncode(students));
+        return students;
       }
-      return [];
+      return await getCachedStudents();
     } catch (e) {
-      return [];
+      // Fallback to cache on network error or timeout
+      return await getCachedStudents();
     }
+  }
+
+  /// Get students from local cache for instant UI rendering
+  Future<List<dynamic>> getCachedStudents() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString('cached_students_list');
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        return jsonDecode(cachedStr) as List<dynamic>;
+      }
+    } catch (e) {
+      // Ignore cache errors
+    }
+    return [];
   }
 
   /// Update an existing student's details.

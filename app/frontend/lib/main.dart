@@ -3,12 +3,22 @@ import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/progress_service.dart';
+import 'dart:io';
+import 'http_overrides.dart';
 
 final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Set global HTTP overrides to fix long hangs (like 4 min IPv6 timeouts)
+  HttpOverrides.global = MyHttpOverrides();
+
+  // Ping the server early to wake up Render free tier in the background
+  try {
+    HttpClient().getUrl(Uri.parse('https://adaptedmind-auth-api.onrender.com/api/v1/auth')).then((req) => req.close()).catchError((_) {});
+  } catch (_) {}
+
   // Initialize ProgressService (no longer bypassing student ID)
   await ProgressService().init();
 

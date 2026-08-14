@@ -332,15 +332,27 @@ class AuthService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(const Duration(seconds: 10)); // Reduced timeout from 60s to 10s for better UX
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        // Cache the role for faster splash screen loads
+        if (data['role'] != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('cached_user_role', data['role']);
+        }
+        return data;
       }
       return null;
     } catch (e) {
       return null;
     }
+  }
+  
+  /// Helper to get the cached role quickly
+  Future<String> getCachedRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('cached_user_role') ?? 'parent';
   }
   /// Update Profile (Name/Email)
   Future<String?> updateProfile({String? name, String? email, String? specialization, String? clinicName}) async {
