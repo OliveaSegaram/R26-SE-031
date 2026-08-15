@@ -405,6 +405,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -682,6 +683,8 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
       scale: _scaleAnimation,
       child: GestureDetector(
         onTap: () async {
+          if (_isNavigating) return;
+          if (mounted) setState(() => _isNavigating = true);
           try {
             final skillDetail = await SkillDetail.load(widget.skill.file);
             if (!mounted) return;
@@ -699,6 +702,8 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
             widget.onReturn();
           } catch (e) {
             debugPrint('Error loading skill detail: $e');
+          } finally {
+            if (mounted) setState(() => _isNavigating = false);
           }
         },
         child: cardContent,
