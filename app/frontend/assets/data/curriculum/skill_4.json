@@ -1,1022 +1,285 @@
 [
   {
     "id": "skill_4",
-    "title": "Syllable Formation (පිල්ලම්)",
-    "description": "Dynamic curriculum generated from contents.md with cognitive telemetry",
+    "title": "සරල වාක්‍ය කියවීම",
+    "description": "සරල වාක්‍ය කියවමු! 🏆",
     "activities": [
       {
         "id": "act_1",
-        "title": "Syllable Identification (Long A - ා)",
-        "description": "",
+        "title": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
+        "description": "රූපයට ගැලපෙන නිවැරදි වාක්‍යය තෝරන්න",
         "telemetry_tags": [
-          "decoding"
+          "reading_comprehension",
+          "visual_context"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "Tap `කා` (among `ක`).",
+            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
             "options": [
-              "Option 1",
-              "Option 2"
+              "ඒ ගස උසයි.",
+              "ඒ මල ලස්සනයි."
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "correctOption": "ඒ ගස උසයි.",
+            "correct_index": 0
           },
           {
-            "raw_text": "Tap `ගා` (among `ග`).",
+            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
             "options": [
-              "Option 1",
-              "Option 2"
+              "බල්ලා නිදාගනී.",
+              "බල්ලා දුවයි.",
+              "බල්ලා බුරයි."
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "correctOption": "බල්ලා දුවයි.",
+            "correct_index": 1
           },
           {
-            "raw_text": "Tap `ටා` (among `ට`).",
+            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
             "options": [
-              "Option 1",
-              "Option 2"
+              "තාත්තා වැඩ කරයි.",
+              "අක්කා සෙල්ලම් කරයි.",
+              "අම්මා කෑම උයයි."
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "correctOption": "අම්මා කෑම උයයි.",
+            "correct_index": 2
           },
           {
-            "raw_text": "Tap `ඩා` (among `ඩ`).",
+            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
             "options": [
-              "Option 1",
-              "Option 2"
+              "ළමයි පාසල් යති.",
+              "ළමයි සෙල්ලම් කරති.",
+              "ළමයි පොත් කියවති.",
+              "ළමයි සිංදු කියති."
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "correctOption": "ළමයි සෙල්ලම් කරති.",
+            "correct_index": 1
           },
           {
-            "raw_text": "Tap `පා` (among `ප`).",
+            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
             "options": [
-              "Option 1",
-              "Option 2"
+              "කුරුල්ලා අහසේ පියඹයි.",
+              "මාළු දියේ පීනයි.",
+              "ගෙම්බා උඩ පනියි.",
+              "වඳුරා ගසේ පනියි.",
+              "සමනලයා මලට ඉගිලෙයි."
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Tap `බා` (among `බ`).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Tap `මා` (among `ම`).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Tap `යා` (among `ය`).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Tap `රා` (among `ර`).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Tap `ලා` (among `ල`).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "correctOption": "කුරුල්ලා අහසේ පියඹයි.",
+            "correct_index": 0
           }
         ]
       },
       {
         "id": "act_2",
-        "title": "Syllable Identification (Short/Long I - ි/ී)",
-        "description": "",
+        "title": "අඩු වචනය සොයන්න",
+        "description": "වාක්‍යයේ හිස්තැනට සුදුසු වචනය තෝරන්න",
         "telemetry_tags": [
-          "decoding"
+          "sentence_structure",
+          "vocabulary"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "missing_picture_game",
         "rounds": [
           {
-            "raw_text": "Tap `කි` (among `ක`, `කා`).",
-            "options": [
-              "Option 1",
-              "Option 2"
+            "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
+            "sequence": [
+              "මම",
+              null,
+              "බොමි"
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "options": [
+              "කිරි",
+              "බත්"
+            ],
+            "correctOption": "කිරි",
+            "correct_index": 0
           },
           {
-            "raw_text": "Tap `කී` (among `කි`, `ක`).",
-            "options": [
-              "Option 1",
-              "Option 2"
+            "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
+            "sequence": [
+              "ගසේ",
+              null,
+              "පිපේ"
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "options": [
+              "කොළ",
+              "මල්",
+              "ගල්"
+            ],
+            "correctOption": "මල්",
+            "correct_index": 1
           },
           {
-            "raw_text": "Tap `ගි` (among `ග`, `ගා`).",
-            "options": [
-              "Option 1",
-              "Option 2"
+            "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
+            "sequence": [
+              "අපි",
+              "පාසල්",
+              null
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "options": [
+              "එමු",
+              "කමු",
+              "යමු"
+            ],
+            "correctOption": "යමු",
+            "correct_index": 2
           },
           {
-            "raw_text": "Tap `ගී` (among `ගි`, `ග`).",
-            "options": [
-              "Option 1",
-              "Option 2"
+            "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
+            "sequence": [
+              "අම්මා",
+              null,
+              "උයයි"
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "options": [
+              "කෑම",
+              "පොත",
+              "සෙල්ලම්",
+              "සිංදු"
+            ],
+            "correctOption": "කෑම",
+            "correct_index": 0
           },
           {
-            "raw_text": "Tap `ටි` (among `ටී`, `ටා`).",
-            "options": [
-              "Option 1",
-              "Option 2"
+            "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
+            "sequence": [
+              "මල්ලී",
+              "ලස්සන",
+              null,
+              "අඳියි"
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Tap `ටී` (among `ටි`, `ට`).",
             "options": [
-              "Option 1",
-              "Option 2"
+              "ගෙදර",
+              "චිත්‍රයක්",
+              "කිරි",
+              "සීනි",
+              "වතුර"
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Tap `පි` (among `පී`, `පා`).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Tap `පී` (among `පි`, `ප`).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Tap `මි` (among `මී`, `මා`).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Tap `මී` (among `මි`, `ම`).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "correctOption": "චිත්‍රයක්",
+            "correct_index": 1
           }
         ]
       },
       {
         "id": "act_3",
-        "title": "Visual Math Matching",
-        "description": "",
+        "title": "වාක්‍යය හදමු",
+        "description": "වචන නිවැරදිව ගලපා වාක්‍යය සාදමු",
         "telemetry_tags": [
-          "decoding",
-          "visual_discrimination"
+          "sentence_structure",
+          "syntax"
         ],
-        "template_type": "matching_game",
+        "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "`ක + ා = ?` (Options: `කා`, `කි`)",
+            "prompt": "නිවැරදි වාක්‍යය තෝරන්න",
             "options": [
-              "`කා`",
-              "`කි`"
+              "ඒ ගස උසයි.",
+              "ගස ඒ උසයි."
             ],
-            "correctOption": "`කා`",
+            "correctOption": "ඒ ගස උසයි.",
             "correct_index": 0
           },
           {
-            "raw_text": "`ග + ි = ?` (Options: `ගි`, `ගා`)",
+            "prompt": "නිවැරදි වාක්‍යය තෝරන්න",
             "options": [
-              "`ගි`",
-              "`ගා`"
+              "දුවයි බල්ලා.",
+              "බල්ලා දුවයි.",
+              "බල්ලා ගස."
             ],
-            "correctOption": "`ගි`",
+            "correctOption": "බල්ලා දුවයි.",
+            "correct_index": 1
+          },
+          {
+            "prompt": "නිවැරදි වාක්‍යය තෝරන්න",
+            "options": [
+              "උයයි අම්මා කෑම.",
+              "කෑම උයයි අම්මා.",
+              "අම්මා කෑම උයයි."
+            ],
+            "correctOption": "අම්මා කෑම උයයි.",
+            "correct_index": 2
+          },
+          {
+            "prompt": "නිවැරදි වාක්‍යය තෝරන්න",
+            "options": [
+              "ළමයි පාසල් යති.",
+              "යති පාසල් ළමයි.",
+              "පාසල් යති ළමයි.",
+              "ළමයි යති පාසල්."
+            ],
+            "correctOption": "ළමයි පාසල් යති.",
             "correct_index": 0
           },
           {
-            "raw_text": "`ට + ී = ?` (Options: `ටී`, `ටි`)",
+            "prompt": "නිවැරදි වාක්‍යය තෝරන්න",
             "options": [
-              "`ටී`",
-              "`ටි`"
+              "ඉගිලෙයි සමනලයා මලට.",
+              "මලට සමනලයා ඉගිලෙයි.",
+              "සමනලයා මලට ඉගිලෙයි.",
+              "ඉගිලෙයි මලට සමනලයා.",
+              "සමනලයා ඉගිලෙයි මලට."
             ],
-            "correctOption": "`ටී`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ඩ + ු = ?` (Options: `ඩු`, `ඩා`)",
-            "options": [
-              "`ඩු`",
-              "`ඩා`"
-            ],
-            "correctOption": "`ඩු`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ප + ූ = ?` (Options: `පූ`, `පු`)",
-            "options": [
-              "`පූ`",
-              "`පු`"
-            ],
-            "correctOption": "`පූ`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`බ + ෙ = ?` (Options: `බෙ`, `බේ`)",
-            "options": [
-              "`බෙ`",
-              "`බේ`"
-            ],
-            "correctOption": "`බෙ`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ම + ේ = ?` (Options: `මේ`, `මෙ`)",
-            "options": [
-              "`මේ`",
-              "`මෙ`"
-            ],
-            "correctOption": "`මේ`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ය + ො = ?` (Options: `යො`, `යෝ`)",
-            "options": [
-              "`යො`",
-              "`යෝ`"
-            ],
-            "correctOption": "`යො`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ර + ෝ = ?` (Options: `රෝ`, `රො`)",
-            "options": [
-              "`රෝ`",
-              "`රො`"
-            ],
-            "correctOption": "`රෝ`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ල + ෞ = ?` (Options: `ලෞ`, `ලෝ`)",
-            "options": [
-              "`ලෞ`",
-              "`ලෝ`"
-            ],
-            "correctOption": "`ලෞ`",
-            "correct_index": 0
+            "correctOption": "සමනලයා මලට ඉගිලෙයි.",
+            "correct_index": 2
           }
         ]
       },
       {
         "id": "act_4",
-        "title": "Auditory to Visual Match",
-        "description": "",
+        "title": "නිවැරදි ද වැරදි ද?",
+        "description": "ප්‍රකාශය නිවැරදි ද වැරදි ද යන්න තෝරන්න",
         "telemetry_tags": [
-          "decoding",
-          "visual_discrimination"
-        ],
-        "template_type": "matching_game",
-        "rounds": [
-          {
-            "raw_text": "Listen \"Kaa\" -> Select `කා`.",
-            "options": [
-              "කා",
-              "Other"
-            ],
-            "correctOption": "කා",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen \"Gi\" -> Select `ගි`.",
-            "options": [
-              "ගි",
-              "Other"
-            ],
-            "correctOption": "ගි",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen \"Tee\" -> Select `ටී`.",
-            "options": [
-              "ටී",
-              "Other"
-            ],
-            "correctOption": "ටී",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen \"Du\" -> Select `ඩු`.",
-            "options": [
-              "ඩු",
-              "Other"
-            ],
-            "correctOption": "ඩු",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen \"Puu\" -> Select `පූ`.",
-            "options": [
-              "පූ",
-              "Other"
-            ],
-            "correctOption": "පූ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen \"Be\" -> Select `බෙ`.",
-            "options": [
-              "බෙ",
-              "Other"
-            ],
-            "correctOption": "බෙ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen \"Mae\" -> Select `මේ`.",
-            "options": [
-              "මේ",
-              "Other"
-            ],
-            "correctOption": "මේ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen \"Yo\" -> Select `යො`.",
-            "options": [
-              "යො",
-              "Other"
-            ],
-            "correctOption": "යො",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen \"Roo\" -> Select `රෝ`.",
-            "options": [
-              "රෝ",
-              "Other"
-            ],
-            "correctOption": "රෝ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen \"Lau\" -> Select `ලෞ`.",
-            "options": [
-              "ලෞ",
-              "Other"
-            ],
-            "correctOption": "ලෞ",
-            "correct_index": 0
-          }
-        ]
-      },
-      {
-        "id": "act_5",
-        "title": "Odd One Out (Syllables)",
-        "description": "",
-        "telemetry_tags": [
-          "decoding"
-        ],
-        "template_type": "odd_one_out_game",
-        "rounds": [
-          {
-            "raw_text": "`කා කා කි කා කා` -> Find `කි`.",
-            "options": [
-              "කි",
-              "Other"
-            ],
-            "correctOption": "කි",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ගි ගි ගී ගි ගි` -> Find `ගී`.",
-            "options": [
-              "ගී",
-              "Other"
-            ],
-            "correctOption": "ගී",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ටු ටු ටූ ටු ටු` -> Find `ටූ`.",
-            "options": [
-              "ටූ",
-              "Other"
-            ],
-            "correctOption": "ටූ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`පෙ පෙ පේ පෙ පෙ` -> Find `පේ`.",
-            "options": [
-              "පේ",
-              "Other"
-            ],
-            "correctOption": "පේ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`මො මො මෝ මො මො` -> Find `මෝ`.",
-            "options": [
-              "මෝ",
-              "Other"
-            ],
-            "correctOption": "මෝ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`කී කී කි කී කී` -> Find `කි`.",
-            "options": [
-              "කි",
-              "Other"
-            ],
-            "correctOption": "කි",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ගූ ගූ ගු ගූ ගූ` -> Find `ගු`.",
-            "options": [
-              "ගු",
-              "Other"
-            ],
-            "correctOption": "ගු",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ටේ ටේ ටෙ ටේ ටේ` -> Find `ටෙ`.",
-            "options": [
-              "ටෙ",
-              "Other"
-            ],
-            "correctOption": "ටෙ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`පෝ පෝ පො පෝ පෝ` -> Find `පො`.",
-            "options": [
-              "පො",
-              "Other"
-            ],
-            "correctOption": "පො",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`මෞ මෞ මෝ මෞ මෞ` -> Find `මෝ`.",
-            "options": [
-              "මෝ",
-              "Other"
-            ],
-            "correctOption": "මෝ",
-            "correct_index": 0
-          }
-        ]
-      },
-      {
-        "id": "act_6",
-        "title": "Targeted Syllable Search",
-        "description": "",
-        "telemetry_tags": [
-          "decoding",
-          "visual_discrimination"
+          "reading_comprehension",
+          "logic"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
-            "raw_text": "Find 3 `කා` in a grid.",
+            "prompt": "'මාළු පීනයි' - මෙම ප්‍රකාශය නිවැරදිද?",
             "options": [
-              "Option 1",
-              "Option 2"
+              "නිවැරදියි",
+              "වැරදියි"
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 4 `ගි` in a grid.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 4 `ටී` in a grid.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 5 `ඩු` in a grid.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 5 `පූ` in a grid.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 6 `බෙ` in a grid.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 6 `මේ` in a grid.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 7 `යො` in a grid.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 8 `රෝ` in a grid.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 10 `ලෞ` in a massive grid.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          }
-        ]
-      },
-      {
-        "id": "act_7",
-        "title": "Syllable Building (Drag Modifier)",
-        "description": "",
-        "telemetry_tags": [
-          "decoding"
-        ],
-        "template_type": "generic_mcq_game",
-        "rounds": [
-          {
-            "raw_text": "Build \"Kaa\": `ක` + drag `ා`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Build \"Gi\": `ග` + drag `ි`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Build \"Tee\": `ට` + drag `ී`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Build \"Du\": `ඩ` + drag `ු`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Build \"Puu\": `ප` + drag `ූ`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Build \"Be\": `බ` + drag `ෙ`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Build \"Mae\": `ම` + drag `ේ`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Build \"Yo\": `ය` + drag `ො`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Build \"Roo\": `ර` + drag `ෝ`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Build \"Lau\": `ල` + drag `ෞ`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          }
-        ]
-      },
-      {
-        "id": "act_8",
-        "title": "Rapid Syllable Reading",
-        "description": "",
-        "telemetry_tags": [
-          "decoding"
-        ],
-        "template_type": "generic_mcq_game",
-        "rounds": [
-          {
-            "raw_text": "Read aloud 5 syllables (කා, ගි, ටු, පෙ, මො).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 6 syllables.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 7 syllables.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 8 syllables.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 10 syllables.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 12 syllables (mix of long and short).",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 15 syllables.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 18 syllables.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 20 syllables.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 25 complex syllables.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          }
-        ]
-      },
-      {
-        "id": "act_9",
-        "title": "Timed Reading Challenge",
-        "description": "",
-        "telemetry_tags": [
-          "decoding"
-        ],
-        "template_type": "generic_mcq_game",
-        "rounds": [
-          {
-            "raw_text": "Read aloud 5 syllables in 10s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 8 syllables in 15s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 10 syllables in 15s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 12 syllables in 20s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 15 syllables in 20s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 18 syllables in 25s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 20 syllables in 25s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 22 syllables in 30s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 25 syllables in 30s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 30 syllables in 40s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          }
-        ]
-      },
-      {
-        "id": "act_10",
-        "title": "Pillam Construction Boss",
-        "description": "",
-        "telemetry_tags": [
-          "decoding"
-        ],
-        "template_type": "generic_mcq_game",
-        "rounds": [
-          {
-            "raw_text": "Audio \"Kaa\" -> Build `කා`.",
-            "options": [
-              "Build `කා",
-              "Other"
-            ],
-            "correctOption": "Build `කා",
+            "correctOption": "නිවැරදියි",
             "correct_index": 0
           },
           {
-            "raw_text": "Audio \"Gi\" -> Build `ගි`.",
+            "prompt": "'කුරුල්ලන් අහසේ පියඹයි' - මෙම ප්‍රකාශය නිවැරදිද?",
             "options": [
-              "Build `ගි",
-              "Other"
+              "වැරදියි",
+              "නිවැරදියි"
             ],
-            "correctOption": "Build `ගි",
+            "correctOption": "නිවැරදියි",
+            "correct_index": 1
+          },
+          {
+            "prompt": "'හරකා ගස් උඩ නගියි' - මෙම ප්‍රකාශය නිවැරදිද?",
+            "options": [
+              "නිවැරදියි",
+              "වැරදියි"
+            ],
+            "correctOption": "වැරදියි",
+            "correct_index": 1
+          },
+          {
+            "prompt": "'ඉර රෑට පායයි' - මෙම ප්‍රකාශය නිවැරදිද?",
+            "options": [
+              "වැරදියි",
+              "නිවැරදියි"
+            ],
+            "correctOption": "වැරදියි",
             "correct_index": 0
           },
           {
-            "raw_text": "Audio \"Tee\" -> Build `ටී`.",
+            "prompt": "'ළමයි පොත් කියවති' - මෙම ප්‍රකාශය නිවැරදිද?",
             "options": [
-              "Build `ටී",
-              "Other"
+              "වැරදියි",
+              "නිවැරදියි"
             ],
-            "correctOption": "Build `ටී",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Audio \"Du\" -> Build `ඩු`.",
-            "options": [
-              "Build `ඩු",
-              "Other"
-            ],
-            "correctOption": "Build `ඩු",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Audio \"Puu\" -> Build `පූ`.",
-            "options": [
-              "Build `පූ",
-              "Other"
-            ],
-            "correctOption": "Build `පූ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Audio \"Be\" -> Build `බෙ`.",
-            "options": [
-              "Build `බෙ",
-              "Other"
-            ],
-            "correctOption": "Build `බෙ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Audio \"Mae\" -> Build `මේ`.",
-            "options": [
-              "Build `මේ",
-              "Other"
-            ],
-            "correctOption": "Build `මේ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Audio \"Yo\" -> Build `යො`.",
-            "options": [
-              "Build `යො",
-              "Other"
-            ],
-            "correctOption": "Build `යො",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Audio \"Roo\" -> Build `රෝ`.",
-            "options": [
-              "Build `රෝ",
-              "Other"
-            ],
-            "correctOption": "Build `රෝ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Audio \"Lau\" -> Build `ලෞ`.",
-            "options": [
-              "Build `ලෞ",
-              "Other"
-            ],
-            "correctOption": "Build `ලෞ",
-            "correct_index": 0
+            "correctOption": "නිවැරදියි",
+            "correct_index": 1
           }
         ]
       }
-    ]
+    ],
+    "total_activities": 4
   }
 ]
