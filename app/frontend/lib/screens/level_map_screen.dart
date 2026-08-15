@@ -37,6 +37,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   // Current progress (0-indexed)
   int currentLevel = 0;
   bool _isNavigating = false;
+  bool _isBottomSheetOpen = false;
   int _animatingFromLevel = -1; // Tracks the level we are animating from
 
   List<ActivityNode> get levels => widget.skillMap.activities;
@@ -261,7 +262,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
           return GestureDetector(
             onTap: () {
-              if (!isLocked && _animatingFromLevel == -1) {
+              if (!isLocked && _animatingFromLevel == -1 && !_isBottomSheetOpen) {
                 _showActivityPreviewSheet(index);
               }
             },
@@ -406,6 +407,8 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   }
 
   void _showActivityPreviewSheet(int index) {
+    if (_isBottomSheetOpen) return;
+    _isBottomSheetOpen = true;
     final level = levels[index];
     final isCompleted = ProgressService().isActivityCompleted(widget.skillMap.id, level.id);
     final score = ProgressService().getActivityScore(widget.skillMap.id, level.id);
@@ -513,7 +516,12 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           ],
         ),
       ),
-    );
+    ).then((_) {
+      // Clear flag when sheet is closed (by swipe down, tap outside, or programmatic pop)
+      if (mounted) {
+        _isBottomSheetOpen = false;
+      }
+    });
   }
 
   Widget _buildTopHeader() {
@@ -716,7 +724,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
     return GestureDetector(
       onTap: () {
-        if (!isLocked && _animatingFromLevel == -1) {
+        if (!isLocked && _animatingFromLevel == -1 && !_isBottomSheetOpen) {
           _showActivityPreviewSheet(index);
         }
       },

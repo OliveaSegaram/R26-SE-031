@@ -334,4 +334,27 @@ class ProgressService {
     await prefs.setInt(_keyStreakCount, streak);
     return streak;
   }
+
+  // --- Reset Progress ---
+
+  /// Resets all skill progress, activity scores, failures, and intros for a student
+  Future<void> resetStudentProgress(String studentId) async {
+    final prefs = await _ensurePrefs();
+    final completedKey = '$_keyCompletedActivitiesPrefix$studentId';
+    final scoresKey = '$_keyActivityScoresPrefix$studentId';
+    final failsKey = '$_keyFailureCountPrefix$studentId';
+
+    await prefs.remove(completedKey);
+    await prefs.remove(scoresKey);
+    await prefs.remove(failsKey);
+
+    // Clear skill intro seen flags for all skills
+    for (int i = 0; i <= 10; i++) {
+      await prefs.remove('intro_seen_skill_${studentId}_skill_$i');
+    }
+
+    // Sync cloud state (send empty list and map)
+    await StudentService().syncProgress(studentId, [], {});
+  }
 }
+
