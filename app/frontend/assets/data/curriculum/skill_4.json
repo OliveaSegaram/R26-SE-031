@@ -7,7 +7,7 @@
       {
         "id": "act_1",
         "title": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
-        "description": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
+        "description": "රූපයට ගැලපෙන නිවැරදි වාක්‍යය තෝරන්න",
         "telemetry_tags": [
           "reading_comprehension",
           "visual_context"
@@ -15,38 +15,63 @@
         "template_type": "generic_mcq_game",
         "rounds": [
           {
+            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
             "options": [
               "ඒ ගස උසයි.",
               "ඒ මල ලස්සනයි."
             ],
             "correctOption": "ඒ ගස උසයි.",
-            "correct_index": 0,
-            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න"
+            "correct_index": 0
           },
           {
+            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
             "options": [
+              "බල්ලා නිදාගනී.",
               "බල්ලා දුවයි.",
-              "බල්ලා නිදාගනී."
+              "බල්ලා බුරයි."
             ],
             "correctOption": "බල්ලා දුවයි.",
-            "correct_index": 0,
-            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න"
+            "correct_index": 1
           },
           {
+            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
             "options": [
-              "අම්මා කෑම උයයි.",
-              "තාත්තා කෑම කයි."
+              "තාත්තා වැඩ කරයි.",
+              "අක්කා සෙල්ලම් කරයි.",
+              "අම්මා කෑම උයයි."
             ],
             "correctOption": "අම්මා කෑම උයයි.",
-            "correct_index": 0,
-            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න"
+            "correct_index": 2
+          },
+          {
+            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
+            "options": [
+              "ළමයි පාසල් යති.",
+              "ළමයි සෙල්ලම් කරති.",
+              "ළමයි පොත් කියවති.",
+              "ළමයි සිංදු කියති."
+            ],
+            "correctOption": "ළමයි සෙල්ලම් කරති.",
+            "correct_index": 1
+          },
+          {
+            "prompt": "රූපයට ගැලපෙන වාක්‍යය තෝරන්න",
+            "options": [
+              "කුරුල්ලා අහසේ පියඹයි.",
+              "මාළු දියේ පීනයි.",
+              "ගෙම්බා උඩ පනියි.",
+              "වඳුරා ගසේ පනියි.",
+              "සමනලයා මලට ඉගිලෙයි."
+            ],
+            "correctOption": "කුරුල්ලා අහසේ පියඹයි.",
+            "correct_index": 0
           }
         ]
       },
       {
         "id": "act_2",
         "title": "අඩු වචනය සොයන්න",
-        "description": "හිස්තැනට සුදුසු වචනය තෝරන්න",
+        "description": "වාක්‍යයේ හිස්තැනට සුදුසු වචනය තෝරන්න",
         "telemetry_tags": [
           "sentence_structure",
           "vocabulary"
@@ -54,56 +79,89 @@
         "template_type": "missing_picture_game",
         "rounds": [
           {
-            "options": [
-              "කිරි",
-              "බත්",
-              "මල්"
-            ],
-            "correctOption": "කිරි",
-            "correct_index": 0,
-            "prompt": "අම්මා ______ උයයි.",
+            "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
             "sequence": [
               "මම",
               null,
               "බොමි"
-            ]
+            ],
+            "options": [
+              "කිරි",
+              "බත්"
+            ],
+            "correctOption": "කිරි",
+            "correct_index": 0
           },
           {
-            "options": [
-              "ගසේ",
-              "ගලේ",
-              "මලේ"
-            ],
-            "correctOption": "ගසේ",
-            "correct_index": 0,
-            "prompt": "ඒ ගස ______.",
+            "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
             "sequence": [
+              "ගසේ",
               null,
-              "මල්",
               "පිපේ"
-            ]
+            ],
+            "options": [
+              "කොළ",
+              "මල්",
+              "ගල්"
+            ],
+            "correctOption": "මල්",
+            "correct_index": 1
           },
           {
-            "options": [
-              "යමු",
-              "එමු",
-              "කමු"
-            ],
-            "correctOption": "යමු",
-            "correct_index": 0,
-            "prompt": "ළමයා ______ යයි.",
+            "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
             "sequence": [
               "අපි",
               "පාසල්",
               null
-            ]
+            ],
+            "options": [
+              "එමු",
+              "කමු",
+              "යමු"
+            ],
+            "correctOption": "යමු",
+            "correct_index": 2
+          },
+          {
+            "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
+            "sequence": [
+              "අම්මා",
+              null,
+              "උයයි"
+            ],
+            "options": [
+              "කෑම",
+              "පොත",
+              "සෙල්ලම්",
+              "සිංදු"
+            ],
+            "correctOption": "කෑම",
+            "correct_index": 0
+          },
+          {
+            "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
+            "sequence": [
+              "මල්ලී",
+              "ලස්සන",
+              null,
+              "අඳියි"
+            ],
+            "options": [
+              "ගෙදර",
+              "චිත්‍රයක්",
+              "කිරි",
+              "සීනි",
+              "වතුර"
+            ],
+            "correctOption": "චිත්‍රයක්",
+            "correct_index": 1
           }
         ]
       },
       {
         "id": "act_3",
         "title": "වාක්‍යය හදමු",
-        "description": "වචන ගලපා වාක්‍යය හදමු",
+        "description": "වචන නිවැරදිව ගලපා වාක්‍යය සාදමු",
         "telemetry_tags": [
           "sentence_structure",
           "syntax"
@@ -111,38 +169,63 @@
         "template_type": "generic_mcq_game",
         "rounds": [
           {
+            "prompt": "නිවැරදි වාක්‍යය තෝරන්න",
             "options": [
               "ඒ ගස උසයි.",
               "ගස ඒ උසයි."
             ],
             "correctOption": "ඒ ගස උසයි.",
-            "correct_index": 0,
-            "prompt": "වචන ගලපා වාක්‍යය හදමු"
+            "correct_index": 0
           },
           {
+            "prompt": "නිවැරදි වාක්‍යය තෝරන්න",
             "options": [
+              "දුවයි බල්ලා.",
               "බල්ලා දුවයි.",
-              "දුවයි බල්ලා."
+              "බල්ලා ගස."
             ],
             "correctOption": "බල්ලා දුවයි.",
-            "correct_index": 0,
-            "prompt": "වචන ගලපා වාක්‍යය හදමු"
+            "correct_index": 1
           },
           {
+            "prompt": "නිවැරදි වාක්‍යය තෝරන්න",
             "options": [
-              "අම්මා කෑම උයයි.",
-              "කෑම අම්මා උයයි."
+              "උයයි අම්මා කෑම.",
+              "කෑම උයයි අම්මා.",
+              "අම්මා කෑම උයයි."
             ],
             "correctOption": "අම්මා කෑම උයයි.",
-            "correct_index": 0,
-            "prompt": "වචන ගලපා වාක්‍යය හදමු"
+            "correct_index": 2
+          },
+          {
+            "prompt": "නිවැරදි වාක්‍යය තෝරන්න",
+            "options": [
+              "ළමයි පාසල් යති.",
+              "යති පාසල් ළමයි.",
+              "පාසල් යති ළමයි.",
+              "ළමයි යති පාසල්."
+            ],
+            "correctOption": "ළමයි පාසල් යති.",
+            "correct_index": 0
+          },
+          {
+            "prompt": "නිවැරදි වාක්‍යය තෝරන්න",
+            "options": [
+              "ඉගිලෙයි සමනලයා මලට.",
+              "මලට සමනලයා ඉගිලෙයි.",
+              "සමනලයා මලට ඉගිලෙයි.",
+              "ඉගිලෙයි මලට සමනලයා.",
+              "සමනලයා ඉගිලෙයි මලට."
+            ],
+            "correctOption": "සමනලයා මලට ඉගිලෙයි.",
+            "correct_index": 2
           }
         ]
       },
       {
         "id": "act_4",
         "title": "නිවැරදි ද වැරදි ද?",
-        "description": "නිවැරදි ද වැරදි ද යන්න තෝරන්න",
+        "description": "ප්‍රකාශය නිවැරදි ද වැරදි ද යන්න තෝරන්න",
         "telemetry_tags": [
           "reading_comprehension",
           "logic"
@@ -150,34 +233,53 @@
         "template_type": "generic_mcq_game",
         "rounds": [
           {
+            "prompt": "'මාළු පීනයි' - මෙම ප්‍රකාශය නිවැරදිද?",
+            "options": [
+              "නිවැරදියි",
+              "වැරදියි"
+            ],
+            "correctOption": "නිවැරදියි",
+            "correct_index": 0
+          },
+          {
+            "prompt": "'කුරුල්ලන් අහසේ පියඹයි' - මෙම ප්‍රකාශය නිවැරදිද?",
+            "options": [
+              "වැරදියි",
+              "නිවැරදියි"
+            ],
+            "correctOption": "නිවැරදියි",
+            "correct_index": 1
+          },
+          {
+            "prompt": "'හරකා ගස් උඩ නගියි' - මෙම ප්‍රකාශය නිවැරදිද?",
             "options": [
               "නිවැරදියි",
               "වැරදියි"
             ],
             "correctOption": "වැරදියි",
-            "correct_index": 1,
-            "prompt": "මාළු පීනයි."
+            "correct_index": 1
           },
           {
+            "prompt": "'ඉර රෑට පායයි' - මෙම ප්‍රකාශය නිවැරදිද?",
             "options": [
-              "නිවැරදියි",
-              "වැරදියි"
+              "වැරදියි",
+              "නිවැරදියි"
             ],
-            "correctOption": "නිවැරදියි",
-            "correct_index": 0,
-            "prompt": "බල්ලා දුවයි."
+            "correctOption": "වැරදියි",
+            "correct_index": 0
           },
           {
+            "prompt": "'ළමයි පොත් කියවති' - මෙම ප්‍රකාශය නිවැරදිද?",
             "options": [
-              "නිවැරදියි",
-              "වැරදියි"
+              "වැරදියි",
+              "නිවැරදියි"
             ],
             "correctOption": "නිවැරදියි",
-            "correct_index": 0,
-            "prompt": "ඉර පායයි."
+            "correct_index": 1
           }
         ]
       }
-    ]
+    ],
+    "total_activities": 4
   }
 ]

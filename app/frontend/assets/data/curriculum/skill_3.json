@@ -7,54 +7,71 @@
       {
         "id": "act_1",
         "title": "රූපයට ගැලපෙන වචනය තෝරන්න",
-        "description": "රූපයට ගැලපෙන වචනය තෝරන්න",
+        "description": "රූපයට ගැලපෙන නිවැරදි වචනය තෝරන්න",
         "telemetry_tags": [
-          "reading_comprehension"
+          "reading_comprehension",
+          "visual_context"
         ],
         "template_type": "generic_mcq_game",
         "rounds": [
           {
+            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
             "options": [
               "මල",
               "ගස"
             ],
             "correctOption": "මල",
-            "correct_index": 0,
-            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න"
+            "correct_index": 0
           },
           {
-            "options": [
-              "ගස",
-              "පහ"
-            ],
-            "correctOption": "ගස",
-            "correct_index": 0,
-            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න"
-          },
-          {
+            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
             "options": [
               "අත",
-              "පය"
+              "පය",
+              "ඇස"
             ],
-            "correctOption": "අත",
-            "correct_index": 0,
-            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න"
+            "correctOption": "පය",
+            "correct_index": 1
           },
           {
+            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
             "options": [
-              "ඇස",
-              "කන"
+              "පොත",
+              "පනාව",
+              "පෑන"
             ],
-            "correctOption": "ඇස",
-            "correct_index": 0,
-            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න"
+            "correctOption": "පෑන",
+            "correct_index": 2
+          },
+          {
+            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
+            "options": [
+              "හරකා",
+              "එළදෙන",
+              "එළුවා",
+              "කුකුළා"
+            ],
+            "correctOption": "එළුවා",
+            "correct_index": 2
+          },
+          {
+            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
+            "options": [
+              "කුරුල්ලා",
+              "සමනලයා",
+              "මෞරයා",
+              "වවුලා",
+              "ගිරවා"
+            ],
+            "correctOption": "සමනලයා",
+            "correct_index": 1
           }
         ]
       },
       {
         "id": "act_2",
         "title": "වචනය සකසන්න",
-        "description": "අකුරු ගලපා වචනය හදමු",
+        "description": "අකුරු එකතු කර නිවැරදි වචනය තෝරන්න",
         "telemetry_tags": [
           "spelling",
           "phonics"
@@ -62,31 +79,56 @@
         "template_type": "generic_mcq_game",
         "rounds": [
           {
+            "prompt": "'ම' + 'ල' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
             "options": [
               "මල",
               "ගස"
             ],
             "correctOption": "මල",
-            "correct_index": 0,
-            "prompt": "අකුරු ගලපා වචනය හදමු"
+            "correct_index": 0
           },
           {
+            "prompt": "'අ' + 'ත' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
             "options": [
-              "ගස",
-              "අත"
-            ],
-            "correctOption": "ගස",
-            "correct_index": 0,
-            "prompt": "අකුරු ගලපා වචනය හදමු"
-          },
-          {
-            "options": [
+              "පය",
               "අත",
               "ඇස"
             ],
             "correctOption": "අත",
-            "correct_index": 0,
-            "prompt": "අකුරු ගලපා වචනය හදමු"
+            "correct_index": 1
+          },
+          {
+            "prompt": "'පො' + 'ත' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+            "options": [
+              "පත",
+              "පොල්",
+              "පොත"
+            ],
+            "correctOption": "පොත",
+            "correct_index": 2
+          },
+          {
+            "prompt": "'පා' + 'ස' + 'ල' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+            "options": [
+              "පන්සල",
+              "පාසල",
+              "පවුල",
+              "පාර"
+            ],
+            "correctOption": "පාසල",
+            "correct_index": 1
+          },
+          {
+            "prompt": "'අ' + 'ම්' + 'මා' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+            "options": [
+              "තාත්තා",
+              "අක්කා",
+              "මාමා",
+              "අම්මා",
+              "අයියා"
+            ],
+            "correctOption": "අම්මා",
+            "correct_index": 3
           }
         ]
       },
@@ -101,38 +143,63 @@
         "template_type": "audio_game",
         "rounds": [
           {
+            "prompt": "ශබ්දයට සවන් දී 'මල' තෝරන්න",
             "options": [
               "මල",
               "ගස"
             ],
             "correctOption": "මල",
-            "correct_index": 0,
-            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න"
+            "correct_index": 0
           },
           {
-            "options": [
-              "ගස",
-              "අත"
-            ],
-            "correctOption": "ගස",
-            "correct_index": 0,
-            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න"
-          },
-          {
+            "prompt": "ශබ්දයට සවන් දී 'ගස' තෝරන්න",
             "options": [
               "අත",
-              "ඇස"
+              "ගස",
+              "පය"
             ],
-            "correctOption": "අත",
-            "correct_index": 0,
-            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න"
+            "correctOption": "ගස",
+            "correct_index": 1
+          },
+          {
+            "prompt": "ශබ්දයට සවන් දී 'පොත' තෝරන්න",
+            "options": [
+              "පත",
+              "පෑන",
+              "පොත"
+            ],
+            "correctOption": "පොත",
+            "correct_index": 2
+          },
+          {
+            "prompt": "ශබ්දයට සවන් දී 'අම්මා' තෝරන්න",
+            "options": [
+              "තාත්තා",
+              "අම්මා",
+              "අක්කා",
+              "මාමා"
+            ],
+            "correctOption": "අම්මා",
+            "correct_index": 1
+          },
+          {
+            "prompt": "ශබ්දයට සවන් දී 'පාසල' තෝරන්න",
+            "options": [
+              "පන්සල",
+              "නුවර",
+              "ගෙදර",
+              "පාසල",
+              "වත්ත"
+            ],
+            "correctOption": "පාසල",
+            "correct_index": 3
           }
         ]
       },
       {
         "id": "act_4",
         "title": "අඩු අකුර පුරවන්න",
-        "description": "හිස්තැනට සුදුසු අකුර තෝරන්න",
+        "description": "වචනයේ හිස්තැනට සුදුසු අකුර තෝරන්න",
         "telemetry_tags": [
           "spelling",
           "phonics"
@@ -140,48 +207,79 @@
         "template_type": "missing_picture_game",
         "rounds": [
           {
-            "options": [
-              "ම්",
-              "ක්",
-              "ත්"
-            ],
-            "correctOption": "ම්",
-            "correct_index": 0,
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
             "sequence": [
               "අ",
               null,
               "මා"
-            ]
+            ],
+            "options": [
+              "ම්",
+              "ක්"
+            ],
+            "correctOption": "ම්",
+            "correct_index": 0
           },
           {
-            "options": [
-              "තා",
-              "මා",
-              "නා"
-            ],
-            "correctOption": "තා",
-            "correct_index": 0,
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
             "sequence": [
               "තා",
               "ත්",
               null
-            ]
+            ],
+            "options": [
+              "මා",
+              "තා",
+              "නා"
+            ],
+            "correctOption": "තා",
+            "correct_index": 1
           },
           {
-            "options": [
-              "ග",
-              "ක",
-              "ම"
-            ],
-            "correctOption": "ග",
-            "correct_index": 0,
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
             "sequence": [
               null,
               "ස"
-            ]
+            ],
+            "options": [
+              "ක",
+              "ම",
+              "ග"
+            ],
+            "correctOption": "ග",
+            "correct_index": 2
+          },
+          {
+            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
+            "sequence": [
+              "පා",
+              null,
+              "ල"
+            ],
+            "options": [
+              "ස",
+              "න්",
+              "ර",
+              "ට"
+            ],
+            "correctOption": "ස",
+            "correct_index": 0
+          },
+          {
+            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
+            "sequence": [
+              "පො",
+              null
+            ],
+            "options": [
+              "ල",
+              "ත",
+              "ර",
+              "ම",
+              "ය"
+            ],
+            "correctOption": "ත",
+            "correct_index": 1
           }
         ]
       },
