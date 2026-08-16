@@ -5,6 +5,8 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
+import 'logic/hidden_search_generator.dart';
+import 'widgets/pattern_background.dart';
 
 // ──────────────────────────────────────────────────────────────
 // Activity 01: Picture Hunt
@@ -26,13 +28,14 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
     with TickerProviderStateMixin {
   // ── Game state ──
   int _currentRoundIndex = 0;
-  late List<Map<String, dynamic>> _rounds;
+  late HiddenSearchGameData _gameData;
   List<_GameItem> _items = [];
   int _foundCount = 0;
   int _targetCount = 0;
   bool _roundComplete = false;
   bool _activityComplete = false;
   bool _showHint = false;
+  int _stars = 0;
 
   // ── Audio ──
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -70,7 +73,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   @override
   void initState() {
     super.initState();
-    _rounds = List<Map<String, dynamic>>.from(widget.activityNode.rounds);
+    _gameData = HiddenSearchGenerator.generateGame();
 
     // Pick a random mascot for this session
     final rng = Random();
@@ -122,16 +125,10 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
 
   // ── Round initialization ──
   void _initRound() {
-    if (_currentRoundIndex >= _rounds.length) return;
-    final round = _rounds[_currentRoundIndex];
+    if (_currentRoundIndex >= _gameData.rounds.length) return;
+    final round = _gameData.rounds[_currentRoundIndex];
 
-    final List<String> targets = List<String>.from(round['targets'] ?? []);
-    final int tCount = round['target_count'] ?? 1;
-    final List<String> distractors =
-        List<String>.from(round['distractors'] ?? []);
-    final int dCount = round['distractor_count'] ?? 2;
-
-    _targetCount = tCount;
+    _targetCount = round.targetCount;
     _foundCount = 0;
     _roundComplete = false;
     _showHint = false;
@@ -141,23 +138,15 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
     final rng = Random();
     _currentEncouragement = _encourageMessages[rng.nextInt(_encourageMessages.length)];
 
-    // Add target items
-    for (int i = 0; i < tCount; i++) {
-      final path = targets[i % targets.length];
+    // Populate _items from generator output
+    for (var generatedItem in round.items) {
       _items.add(_GameItem(
-        path: 'assets/images/activity_icons/$path',
-        isTarget: true,
+        path: 'assets/images/activity_icons/${generatedItem.imagePath}',
+        isTarget: generatedItem.isTarget,
+        isFlipped: generatedItem.isFlipped,
+        colorHue: generatedItem.colorHue,
       ));
     }
-    // Add distractor items
-    for (int i = 0; i < dCount; i++) {
-      final path = distractors[i % distractors.length];
-      _items.add(_GameItem(
-        path: 'assets/images/activity_icons/$path',
-        isTarget: false,
-      ));
-    }
-    _items.shuffle(Random());
 
     _resetHintTimer();
     setState(() {});
@@ -165,13 +154,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
 
   void _resetHintTimer() {
     _hintTimer?.cancel();
-    _hintTimer = Timer(const Duration(seconds: 8), () {
-      if (mounted && !_roundComplete) {
-        setState(() {
-          _showHint = true;
-        });
-      }
-    });
+    // Hint feature disabled per user request
   }
 
   // ── Tap handlers ──
@@ -188,6 +171,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
       setState(() {
         item.isFound = true;
         _foundCount++;
+        _stars++;
       });
       _foundCountBounceController.forward(from: 0);
 
@@ -221,7 +205,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
         .findAncestorStateOfType<TelemetryWrapperState>()
         ?.completeRound(100);
 
-    if (_currentRoundIndex < _rounds.length - 1) {
+    if (_currentRoundIndex < _gameData.rounds.length - 1) {
       _roundTransitionController.reverse().then((_) {
         if (!mounted) return;
         setState(() {
@@ -249,105 +233,32 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
     }
   }
 
-  // ── Card Grid ──
-  Widget _buildCardGrid() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final totalItems = _items.length;
-          if (totalItems == 0) return const SizedBox();
-          
-          double maxCardSize = 0.0;
-          
-          const spacing = 12.0;
-          
-          // Find the optimal number of columns that maximizes the card size
-          // while fitting all items in the available space (no scrolling).
-          for (int cols = 1; cols <= totalItems; cols++) {
-            int rows = (totalItems / cols).ceil();
-            
-            double cardWidth = (constraints.maxWidth - (cols - 1) * spacing) / cols;
-            double cardHeight = (constraints.maxHeight - (rows - 1) * spacing) / rows;
-            
-            double currentCardSize = min(cardWidth, cardHeight);
-            
-            if (currentCardSize > maxCardSize) {
-              maxCardSize = currentCardSize;
-            }
-          }
-          
-          // Cap the maximum size so cards don't get comically large if there are only 2 items
-          if (maxCardSize > 120.0) {
-            maxCardSize = 120.0;
-          }
-          
-          return Center(
-            child: Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              alignment: WrapAlignment.center,
-              runAlignment: WrapAlignment.center,
-              children: List.generate(totalItems, (index) {
-                return SizedBox(
-                  width: maxCardSize,
-                  height: maxCardSize,
-                  child: _PictureCard(
-                    key: ValueKey('${_currentRoundIndex}_${_items[index].path}_$index'),
-                    item: _items[index],
-                    onTap: () => _onItemTapped(_items[index]),
-                    showHint: _showHint && _items[index].isTarget && !_items[index].isFound,
-                    animationDelay: index * 0.06,
-                  ),
-                );
-              }),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   // ── Build ──
   @override
   Widget build(BuildContext context) {
-    if (_rounds.isEmpty) {
+    if (_gameData.rounds.isEmpty) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    final round = _rounds[_currentRoundIndex];
-    final List<String> targets = List<String>.from(round['targets'] ?? []);
-    final String targetPath = targets.isNotEmpty
-        ? 'assets/images/activity_icons/${targets[0]}'
-        : '';
-    final String instruction =
-        round['instruction']?.toString() ?? 'පින්තූරය සොයන්න!';
+    final round = _gameData.rounds[_currentRoundIndex];
+    final String title = round.instructionText;
+    final String targetPath = 'assets/images/activity_icons/${round.targetPath}';
+    final String instruction = round.instructionText;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF0F4FF), // Very light blue-white
-              Color(0xFFE8F0FE), // Soft sky blue
-              Color(0xFFFFF8E7), // Warm cream at bottom
-            ],
-            stops: [0.0, 0.5, 1.0],
+      body: Stack(
+        children: [
+          // ── Background Layer ──
+          const Positioned.fill(
+            child: PatternBackground(imagePath: 'assets/images/backgrounds/act1_bg.jpg'),
           ),
-        ),
-        child: Stack(
-          children: [
-            // ── Decorative Background Elements ──
-            _buildDecoBackground(),
 
-            // ── Main Content ──
-            SafeArea(
-              child: Column(
-                children: [
+          // ── Main Content ──
+          SafeArea(
+            child: Column(
+              children: [
                   _buildTopHUD(),
                   const SizedBox(height: 8),
                   _buildInstructionCard(instruction, targetPath),
@@ -370,91 +281,10 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
             if (_activityComplete) _buildCelebrationOverlay(),
           ],
         ),
-      ),
     );
   }
 
-  // ── Decorative background ──
-  Widget _buildDecoBackground() {
-    return Stack(
-      children: [
-        // Soft floating circles for a playful feel
-        Positioned(
-          top: -30,
-          right: -20,
-          child: Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF4A90D9).withOpacity(0.08),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 200,
-          left: -40,
-          child: Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF6DBE6D).withOpacity(0.06),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 100,
-          right: -30,
-          child: Container(
-            width: 140,
-            height: 140,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFE8A54B).withOpacity(0.07),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 60,
-          left: 30,
-          child: Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFE87C6D).withOpacity(0.05),
-            ),
-          ),
-        ),
-        // Small decorative dots
-        Positioned(
-          top: 320,
-          right: 40,
-          child: Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFF9C623).withOpacity(0.3),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 450,
-          left: 20,
-          child: Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF4A90D9).withOpacity(0.2),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+
 
   // ── Top HUD ──
   Widget _buildTopHUD() {
@@ -504,8 +334,8 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                         color: const Color(0xFF4A90D9),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
-                        '0${widget.activityNode.rounds.indexOf(_rounds[0]) + 1}',
+                      child: const Text(
+                        '01',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -538,7 +368,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              '${_currentRoundIndex + 1}/${_rounds.length}',
+              '${_currentRoundIndex + 1}/${_gameData.rounds.length}',
               style: AppTypography.body(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -555,7 +385,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   Widget _buildProgressDots() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(_rounds.length * 2 - 1, (index) {
+      children: List.generate(_gameData.rounds.length * 2 - 1, (index) {
         if (index % 2 == 1) {
           // Line segment
           final lineIndex = index ~/ 2;
@@ -622,12 +452,12 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
           // Target image preview (large)
           if (targetPath.isNotEmpty)
             Container(
-              width: 56,
-              height: 56,
-              padding: const EdgeInsets.all(6),
+              width: 72,
+              height: 72,
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: const Color(0xFFF0F4FF),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: const Color(0xFF4A90D9).withOpacity(0.2),
                   width: 1.5,
@@ -643,7 +473,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                 ),
               ),
             ),
-          if (targetPath.isNotEmpty) const SizedBox(width: 14),
+          if (targetPath.isNotEmpty) const SizedBox(width: 16),
           // Instruction text
           Flexible(
             child: Text(
@@ -718,7 +548,64 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
     );
   }
 
+  // ── Card Grid ──
+  Widget _buildCardGrid() {
+    // Dynamic sizing and spacing to beautifully balance rows and item visibility
+    double itemSize;
+    double spacing;
+    double hPadding;
+    final total = _items.length;
+    
+    if (total <= 4) {
+      itemSize = 155.0; // Task 1: Nice and large
+      spacing = 16.0;
+      hPadding = 22.0;
+    } else if (total <= 6) {
+      itemSize = 130.0; 
+      spacing = 16.0;
+      hPadding = 22.0;
+    } else if (total <= 9) {
+      itemSize = 105.0; 
+      spacing = 14.0;
+      hPadding = 16.0;
+    } else if (total <= 12) {
+      itemSize = 98.0; // Task 4: Increased slightly
+      spacing = 12.0;
+      hPadding = 16.0;
+    } else {
+      // Task 5: Use maximum screen width to force 4 objects per row and avoid excessive vertical scrolling
+      itemSize = 86.0; 
+      spacing = 8.0;
+      hPadding = 8.0; 
+    }
 
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      // Dynamic padding to squeeze every drop of width for harder levels
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: hPadding),
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: spacing,
+          runSpacing: spacing,
+          children: List.generate(_items.length, (index) {
+            return SizedBox(
+              width: itemSize,
+              height: itemSize,
+              child: _PictureCard(
+                key: ValueKey('${_currentRoundIndex}_${_items[index].path}_$index'),
+                item: _items[index],
+                onTap: () => _onItemTapped(_items[index]),
+                showHint: _showHint && _items[index].isTarget && !_items[index].isFound,
+                animationDelay: index * 0.05,
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
 
   // ── Mascot Area ──
   Widget _buildMascotArea() {
@@ -888,12 +775,18 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
 class _GameItem {
   final String path;
   final bool isTarget;
-  bool isFound = false;
-  bool showWrongFeedback = false;
+  final bool isFlipped;
+  final double? colorHue;
+  bool isFound;
+  bool showWrongFeedback;
 
   _GameItem({
     required this.path,
     required this.isTarget,
+    this.isFlipped = false,
+    this.colorHue,
+    this.isFound = false,
+    this.showWrongFeedback = false,
   });
 }
 
@@ -1099,15 +992,25 @@ class _PictureCardState extends State<_PictureCard>
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 300),
                 opacity: isFound ? 0.45 : 1.0,
-                child: Image.asset(
-                  widget.item.path,
-                  fit: BoxFit.contain,
-                  errorBuilder: (c, e, s) => const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: Color(0xFFBBBBBB),
-                    size: 40,
-                  ),
-                ),
+                child: Builder(builder: (context) {
+                  Widget img = Image.asset(
+                    widget.item.path,
+                    fit: BoxFit.contain,
+                    color: widget.item.colorHue != null 
+                        ? HSVColor.fromAHSV(1.0, widget.item.colorHue! % 360, 1.0, 1.0).toColor()
+                        : null,
+                    colorBlendMode: widget.item.colorHue != null ? BlendMode.modulate : null,
+                    errorBuilder: (c, e, s) => const Icon(
+                      Icons.image_not_supported_outlined,
+                      color: Color(0xFFBBBBBB),
+                      size: 40,
+                    ),
+                  );
+                  if (widget.item.isFlipped) {
+                    img = Transform.flip(flipX: true, child: img);
+                  }
+                  return img;
+                }),
               ),
             ),
 
