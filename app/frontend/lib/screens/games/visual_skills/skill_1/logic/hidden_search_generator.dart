@@ -1,145 +1,160 @@
 import 'dart:math';
 
-class HiddenSearchGenerator {
-  // All possible assets for distractors
-  static const List<String> allAssets = [
-    'fruits_food/mango.png',
-    'fruits_food/watermelon.png',
-    'fruits_food/orange.png',
-    'fruits_food/grapes.png',
-    'fruits_food/apple.png',
-    'fruits_food/ice_cream.png',
-    'fruits_food/banana.png',
-    'everyday_objects/spoon.png',
-    'everyday_objects/flag.png',
-    'everyday_objects/bell.png',
-    'everyday_objects/hat.png',
-    'everyday_objects/book.png',
-    'everyday_objects/key.png',
-    'everyday_objects/candle.png',
-    'everyday_objects/umbrella.png',
-    'everyday_objects/shoe.png',
-    'everyday_objects/comb.png',
-    'everyday_objects/balloon.png',
-    'everyday_objects/chair.png',
-    'everyday_objects/clock.png',
-    'everyday_objects/pencil.png',
-    'everyday_objects/cylinder.png',
-    'everyday_objects/necklace.png',
-    'everyday_objects/teacup.png',
-    'everyday_objects/bucket.png',
-    'everyday_objects/kite.png',
-    'everyday_objects/oil_lamp.png',
-    'nature/flower.png',
-    'nature/sun.png',
-    'nature/leaf.png',
-    'animals/dog.png',
-    'animals/rabbit.png',
-    'animals/turtle.png',
-    'animals/elephant.png',
-    'animals/bird.png',
-    'animals/cow.png',
-    'animals/butterfly.png',
-    'animals/cat.png',
-    'animals/frog.png',
-    'animals/fish.png',
-    'animals/snail.png',
-    'vehicles/boat.png',
-    'vehicles/train.png',
-    'vehicles/van.png',
-    'vehicles/airplane.png',
-    'vehicles/bicycle.png',
-  ];
+class HiddenSearchItem {
+  final String id;
+  final String imagePath;
+  final bool isTarget;
+  final bool isFlipped;
+  final double? colorHue; // If null, original color. If double, applies a hue shift.
 
-  // A strict list of asymmetrical targets that work well with the FLIPPED trick
-  static const Map<String, Map<String, String>> targetDict = {
-    'animals/fish.png': {'singular': 'මාළුවා', 'plural': 'මාළුන්'},
-    'animals/rabbit.png': {'singular': 'හාවා', 'plural': 'හාවුන්'},
-    'animals/dog.png': {'singular': 'බල්ලා', 'plural': 'බල්ලන්'},
-    'animals/bird.png': {'singular': 'කුරුල්ලා', 'plural': 'කුරුල්ලන්'},
-    'animals/cat.png': {'singular': 'පූසා', 'plural': 'පූසන්'},
-    'vehicles/boat.png': {'singular': 'බෝට්ටුව', 'plural': 'බෝට්ටු'},
-    'vehicles/airplane.png': {'singular': 'ගුවන්යානය', 'plural': 'ගුවන්යානා'},
+  HiddenSearchItem({
+    required this.id,
+    required this.imagePath,
+    required this.isTarget,
+    this.isFlipped = false,
+    this.colorHue,
+  });
+}
+
+class HiddenSearchRound {
+  final String targetPath;
+  final String targetSingular;
+  final String targetPlural;
+  final int targetCount;
+  final List<HiddenSearchItem> items;
+
+  HiddenSearchRound({
+    required this.targetPath,
+    required this.targetSingular,
+    required this.targetPlural,
+    required this.targetCount,
+    required this.items,
+  });
+
+  String get instructionText {
+    if (targetCount == 1) {
+      return '$targetSingular සොයන්න!';
+    } else {
+      return '$targetPlural $targetCount ක් සොයන්න!';
+    }
+  }
+}
+
+class HiddenSearchGameData {
+  final List<HiddenSearchRound> rounds;
+  HiddenSearchGameData({required this.rounds});
+}
+
+class HiddenSearchGenerator {
+  static final _random = Random();
+
+  // Full asset dictionary with singular and plural Sinhala names
+  static const Map<String, Map<String, String>> _assetDictionary = {
     'vehicles/van.png': {'singular': 'වෑන් රථය', 'plural': 'වෑන් රථ'},
+    'vehicles/train.png': {'singular': 'දුම්රිය', 'plural': 'දුම්රිය'},
+    'vehicles/airplane.png': {'singular': 'ගුවන් යානය', 'plural': 'ගුවන් යානා'},
+    'vehicles/bicycle.png': {'singular': 'බයිසිකලය', 'plural': 'බයිසිකල්'},
+    'vehicles/boat.png': {'singular': 'බෝට්ටුව', 'plural': 'බෝට්ටු'},
     'everyday_objects/shoe.png': {'singular': 'සපත්තුව', 'plural': 'සපත්තු'},
     'everyday_objects/key.png': {'singular': 'යතුර', 'plural': 'යතුරු'},
-    'everyday_objects/teacup.png': {'singular': 'තේ කෝප්පය', 'plural': 'තේ කෝප්ප'},
+    'everyday_objects/clock.png': {'singular': 'ඔරලෝසුව', 'plural': 'ඔරලෝසු'},
+    'everyday_objects/balloon.png': {'singular': 'බැලුනය', 'plural': 'බැලුන්'},
+    'everyday_objects/bell.png': {'singular': 'සීනුව', 'plural': 'සීනු'},
+    'everyday_objects/book.png': {'singular': 'පොත', 'plural': 'පොත්'},
   };
 
-  static const List<String> colorTricks = [
-    '0xFFFFCDD2', // Light Red / Pink
-    '0xFFC8E6C9', // Light Green
-    '0xFFBBDEFB', // Light Blue
-    '0xFFE1BEE7', // Purple
-    '0xFFFFF9C4', // Yellow
-  ];
-
-  static List<Map<String, dynamic>> generateRounds() {
-    final rng = Random();
+  static HiddenSearchGameData generateGame() {
+    // Pick 5 unique target paths for the 5 rounds
+    final List<String> allPaths = _assetDictionary.keys.toList()..shuffle(_random);
+    final List<String> targetPaths = allPaths.take(5).toList();
     
-    // Pick 5 unique targets from our dictionary so the child never searches for the same thing twice in a session
-    final targetKeys = targetDict.keys.toList()..shuffle(rng);
-    
-    return [
-      _generateRound(rng, targetKeys[0], 1, 3, useFlipped: false, useColors: false), // Round 1
-      _generateRound(rng, targetKeys[1], 1, 4, useFlipped: false, useColors: false), // Round 2
-      _generateRound(rng, targetKeys[2], 2, 6, useFlipped: true, useColors: false),  // Round 3
-      _generateRound(rng, targetKeys[3], 2, 9, useFlipped: true, useColors: true),   // Round 4
-      _generateRound(rng, targetKeys[4], 3, 14, useFlipped: true, useColors: true),  // Round 5
-    ];
-  }
+    final List<HiddenSearchRound> rounds = [];
 
-  static Map<String, dynamic> _generateRound(
-    Random rng, 
-    String targetPath, 
-    int targetCount, 
-    int distractorCount, 
-    {required bool useFlipped, required bool useColors}
-  ) {
-    
-    final tInfo = targetDict[targetPath]!;
-    final instruction = targetCount == 1 
-        ? '${tInfo['singular']} සොයන්න!' 
-        : '${tInfo['plural']} $targetCountක් සොයන්න!';
-        
-    final targetName = targetCount == 1 ? tInfo['singular']! : tInfo['plural']!;
-
-    // Select random base distractors
-    final List<String> baseDistractors = List<String>.from(allAssets)
-      ..remove(targetPath)
-      ..shuffle(rng);
-
-    List<String> finalDistractors = [];
-
-    // Add standard distractors
-    for (int i = 0; i < distractorCount; i++) {
-      String distractor = baseDistractors[i % baseDistractors.length];
+    for (int i = 0; i < 5; i++) {
+      final targetPath = targetPaths[i];
+      final targetInfo = _assetDictionary[targetPath]!;
       
-      // Inject tricky distractors for advanced rounds
-      if (useFlipped && i == 0) {
-        distractor = 'FLIPPED:$targetPath';
-      } else if (useColors && i == 1) {
-        final color = colorTricks[rng.nextInt(colorTricks.length)];
-        distractor = 'COLOR:$color:$targetPath';
-      } else if (useFlipped && useColors && i == 2) {
-        final color = colorTricks[rng.nextInt(colorTricks.length)];
-        distractor = 'COLOR:$color:FLIPPED:$targetPath';
-      } else if (useFlipped && i == 3) {
-        distractor = 'FLIPPED:$targetPath'; 
+      // Progressive difficulty
+      int targetCount;
+      int distractorCount;
+      bool allowFlips;
+      bool allowColors;
+
+      switch (i) {
+        case 0:
+          targetCount = 1; distractorCount = 3; allowFlips = false; allowColors = false; break;
+        case 1:
+          targetCount = 2; distractorCount = 4; allowFlips = false; allowColors = false; break;
+        case 2:
+          targetCount = 3; distractorCount = 5; allowFlips = true; allowColors = false; break;
+        case 3:
+          targetCount = 3; distractorCount = 9; allowFlips = true; allowColors = true; break;
+        case 4:
+        default:
+          targetCount = 4; distractorCount = 11; allowFlips = true; allowColors = true; break;
       }
-      
-      finalDistractors.add(distractor);
-    }
-    
-    finalDistractors.shuffle(rng);
 
-    return {
-      "instruction": instruction,
-      "target_name": targetName,
-      "targets": [targetPath],
-      "target_count": targetCount,
-      "distractors": finalDistractors,
-      "distractor_count": finalDistractors.length
-    };
+      final List<HiddenSearchItem> items = [];
+
+      // Add target items
+      for (int t = 0; t < targetCount; t++) {
+        items.add(HiddenSearchItem(
+          id: 'target_${i}_$t',
+          imagePath: targetPath,
+          isTarget: true,
+          isFlipped: false, // TARGETS MUST MATCH INSTRUCTION IMAGE EXACTLY
+          colorHue: null,
+        ));
+      }
+
+      // Prepare distractors
+      final List<String> availableDistractorPaths = allPaths.where((p) => p != targetPath).toList();
+      
+      for (int d = 0; d < distractorCount; d++) {
+        // Tricky variants are distractors that use the EXACT SAME image as the target.
+        // To avoid impossible situations with symmetrical objects (like bells or balloons)
+        // looking identical when flipped, we ONLY allow tricky variants if we can change their color.
+        bool isTrickyVariant = allowColors && _random.nextDouble() < 0.35; // 35% chance in hard rounds
+        
+        String dPath = isTrickyVariant ? targetPath : availableDistractorPaths[_random.nextInt(availableDistractorPaths.length)];
+        
+        double? dColorHue;
+        bool dFlipped = false;
+        
+        if (isTrickyVariant) {
+          // ALWAYS apply a distinct color shift to tricky variants so they are visibly NOT the target
+          final distinctHues = [40.0, 90.0, 160.0, 220.0, 280.0, 330.0];
+          dColorHue = distinctHues[_random.nextInt(distinctHues.length)];
+          dFlipped = allowFlips ? _random.nextBool() : false;
+        } else {
+          // Normal distractor (different object altogether)
+          dFlipped = allowFlips ? _random.nextBool() : false;
+          // Optionally color shift normal distractors if allowed
+          if (allowColors && _random.nextDouble() < 0.3) {
+            dColorHue = _random.nextDouble() * 360.0;
+          }
+        }
+
+        items.add(HiddenSearchItem(
+          id: 'distractor_${i}_$d',
+          imagePath: dPath,
+          isTarget: false,
+          isFlipped: dFlipped,
+          colorHue: dColorHue,
+        ));
+      }
+
+      items.shuffle(_random);
+
+      rounds.add(HiddenSearchRound(
+        targetPath: targetPath,
+        targetSingular: targetInfo['singular']!,
+        targetPlural: targetInfo['plural']!,
+        targetCount: targetCount,
+        items: items,
+      ));
+    }
+
+    return HiddenSearchGameData(rounds: rounds);
   }
 }
