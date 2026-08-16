@@ -28,7 +28,6 @@ class SortingGenerator {
       'fruits_food/mango.png',
       'fruits_food/orange.png',
       'fruits_food/watermelon.png',
-      'fruits_food/ice_cream.png',
     ],
     'vehicles': [
       'vehicles/airplane.png',
@@ -93,17 +92,23 @@ class SortingGenerator {
     final rounds = <SortingRound>[];
 
     // Pick categories for rounds — rotate through shuffled pool
+    // Round 1: 2 categories, 3 objects total (2 for first, 1 for second)
+    // Round 2: 2 categories, 4 objects total (2 each)
+    // Round 3: 2 categories, 6 objects total (3 each)
+    // Round 4: 3 categories, 6 objects total (2 each)
+    // Round 5: 3 categories, 9 objects total (3 each)
+    
     final r1Cats = _pickCategories(allCategoryKeys, 2, exclude: []);
     final r2Cats = _pickCategories(allCategoryKeys, 2, exclude: r1Cats);
-    final r3Cats = _pickCategories(allCategoryKeys, 3, exclude: []);
-    final r4Cats = _pickCategories(allCategoryKeys, 3, exclude: r3Cats.length == 3 ? [r3Cats[0]] : []);
-    final r5Cats = _pickCategories(allCategoryKeys, 3, exclude: []);
+    final r3Cats = _pickCategories(allCategoryKeys, 2, exclude: r2Cats);
+    final r4Cats = _pickCategories(allCategoryKeys, 3, exclude: []);
+    final r5Cats = _pickCategories(allCategoryKeys, 3, exclude: r4Cats.isNotEmpty ? [r4Cats[0]] : []);
 
-    rounds.add(_buildRound(r1Cats, objectsPerCategory: 2, difficulty: 1));
-    rounds.add(_buildRound(r2Cats, objectsPerCategory: 3, difficulty: 2));
-    rounds.add(_buildRound(r3Cats, objectsPerCategory: 2, difficulty: 3));
-    rounds.add(_buildRound(r4Cats, objectsPerCategory: 3, difficulty: 4));
-    rounds.add(_buildRound(r5Cats, objectsPerCategory: [3, 4, 3], difficulty: 5));
+    rounds.add(_buildRound(r1Cats, objectsPerCategory: [2, 1], difficulty: 1));
+    rounds.add(_buildRound(r2Cats, objectsPerCategory: 2, difficulty: 2));
+    rounds.add(_buildRound(r3Cats, objectsPerCategory: 3, difficulty: 3));
+    rounds.add(_buildRound(r4Cats, objectsPerCategory: 2, difficulty: 4));
+    rounds.add(_buildRound(r5Cats, objectsPerCategory: 3, difficulty: 5));
 
     return rounds;
   }
