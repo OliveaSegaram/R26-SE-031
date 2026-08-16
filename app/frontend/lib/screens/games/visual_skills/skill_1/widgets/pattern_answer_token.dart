@@ -66,11 +66,11 @@ class _PatternAnswerTokenState extends State<PatternAnswerToken>
   Widget _buildTokenContent() {
     return Container(
       key: widget.tokenKey,
-      width: 80,
-      height: 80,
+      width: 100,
+      height: 100,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFFC4A484).withOpacity(0.6), // Crate wood color border
           width: 3,
