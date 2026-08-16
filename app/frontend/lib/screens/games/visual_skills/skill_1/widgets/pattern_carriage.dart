@@ -19,13 +19,13 @@ class PatternCarriage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget carriageBody = SizedBox(
-      width: 76,
+      width: 68,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Roof
           Container(
-            width: 70,
+            width: 62,
             height: 10,
             decoration: BoxDecoration(
               color: accentColor,
@@ -38,8 +38,8 @@ class PatternCarriage extends StatelessWidget {
           // Body
           Container(
             key: carriageKey,
-            width: 70,
-            height: 70,
+            width: 68,
+            height: 68,
             decoration: BoxDecoration(
               color: isMissing ? Colors.white.withOpacity(0.9) : Colors.white,
               borderRadius: const BorderRadius.only(
@@ -60,7 +60,7 @@ class PatternCarriage extends StatelessWidget {
                   ),
               ],
             ),
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             child: _buildContent(),
           ),
           const SizedBox(height: 4),
@@ -68,8 +68,8 @@ class PatternCarriage extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildWheel(18),
-              _buildWheel(18),
+              _buildWheel(16),
+              _buildWheel(16),
             ],
           ),
         ],

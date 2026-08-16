@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class PatternTrain extends StatelessWidget {
   final Widget locomotive;
   final List<Widget> carriages;
+  final ScrollController? scrollController;
 
   const PatternTrain({
     Key? key,
     required this.locomotive,
     required this.carriages,
+    this.scrollController,
   }) : super(key: key);
 
   @override
@@ -16,18 +18,29 @@ class PatternTrain extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // Train Body
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.none,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              locomotive,
-              ..._buildCoupledCarriages(),
-            ],
-          ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: constraints.maxWidth > 16 ? constraints.maxWidth - 16 : 0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    locomotive,
+                    ..._buildCoupledCarriages(),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
         // Track Base Line (The wheels should sit right on top of this)
         Container(
@@ -64,12 +77,17 @@ class PatternTrain extends StatelessWidget {
   Widget _buildCoupling() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 28),
-      child: Container(
-        width: 12,
-        height: 6,
-        decoration: BoxDecoration(
-          color: const Color(0xFF757575), // grey coupling
-          borderRadius: BorderRadius.circular(3),
+      child: SizedBox(
+        width: 8,
+        child: Center(
+          child: Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: Color(0xFF757575),
+              shape: BoxShape.circle,
+            ),
+          ),
         ),
       ),
     );
