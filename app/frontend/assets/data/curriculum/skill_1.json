@@ -1,22 +1,77 @@
 [
   {
     "id": "skill_1",
-    "title": "හැඩතල සහ වර්ණ හඳුනා ගනිමු.",
-    "description": "Shapes and colors recognition visual skills curriculum",
-    "intro_text": "සාදරයෙන් පිළිගන්නවා! මෙම කුසලතාවයෙන් අපි එකිනෙකට වෙනස් හැඩතල, රටා සහ වර්ණ හඳුනා ගැනීමට පුරුදු වෙමු.",
-    "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/skill_1_intro.mp3",
+    "title": "පින්තූර හඳුනාගැනීම",
+    "intro_text": "පින්තූර හඳුනාගනිමු!",
+    "intro_audio_url": "",
     "activities": [
-      { "id": "act_1", "title": "වෙනස් හැඩය සොයමු", "file_path": "skill_1/act_1.json" },
-      { "id": "act_2", "title": "රටාව සම්පූර්ණ කරමු", "file_path": "skill_1/act_2.json" },
-      { "id": "act_3", "title": "රටාව මතක තබා ගනිමු", "file_path": "skill_1/act_3.json" },
-      { "id": "act_4", "title": "නොගැලපෙන රූපය සොයාමු", "file_path": "skill_1/act_4.json" },
-      { "id": "act_5", "title": "දිශාව හඳුනා ගනිමු", "file_path": "skill_1/act_5.json" },
-      { "id": "act_6", "title": "වර්ණයට ගැලපෙන රූපය හඳුනා ගනිමු", "file_path": "skill_1/act_6.json" },
-      { "id": "act_7", "title": "හැඩතලවලට පාට කරමු", "file_path": "skill_1/act_7.json" },
-      { "id": "act_8", "title": "රූපයට ගැලපෙන හිස්තැන පුරවමු", "file_path": "skill_1/act_8.json" },
-      { "id": "act_9", "title": "වචනයට සවන් දී රූපය සොයමු", "file_path": "skill_1/act_9.json" },
-      { "id": "act_10", "title": "එක සමාන රූප හඳුනා ගනිමු", "file_path": "skill_1/act_10.json" },
-      { "id": "act_11", "title": "වචන අනුපිළිවෙලට සවන් දී රූප පිලිවෙලින් පෙළගස්වමු", "file_path": "skill_1/act_11.json" }
+      {
+        "id": "visual_act_1",
+        "title": "සඟවා ඇති පින්තූර සෙවීම",
+        "description": "සඟවා ඇති පින්තූර සොයන්න.",
+        "file_path": "",
+        "telemetry_tags": ["visual", "hidden_picture"],
+        "template_type": "visual_hidden_search",
+        "rounds": [
+          {
+            "targets": ["animals/dog.png"],
+            "target_count": 1,
+            "distractors": ["animals/cat.png", "animals/cow.png", "animals/bird.png"],
+            "distractor_count": 3,
+            "instruction": "බල්ලා සොයන්න!"
+          },
+          {
+            "targets": ["animals/elephant.png"],
+            "target_count": 2,
+            "distractors": ["animals/frog.png", "animals/turtle.png", "animals/rabbit.png", "animals/snail.png", "animals/fish.png"],
+            "distractor_count": 6,
+            "instruction": "අලියන් දෙදෙනා සොයන්න!"
+          },
+          {
+            "targets": ["animals/butterfly.png"],
+            "target_count": 3,
+            "distractors": ["animals/cat.png", "animals/dog.png", "animals/cow.png", "animals/bird.png", "animals/turtle.png", "animals/rabbit.png"],
+            "distractor_count": 9,
+            "instruction": "සමනලුන් තුන්දෙනා සොයන්න!"
+          }
+        ]
+      },
+      {
+        "id": "visual_act_2",
+        "title": "රටාව සම්පූර්ණ කිරීම",
+        "description": "මීළඟට එන පින්තූරය තෝරන්න.",
+        "file_path": "skill_visual/activity_2.json",
+        "telemetry_tags": ["visual", "pattern_adventure"],
+        "template_type": "visual_pattern_adventure",
+        "rounds": []
+      },
+      {
+        "id": "visual_act_3",
+        "title": "වර්ග කිරීමේ ත්‍යාගය",
+        "description": "පින්තූර නිවැරදි තැනට දමන්න.",
+        "file_path": "skill_visual/activity_3.json",
+        "telemetry_tags": ["visual", "sorting_adventure"],
+        "template_type": "visual_sorting_adventure",
+        "rounds": []
+      },
+      {
+        "id": "visual_act_4",
+        "title": "වෙනස් දේ සෙවීම",
+        "description": "වෙනස් පින්තූරය තෝරන්න.",
+        "file_path": "skill_visual/activity_4.json",
+        "telemetry_tags": ["visual", "odd_one_out"],
+        "template_type": "visual_odd_one_out",
+        "rounds": []
+      },
+      {
+        "id": "visual_act_5",
+        "title": "මතක අභියෝගය",
+        "description": "තොප්පි යට ඇති දේවල් මතක තබාගන්න.",
+        "file_path": "skill_visual/activity_5.json",
+        "telemetry_tags": ["visual", "memory_hats"],
+        "template_type": "visual_memory_hats",
+        "rounds": []
+      }
     ]
   }
 ]
