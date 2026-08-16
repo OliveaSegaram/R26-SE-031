@@ -430,9 +430,9 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -450,7 +450,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
+                    Flexible(
                       child: Text(
                         widget.activityNode.title.isEmpty ? 'මතක අභියෝගය' : widget.activityNode.title,
                         style: AppTypography.heading(
@@ -492,18 +492,17 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
 
   Widget _buildProgressDots() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(_rounds.length * 2 - 1, (index) {
         if (index % 2 == 1) {
           final lineIndex = index ~/ 2;
           final isCompleted = lineIndex < _currentRoundIndex;
-          return Expanded(
-            child: Container(
-              height: 3,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(2),
-                color: isCompleted ? const Color(0xFF6DBE6D) : const Color(0xFFE0E0E0),
-              ),
+          return Container(
+            width: 14,
+            height: 3,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(2),
+              color: isCompleted ? const Color(0xFF6DBE6D) : const Color(0xFFE0E0E0),
             ),
           );
         } else {
