@@ -67,15 +67,15 @@ class PatternGenerator {
   }
 
   static PatternRound _generateRound1(Random rng) {
-    // Round 1 (Very Easy): A B A ? (3 choices)
+    // Round 1 (Very Easy): A B A ? (2 choices)
     final assets = List<String>.from(allAssets)..shuffle(rng);
     final A = assets[0];
     final B = assets[1];
     
-    List<String?> sequence = [A, B, A, null]; // null means '?'
+    List<String?> sequence = [A, B, A, null]; // length 4
     final correctAnswer = B;
     
-    final distractors = [assets[2], assets[3]];
+    final distractors = [assets[2]]; // Only 1 distractor for 2 total choices
     List<String> options = [correctAnswer, ...distractors]..shuffle(rng);
     
     return PatternRound(
@@ -88,21 +88,20 @@ class PatternGenerator {
   }
 
   static PatternRound _generateRound2(Random rng) {
-    // Round 2 (Easy): A B B A ? (3 choices)
+    // Round 2 (Easy): A A B ? (3 choices)
     final assets = List<String>.from(allAssets)..shuffle(rng);
     final A = assets[0];
     final B = assets[1];
     
-    List<String?> sequence = [A, B, B, A, null];
-    final correctAnswer = B; // Should be B if pattern is A B B A B B
-    // Wait, pattern A B B | A B B, missing is B
+    List<String?> sequence = [A, A, B, null]; // length 4
+    final correctAnswer = B; // Pattern: A A B B
     
     final distractors = [assets[2], assets[3]];
     List<String> options = [correctAnswer, ...distractors]..shuffle(rng);
     
     return PatternRound(
       sequence: sequence,
-      missingIndex: 4,
+      missingIndex: 3,
       correctAnswer: correctAnswer,
       options: options,
       difficulty: 2,
@@ -110,21 +109,21 @@ class PatternGenerator {
   }
 
   static PatternRound _generateRound3(Random rng) {
-    // Round 3 (Medium): A B C A B ? (3 choices)
+    // Round 3 (Medium): A B C A ? (3 choices)
     final assets = List<String>.from(allAssets)..shuffle(rng);
     final A = assets[0];
     final B = assets[1];
     final C = assets[2];
     
-    List<String?> sequence = [A, B, C, A, B, null];
-    final correctAnswer = C;
+    List<String?> sequence = [A, B, C, A, null]; // Length 5
+    final correctAnswer = B;
     
     final distractors = [assets[3], assets[4]];
     List<String> options = [correctAnswer, ...distractors]..shuffle(rng);
     
     return PatternRound(
       sequence: sequence,
-      missingIndex: 5,
+      missingIndex: 4,
       correctAnswer: correctAnswer,
       options: options,
       difficulty: 3,
@@ -132,22 +131,22 @@ class PatternGenerator {
   }
 
   static PatternRound _generateRound4(Random rng) {
-    // Round 4 (Hard): A B C D A B ? (4 choices)
+    // Round 4 (Hard): A B C D A ? (4 choices)
     final assets = List<String>.from(allAssets)..shuffle(rng);
     final A = assets[0];
     final B = assets[1];
     final C = assets[2];
     final D = assets[3];
     
-    List<String?> sequence = [A, B, C, D, A, B, null];
-    final correctAnswer = C; // since A B C D A B C D
+    List<String?> sequence = [A, B, C, D, A, null]; // Length 6
+    final correctAnswer = B; // since A B C D A B
     
     final distractors = [assets[4], assets[5], assets[6]];
     List<String> options = [correctAnswer, ...distractors]..shuffle(rng);
     
     return PatternRound(
       sequence: sequence,
-      missingIndex: 6,
+      missingIndex: 5,
       correctAnswer: correctAnswer,
       options: options,
       difficulty: 4,
@@ -155,22 +154,22 @@ class PatternGenerator {
   }
 
   static PatternRound _generateRound5(Random rng) {
-    // Round 5 (Challenge): A B B C A B B ? (4 choices)
+    // Round 5 (Challenge): A B B C A B ? (4 choices)
     final assets = List<String>.from(allAssets)..shuffle(rng);
     final A = assets[0];
     final B = assets[1];
     final C = assets[2];
     
     // Pattern: A B B C | A B B C
-    List<String?> sequence = [A, B, B, C, A, B, B, null];
-    final correctAnswer = C;
+    List<String?> sequence = [A, B, B, C, A, B, null]; // Length 7
+    final correctAnswer = B;
     
     final distractors = [assets[3], assets[4], assets[5]];
     List<String> options = [correctAnswer, ...distractors]..shuffle(rng);
     
     return PatternRound(
       sequence: sequence,
-      missingIndex: 7,
+      missingIndex: 6,
       correctAnswer: correctAnswer,
       options: options,
       difficulty: 5,
