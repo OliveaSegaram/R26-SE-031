@@ -9,10 +9,32 @@
         "id": "visual_act_1",
         "title": "සඟවා ඇති පින්තූර සෙවීම",
         "description": "සඟවා ඇති පින්තූර සොයන්න.",
-        "file_path": "skill_visual/activity_1.json",
+        "file_path": "",
         "telemetry_tags": ["visual", "hidden_picture"],
         "template_type": "visual_hidden_search",
-        "rounds": []
+        "rounds": [
+          {
+            "targets": ["animals/dog.png"],
+            "target_count": 1,
+            "distractors": ["animals/cat.png", "animals/cow.png", "animals/bird.png"],
+            "distractor_count": 3,
+            "instruction": "බල්ලා සොයන්න!"
+          },
+          {
+            "targets": ["animals/elephant.png"],
+            "target_count": 2,
+            "distractors": ["animals/frog.png", "animals/turtle.png", "animals/rabbit.png", "animals/snail.png", "animals/fish.png"],
+            "distractor_count": 6,
+            "instruction": "අලියන් දෙදෙනා සොයන්න!"
+          },
+          {
+            "targets": ["animals/butterfly.png"],
+            "target_count": 3,
+            "distractors": ["animals/cat.png", "animals/dog.png", "animals/cow.png", "animals/bird.png", "animals/turtle.png", "animals/rabbit.png"],
+            "distractor_count": 9,
+            "instruction": "සමනලුන් තුන්දෙනා සොයන්න!"
+          }
+        ]
       },
       {
         "id": "visual_act_2",
