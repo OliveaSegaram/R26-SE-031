@@ -10,7 +10,7 @@ import 'widgets/pattern_background.dart';
 // ──────────────────────────────────────────────────────────────
 // Activity 05: Memory Adventure
 // A world-class visual memory game for Grade 1 children
-// Magic Hat lifting mechanics and premium UI
+// 3D Card Flipping UI with Mascot and Premium Styling
 // ──────────────────────────────────────────────────────────────
 
 enum MemoryPhase { preparing, memorizing, hiding, recall, success }
@@ -42,6 +42,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   int _currentRoundIndex = 0;
   late List<MemoryRound> _rounds;
   bool _activityComplete = false;
+  bool _isProcessingTap = false; // Prevents tapping other cards while one is animating
 
   MemoryPhase _currentPhase = MemoryPhase.preparing;
 
@@ -81,10 +82,12 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
 
   late AnimationController _wrongShakeController;
   late Animation<double> _wrongShakeAnimation;
-  late AnimationController _hintGlowController;
 
-  // Track hat drop controllers for each item in the current round
-  List<AnimationController> _hatDropControllers = [];
+  // Track memory phase timer
+  late AnimationController _timerController;
+
+  // Track card flip controllers
+  List<AnimationController> _cardFlipControllers = [];
 
   // ── Available Assets ──
   static const List<String> _poolAssets = [
@@ -146,10 +149,9 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       curve: Curves.easeInOut,
     ));
 
-    // Hint glow
-    _hintGlowController = AnimationController(
+    // Timer bar
+    _timerController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
     );
 
     _initRoundState();
@@ -187,15 +189,15 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     return rounds;
   }
 
-  void _setupHatControllers() {
-    for (var controller in _hatDropControllers) {
+  void _setupCardControllers() {
+    for (var controller in _cardFlipControllers) {
       controller.dispose();
     }
-    _hatDropControllers = List.generate(
+    _cardFlipControllers = List.generate(
       _currentRound.itemCount,
       (_) => AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 600),
+        duration: const Duration(milliseconds: 400),
       ),
     );
   }
@@ -203,8 +205,10 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   void _initRoundState() {
     _mistakesInRound = 0;
     _lastMistakeIndex = -1;
+    _isProcessingTap = false;
     _celebrationController.reset();
-    _setupHatControllers();
+    _timerController.reset();
+    _setupCardControllers();
     
     setState(() {
       _currentPhase = MemoryPhase.preparing;
@@ -216,7 +220,6 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   }
 
   void _startMemorySequence() async {
-    // Wait a brief moment before popping in objects
     await Future.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
     
@@ -224,25 +227,25 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       _currentPhase = MemoryPhase.memorizing;
     });
 
-    // Wait the memory duration
-    await Future.delayed(Duration(milliseconds: _currentRound.memoryDurationMs));
+    _timerController.duration = Duration(milliseconds: _currentRound.memoryDurationMs);
+    await _timerController.forward(from: 0.0);
     if (!mounted) return;
 
     setState(() {
       _currentPhase = MemoryPhase.hiding;
     });
     
-    // Drop all hats down (value -> 1)
-    List<Future> dropFutures = [];
-    for (int i = 0; i < _hatDropControllers.length; i++) {
-      dropFutures.add(
-        Future.delayed(Duration(milliseconds: i * 80), () {
-          if (mounted) _hatDropControllers[i].forward();
+    // Flip all cards to face down (value -> 1)
+    List<Future> flipFutures = [];
+    for (int i = 0; i < _cardFlipControllers.length; i++) {
+      flipFutures.add(
+        Future.delayed(Duration(milliseconds: i * 50), () {
+          if (mounted) _cardFlipControllers[i].forward();
         })
       );
     }
     
-    await Future.wait(dropFutures);
+    await Future.wait(flipFutures);
     if (!mounted) return;
 
     setState(() {
@@ -255,8 +258,8 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     _celebrationController.dispose();
     _roundTransitionController.dispose();
     _wrongShakeController.dispose();
-    _hintGlowController.dispose();
-    for (var controller in _hatDropControllers) {
+    _timerController.dispose();
+    for (var controller in _cardFlipControllers) {
       controller.dispose();
     }
     _audioPlayer.dispose();
@@ -267,14 +270,15 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
 
   MemoryRound get _currentRound => _rounds[_currentRoundIndex];
 
-  void _onHatTapped(int index) {
-    if (_currentPhase != MemoryPhase.recall) return;
+  void _onCardTapped(int index) {
+    if (_currentPhase != MemoryPhase.recall || _isProcessingTap) return;
 
     String tappedAsset = _currentRound.assets[index];
 
     if (tappedAsset == _currentRound.targetAsset) {
-      // Correct! Lift hat back up (reverse controller)
-      _hatDropControllers[index].reverse();
+      // Correct! Flip card back up (reverse controller)
+      _isProcessingTap = true;
+      _cardFlipControllers[index].reverse();
       
       _audioPlayer.play(AssetSource('audio/correct.mp3'));
       final rng = Random();
@@ -291,14 +295,17 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       });
     } else {
       // Wrong!
+      _isProcessingTap = true;
       _audioPlayer.play(AssetSource('audio/wrong.mp3'));
       context.findAncestorStateOfType<TelemetryWrapperState>()?.recordMisclick();
       
-      // Briefly lift to show they got it wrong, then drop back
-      _hatDropControllers[index].reverse().then((_) {
+      // Briefly flip to show they got it wrong, then flip back
+      _cardFlipControllers[index].reverse().then((_) {
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted && _currentPhase == MemoryPhase.recall) {
-             _hatDropControllers[index].forward();
+             _cardFlipControllers[index].forward().then((_) {
+               if (mounted) setState(() { _isProcessingTap = false; });
+             });
           }
         });
       });
@@ -310,23 +317,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       _wrongShakeController.forward(from: 0).then((_) {
         if (mounted) setState(() { _lastMistakeIndex = -1; });
       });
-
-      if (_mistakesInRound >= 2) {
-        _showHint();
-      }
     }
-  }
-
-  void _showHint() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
-    _hintGlowController.forward().then((_) {
-      if (!mounted) return;
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (!mounted) return;
-        _hintGlowController.reverse();
-      });
-    });
   }
 
   void _nextRound() {
@@ -386,7 +377,9 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                   _buildTopHUD(),
                   const SizedBox(height: 12),
                   _buildInstructionCard(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+                  _buildTimerBar(),
+                  const SizedBox(height: 4),
                   _buildGameArea(),
                   const SizedBox(height: 12),
                   _buildMascotArea(),
@@ -638,7 +631,61 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     );
   }
 
-  // ── Main Game Area (Wrap Layout for Hats) ──
+  // ── Timer Bar ──
+  Widget _buildTimerBar() {
+    // Only show during preparation or memorization
+    if (_currentPhase != MemoryPhase.preparing && _currentPhase != MemoryPhase.memorizing) {
+      return const SizedBox(height: 16);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: AnimatedBuilder(
+        animation: _timerController,
+        builder: (context, child) {
+          final progress = (1.0 - _timerController.value).clamp(0.0, 1.0);
+          
+          // Smooth color transition based on time remaining
+          Color barColor = const Color(0xFF6DBE6D); // Green
+          if (progress < 0.25) {
+            barColor = const Color(0xFFFF4B4B); // Red
+          } else if (progress < 0.5) {
+            barColor = const Color(0xFFF9C623); // Yellow
+          }
+
+          return Container(
+            height: 14,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                )
+              ],
+              border: Border.all(color: const Color(0xFFE0E0E0), width: 2),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: progress,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: barColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Main Game Area (Wrap Layout for Cards) ──
   Widget _buildGameArea() {
     return Expanded(
       child: Center(
@@ -652,7 +699,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
               alignment: WrapAlignment.center,
               children: List.generate(_currentRound.itemCount, (index) {
                 final asset = _currentRound.assets[index];
-                return _buildHatWidget(index, asset);
+                return _buildCardWidget(index, asset);
               }),
             ),
           ),
@@ -661,9 +708,9 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     );
   }
 
-  Widget _buildHatWidget(int index, String asset) {
+  Widget _buildCardWidget(int index, String asset) {
     bool isTarget = (asset == _currentRound.targetAsset);
-    final dropController = _hatDropControllers[index];
+    final flipController = _cardFlipControllers[index];
 
     // Shake effect for wrong tap
     double shakeX = 0;
@@ -671,38 +718,32 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       shakeX = _wrongShakeAnimation.value;
     }
 
-    // Hint glow
-    double hintOpacity = 0.0;
-    if (isTarget && _mistakesInRound >= 2 && _hintGlowController.isAnimating) {
-      hintOpacity = _hintGlowController.value * 0.6;
+    Color borderColor = const Color(0xFF4A90D9).withOpacity(0.3);
+    double borderWidth = 2.0;
+
+    if (_currentPhase == MemoryPhase.success && isTarget) {
+      borderColor = const Color(0xFF6DBE6D); // Green for correct
+      borderWidth = 4.0;
+    } else if (_lastMistakeIndex == index) {
+      borderColor = const Color(0xFFFF4B4B); // Red for incorrect
+      borderWidth = 4.0;
     }
 
-    // Determine size based on screen width and item count
     double screenWidth = MediaQuery.of(context).size.width;
     int itemsPerRow = _currentRound.itemCount <= 4 ? 2 : 3;
     double cardWidth = (screenWidth - 32 - (16 * (itemsPerRow + 1))) / itemsPerRow;
-    // Limit max size
     cardWidth = cardWidth.clamp(80.0, 140.0);
     double cardHeight = cardWidth * 1.2;
 
     return AnimatedBuilder(
       animation: Listenable.merge([
-        dropController,
+        flipController,
         _wrongShakeController,
-        _hintGlowController,
         _celebrationController,
       ]),
       builder: (context, child) {
-        // Drop value: 0.0 = Hat is high up (hidden / lifted). 1.0 = Hat is down (covering)
-        // We use an elastic curve to make it springy
-        final curve = dropController.isAnimating && dropController.status == AnimationStatus.forward
-            ? Curves.bounceOut // Dropping down
-            : Curves.easeOutBack; // Lifting up
-            
-        final dropCurve = CurvedAnimation(parent: dropController, curve: curve).value;
-        
-        final hatOffsetY = (1.0 - dropCurve) * -300.0; // Starts way above, moves to 0
-        final hatOpacity = dropCurve.clamp(0.0, 1.0); // Fades in as it drops
+        final flipValue = flipController.value;
+        bool isFaceUp = flipValue < 0.5;
 
         double scale = 1.0;
         if (_currentPhase == MemoryPhase.success && isTarget) {
@@ -714,26 +755,22 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
           child: Transform.scale(
             scale: scale,
             child: GestureDetector(
-              onTap: () => _onHatTapped(index),
+              onTap: () => _onCardTapped(index),
               child: SizedBox(
                 width: cardWidth,
                 height: cardHeight,
-                child: Stack(
-                  alignment: Alignment.bottomCenter,
-                  clipBehavior: Clip.none,
-                  children: [
-                    // The hidden object (always there, just covered by hat when hat is down)
-                    _buildHiddenObject(asset, cardWidth, cardHeight, isTarget),
-                    
-                    // The Magic Hat dropping over it
-                    Transform.translate(
-                      offset: Offset(0, hatOffsetY),
-                      child: Opacity(
-                        opacity: hatOpacity,
-                        child: _buildMagicHat(cardWidth, cardHeight, hintOpacity),
-                      ),
-                    ),
-                  ],
+                child: Transform(
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.001)
+                    ..rotateY(flipValue * pi),
+                  alignment: Alignment.center,
+                  child: isFaceUp
+                      ? _buildCardFront(asset, cardWidth, cardHeight, isTarget, borderColor, borderWidth)
+                      : Transform(
+                          transform: Matrix4.identity()..rotateY(pi),
+                          alignment: Alignment.center,
+                          child: _buildCardBack(cardWidth, cardHeight),
+                        ),
                 ),
               ),
             ),
@@ -743,28 +780,27 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     );
   }
 
-  Widget _buildHiddenObject(String asset, double width, double height, bool isTarget) {
+  Widget _buildCardFront(String asset, double width, double height, bool isTarget, Color borderColor, double borderWidth) {
     return Container(
-      width: width * 0.8,
-      height: width * 0.8,
-      margin: EdgeInsets.only(bottom: height * 0.1), // Offset so hat covers it nicely
+      width: width,
+      height: height,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        shape: BoxShape.circle,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: borderWidth),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.2),
+            color: const Color(0xFF4A90D9).withOpacity(0.15),
             blurRadius: 10,
-            spreadRadius: 2,
+            offset: const Offset(0, 4),
           )
         ],
-        border: Border.all(color: const Color(0xFF4A90D9).withOpacity(0.3), width: 2),
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Image.asset('assets/images/activity_icons/$asset'),
           ),
           if (_currentPhase == MemoryPhase.success && isTarget)
@@ -780,117 +816,65 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     );
   }
 
-  Widget _buildMagicHat(double width, double height, double hintOpacity) {
-    return SizedBox(
+  Widget _buildCardBack(double width, double height) {
+    return Container(
       width: width,
       height: height,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6C63FF), Color(0xFF3F3D56)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withOpacity(0.5),
+          width: 3,
+        ),
+      ),
       child: Stack(
-        alignment: Alignment.bottomCenter,
+        alignment: Alignment.center,
         children: [
-          // Brim (Back part)
-          Positioned(
-            bottom: height * 0.05 + 5,
-            child: Container(
-              width: width * 0.9,
-              height: height * 0.15,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1D28),
-                borderRadius: BorderRadius.circular(100),
-              ),
-            ),
+          // Magical fairy dust and bokeh pattern
+          CustomPaint(
+            size: Size(width, height),
+            painter: _CardPatternPainter(),
           ),
-          
-          // Hat Body
-          Positioned(
-            bottom: height * 0.12,
-            child: Container(
-              width: width * 0.65,
-              height: height * 0.75,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF534F75), Color(0xFF28263D)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.4),
-                    blurRadius: 10,
-                    offset: const Offset(3, 5),
-                  )
-                ],
-                border: Border.all(
-                  color: hintOpacity > 0 ? const Color(0xFFF9C623) : Colors.transparent,
-                  width: 2,
-                ),
+          // Premium Glowing Centerpiece
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFDF00), Color(0xFFF9A825)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ),
-          ),
-          
-          // Ribbon
-          Positioned(
-            bottom: height * 0.12,
-            child: Container(
-              width: width * 0.65,
-              height: height * 0.12,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFF4B4B), Color(0xFFC62828)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFFDF00).withOpacity(0.4),
+                  blurRadius: 12,
+                  spreadRadius: 2,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  )
-                ]
-              ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                )
+              ],
+              border: Border.all(color: Colors.white, width: 2.5),
             ),
-          ),
-
-          // Star on Ribbon
-          Positioned(
-            bottom: height * 0.12 + 2,
             child: const Icon(
               Icons.star_rounded,
-              color: Color(0xFFFFD700),
-              size: 28,
-            ),
-          ),
-          
-          // Brim (Front)
-          Positioned(
-            bottom: height * 0.05,
-            child: Container(
-              width: width * 0.9,
-              height: height * 0.15,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF3E3C56), Color(0xFF1E1D28)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(100), // Ellipse shape
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 12,
-                    offset: const Offset(0, 8),
-                  ),
-                  if (hintOpacity > 0)
-                    BoxShadow(
-                      color: const Color(0xFFF9C623).withOpacity(hintOpacity),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    ),
-                ],
-              ),
+              color: Colors.white,
+              size: 42,
             ),
           ),
         ],
@@ -1007,4 +991,44 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       ),
     );
   }
+}
+
+class _CardPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.12)
+      ..style = PaintingStyle.fill;
+
+    // Draw soft, playful circles (bokeh effect)
+    canvas.drawCircle(Offset(size.width * 0.2, size.height * 0.15), 10, paint);
+    canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.25), 16, paint);
+    canvas.drawCircle(Offset(size.width * 0.25, size.height * 0.75), 18, paint);
+    canvas.drawCircle(Offset(size.width * 0.75, size.height * 0.85), 8, paint);
+    canvas.drawCircle(Offset(size.width * 0.8, size.height * 0.6), 5, paint);
+    canvas.drawCircle(Offset(size.width * 0.15, size.height * 0.45), 6, paint);
+    
+    // Draw magical sparkling stars
+    final starPaint = Paint()
+      ..color = Colors.white.withOpacity(0.25)
+      ..style = PaintingStyle.fill;
+      
+    _drawSparkle(canvas, Offset(size.width * 0.5, size.height * 0.12), 6, starPaint);
+    _drawSparkle(canvas, Offset(size.width * 0.85, size.height * 0.7), 8, starPaint);
+    _drawSparkle(canvas, Offset(size.width * 0.18, size.height * 0.85), 5, starPaint);
+    _drawSparkle(canvas, Offset(size.width * 0.8, size.height * 0.45), 4, starPaint);
+  }
+
+  void _drawSparkle(Canvas canvas, Offset center, double size, Paint paint) {
+    final path = Path();
+    path.moveTo(center.dx, center.dy - size);
+    path.quadraticBezierTo(center.dx, center.dy, center.dx + size, center.dy);
+    path.quadraticBezierTo(center.dx, center.dy, center.dx, center.dy + size);
+    path.quadraticBezierTo(center.dx, center.dy, center.dx - size, center.dy);
+    path.quadraticBezierTo(center.dx, center.dy, center.dx, center.dy - size);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
