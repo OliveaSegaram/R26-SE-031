@@ -66,6 +66,8 @@ class _VisualAct2PatternAdventureState
   late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
 
+  late ScrollController _trainScrollController;
+
   // ── Fly animation positions ──
   final GlobalKey _questionSlotKey = GlobalKey();
   late List<GlobalKey> _choiceKeys;
@@ -98,6 +100,8 @@ class _VisualAct2PatternAdventureState
     
     // Generate randomized rounds dynamically
     _rounds = PatternGenerator.generateRounds();
+
+    _trainScrollController = ScrollController();
     _choiceKeys = List.generate(4, (_) => GlobalKey()); // Max 4 choices
 
     final rng = Random();
@@ -115,7 +119,7 @@ class _VisualAct2PatternAdventureState
 
     // Round transition
     _roundTransitionController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 400));
+        vsync: this, duration: const Duration(milliseconds: 1500));
     _roundFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
           parent: _roundTransitionController, curve: Curves.easeOut),
@@ -160,17 +164,37 @@ class _VisualAct2PatternAdventureState
 
     // Bounce for correct answer insertion
     _bounceController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 400));
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
     _bounceAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0, end: 1), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 1, end: 0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 1),
     ]).animate(CurvedAnimation(
       parent: _bounceController,
       curve: Curves.easeOut,
     ));
 
+    _roundTransitionController.forward().then((_) {
+      _scrollToEndOfTrain();
+    });
     _initRound();
-    _roundTransitionController.forward();
+  }
+
+  void _scrollToEndOfTrain() {
+    if (_rounds[_currentRoundIndex].sequence.length <= 4) return;
+
+    if (_trainScrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && _trainScrollController.hasClients) {
+          _trainScrollController.animateTo(
+            _trainScrollController.position.maxScrollExtent,
+            duration: const Duration(seconds: 2),
+            curve: Curves.easeInOutCubic,
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -182,6 +206,8 @@ class _VisualAct2PatternAdventureState
     for (var c in _shakeControllers) {
       c.dispose();
     }
+    _bounceController.dispose();
+    _trainScrollController.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -253,7 +279,9 @@ class _VisualAct2PatternAdventureState
           _currentRoundIndex++;
           _initRound();
         });
-        _roundTransitionController.forward();
+        _roundTransitionController.forward().then((_) {
+          _scrollToEndOfTrain();
+        });
       });
     } else {
       setState(() => _activityComplete = true);
@@ -297,7 +325,16 @@ class _VisualAct2PatternAdventureState
                   // Train section
                   SizedBox(
                     height: 160,
-                    child: Center(child: _buildTrainSection()),
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(1.5, 0), // Slide in from the right
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: _roundTransitionController,
+                        curve: Curves.easeOutCubic,
+                      )),
+                      child: _buildTrainSection(),
+                    ),
                   ),
 
                   const Spacer(flex: 1),
@@ -480,18 +517,21 @@ class _VisualAct2PatternAdventureState
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.question_mark_rounded,
-              color: Color(0xFFE8A54B), size: 28),
+          const Icon(Icons.train_rounded,
+              color: Color(0xFF4A90D9), size: 30),
           const SizedBox(width: 12),
           Flexible(
-            child: Text(
-              'ඊළඟට එන්නේ මොකක්ද?', // "What comes next?"
-              style: AppTypography.sinhala(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF3E3E3E),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'ඊළඟට එන්නේ මොකක්ද?', // "What comes next?"
+                style: AppTypography.sinhala(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF3E3E3E),
+                ),
+                maxLines: 1,
               ),
-              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -524,69 +564,110 @@ class _VisualAct2PatternAdventureState
     return PatternTrain(
       locomotive: _buildLocomotive(),
       carriages: carriageWidgets,
+      scrollController: _trainScrollController,
     );
   }
 
   Widget _buildLocomotive() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(right: 6), // Removed bottom margin so wheels touch track
       child: SizedBox(
-        width: 70,
+        width: 58, // Slightly larger size (58)
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Chimney
-            Container(
-              width: 14,
-              height: 16,
-              decoration: const BoxDecoration(
-                color: Color(0xFF424242),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(4),
-                  topRight: Radius.circular(4),
+            // Roof / Smoke stack row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Chimney
+                Container(
+                  width: 12,
+                  height: 18,
+                  margin: const EdgeInsets.only(left: 4),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF424242),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(4),
+                      topRight: Radius.circular(4),
+                    ),
+                  ),
                 ),
-              ),
+                // Cab roof
+                Container(
+                  width: 28,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD32F2F),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(6),
+                      topRight: Radius.circular(6),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 2),
             // Body
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFE87C6D), Color(0xFFD4645A)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFE87C6D).withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Container(
-                  width: 30,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFB3E5FC),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: Colors.white.withOpacity(0.6), width: 2),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Cowcatcher
+                Container(
+                  width: 6,
+                  height: 14,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF757575),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(6),
+                      topLeft: Radius.circular(2),
+                    ),
                   ),
                 ),
-              ),
+                // Boiler
+                Container(
+                  width: 24,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1976D2), // Blue boiler
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                    ),
+                  ),
+                ),
+                // Cab
+                Container(
+                  width: 28,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE53935), // Red cab
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(6),
+                    ),
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFB3E5FC),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 4),
             // Wheels
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildWheel(20),
-                _buildWheel(20),
+                _buildWheel(16), // Front wheel
+                _buildWheel(16), // Same size cab wheel
               ],
             ),
           ],
