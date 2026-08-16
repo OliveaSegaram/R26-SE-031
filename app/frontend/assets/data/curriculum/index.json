@@ -12,17 +12,18 @@
     "is_locked": false
   },
   {
-    "id": "skill_1",
-    "title": "හැඩතල සහ වර්ණ හඳුනා ගනිමු.",
-    "description": "හැඩතල ගලපමු! 🔍",
-    "file_path": "skill_1.json",
-    "total_activities": 11,
+    "id": "skill_visual",
+    "title": "පින්තූර හඳුනාගැනීම",
+    "description": "පින්තූර හඳුනාගනිමු! 👁️",
+    "file_path": "skill_visual.json",
+    "total_activities": 5,
     "image_path": "assets/images/skills/s0.png",
-    "color_hex": "#4A90D9",
-    "emoji": "🔷",
-    "audio_url": "https://raw.githubusercontent.com/sasmithaK/R26-SE-031/main/app/frontend/assets/audio/skill_1_name.mp3",
+    "color_hex": "#7B8EC4",
+    "emoji": "👁️",
+    "audio_url": "",
     "is_locked": false
   },
+
   {
     "id": "skill_2",
     "title": "මූලික අකුරු හඳුනාගැනීම",
