@@ -581,10 +581,10 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 ),
                 // Filled glowing bar
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 700),
-                  curve: Curves.elasticOut,
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutCubic,
                   width: 16,
-                  height: (progress * barHeight).clamp(0.0, double.infinity),
+                  height: (progress * barHeight).clamp(0.0, barHeight),
                   decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     begin: Alignment.bottomCenter,
@@ -868,13 +868,10 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                                     ),
                                   ),
                                 
-                                // The 3D Basket Image
+                                // The New Custom 3D UI Basket
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                  child: Image.asset(
-                                    'assets/images/activity_icons/basket_$categoryKey.png',
-                                    fit: BoxFit.contain,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                  child: _buildCustomBasket(categoryKey, accentColor),
                                 ),
                                 
                               ],
