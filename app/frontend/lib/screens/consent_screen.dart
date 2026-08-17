@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../utils/avatar_utils.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
@@ -347,7 +348,7 @@ class _ConsentScreenState extends State<ConsentScreen>
 
               // --- Agree Button ---
               _isSubmitting
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.gentleGreen))
+                  ? const Center(child: AppLoadingIndicator())
                   : GradientButton(
                       text: 'i agree & continue',
                       icon: Icons.check_circle_rounded,

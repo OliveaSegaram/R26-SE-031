@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import 'comprehensive_assessment_screen.dart';
@@ -78,7 +79,7 @@ class _ComprehensiveAssessmentSelectionScreenState extends State<ComprehensiveAs
           ),
           
           _isLoading 
-            ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+            ? const Center(child: AppLoadingIndicator())
             : CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [

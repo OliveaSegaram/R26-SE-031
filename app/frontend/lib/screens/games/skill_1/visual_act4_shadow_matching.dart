@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../widgets/app_loading_indicator.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
@@ -300,7 +301,7 @@ class _VisualAct4ShadowMatchingState extends State<VisualAct4ShadowMatching>
   Widget build(BuildContext context) {
     if (_rounds.isEmpty) {
       return const Scaffold(
-          body: Center(child: CircularProgressIndicator()));
+          body: Center(child: AppLoadingIndicator()));
     }
 
     return Scaffold(

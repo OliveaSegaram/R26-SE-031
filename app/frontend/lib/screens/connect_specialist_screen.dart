@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
 import '../services/student_service.dart';
@@ -90,7 +91,7 @@ class _ConnectSpecialistScreenState extends State<ConnectSpecialistScreen> {
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: AppLoadingIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(28.0),
               child: Column(

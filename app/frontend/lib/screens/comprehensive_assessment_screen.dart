@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 
@@ -156,7 +157,7 @@ class _ComprehensiveAssessmentScreenState extends State<ComprehensiveAssessmentS
           
           SafeArea(
             child: _isLoading 
-                ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+                ? const Center(child: AppLoadingIndicator())
                 : Column(
                     children: [
                       Padding(

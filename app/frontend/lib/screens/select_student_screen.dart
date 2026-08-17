@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../utils/avatar_utils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_theme.dart';
@@ -131,7 +132,7 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
                   // Student cards grid
                   Expanded(
                     child: _isLoading
-                        ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+                        ? const Center(child: AppLoadingIndicator())
                         : _students.isEmpty
                             ? _buildEmptyState()
                             : _buildStudentGrid(screenWidth),

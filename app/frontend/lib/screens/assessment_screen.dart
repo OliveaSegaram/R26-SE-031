@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 
 import '../theme/app_theme.dart';
 import '../models/assessment_question.dart';
@@ -131,7 +132,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator(color: AppColors.gentleGreen))
+          ? const Center(child: AppLoadingIndicator())
           : SafeArea(
               child: Column(
                 children: [

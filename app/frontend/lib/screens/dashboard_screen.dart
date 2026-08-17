@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../utils/avatar_utils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -13,6 +14,7 @@ import 'character_shop_screen.dart';
 import 'progress_analytics_screen.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
+import 'loading_skill_screen.dart';
 
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
@@ -122,7 +124,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
               // Skill cards list
               Expanded(
                 child: _curriculum == null 
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(child: AppLoadingIndicator())
                   : _buildSkillsGrid(),
               ),
             ],
@@ -669,22 +671,20 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
           if (_isNavigating) return;
           if (mounted) setState(() => _isNavigating = true);
           try {
-            final skillDetail = await SkillDetail.load(widget.skill.file);
-            if (!mounted) return;
-
-            final bool isIntroSeen = ProgressService().isSkillIntroSeen(skillDetail.id);
-            final Widget targetScreen = isIntroSeen
-                ? LevelMapScreen(skillMap: skillDetail, studentData: widget.studentData)
-                : SkillIntroScreen(skillMap: skillDetail, studentData: widget.studentData);
-
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => targetScreen),
+              MaterialPageRoute(
+                builder: (context) => LoadingSkillScreen(
+                  skill: widget.skill,
+                  studentData: widget.studentData,
+                  onReturn: widget.onReturn,
+                ),
+              ),
             );
             if (!mounted) return;
             widget.onReturn();
           } catch (e) {
-            debugPrint('Error loading skill detail: $e');
+            debugPrint('Error navigating to loading skill screen: $e');
           } finally {
             if (mounted) setState(() => _isNavigating = false);
           }

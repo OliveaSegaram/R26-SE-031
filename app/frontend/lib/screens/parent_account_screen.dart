@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../utils/avatar_utils.dart';
 import '../../theme/app_theme.dart';
 import 'welcome_screen.dart';
@@ -84,8 +85,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.calmBlue))
+            ? const Center(child: AppLoadingIndicator())
             : SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(

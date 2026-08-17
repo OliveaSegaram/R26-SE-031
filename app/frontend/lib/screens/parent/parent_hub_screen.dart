@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/app_loading_indicator.dart';
 import '../../utils/avatar_utils.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -80,8 +81,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.calmBlue))
+          ? const Center(child: AppLoadingIndicator())
           : FadeTransition(
               opacity: _fadeAnimation,
               child: SafeArea(
