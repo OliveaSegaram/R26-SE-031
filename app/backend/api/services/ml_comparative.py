@@ -3,7 +3,7 @@ services/ml_comparative.py
 ===========================
 Comparative ML training and evaluation module.
 Trains Random Forest, XGBoost, Logistic Regression, and a Stacking Ensemble
-on clinician-labelled telemetry data using SMOTE to handle class imbalances.
+on clinician-labelled telemetry data using cost-sensitive learning.
 """
 
 import os
@@ -18,8 +18,7 @@ from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.metrics import classification_report
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-from imblearn.over_sampling import SMOTE
-from imblearn.pipeline import Pipeline as ImbPipeline
+from sklearn.pipeline import Pipeline
 
 FEATURE_COLUMNS = [
     "visual_processing_speed",
@@ -28,8 +27,6 @@ FEATURE_COLUMNS = [
     "accuracy_slope",
     "phonological_latency",
     "fatigue_drift",
-    "scan_path_length",
-    "touch_regression_count",
     "response_consistency",
     "first_touch_variability",
     "abandonment_rate",
@@ -43,13 +40,8 @@ FEATURE_COLUMNS = [
 ]
 
 def build_balanced_pipeline(base_model):
-    """Wrap any sklearn model with SMOTE oversampling and standard scaling."""
-    return ImbPipeline([
-        ("smote", SMOTE(
-            sampling_strategy="auto",
-            k_neighbors=3, # Low K needed for very small datasets
-            random_state=42
-        )),
+    """Wrap any sklearn model with standard scaling. (Class balancing is handled via algorithm parameters)."""
+    return Pipeline([
         ("scaler", StandardScaler()),
         ("model", base_model),
     ])
@@ -82,13 +74,13 @@ def build_stacking_ensemble():
 
     return build_balanced_pipeline(stacking_model)
 
-def train_and_compare(features_list: List[Dict[str, float]], labels_list: List[str]) -> Dict[str, Any]:
+def train_and_compare(features_list: List[Dict[str, float]], labels_list: List[str], output_dir: str = "staging") -> Dict[str, Any]:
     """
     Trains and compares multiple models using Stratified K-Fold CV.
-    Returns metrics and saves the models to the /models directory.
+    Returns metrics and saves the models to the specified staging directory to comply with PCCP.
     """
     if len(labels_list) < 15:
-        return {"error": "Need at least 15 labelled samples to perform 5-fold CV with SMOTE."}
+        return {"error": "Need at least 15 labelled samples to perform 5-fold CV."}
 
     # Prepare data arrays
     X = np.array([[f.get(col, 0.0) for col in FEATURE_COLUMNS] for f in features_list])
@@ -113,11 +105,11 @@ def train_and_compare(features_list: List[Dict[str, float]], labels_list: List[s
     results = {}
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     
-    # Ensure models directory exists
-    os.makedirs("models", exist_ok=True)
+    # Ensure staging directory exists for PCCP compliance
+    os.makedirs(output_dir, exist_ok=True)
     
     # Save the label encoder so prediction phase knows the classes
-    joblib.dump(le, "models/label_encoder.pkl")
+    joblib.dump(le, f"{output_dir}/label_encoder.pkl")
     
     for name, model in models.items():
         try:
@@ -129,9 +121,9 @@ def train_and_compare(features_list: List[Dict[str, float]], labels_list: List[s
             # 2. Train final model on full dataset
             model.fit(X, y)
             
-            # 3. Save model artifact
+            # 3. Save model artifact to staging (avoid hot-swapping)
             filename = name.lower().replace(' ', '_')
-            joblib.dump(model, f"models/{filename}.pkl")
+            joblib.dump(model, f"{output_dir}/{filename}.pkl")
         except Exception as e:
             results[name] = {"error": str(e)}
     
