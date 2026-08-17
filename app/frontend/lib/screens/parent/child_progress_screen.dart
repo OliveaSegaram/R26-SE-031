@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../utils/avatar_utils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
 import '../../services/student_service.dart';
@@ -161,7 +162,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
     final name = widget.studentData['first_name'] ?? 'student';
     final grade = widget.studentData['grade'] ?? 'n/a';
     final avatar =
-        widget.studentData['avatar_url'] ?? 'assets/images/mascots/solo_blue.png';
+        AvatarUtils.getCorrectedAvatarPath(widget.studentData['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png');
 
     return Scaffold(
       backgroundColor: AppColors.cream,

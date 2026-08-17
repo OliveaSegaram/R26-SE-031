@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../utils/avatar_utils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../theme/app_theme.dart';
@@ -79,7 +80,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final studentName = widget.studentData?['name'] ?? 'Student';
-    final avatarUrl = widget.studentData?['avatar_url'] ?? 'assets/images/mascots/solo_blue.png';
+    final avatarUrl = AvatarUtils.getCorrectedAvatarPath(widget.studentData?['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png');
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -232,7 +233,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Image.asset(
-                          'assets/images/mascots/solo_blue.png',
+                          'assets/images/characters/human/human_student_1.png',
                           fit: BoxFit.cover,
                         );
                       },
