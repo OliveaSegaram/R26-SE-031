@@ -1,8 +1,10 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Handles all student-related API calls.
 /// Separated from AuthService for clean architecture.
@@ -331,6 +333,33 @@ class StudentService {
       return {};
     } catch (e) {
       return {};
+    }
+  }
+
+  /// Download the PDF Clinical Report
+  Future<String?> downloadClinicalReport(String studentId) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/telemetry/$studentId/report/pdf'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/Clinical_Report_$studentId.pdf');
+        await file.writeAsBytes(response.bodyBytes);
+        await Share.shareXFiles([XFile(file.path)], text: 'Clinical Report');
+        return null;
+      } else {
+        return 'Failed to download report: ${response.statusCode}';
+      }
+    } catch (e) {
+      return 'Error downloading report: $e';
     }
   }
 

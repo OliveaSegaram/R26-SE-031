@@ -40,6 +40,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
 
   String? _selectedLabel;
   bool _isSubmittingLabel = false;
+  bool _isDownloadingReport = false;
   final List<String> _labelOptions = ["Low Risk", "Moderate Risk", "Needs Attention"];
 
   @override
@@ -83,6 +84,19 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           backgroundColor: AppColors.softCoral,
         ),
       );
+    }
+  }
+
+  Future<void> _downloadReport() async {
+    setState(() => _isDownloadingReport = true);
+    final error = await StudentService().downloadClinicalReport(widget.student['id']);
+    if (!mounted) return;
+    setState(() => _isDownloadingReport = false);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error),
+        backgroundColor: AppColors.softCoral,
+      ));
     }
   }
 
@@ -322,6 +336,29 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
+
+          // Download Report Button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: _isDownloadingReport ? null : _downloadReport,
+              icon: _isDownloadingReport
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.picture_as_pdf_rounded, size: 20),
+              label: Text(
+                _isDownloadingReport ? 'Generating Report...' : 'Download Clinical Report',
+                style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.calmBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // Weekly Progress Chart
           Container(
