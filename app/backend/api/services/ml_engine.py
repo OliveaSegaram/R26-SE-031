@@ -28,9 +28,9 @@ class CognitiveLoadClassifier:
         n = len(telemetry_history)
         
         # Calculate moving averages
-        avg_motion = sum(e.get("maxDeviceMotion", 0.0) for e in telemetry_history) / n
-        avg_hesitations = sum(e.get("hesitationCount", 0) for e in telemetry_history) / n
-        avg_misclicks = sum(e.get("misclickCount", 0) for e in telemetry_history) / n
+        avg_motion = sum(e.get("max_device_motion", 0.0) for e in telemetry_history) / n
+        avg_hesitations = sum(e.get("hesitation_count", 0) for e in telemetry_history) / n
+        avg_misclicks = sum(e.get("misclick_count", 0) for e in telemetry_history) / n
         
         # Calculate an abstract "Load Score"
         # max normal motion ~ 15.0, max normal hesitations ~ 3, max normal misclicks ~ 2

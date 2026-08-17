@@ -17,6 +17,7 @@ from shared.database import get_db
 from dependencies import get_current_user
 from schemas.telemetry import TelemetrySessionSubmit
 from services.ml_pipeline import run_pipeline
+from services.ml_engine import CognitiveLoadClassifier
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Telemetry"])
 
@@ -62,8 +63,15 @@ async def submit_telemetry(
     session_doc["submitted_at"] = datetime.now(timezone.utc).isoformat()
 
     await db.telemetry_events.insert_one(session_doc)
+    
+    # Assess real-time cognitive load
+    events_list = session_doc.get("events", [])
+    cognitive_load = CognitiveLoadClassifier.classify(events_list)
 
-    return {"message": "Telemetry session logged successfully."}
+    return {
+        "message": "Telemetry session logged successfully.",
+        "cognitive_load": cognitive_load
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -185,8 +193,14 @@ async def get_cognitive_analytics(
             "data_points": 0,
         }
 
+    # Fetch assessment_risk_score
+    comp_results = student.get("comprehensive_assessment_results", {})
+    total_yes = sum(sum(1 for a in ans if a is True) for ans in comp_results.values() if isinstance(ans, list))
+    total_q = sum(len(ans) for ans in comp_results.values() if isinstance(ans, list))
+    assessment_risk_score = total_yes / max(total_q, 1)
+
     # Run ML pipeline
-    profile = run_pipeline(sessions)
+    profile = run_pipeline(sessions, assessment_risk_score=assessment_risk_score)
 
     # Persist / upsert the latest cognitive profile for this student
     await db.cognitive_profiles.update_one(
