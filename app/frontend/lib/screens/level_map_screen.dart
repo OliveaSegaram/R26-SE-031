@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../utils/avatar_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../theme/app_theme.dart';
 import '../models/curriculum_models.dart';
@@ -851,25 +852,31 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           y = startY + (targetY - startY) * _avatarMoveAnim.value;
         }
 
+        final avatarUrl = AvatarUtils.getCorrectedAvatarPath(widget.studentData?['avatar_url'] as String?, 'assets/images/characters/mascots/solo_blue.png');
+
         return Positioned(
           left: x - 30,
-          top: y + 2,
+          top: y - 0,
           child: IgnorePointer(
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(widget.studentData?['avatar_url'] ?? 'assets/images/mascots/solo_blue.png'),
-                  fit: BoxFit.contain,
+            child: Transform.scale(
+              scale: 0.75,
+              alignment: Alignment.center,
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(avatarUrl),
+                    fit: BoxFit.contain,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      offset: const Offset(0, 8),
+                      blurRadius: 10,
+                    )
+                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    offset: const Offset(0, 8),
-                    blurRadius: 10,
-                  )
-                ],
               ),
             ),
           ),

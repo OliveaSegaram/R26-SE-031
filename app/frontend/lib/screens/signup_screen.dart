@@ -167,7 +167,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                       MonsterCharacter(
                         size: 100,
                         animation: MonsterAnimation.excited,
-                        imagePath: 'assets/images/mascots/solo_green.png',
+                        imagePath: 'assets/images/characters/mascots/solo_green.png',
                       ),
                       // Back Button on the left
                       Align(

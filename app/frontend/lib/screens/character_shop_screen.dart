@@ -38,16 +38,16 @@ class CharacterShopScreen extends StatefulWidget {
 
 class _CharacterShopScreenState extends State<CharacterShopScreen> with TickerProviderStateMixin {
   static const List<CharacterConfig> _characters = [
-    CharacterConfig(name: 'Blue Blob', assetPath: 'assets/images/mascots/solo_blue.png', moveType: MoveType.bounce, color: AppColors.calmBlue),
-    CharacterConfig(name: 'Pink Berry', assetPath: 'assets/images/mascots/solo_pink.png', moveType: MoveType.spin, color: AppColors.softCoral),
-    CharacterConfig(name: 'Yellow Star', assetPath: 'assets/images/mascots/solo_yellow.png', moveType: MoveType.float, color: AppColors.warmAmber),
-    CharacterConfig(name: 'Green Slime', assetPath: 'assets/images/mascots/solo_green.png', moveType: MoveType.zoom, color: AppColors.gentleGreen),
-    CharacterConfig(name: 'Teal Drop', assetPath: 'assets/images/mascots/solo_teal.png', moveType: MoveType.heartbeat, color: Colors.teal),
-    CharacterConfig(name: 'Orange Flame', assetPath: 'assets/images/mascots/solo_orange.png', moveType: MoveType.shake, color: Colors.orangeAccent),
-    CharacterConfig(name: 'Furry Blue', assetPath: 'assets/images/mascots/blue_monster.png', moveType: MoveType.pendulum, color: Colors.blueAccent),
-    CharacterConfig(name: 'Furry Green', assetPath: 'assets/images/mascots/green_monster.png', moveType: MoveType.flipFlop, color: Colors.lightGreen),
-    CharacterConfig(name: 'Furry Pink', assetPath: 'assets/images/mascots/pink_monster.png', moveType: MoveType.squish, color: Colors.pinkAccent),
-    CharacterConfig(name: 'Furry Yellow', assetPath: 'assets/images/mascots/yellow_monster.png', moveType: MoveType.peekaboo, color: Colors.amber),
+    CharacterConfig(name: 'Blue Blob', assetPath: 'assets/images/characters/human/human_student_1.png', moveType: MoveType.bounce, color: AppColors.calmBlue),
+    CharacterConfig(name: 'Pink Berry', assetPath: 'assets/images/characters/mascots/solo_pink.png', moveType: MoveType.spin, color: AppColors.softCoral),
+    CharacterConfig(name: 'Yellow Star', assetPath: 'assets/images/characters/mascots/solo_yellow.png', moveType: MoveType.float, color: AppColors.warmAmber),
+    CharacterConfig(name: 'Green Slime', assetPath: 'assets/images/characters/mascots/solo_green.png', moveType: MoveType.zoom, color: AppColors.gentleGreen),
+    CharacterConfig(name: 'Teal Drop', assetPath: 'assets/images/characters/mascots/solo_teal.png', moveType: MoveType.heartbeat, color: Colors.teal),
+    CharacterConfig(name: 'Orange Flame', assetPath: 'assets/images/characters/mascots/solo_orange.png', moveType: MoveType.shake, color: Colors.orangeAccent),
+    CharacterConfig(name: 'Furry Blue', assetPath: 'assets/images/characters/mascots/blue_monster.png', moveType: MoveType.pendulum, color: Colors.blueAccent),
+    CharacterConfig(name: 'Furry Green', assetPath: 'assets/images/characters/mascots/green_monster.png', moveType: MoveType.flipFlop, color: Colors.lightGreen),
+    CharacterConfig(name: 'Furry Pink', assetPath: 'assets/images/characters/mascots/pink_monster.png', moveType: MoveType.squish, color: Colors.pinkAccent),
+    CharacterConfig(name: 'Furry Yellow', assetPath: 'assets/images/characters/mascots/yellow_monster.png', moveType: MoveType.peekaboo, color: Colors.amber),
   ];
 
   late AnimationController _moveController;

@@ -63,12 +63,12 @@ class _VisualAct4ShadowMatchingState extends State<VisualAct4ShadowMatching>
 
   // ── Mascot ──
   static const List<String> _mascots = [
-    'assets/images/mascots/solo_blue.png',
-    'assets/images/mascots/solo_green.png',
-    'assets/images/mascots/solo_orange.png',
-    'assets/images/mascots/solo_pink.png',
-    'assets/images/mascots/solo_yellow.png',
-    'assets/images/mascots/solo_teal.png',
+    'assets/images/characters/human/human_student_1.png',
+    'assets/images/characters/mascots/solo_green.png',
+    'assets/images/characters/mascots/solo_orange.png',
+    'assets/images/characters/mascots/solo_pink.png',
+    'assets/images/characters/mascots/solo_yellow.png',
+    'assets/images/characters/mascots/solo_teal.png',
   ];
   late String _currentMascot;
 

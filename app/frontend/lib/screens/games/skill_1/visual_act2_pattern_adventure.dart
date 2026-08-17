@@ -76,12 +76,12 @@ class _VisualAct2PatternAdventureState
 
   // ── Mascot ──
   static const List<String> _mascots = [
-    'assets/images/mascots/solo_blue.png',
-    'assets/images/mascots/solo_green.png',
-    'assets/images/mascots/solo_orange.png',
-    'assets/images/mascots/solo_pink.png',
-    'assets/images/mascots/solo_yellow.png',
-    'assets/images/mascots/solo_teal.png',
+    'assets/images/characters/human/human_student_1.png',
+    'assets/images/characters/mascots/solo_green.png',
+    'assets/images/characters/mascots/solo_orange.png',
+    'assets/images/characters/mascots/solo_pink.png',
+    'assets/images/characters/mascots/solo_yellow.png',
+    'assets/images/characters/mascots/solo_teal.png',
   ];
   late String _currentMascot;
 
@@ -849,7 +849,7 @@ class _VisualAct2PatternAdventureState
                 shape: BoxShape.circle,
               ),
               child: Image.asset(
-                'assets/images/mascots/star_mascot.png',
+                'assets/images/characters/mascots/star_mascot.png',
                 width: 100,
                 height: 100,
                 errorBuilder: (c, e, s) => const Icon(
