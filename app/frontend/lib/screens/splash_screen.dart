@@ -45,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
     _animationController.forward();
 
     // Navigate based on auth status after minimal splash duration
-    Future.delayed(const Duration(milliseconds: 2000), () async {
+    Future.delayed(const Duration(milliseconds: 3000), () async {
       try {
         if (!mounted) return;
         final token = await AuthService().getAccessToken();
@@ -105,7 +105,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.calmBlue,
+   
       body: SizedBox.expand(
         child: Image.asset(
           'assets/images/branding/splash_bg.png',
