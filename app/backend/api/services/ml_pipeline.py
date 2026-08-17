@@ -284,17 +284,24 @@ def generate_interventions(
     return interventions
 
 
+from services.feature_engineering import extract_advanced_features
+
+
 # ---------------------------------------------------------------------------
 # Full Pipeline Entry Point
 # ---------------------------------------------------------------------------
 
-def run_pipeline(telemetry_sessions: list[dict[str, Any]]) -> dict[str, Any]:
+def run_pipeline(
+    telemetry_sessions: list[dict[str, Any]], 
+    assessment_risk_score: float = 0.0
+) -> dict[str, Any]:
     """
     Full end-to-end ML analytics pipeline.
 
     Args:
         telemetry_sessions: List of raw telemetry session documents from MongoDB,
                             each containing an `events` list of TelemetryEvent dicts.
+        assessment_risk_score: Pre-calculated parent assessment risk score (0.0 to 1.0).
 
     Returns:
         Cognitive profile dict ready for storage in `cognitive_profiles` collection.
@@ -304,10 +311,22 @@ def run_pipeline(telemetry_sessions: list[dict[str, Any]]) -> dict[str, Any]:
     for session in telemetry_sessions:
         all_events.extend(session.get("events", []))
 
-    features = extract_features(all_events)
-    indices = compute_cognitive_indices(features)
-    risk = classify_risk(features, indices)
-    interventions = generate_interventions(risk, features)
+    base_features = extract_features(all_events)
+    advanced_features = extract_advanced_features(all_events)
+    
+    # Combine into 19-dimensional feature vector (STT features stubbed for now)
+    features = {
+        **base_features,
+        **advanced_features,
+        "word_error_rate": 0.0,
+        "voice_hesitation_ms": 0.0,
+        "assessment_risk_score": round(assessment_risk_score, 4),
+    }
+
+    # Cognitive indices currently only use the base features
+    indices = compute_cognitive_indices(base_features)
+    risk = classify_risk(base_features, indices)
+    interventions = generate_interventions(risk, base_features)
 
     return {
         "feature_vector": features,

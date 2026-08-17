@@ -3,6 +3,7 @@ import '../widgets/app_loading_indicator.dart';
 import '../theme/app_theme.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
+import '../services/student_service.dart';
 
 class ProgressAnalyticsScreen extends StatefulWidget {
   final Map<String, dynamic>? studentData;
@@ -17,6 +18,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
   CurriculumIndex? _curriculum;
   final Map<String, SkillDetail> _skillDetails = {};
   bool _isLoading = true;
+  bool _isDownloadingReport = false;
 
   @override
   void initState() {
@@ -45,6 +47,21 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
       }
     }
   }
+  
+  Future<void> _downloadReport() async {
+    if (widget.studentData == null || widget.studentData!['id'] == null) return;
+    
+    setState(() => _isDownloadingReport = true);
+    final error = await StudentService().downloadClinicalReport(widget.studentData!['id']);
+    if (!mounted) return;
+    setState(() => _isDownloadingReport = false);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error),
+        backgroundColor: AppColors.softCoral,
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,14 +86,38 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
           ? const Center(child: AppLoadingIndicator())
           : _curriculum == null
               ? const Center(child: Text("No data available"))
-              : ListView.builder(
+              : ListView(
                   padding: const EdgeInsets.all(20),
-                  itemCount: _curriculum!.skills.length,
-                  itemBuilder: (context, index) {
-                    final skill = _curriculum!.skills[index];
-                    final detail = _skillDetails[skill.id];
-                    return _buildSkillProgressCard(skill, detail);
-                  },
+                  children: [
+                    if (widget.studentData?['id'] != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: _isDownloadingReport ? null : _downloadReport,
+                            icon: _isDownloadingReport
+                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Icon(Icons.picture_as_pdf_rounded, size: 20),
+                            label: Text(
+                              _isDownloadingReport ? 'Generating Report...' : 'Download Clinical Report',
+                              style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.calmBlue,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ..._curriculum!.skills.map((skill) {
+                      final detail = _skillDetails[skill.id];
+                      return _buildSkillProgressCard(skill, detail);
+                    }),
+                  ],
                 ),
     );
   }
