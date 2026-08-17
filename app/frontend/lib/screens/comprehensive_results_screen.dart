@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../theme/app_theme.dart';
 import '../models/comprehensive_assessment_questions.dart';
 import '../services/student_service.dart';
@@ -55,7 +56,7 @@ class _ComprehensiveResultsScreenState extends State<ComprehensiveResultsScreen>
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+          ? const Center(child: AppLoadingIndicator())
           : _studentData == null
               ? const Center(child: Text('Student not found'))
               : _buildResultsList(),

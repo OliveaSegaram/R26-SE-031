@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/app_loading_indicator.dart';
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
 
@@ -52,7 +53,7 @@ class _TherapistStudentsScreenState extends State<TherapistStudentsScreen> {
             const SizedBox(height: 24),
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(child: AppLoadingIndicator())
                   : _connections.isEmpty
                   ? Center(
                       child: Column(

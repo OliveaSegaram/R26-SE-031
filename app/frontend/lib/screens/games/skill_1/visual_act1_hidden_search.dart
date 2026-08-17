@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../../widgets/app_loading_indicator.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
@@ -51,12 +52,12 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
 
   // ── Mascot ──
   static const List<String> _mascots = [
-    'assets/images/mascots/solo_blue.png',
-    'assets/images/mascots/solo_green.png',
-    'assets/images/mascots/solo_orange.png',
-    'assets/images/mascots/solo_pink.png',
-    'assets/images/mascots/solo_yellow.png',
-    'assets/images/mascots/solo_teal.png',
+    'assets/images/characters/human/human_student_1.png',
+    'assets/images/characters/mascots/solo_green.png',
+    'assets/images/characters/mascots/solo_orange.png',
+    'assets/images/characters/mascots/solo_pink.png',
+    'assets/images/characters/mascots/solo_yellow.png',
+    'assets/images/characters/mascots/solo_teal.png',
   ];
   late String _currentMascot;
 
@@ -238,7 +239,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   Widget build(BuildContext context) {
     if (_gameData.rounds.isEmpty) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: AppLoadingIndicator()),
       );
     }
 

@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
+import '../utils/avatar_utils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_theme.dart';
 import '../widgets/monster_character.dart';
@@ -130,7 +132,7 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
                   // Student cards grid
                   Expanded(
                     child: _isLoading
-                        ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+                        ? const Center(child: AppLoadingIndicator())
                         : _students.isEmpty
                             ? _buildEmptyState()
                             : _buildStudentGrid(screenWidth),
@@ -203,7 +205,7 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
           const MonsterCharacter(
             size: 150,
             animation: MonsterAnimation.curious,
-            imagePath: 'assets/images/mascots/solo_green.png',
+            imagePath: 'assets/images/characters/mascots/solo_green.png',
           ),
           const SizedBox(height: 20),
           Text(
@@ -241,7 +243,7 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
       itemBuilder: (context, index) {
         final student = _students[index] as Map<String, dynamic>;
         final isSelected = _selectedIndex == index;
-        final avatarUrl = student['avatar_url'] ?? 'assets/images/mascots/solo_blue.png';
+        final avatarUrl = AvatarUtils.getCorrectedAvatarPath(student['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png');
         
         final Map<String, dynamic> compResults = (student['comprehensive_assessment_results'] as Map?)?.cast<String, dynamic>() ?? {};
         final bool needsScreening = compResults.length < 4;
@@ -307,7 +309,7 @@ class _SelectStudentScreenState extends State<SelectStudentScreen>
                       errorBuilder: (context, error, stackTrace) {
                         // Fallback to default avatar if the asset is not found
                         return Image.asset(
-                          'assets/images/mascots/solo_blue.png',
+                          'assets/images/characters/human/human_student_1.png',
                           fit: BoxFit.cover,
                         );
                       },

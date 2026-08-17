@@ -129,7 +129,7 @@ class _CharacterIntroScreenState extends State<CharacterIntroScreen>
                     size: 220,
                     animation: MonsterAnimation.none,
                     showBody: true,
-                    imagePath: 'assets/images/mascots/solo_yellow_straight.png',
+                    imagePath: 'assets/images/characters/mascots/solo_yellow_straight.png',
                   ),
                 ),
 

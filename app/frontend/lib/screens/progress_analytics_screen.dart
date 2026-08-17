@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../theme/app_theme.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
@@ -82,7 +83,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: AppLoadingIndicator())
           : _curriculum == null
               ? const Center(child: Text("No data available"))
               : ListView(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
 import '../services/auth_service.dart';
@@ -134,7 +135,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               const SizedBox(height: 40),
               
               _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+                  ? const Center(child: AppLoadingIndicator())
                   : GradientButton(
                       text: 'reset password',
                       onPressed: _resetPassword,
