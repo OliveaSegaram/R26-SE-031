@@ -402,29 +402,13 @@ class _AnimatedSkillCard extends StatefulWidget {
   State<_AnimatedSkillCard> createState() => _AnimatedSkillCardState();
 }
 
-class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isNavigating = false;
 
   @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-    
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.025).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
   void dispose() {
     _audioPlayer.dispose();
-    _controller.dispose();
     super.dispose();
   }
 
@@ -680,9 +664,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
       ),
     );
 
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: GestureDetector(
+    return GestureDetector(
         onTap: () async {
           if (_isNavigating) return;
           if (mounted) setState(() => _isNavigating = true);
@@ -708,7 +690,6 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
           }
         },
         child: cardContent,
-      ),
     );
   }
 }
