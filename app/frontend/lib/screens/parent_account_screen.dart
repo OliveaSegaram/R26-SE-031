@@ -9,6 +9,7 @@ import 'comprehensive_results_screen.dart';
 import '../services/auth_service.dart';
 import '../services/student_service.dart';
 import '../services/progress_service.dart';
+import '../services/accessibility_service.dart';
 
 /// Parent Account Screen — Frontend Redesign with World-Class UX
 class ParentAccountScreen extends StatefulWidget {
@@ -43,6 +44,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
   }
 
   Future<void> _loadData() async {
+    await AccessibilityService().init();
     final profile = await AuthService().getUserProfile();
     final students = await StudentService().getStudents();
     final provider = await AuthService().getAuthProvider();
@@ -287,6 +289,12 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
               icon: Icons.assignment_rounded,
               title: 'comprehensive assessments',
               child: _buildComprehensiveAssessmentsContent(),
+            ),
+            _divider(),
+            _buildExpansionSection(
+              icon: Icons.accessibility_new_rounded,
+              title: 'neuroinclusive settings',
+              child: _buildAccessibilityContent(),
             ),
             _divider(),
             _buildExpansionSection(
@@ -1692,6 +1700,99 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
       SnackBar(
         content: Text('$feature — coming soon!'),
         backgroundColor: AppColors.calmBlue,
+      ),
+    );
+  }
+
+  Widget _buildAccessibilityContent() {
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        AccessibilityService().useDyslexicFont,
+        AccessibilityService().highContrastMode,
+        AccessibilityService().relaxedTimeLimits,
+      ]),
+      builder: (context, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Customize the app to match your child\'s cognitive profile.',
+              style: AppTypography.caption(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            _buildAccessibilityToggle(
+              icon: Icons.font_download_outlined,
+              title: 'OpenDyslexic Font',
+              subtitle: 'Enhances readability by bottom-weighting letters to prevent rotation.',
+              value: AccessibilityService().useDyslexicFont.value,
+              onChanged: (val) => AccessibilityService().setDyslexicFont(val),
+            ),
+            const SizedBox(height: 12),
+            _buildAccessibilityToggle(
+              icon: Icons.contrast_rounded,
+              title: 'High Contrast UI',
+              subtitle: 'Increases visual distinction for children with visual processing difficulties.',
+              value: AccessibilityService().highContrastMode.value,
+              onChanged: (val) => AccessibilityService().setHighContrastMode(val),
+            ),
+            const SizedBox(height: 12),
+            _buildAccessibilityToggle(
+              icon: Icons.timer_off_outlined,
+              title: 'Relaxed Time Limits',
+              subtitle: 'Disables or extends countdown timers to reduce cognitive load and anxiety.',
+              value: AccessibilityService().relaxedTimeLimits.value,
+              onChanged: (val) => AccessibilityService().setRelaxedTimeLimits(val),
+            ),
+          ],
+        );
+      }
+    );
+  }
+
+  Widget _buildAccessibilityToggle({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.slateBg.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.calmBlue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.calmBlue, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTypography.body(fontWeight: FontWeight.w700, fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(subtitle, style: AppTypography.caption(fontSize: 12, color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.calmBlue,
+            activeTrackColor: AppColors.calmBlue.withValues(alpha: 0.3),
+          ),
+        ],
       ),
     );
   }
