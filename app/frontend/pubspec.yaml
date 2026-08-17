@@ -27,7 +27,7 @@ dependencies:
   fl_chart: ^1.2.0
   sensors_plus: ^7.1.0
   share_plus: ^12.0.2
-  record: ^5.0.5
+  record: ^6.2.0
   path_provider: ^2.1.2
 
 dev_dependencies:
