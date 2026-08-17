@@ -41,7 +41,8 @@ flutter:
     - assets/images/
     - assets/images/backgrounds/
     - assets/images/branding/
-    - assets/images/mascots/
+    - assets/images/characters/mascots/
+    - assets/images/characters/human/
     - assets/images/activity_icons/
     - assets/images/activity_icons/animals/
     - assets/images/activity_icons/fruits_food/
