@@ -12,25 +12,7 @@ from typing import List, Dict, Any
 from sklearn.cluster import DBSCAN
 
 
-def compute_scan_path_length(touch_path: List[Dict]) -> float:
-    """Sum of Euclidean distances between consecutive touch points."""
-    if len(touch_path) < 2:
-        return 0.0
-    total = 0.0
-    for i in range(1, len(touch_path)):
-        dx = touch_path[i].get("x_ratio", 0) - touch_path[i-1].get("x_ratio", 0)
-        dy = touch_path[i].get("y_ratio", 0) - touch_path[i-1].get("y_ratio", 0)
-        total += math.sqrt(dx*dx + dy*dy)
-    return round(total, 4)
 
-
-def compute_regression_count(touch_path: List[Dict]) -> int:
-    """Count backward horizontal movements (re-reading indicators)."""
-    count = 0
-    for i in range(1, len(touch_path)):
-        if touch_path[i].get("x_ratio", 0) < touch_path[i-1].get("x_ratio", 0) - 0.02:
-            count += 1
-    return count
 
 
 def compute_response_consistency(latencies: List[int]) -> float:
@@ -89,11 +71,7 @@ def extract_advanced_features(all_events: List[Dict]) -> Dict[str, float]:
         total_audio_replays += e.get("audio_replay_count", 0)
         misclick_per_session.append(e.get("misclick_count", 0))
 
-    # Feature 9: Scan Path Length
-    scan_path_length = compute_scan_path_length(all_touch_points)
-
-    # Feature 10: Regression Count
-    touch_regression_count = compute_regression_count(all_touch_points)
+    # Gaze proxies (scan path, regression count) removed to maintain clinical validity
 
     # Feature 11: Response Consistency
     response_consistency = compute_response_consistency(all_latencies)
@@ -131,8 +109,6 @@ def extract_advanced_features(all_events: List[Dict]) -> Dict[str, float]:
     touch_cluster_count = compute_touch_cluster_count(all_touch_points)
 
     return {
-        "scan_path_length": scan_path_length,
-        "touch_regression_count": touch_regression_count,
         "response_consistency": response_consistency,
         "first_touch_variability": first_touch_variability,
         "abandonment_rate": abandonment_rate,
@@ -145,8 +121,6 @@ def extract_advanced_features(all_events: List[Dict]) -> Dict[str, float]:
 
 def _zero_advanced() -> Dict[str, float]:
     return {
-        "scan_path_length": 0.0,
-        "touch_regression_count": 0.0,
         "response_consistency": 0.0,
         "first_touch_variability": 0.0,
         "abandonment_rate": 0.0,
