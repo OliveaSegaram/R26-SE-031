@@ -6,7 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
 import '../../services/student_service.dart';
 import 'skill_detail_progress_screen.dart';
-
+import '../therapist/therapist_student_detail_screen.dart';
 /// Child Progress Screen — Visual dashboard showing a specific child's
 /// learning journey: weekly activity chart, overall stats, skill progress.
 class ChildProgressScreen extends StatefulWidget {
@@ -27,6 +27,9 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
   List<double> _weeklyMinutes = [0, 0, 0, 0, 0, 0, 0];
   List<Map<String, dynamic>> _skills = [];
   int _totalActivities = 0;
+  int _overallAccuracy = 0;
+  int _dayStreak = 0;
+  int _totalStars = 0;
 
   final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -65,50 +68,81 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
     final now = DateTime.now();
     final List<double> weeklyMins = List.filled(7, 0.0);
     
-    // Group events by activity name to calculate accuracy and progress
-    final Map<String, List<int>> activityScores = {};
+    final Map<String, List<dynamic>> activityEvents = {};
     int totalActs = 0;
+    int totalScoreSum = 0;
+    int earnedStars = 0;
+    Set<String> activeDates = {};
 
     for (final session in sessions) {
-      // Parse session duration and map to weekday
       final submittedAtStr = session['submitted_at'] as String?;
       if (submittedAtStr != null) {
         final submittedAt = DateTime.tryParse(submittedAtStr);
         if (submittedAt != null) {
-          // Check if it's within the last 7 days
           final diff = now.difference(submittedAt).inDays;
           if (diff < 7) {
-            // Dart weekday is 1(Mon) to 7(Sun)
             final dayIndex = submittedAt.weekday - 1; 
             final durationSecs = session['session_duration_seconds'] as int? ?? 0;
             weeklyMins[dayIndex] += (durationSecs / 60.0);
           }
+          // Store date string for streak calculation (YYYY-MM-DD)
+          activeDates.add("${submittedAt.year}-${submittedAt.month.toString().padLeft(2, '0')}-${submittedAt.day.toString().padLeft(2, '0')}");
         }
       }
 
-      // Parse events
       final events = session['events'] as List<dynamic>? ?? [];
       for (final ev in events) {
         final activityName = ev['activity_name'] as String? ?? 'Unknown';
         final score = ev['score'] as int? ?? 0;
         
-        if (!activityScores.containsKey(activityName)) {
-          activityScores[activityName] = [];
+        if (!activityEvents.containsKey(activityName)) {
+          activityEvents[activityName] = [];
         }
-        activityScores[activityName]!.add(score);
+        activityEvents[activityName]!.add(ev);
+        
         totalActs++;
+        totalScoreSum += score;
+        if (score >= 80) earnedStars += 3;
+        else if (score >= 50) earnedStars += 2;
+        else earnedStars += 1;
+      }
+    }
+
+    // Calculate Streak
+    int currentStreak = 0;
+    DateTime checkDate = now;
+    // Check if they played today or yesterday to start the streak
+    String todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    String yesterdayStr = "${now.subtract(const Duration(days: 1)).year}-${now.subtract(const Duration(days: 1)).month.toString().padLeft(2, '0')}-${now.subtract(const Duration(days: 1)).day.toString().padLeft(2, '0')}";
+    
+    if (activeDates.contains(todayStr) || activeDates.contains(yesterdayStr)) {
+      if (activeDates.contains(todayStr)) {
+        checkDate = now;
+      } else {
+        checkDate = now.subtract(const Duration(days: 1));
+      }
+      
+      while (true) {
+        String dStr = "${checkDate.year}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}";
+        if (activeDates.contains(dStr)) {
+          currentStreak++;
+          checkDate = checkDate.subtract(const Duration(days: 1));
+        } else {
+          break;
+        }
       }
     }
 
     _weeklyMinutes = weeklyMins;
     _totalActivities = totalActs;
+    _overallAccuracy = totalActs > 0 ? (totalScoreSum / totalActs).round() : 0;
+    _dayStreak = currentStreak;
+    _totalStars = earnedStars;
 
-    // 2. Map activity scores to the _skills list
-    // In a full implementation, we'd map 'activityName' back to 'Skill ID' using Curriculum,
-    // but here we just show the distinct activities as skills for the dashboard.
-    _skills = activityScores.entries.map((entry) {
+    _skills = activityEvents.entries.map((entry) {
       final name = entry.key;
-      final scores = entry.value;
+      final evts = entry.value;
+      final scores = evts.map((e) => e['score'] as int? ?? 0).toList();
       final avgScore = scores.isNotEmpty ? scores.reduce((a, b) => a + b) / scores.length : 0.0;
       
       // Determine an icon and color based on name (mocking styling for dynamic names)
@@ -131,8 +165,9 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
         'color': color,
         'progress': (avgScore / 100.0).clamp(0.0, 1.0),
         'accuracy': avgScore.round(),
-        'levels': '${scores.length} rounds',
-        'lastPlayed': 'recent', // could parse exact date if needed
+        'levels': '${evts.length} rounds',
+        'lastPlayed': 'recent',
+        'events': evts,
       };
     }).toList();
 
@@ -185,6 +220,39 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                 const SizedBox(height: 24),
                 _buildSkillProgressSection(),
                 const SizedBox(height: 32),
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TherapistStudentDetailScreen(student: widget.studentData),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.analytics_rounded, color: Colors.white),
+                      label: const Text(
+                        'View Advanced Reports & Heatmap',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.calmBlue,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 4,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 48),
               ],
             ),
           ),
@@ -275,13 +343,13 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
           _buildMiniStat(FontAwesomeIcons.gamepad, '$_totalActivities', 'activities',
               AppColors.calmBlue),
           const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.bullseye, '78%', 'accuracy',
+          _buildMiniStat(FontAwesomeIcons.bullseye, '$_overallAccuracy%', 'accuracy',
               AppColors.gentleGreen),
           const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.fire, '5', 'day streak',
+          _buildMiniStat(FontAwesomeIcons.fire, '$_dayStreak', 'day streak',
               AppColors.warmAmber),
           const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.star, '124', 'stars',
+          _buildMiniStat(FontAwesomeIcons.star, '$_totalStars', 'stars',
               AppColors.softCoral),
         ],
       ),
@@ -484,6 +552,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
               skillColor: color,
               skillIcon: skill['icon'] as dynamic,
               studentData: widget.studentData,
+              events: skill['events'] ?? [],
             ),
           ),
         );

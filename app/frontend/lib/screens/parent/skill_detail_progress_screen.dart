@@ -10,6 +10,7 @@ class SkillDetailProgressScreen extends StatelessWidget {
   final Color skillColor;
   final dynamic skillIcon;
   final Map<String, dynamic> studentData;
+  final List<dynamic> events;
 
   const SkillDetailProgressScreen({
     super.key,
@@ -17,20 +18,51 @@ class SkillDetailProgressScreen extends StatelessWidget {
     required this.skillColor,
     required this.skillIcon,
     required this.studentData,
+    this.events = const [],
   });
 
-  // Mock activity data
-  List<Map<String, dynamic>> get _activities => [
-        {'name': 'Level 1: Basics', 'score': 95, 'time': '3m 20s', 'attempts': 1, 'status': 'completed'},
-        {'name': 'Level 2: Practice', 'score': 82, 'time': '4m 45s', 'attempts': 2, 'status': 'completed'},
-        {'name': 'Level 3: Challenge', 'score': 70, 'time': '5m 10s', 'attempts': 3, 'status': 'completed'},
-        {'name': 'Level 4: Advanced', 'score': 88, 'time': '4m 00s', 'attempts': 1, 'status': 'completed'},
-        {'name': 'Level 5: Expert', 'score': 0, 'time': '--', 'attempts': 0, 'status': 'locked'},
-        {'name': 'Level 6: Master', 'score': 0, 'time': '--', 'attempts': 0, 'status': 'locked'},
+  // Dynamic activity data derived from actual telemetry events
+  List<Map<String, dynamic>> get _activities {
+    if (events.isEmpty) {
+      return [
+        {'name': 'No Attempts Yet', 'score': 0, 'time': '--', 'attempts': 0, 'status': 'locked'},
       ];
+    }
+    
+    return List.generate(events.length, (index) {
+      final ev = events[index];
+      final rNumber = ev['round_number'] ?? (index + 1);
+      final score = ev['score'] as int? ?? 0;
+      final latencyMs = ev['total_round_latency_ms'] as int? ?? 0;
+      
+      final mins = latencyMs ~/ 60000;
+      final secs = (latencyMs % 60000) ~/ 1000;
+      final timeStr = mins > 0 ? '${mins}m ${secs}s' : '${secs}s';
+      
+      return {
+        'name': 'Attempt $rNumber',
+        'score': score,
+        'time': timeStr,
+        'attempts': 1,
+        'status': 'completed',
+      };
+    }).reversed.toList();
+  }
 
-  // Mock trend data (last 7 sessions accuracy %)
-  final List<int> _trendData = const [65, 72, 68, 78, 82, 80, 88];
+  // Dynamic trend data (last 7 sessions accuracy %)
+  List<int> get _trendData {
+    if (events.isEmpty) return [0, 0, 0, 0, 0, 0, 0];
+    final scores = events.map((e) => e['score'] as int? ?? 0).toList();
+    if (scores.length >= 7) {
+      return scores.sublist(scores.length - 7);
+    } else {
+      final padded = List<int>.filled(7, 0);
+      for (int i = 0; i < scores.length; i++) {
+        padded[7 - scores.length + i] = scores[i];
+      }
+      return padded;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +196,9 @@ class SkillDetailProgressScreen extends StatelessWidget {
 
   // ─── Trend Chart ───
   Widget _buildTrendChart(BuildContext context) {
-    final maxVal = _trendData.reduce((a, b) => a > b ? a : b).toDouble();
+    final maxVal = _trendData.reduce((a, b) => a > b ? a : b).toDouble() > 0 
+        ? _trendData.reduce((a, b) => a > b ? a : b).toDouble() 
+        : 100.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
