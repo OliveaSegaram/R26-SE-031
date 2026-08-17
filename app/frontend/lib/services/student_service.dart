@@ -333,4 +333,33 @@ class StudentService {
       return {};
     }
   }
+
+  /// Submit a clinical ground-truth label for a student to train ML models.
+  Future<String?> submitClinicianLabel(String studentId, String label) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/ml/label/$studentId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'label': label}),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        }
+        return 'Failed to submit clinical label.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
+    }
+  }
 }
