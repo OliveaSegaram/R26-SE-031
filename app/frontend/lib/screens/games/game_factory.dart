@@ -27,7 +27,7 @@ import 'skill_2/skill2_act1_audio.dart';
 import 'skill_2/skill2_act2_identical_match.dart';
 import 'skill_2/skill2_act3_audio_sequence.dart';
 import 'skill_2/skill2_act4_mcq.dart';
-import 'skill_2/skill2_act5_coloring.dart';
+import 'skill_2/skill2_act5_odd_one_out.dart';
 import 'skill_2/skill2_act6_pattern_memory.dart';
 
 /// Central factory for constructing dynamic game screen instances based on template_type.
@@ -66,8 +66,8 @@ class GameFactory {
       case 'skill2_mcq':
         gameContent = Skill2Act4Mcq(activityNode: node, isRemedial: isRemedial);
         break;
-      case 'skill2_coloring':
-        gameContent = Skill2Act5Coloring(activityNode: node, isRemedial: isRemedial);
+      case 'skill2_odd_one_out':
+        gameContent = Skill2Act5OddOneOut(activityNode: node, isRemedial: isRemedial);
         break;
       case 'skill2_pattern_memory':
         gameContent = Skill2Act6PatternMemory(activityNode: node, isRemedial: isRemedial);
