@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from shared.database import get_db
 from dependencies import get_current_user
 from schemas.telemetry import TelemetrySessionSubmit
-from services.ml_pipeline import run_pipeline
+from services.ml_pipeline import generate_cognitive_profile
 from services.ml_engine import CognitiveLoadClassifier
 from services.report_generator import generate_pdf_report
 
@@ -203,7 +203,7 @@ async def get_cognitive_analytics(
     assessment_risk_score = total_yes / max(total_q, 1)
 
     # Run ML pipeline
-    profile = run_pipeline(sessions, assessment_risk_score=assessment_risk_score)
+    profile = generate_cognitive_profile(sessions, assessment_risk_score=assessment_risk_score)
 
     # Persist / upsert the latest cognitive profile for this student
     await db.cognitive_profiles.update_one(
