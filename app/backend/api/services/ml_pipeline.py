@@ -77,15 +77,19 @@ def extract_features(events: list[dict[str, Any]]) -> dict[str, float]:
         avg_ftl = statistics.mean(
             e.get("first_touch_latency_ms", 1500) for e in visual_events
         )
-        # Invert: lower latency → higher score. Baseline = 2000 ms
-        visual_processing_speed = max(0.0, min(100.0, (2000 - avg_ftl) / 20))
+        # Logistic curve: Midpoint at 3500ms, smooth degradation
+        visual_processing_speed = 100.0 / (1.0 + math.exp((avg_ftl - 3500) / 800))
     else:
         visual_processing_speed = 50.0  # neutral when no data
 
     # ---- Motor Precision Score ----------------------------------------------
-    total_taps = sum(
-        len(e.get("touch_path", [])) for e in events
-    )
+    total_taps = 0
+    for e in events:
+        path = e.get("touch_path", [])
+        # Only count discrete taps/downs, fallback to path length if old data
+        taps = sum(1 for p in path if p.get("type", "tap") in ("tap", "down"))
+        total_taps += taps if taps > 0 else len(path)
+        
     total_misclicks = sum(e.get("misclick_count", 0) for e in events)
     if total_taps > 0:
         motor_precision = max(0.0, (1 - total_misclicks / total_taps) * 100)
@@ -125,7 +129,8 @@ def extract_features(events: list[dict[str, Any]]) -> dict[str, float]:
         late_latency = statistics.mean(
             e.get("total_round_latency_ms", 0) for e in events[-3:]
         )
-        fatigue_drift = late_latency - early_latency  # positive = slowing down
+        # Relative fatigue: percentage slowdown
+        fatigue_drift = ((late_latency / early_latency) - 1.0) if early_latency > 0 else 0.0
     else:
         fatigue_drift = 0.0
 
@@ -153,12 +158,12 @@ def compute_cognitive_indices(features: dict[str, float]) -> dict[str, float]:
     # Motor precision is already 0-100
     motor_precision_score = _clamp(features["motor_precision"])
 
-    # Phonological score: invert latency (2500ms baseline)
+    # Phonological score: Logistic curve with midpoint at 4000ms
     phonological_latency = features["phonological_latency"]
-    phonological_awareness_score = _clamp((2500 - phonological_latency) / 25)
+    phonological_awareness_score = 100.0 / (1.0 + math.exp((phonological_latency - 4000) / 1000))
 
-    # Sustained attention: penalise hesitation ratio; cap at 4 hesitations per round
-    sustained_attention_score = _clamp(100 - (features["hesitation_ratio"] / 4) * 100)
+    # Sustained attention: Exponential decay based on hesitation ratio
+    sustained_attention_score = _clamp(100.0 * math.exp(-features["hesitation_ratio"] / 2.0))
 
     return {
         "visual_processing_score": round(visual_processing_score, 1),
