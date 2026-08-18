@@ -254,8 +254,8 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             Map<String, dynamic> analytics = {};
             if (snapshot.hasData && snapshot.data!.isNotEmpty) {
               analytics = snapshot.data!;
-              if (analytics['risk_assessment'] != null) {
-                risk = analytics['risk_assessment'];
+              if (analytics['risk_assessment'] != null && analytics['risk_assessment'] is Map) {
+                risk = analytics['risk_assessment']['overall_risk']?.toString() ?? risk;
               }
             }
 
