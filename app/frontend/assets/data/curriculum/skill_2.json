@@ -12,7 +12,7 @@
           "phonics",
           "listening"
         ],
-        "template_type": "audio_game",
+        "template_type": "skill2_audio",
         "rounds": [
           {
             "prompt": "ශබ්දයට සවන් දී 'අ' තෝරන්න",
@@ -76,7 +76,7 @@
           "matching",
           "visual_discrimination"
         ],
-        "template_type": "identical_match_game",
+        "template_type": "skill2_identical_match",
         "rounds": [
           {
             "grid_items": [
@@ -136,7 +136,7 @@
           "listening",
           "sequencing"
         ],
-        "template_type": "audio_sequence_game",
+        "template_type": "skill2_audio_sequence",
         "rounds": [
           {
             "audio_prompt": "අ, ආ",
@@ -222,7 +222,7 @@
           "decoding",
           "first_letter"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill2_mcq",
         "rounds": [
           {
             "prompt": "'මල්' යන වචනයේ මුල් අකුර කුමක්ද?",
@@ -286,7 +286,7 @@
           "fine_motor_skills",
           "tracing"
         ],
-        "template_type": "coloring_game",
+        "template_type": "skill2_coloring",
         "rounds": [
           {
             "shape": "ර",
@@ -361,7 +361,7 @@
           "memory",
           "sequencing"
         ],
-        "template_type": "pattern_memory_game",
+        "template_type": "skill2_pattern_memory",
         "rounds": [
           {
             "show_seconds": 5,

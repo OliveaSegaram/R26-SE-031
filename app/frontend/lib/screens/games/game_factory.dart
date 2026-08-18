@@ -22,6 +22,14 @@ import 'skill_1/visual_act3_sorting_adventure.dart';
 import 'skill_1/visual_act4_shadow_matching.dart';
 import 'skill_1/visual_act5_memory_hats.dart';
 
+// Skill 2 Dedicated Templates
+import 'skill_2/skill2_act1_audio.dart';
+import 'skill_2/skill2_act2_identical_match.dart';
+import 'skill_2/skill2_act3_audio_sequence.dart';
+import 'skill_2/skill2_act4_mcq.dart';
+import 'skill_2/skill2_act5_coloring.dart';
+import 'skill_2/skill2_act6_pattern_memory.dart';
+
 /// Central factory for constructing dynamic game screen instances based on template_type.
 class GameFactory {
   static Widget buildGame(ActivityNode node, {bool isRemedial = false}) {
@@ -43,6 +51,26 @@ class GameFactory {
         break;
       case 'visual_memory_hats':
         gameContent = VisualAct5MemoryHats(activityNode: node);
+        break;
+
+      // --- Skill 2 Dedicated Templates ---
+      case 'skill2_audio':
+        gameContent = Skill2Act1Audio(activityNode: node, isRemedial: isRemedial);
+        break;
+      case 'skill2_identical_match':
+        gameContent = Skill2Act2IdenticalMatch(activityNode: node, isRemedial: isRemedial);
+        break;
+      case 'skill2_audio_sequence':
+        gameContent = Skill2Act3AudioSequence(activityNode: node, isRemedial: isRemedial);
+        break;
+      case 'skill2_mcq':
+        gameContent = Skill2Act4Mcq(activityNode: node, isRemedial: isRemedial);
+        break;
+      case 'skill2_coloring':
+        gameContent = Skill2Act5Coloring(activityNode: node, isRemedial: isRemedial);
+        break;
+      case 'skill2_pattern_memory':
+        gameContent = Skill2Act6PatternMemory(activityNode: node, isRemedial: isRemedial);
         break;
 
       // --- Skill 1 Dedicated Templates ---
