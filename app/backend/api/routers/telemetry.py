@@ -290,3 +290,71 @@ async def get_clinical_report_pdf(
         headers={"Content-Disposition": f"attachment; filename=Clinical_Report_{student_id}.pdf"}
     )
 
+# ---------------------------------------------------------------------------
+# GET /telemetry/export/csv  — Data Lake ML Export
+# ---------------------------------------------------------------------------
+import csv
+
+@router.get("/telemetry/export/csv")
+async def export_telemetry_csv(
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Export all raw telemetry flattened for Data Lake / ML training.
+    In production, restrict this to Admin/Data Scientists only.
+    """
+    # Simple permission check
+    if current_user.get("role") not in ("admin", "specialist"):
+        raise HTTPException(status_code=403, detail="Not authorized to export data lake.")
+        
+    db = get_db()
+    cursor = db.telemetry_events.find({}).sort("submitted_at", -1)
+    
+    # We will flatten the session and events
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Headers
+    headers = [
+        "session_id", "student_id", "submitted_at", "session_duration",
+        "activity_name", "round_number", "is_correct", "score",
+        "first_touch_latency_ms", "total_round_latency_ms", "misclick_count",
+        "hesitation_count", "audio_replay_count", "max_device_motion",
+        "is_abandoned", "device_os", "device_model"
+    ]
+    writer.writerow(headers)
+    
+    async for session in cursor:
+        s_id = str(session["_id"])
+        st_id = session.get("student_id", "")
+        sub_at = session.get("submitted_at", "")
+        dur = session.get("session_duration_seconds", 0)
+        
+        dev = session.get("device_metrics", {})
+        d_os = dev.get("os", "unknown")
+        d_mod = dev.get("model", "unknown")
+        
+        for e in session.get("events", []):
+            row = [
+                s_id, st_id, sub_at, dur,
+                e.get("activity_name", ""),
+                e.get("round_number", 0),
+                e.get("is_correct", False),
+                e.get("score", 0),
+                e.get("first_touch_latency_ms", 0),
+                e.get("total_round_latency_ms", 0),
+                e.get("misclick_count", 0),
+                e.get("hesitation_count", 0),
+                e.get("audio_replay_count", 0),
+                e.get("max_device_motion", 0.0),
+                e.get("is_abandoned", False),
+                d_os, d_mod
+            ]
+            writer.writerow(row)
+            
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=sipsara_telemetry_datalake.csv"}
+    )
+
