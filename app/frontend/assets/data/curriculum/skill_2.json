@@ -280,76 +280,82 @@
       },
       {
         "id": "act_5",
-        "title": "අකුර ලියමු",
-        "description": "තිත් ඉරි මත අකුර ලස්සනට ලියන්න.",
+        "title": "වෙනස් රූපය සොයමු",
+        "description": "වෙනස් රූපය හෝ අකුර සොයා ඒ මත ඔබන්න.",
         "telemetry_tags": [
-          "fine_motor_skills",
-          "tracing"
+          "visual_discrimination",
+          "odd_one_out"
         ],
-        "template_type": "skill2_coloring",
+        "template_type": "skill2_odd_one_out",
         "rounds": [
           {
-            "shape": "ර",
-            "shape_name": "'ර' අකුර",
-            "color_name": "රතු පාටින් (Red)",
-            "target_color": "#FF3B30",
-            "palette": [
-              "#FF3B30",
-              "#007AFF"
-            ],
-            "correct_color_index": 0
+            "prompt": "'අ' අකුර සොයන්න.",
+            "items": [
+              {"type": "icon", "value": "assets/images/activity_icons/fruits_food/apple.png", "is_target": false},
+              {"type": "icon", "value": "assets/images/activity_icons/fruits_food/apple.png", "is_target": false},
+              {"type": "icon", "value": "assets/images/activity_icons/fruits_food/apple.png", "is_target": false},
+              {"type": "letter", "value": "අ", "is_target": true}
+            ]
           },
           {
-            "shape": "ප",
-            "shape_name": "'ප' අකුර",
-            "color_name": "නිල් පාටින් (Blue)",
-            "target_color": "#007AFF",
-            "palette": [
-              "#FF3B30",
-              "#007AFF",
-              "#FFCC00"
-            ],
-            "correct_color_index": 1
+            "prompt": "'ම' අකුර සොයන්න.",
+            "items": [
+              {"type": "icon", "value": "assets/images/activity_icons/everyday_objects/spoon.png", "is_target": false},
+              {"type": "icon", "value": "assets/images/activity_icons/everyday_objects/spoon.png", "is_target": false},
+              {"type": "letter", "value": "ය", "is_target": false},
+              {"type": "letter", "value": "ම", "is_target": true}
+            ]
           },
           {
-            "shape": "ක",
-            "shape_name": "'ක' අකුර",
-            "color_name": "කහ පාටින් (Yellow)",
-            "target_color": "#FFCC00",
-            "palette": [
-              "#FF3B30",
-              "#007AFF",
-              "#FFCC00",
-              "#34C759"
-            ],
-            "correct_color_index": 2
+            "prompt": "'ර' අකුර සොයන්න.",
+            "items": [
+              {"type": "icon", "value": "assets/images/activity_icons/everyday_objects/flag.png", "is_target": false},
+              {"type": "letter", "value": "ය", "is_target": false},
+              {"type": "letter", "value": "ම", "is_target": false},
+              {"type": "letter", "value": "ර", "is_target": true}
+            ]
           },
           {
-            "shape": "බ",
-            "shape_name": "'බ' අකුර",
-            "color_name": "කොළ පාටින් (Green)",
-            "target_color": "#34C759",
-            "palette": [
-              "#FF3B30",
-              "#007AFF",
-              "#FFCC00",
-              "#34C759"
-            ],
-            "correct_color_index": 3
+            "prompt": "'ඳ' අකුර සොයන්න.",
+            "items": [
+              {"type": "letter", "value": "උ", "is_target": false},
+              {"type": "letter", "value": "උ", "is_target": false},
+              {"type": "letter", "value": "උ", "is_target": false},
+              {"type": "letter", "value": "ඳ", "is_target": true}
+            ]
           },
           {
-            "shape": "ළ",
-            "shape_name": "'ළ' අකුර",
-            "color_name": "දම් පාටින් (Purple)",
-            "target_color": "#AF52DE",
-            "palette": [
-              "#FF3B30",
-              "#007AFF",
-              "#FFCC00",
-              "#34C759",
-              "#AF52DE"
-            ],
-            "correct_color_index": 4
+            "prompt": "'ධ' අකුර සොයන්න.",
+            "items": [
+              {"type": "letter", "value": "ඔ", "is_target": false},
+              {"type": "letter", "value": "ඔ", "is_target": false},
+              {"type": "letter", "value": "ඔ", "is_target": false},
+              {"type": "letter", "value": "ඔ", "is_target": false},
+              {"type": "letter", "value": "ඔ", "is_target": false},
+              {"type": "letter", "value": "ධ", "is_target": true}
+            ]
+          },
+          {
+            "prompt": "'ට' අකුරු දෙක සොයන්න.",
+            "items": [
+              {"type": "letter", "value": "ඩ", "is_target": false},
+              {"type": "letter", "value": "ඩ", "is_target": false},
+              {"type": "letter", "value": "ඩ", "is_target": false},
+              {"type": "letter", "value": "ඩ", "is_target": false},
+              {"type": "letter", "value": "ට", "is_target": true},
+              {"type": "letter", "value": "ට", "is_target": true}
+            ]
+          },
+          {
+            "prompt": "'අ' සහ 'ආ' අකුරු සොයන්න.",
+            "items": [
+              {"type": "letter", "value": "ඇ", "is_target": false},
+              {"type": "letter", "value": "ඇ", "is_target": false},
+              {"type": "letter", "value": "ඇ", "is_target": false},
+              {"type": "letter", "value": "ඇ", "is_target": false},
+              {"type": "letter", "value": "අ", "is_target": true},
+              {"type": "letter", "value": "ආ", "is_target": true}
+            ]
           }
         ]
       },
