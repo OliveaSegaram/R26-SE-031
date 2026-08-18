@@ -249,10 +249,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           future: _analyticsFuture,
           builder: (context, snapshot) {
             
-            // Determine dynamic risk
             String risk = student['risk']?.toString() ?? 'pending';
             Map<String, dynamic> analytics = {};
-            if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+            if (snapshot.hasData && snapshot.data!.isNotEmpty && snapshot.data!['status'] != 'insufficient_data') {
               analytics = snapshot.data!;
               if (analytics['risk_assessment'] != null && analytics['risk_assessment'] is Map) {
                 risk = analytics['risk_assessment']['overall_risk']?.toString() ?? risk;
@@ -347,7 +346,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                student['name'] ?? 'Unknown',
+                                student['name'] ?? student['first_name'] ?? student['student_name'] ?? 'Unknown',
                                 style: AppTypography.heading(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
@@ -356,7 +355,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'age ${student['age'] ?? 'N/A'} · parent: ${student['parent'] ?? 'N/A'}',
+                                '${student['age'] ?? student['grade'] ?? 'N/A'} · parent: ${student['parent'] ?? student['parent_name'] ?? 'N/A'}',
                                 style: AppTypography.caption(
                                   fontSize: 13,
                                   color: AppColors.textSecondary,
@@ -364,7 +363,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'connected since ${student['connected'] ?? 'N/A'}',
+                                'connected since ${student['connected'] ?? student['connected_at']?.toString().split('T')[0] ?? 'N/A'}',
                                 style: AppTypography.caption(
                                   fontSize: 12,
                                   color: AppColors.textHint,
@@ -458,7 +457,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
 
   // ─── Progress Tab ───
   Widget _buildProgressTab(Map<String, dynamic> analytics) {
-    Map<String, dynamic> indices = analytics['indices'] ?? {};
+    Map<String, dynamic> indices = analytics['cognitive_indices'] ?? {};
     
     // Fallback if no analytics exist yet
     if (indices.isEmpty) {
