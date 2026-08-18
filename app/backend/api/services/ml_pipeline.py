@@ -177,10 +177,48 @@ def compute_cognitive_indices(features: dict[str, float]) -> dict[str, float]:
 # Risk Classifier — Rule-Based (upgradeable to sklearn RandomForest)
 # ---------------------------------------------------------------------------
 
+import os
+import joblib
+
+# Optional: define path to ML model
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "dyslexia_rf_model.pkl")
+
 def classify_risk(
     features: dict[str, float],
     indices: dict[str, float],
 ) -> dict[str, str]:
+    """
+    Classify dyslexia subtype risk levels from feature vector and cognitive indices.
+
+    If a trained Scikit-Learn model exists at MODEL_PATH, it uses the Random Forest
+    to predict probabilities. Otherwise, it falls back to the clinical heuristic rules.
+    """
+    if os.path.exists(MODEL_PATH):
+        try:
+            model = joblib.load(MODEL_PATH)
+            # Feature ordering must match training (assuming alphabetical for simplicity in this stub)
+            # In production, use a DictVectorizer or Pandas DataFrame to guarantee order
+            feature_keys = sorted(list(features.keys()))
+            x_input = [[features[k] for k in feature_keys]]
+            
+            # Predict
+            prediction = model.predict(x_input)[0]  # e.g. 0=Low, 1=Moderate, 2=High
+            
+            risk_map = {0: "Low", 1: "Moderate", 2: "High"}
+            overall_risk = risk_map.get(prediction, "Moderate")
+            
+            return {
+                "overall_risk": overall_risk,
+                "dyslexia_risk": overall_risk,
+                "dyspraxia_risk": overall_risk,
+                "adhd_risk": overall_risk,
+                "model_used": "RandomForest"
+            }
+        except Exception as e:
+            # Fallback on error
+            pass
+
+    # --- FALLBACK HEURISTIC RULES ---
     """
     Classify dyslexia subtype risk levels from feature vector and cognitive indices.
 
@@ -296,28 +334,49 @@ from services.feature_engineering import extract_advanced_features
 # Full Pipeline Entry Point
 # ---------------------------------------------------------------------------
 
-def run_pipeline(
+def normalize_features_for_device(features: dict[str, Any], device_metrics: dict[str, Any]) -> dict[str, Any]:
+    """Normalize kinematics and physical bounds based on the device."""
+    if not device_metrics:
+        return features
+
+    os_type = device_metrics.get("os", "unknown")
+    model = device_metrics.get("model", "").lower()
+    
+    # Rough heuristics for normalization: iPads/Tablets require larger physical drags.
+    scalar = 1.0
+    if "ipad" in model or "tablet" in model:
+        scalar = 0.85
+    elif os_type == "android" or "iphone" in model:
+        scalar = 1.15
+        
+    normalized = features.copy()
+    if "avg_jerkiness" in normalized:
+        normalized["avg_jerkiness"] = round(normalized["avg_jerkiness"] * scalar, 4)
+    if "avg_velocity" in normalized:
+        normalized["avg_velocity"] = round(normalized["avg_velocity"] * (1 / scalar), 4)
+        
+    return normalized
+
+def generate_cognitive_profile(
     telemetry_sessions: list[dict[str, Any]], 
     assessment_risk_score: float = 0.0
 ) -> dict[str, Any]:
     """
     Full end-to-end ML analytics pipeline.
-
-    Args:
-        telemetry_sessions: List of raw telemetry session documents from MongoDB,
-                            each containing an `events` list of TelemetryEvent dicts.
-        assessment_risk_score: Pre-calculated parent assessment risk score (0.0 to 1.0).
-
-    Returns:
-        Cognitive profile dict ready for storage in `cognitive_profiles` collection.
     """
-    # Flatten all events across all sessions
     all_events: list[dict[str, Any]] = []
+    latest_device_metrics = {}
+    
     for session in telemetry_sessions:
         all_events.extend(session.get("events", []))
+        if session.get("device_metrics"):
+            latest_device_metrics = session.get("device_metrics")
 
     base_features = extract_features(all_events)
     advanced_features = extract_advanced_features(all_events)
+    
+    # Normalize features using device metrics
+    advanced_features = normalize_features_for_device(advanced_features, latest_device_metrics)
     
     # Combine into 19-dimensional feature vector (STT features stubbed for now)
     features = {

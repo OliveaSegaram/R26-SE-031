@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'; // For PointerEvent
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'telemetry/telemetry_plugin.dart';
 import 'student_service.dart';
 
@@ -175,6 +177,7 @@ class TelemetryService {
       'student_id': studentId,
       'session_duration_seconds': totalDuration,
       'events': _sessionEvents.map((e) => e.toJson()).toList(),
+      'device_metrics': await _getDeviceMetrics(),
     };
 
     debugPrint('Telemetry: Submitting session (${_sessionEvents.length} events)...');
@@ -235,5 +238,25 @@ class TelemetryService {
     } catch (e) {
       debugPrint('Telemetry: Offline flush error: $e');
     }
+  }
+
+  /// Retrieve device metrics for spatial and acceleration normalization in the backend
+  Future<Map<String, dynamic>> _getDeviceMetrics() async {
+    try {
+      final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      if (kIsWeb) {
+        final webBrowserInfo = await deviceInfo.webBrowserInfo;
+        return {'os': 'web', 'model': webBrowserInfo.userAgent};
+      } else if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        return {'os': 'android', 'model': androidInfo.model, 'brand': androidInfo.brand, 'isPhysicalDevice': androidInfo.isPhysicalDevice};
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        return {'os': 'ios', 'model': iosInfo.utsname.machine, 'systemVersion': iosInfo.systemVersion, 'isPhysicalDevice': iosInfo.isPhysicalDevice};
+      }
+    } catch (e) {
+      debugPrint('Failed to get device info: $e');
+    }
+    return {'os': 'unknown', 'model': 'unknown'};
   }
 }
