@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
+import 'widgets/shared_game_layout.dart';
 
 /// Activity 1: වෙනස් හැඩය සොයමු (Find the Different Shape)
 /// Template: odd_one_out_game
@@ -19,6 +20,7 @@ class _Activity1OddShapeState extends State<Activity1OddShape> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
   bool _isCorrect = false;
+  bool _activityComplete = false;
   int _currentRoundIndex = 0;
 
   @override
@@ -52,12 +54,9 @@ class _Activity1OddShapeState extends State<Activity1OddShape> {
             _isCorrect = false;
           });
         } else {
-          final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
-          if (wrapper != null) {
-            wrapper.completeActivity(context);
-          } else {
-            Navigator.pop(context, 100);
-          }
+          setState(() {
+            _activityComplete = true;
+          });
         }
       });
     } else {
@@ -101,37 +100,52 @@ class _Activity1OddShapeState extends State<Activity1OddShape> {
       items[correctIndex] = target;
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: Text(titleText, style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white)),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // Progress Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'වටය ${_currentRoundIndex + 1} / ${rounds.length}',
-                    style: AppTypography.sinhala(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: (_currentRoundIndex + 1) / rounds.length,
-                backgroundColor: AppColors.borderLight,
-                color: AppColors.gentleGreen,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 24),
+    double itemSize;
+    double spacing;
+    double fontSize;
+    final total = items.length;
+    final bool hasLongText = items.any((opt) => opt.toString().length > 4 || opt.toString().contains(' '));
+    
+    if (total <= 2) {
+      itemSize = 160.0;
+      spacing = 32.0;
+      fontSize = 80.0;
+    } else if (total <= 4) {
+      itemSize = 120.0;
+      spacing = 20.0;
+      fontSize = 64.0;
+    } else if (total <= 6) {
+      itemSize = 96.0; 
+      spacing = 16.0;
+      fontSize = 52.0;
+    } else if (total <= 9) {
+      itemSize = 80.0; 
+      spacing = 12.0;
+      fontSize = 42.0;
+    } else {
+      itemSize = 64.0; 
+      spacing = 8.0;
+      fontSize = 32.0;
+    }
+
+    return SharedGameLayout(
+      title: titleText,
+      currentRoundIndex: _currentRoundIndex,
+      totalRounds: rounds.length,
+      isRoundComplete: _isCorrect,
+      isActivityComplete: _activityComplete,
+      onNext: () {
+        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        if (wrapper != null) {
+          wrapper.completeActivity(context);
+        } else {
+          Navigator.pop(context, 100);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -153,16 +167,18 @@ class _Activity1OddShapeState extends State<Activity1OddShape> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 64),
 
               // Grid Items
               Expanded(
-                child: Center(
-                  child: Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    alignment: WrapAlignment.center,
-                    children: List.generate(items.length, (index) {
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Center(
+                    child: Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      alignment: WrapAlignment.center,
+                      children: List.generate(items.length, (index) {
                       final isSelected = _selectedIndex == index;
                       final isCorrectSelection = isSelected && index == correctIndex;
                       final isWrongSelection = isSelected && index != correctIndex;
@@ -171,8 +187,9 @@ class _Activity1OddShapeState extends State<Activity1OddShape> {
                         onTap: () => _checkAnswer(index, correctIndex, rounds.length),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
-                          width: 90,
-                          height: 90,
+                          width: hasLongText ? null : itemSize,
+                          height: hasLongText ? null : itemSize,
+                          padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
                           decoration: BoxDecoration(
                             color: isCorrectSelection
                                 ? AppColors.gentleGreen.withValues(alpha: 0.3)
@@ -199,7 +216,7 @@ class _Activity1OddShapeState extends State<Activity1OddShape> {
                           child: Center(
                             child: Text(
                               items[index],
-                              style: const TextStyle(fontSize: 48),
+                              style: TextStyle(fontSize: hasLongText ? 24.0 : fontSize), textAlign: TextAlign.center,
                             ),
                           ),
                         ),
@@ -208,29 +225,10 @@ class _Activity1OddShapeState extends State<Activity1OddShape> {
                   ),
                 ),
               ),
-
-              if (_isCorrect)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.gentleGreen,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.star_rounded, color: Colors.white, size: 32),
-                      const SizedBox(width: 8),
-                      Text('විශිෂ්ටයි!', style: AppTypography.sinhala(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white)),
-                    ],
-                  ),
-                )
-              else
-                const SizedBox(height: 56),
+            ),
             ],
           ),
         ),
-      ),
     );
   }
 }

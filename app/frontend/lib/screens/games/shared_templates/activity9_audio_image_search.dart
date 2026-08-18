@@ -4,6 +4,7 @@ import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
+import 'widgets/shared_game_layout.dart';
 
 /// Activity 9: වචනයට සවන් දී රූපය සොයමු (Listen to Word & Find Image)
 /// Template: audio_image_match_game
@@ -20,6 +21,7 @@ class _Activity9AudioImageSearchState extends State<Activity9AudioImageSearch> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
   bool _isCorrect = false;
+  bool _activityComplete = false;
   int _currentRoundIndex = 0;
 
   @override
@@ -72,12 +74,9 @@ class _Activity9AudioImageSearchState extends State<Activity9AudioImageSearch> {
           });
           _playAudioPrompt();
         } else {
-          final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
-          if (wrapper != null) {
-            wrapper.completeActivity(context);
-          } else {
-            Navigator.pop(context, 100);
-          }
+          setState(() {
+            _activityComplete = true;
+          });
         }
       });
     } else {
@@ -115,39 +114,53 @@ class _Activity9AudioImageSearchState extends State<Activity9AudioImageSearch> {
       correctIndex = options.indexOf(correctItem);
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: Text(titleText, style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white)),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // Progress Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'වටය ${_currentRoundIndex + 1} / ${rounds.length}',
-                    style: AppTypography.sinhala(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: (_currentRoundIndex + 1) / rounds.length,
-                backgroundColor: AppColors.borderLight,
-                color: AppColors.gentleGreen,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 24),
+    double itemSize;
+    double spacing;
+    double fontSize;
+    final total = options.length;
+    final bool hasLongText = options.any((opt) => opt.toString().length > 4 || opt.toString().contains(' '));
 
-              // Spoken Audio Prompt Button
+    if (total <= 2) {
+      itemSize = 160.0;
+      spacing = 32.0;
+      fontSize = 72.0;
+    } else if (total <= 4) {
+      itemSize = 130.0;
+      spacing = 16.0;
+      fontSize = 56.0;
+    } else if (total <= 6) {
+      itemSize = 100.0; 
+      spacing = 12.0;
+      fontSize = 48.0;
+    } else if (total <= 9) {
+      itemSize = 80.0; 
+      spacing = 10.0;
+      fontSize = 40.0;
+    } else {
+      itemSize = 64.0; 
+      spacing = 8.0;
+      fontSize = 32.0;
+    }
+
+    return SharedGameLayout(
+      title: titleText,
+      currentRoundIndex: _currentRoundIndex,
+      totalRounds: rounds.length,
+      isRoundComplete: _isCorrect,
+      isActivityComplete: _activityComplete,
+      onNext: () {
+        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        if (wrapper != null) {
+          wrapper.completeActivity(context);
+        } else {
+          Navigator.pop(context, 100);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          children: [
+            // Spoken Audio Prompt Button
               GestureDetector(
                 onTap: () {
                   context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
@@ -165,9 +178,11 @@ class _Activity9AudioImageSearchState extends State<Activity9AudioImageSearch> {
                     children: [
                       const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 40),
                       const SizedBox(width: 12),
-                      Text(
-                        promptText,
-                        style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      Flexible(
+                        child: Text(
+                          promptText,
+                          style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        ),
                       ),
                     ],
                   ),
@@ -178,24 +193,18 @@ class _Activity9AudioImageSearchState extends State<Activity9AudioImageSearch> {
                 '(නැවත ඇසීමට බොත්තම තට්ටු කරන්න)',
                 style: AppTypography.sinhala(fontSize: 14, color: AppColors.textSecondary),
               ),
-
-              const Spacer(),
+              const SizedBox(height: 64),
 
               // Image Option Cards Grid
               Expanded(
-                flex: 3,
-                child: Center(
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1.1,
-                    ),
-                    itemCount: options.length,
-                    itemBuilder: (context, index) {
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Center(
+                    child: Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      alignment: WrapAlignment.center,
+                      children: List.generate(options.length, (index) {
                       final isSelected = (_selectedIndex == index);
                       final isRight = isSelected && (index == correctIndex);
                       final isWrong = isSelected && (index != correctIndex);
@@ -204,6 +213,9 @@ class _Activity9AudioImageSearchState extends State<Activity9AudioImageSearch> {
                         onTap: () => _checkAnswer(index, correctIndex, rounds.length),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
+                          width: hasLongText ? null : itemSize,
+                          height: hasLongText ? null : itemSize,
+                          padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
                           decoration: BoxDecoration(
                             color: isRight
                                 ? AppColors.gentleGreen.withValues(alpha: 0.3)
@@ -224,20 +236,18 @@ class _Activity9AudioImageSearchState extends State<Activity9AudioImageSearch> {
                             ],
                           ),
                           child: Center(
-                            child: Text(options[index], style: const TextStyle(fontSize: 56)),
+                            child: Text(options[index], style: TextStyle(fontSize: hasLongText ? 24.0 : fontSize), textAlign: TextAlign.center),
                           ),
                         ),
                       );
-                    },
+                    }),
                   ),
                 ),
               ),
-
-              const Spacer(),
+            ),
             ],
           ),
         ),
-      ),
     );
   }
 }

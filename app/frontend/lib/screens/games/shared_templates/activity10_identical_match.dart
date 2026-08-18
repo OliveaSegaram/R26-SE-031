@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
+import 'widgets/shared_game_layout.dart';
 
 /// Activity 10: එක සමාන රූප හඳුනා ගනිමු (Identify Identical Images)
 /// Template: identical_match_game
@@ -20,6 +21,7 @@ class _Activity10IdenticalMatchState extends State<Activity10IdenticalMatch> {
   int? _firstSelectedIndex;
   final List<int> _matchedIndices = [];
   bool _isProcessing = false;
+  bool _activityComplete = false;
   int _currentRoundIndex = 0;
 
   @override
@@ -70,12 +72,9 @@ class _Activity10IdenticalMatchState extends State<Activity10IdenticalMatch> {
                 _isProcessing = false;
               });
             } else {
-              final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
-              if (wrapper != null) {
-                wrapper.completeActivity(context);
-              } else {
-                Navigator.pop(context, 100);
-              }
+              setState(() {
+                _activityComplete = true;
+              });
             }
           });
         }
@@ -124,58 +123,69 @@ class _Activity10IdenticalMatchState extends State<Activity10IdenticalMatch> {
       }
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: Text(titleText, style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white)),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // Progress Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'වටය ${_currentRoundIndex + 1} / ${rounds.length}',
-                    style: AppTypography.sinhala(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: (_currentRoundIndex + 1) / rounds.length,
-                backgroundColor: AppColors.borderLight,
-                color: AppColors.gentleGreen,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                instructionText,
-                style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
+    double itemSize;
+    double spacing;
+    double fontSize;
+    final total = gridItems.length;
+    final bool hasLongText = gridItems.any((opt) => opt.toString().length > 4 || opt.toString().contains(' '));
+
+    if (total <= 2) {
+      itemSize = 160.0;
+      spacing = 32.0;
+      fontSize = 72.0;
+    } else if (total <= 4) {
+      itemSize = 130.0;
+      spacing = 16.0;
+      fontSize = 56.0;
+    } else if (total <= 6) {
+      itemSize = 100.0; 
+      spacing = 12.0;
+      fontSize = 48.0;
+    } else if (total <= 9) {
+      itemSize = 80.0; 
+      spacing = 10.0;
+      fontSize = 40.0;
+    } else {
+      itemSize = 64.0; 
+      spacing = 8.0;
+      fontSize = 32.0;
+    }
+
+    return SharedGameLayout(
+      title: titleText,
+      currentRoundIndex: _currentRoundIndex,
+      totalRounds: rounds.length,
+      isRoundComplete: _matchedIndices.length == gridItems.length,
+      isActivityComplete: _activityComplete,
+      onNext: () {
+        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        if (wrapper != null) {
+          wrapper.completeActivity(context);
+        } else {
+          Navigator.pop(context, 100);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          children: [
+            Text(
+              instructionText,
+              style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 64),
 
               // Matching Cards Grid
               Expanded(
-                child: Center(
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1.1,
-                    ),
-                    itemCount: gridItems.length,
-                    itemBuilder: (context, index) {
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Center(
+                    child: Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      alignment: WrapAlignment.center,
+                      children: List.generate(gridItems.length, (index) {
                       final isMatched = _matchedIndices.contains(index);
                       final isSelected = (_firstSelectedIndex == index);
 
@@ -183,6 +193,9 @@ class _Activity10IdenticalMatchState extends State<Activity10IdenticalMatch> {
                         onTap: () => _onCardTapped(index, gridItems, rounds.length),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
+                          width: hasLongText ? null : itemSize,
+                          height: hasLongText ? null : itemSize,
+                          padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
                           decoration: BoxDecoration(
                             color: isMatched
                                 ? AppColors.gentleGreen.withValues(alpha: 0.25)
@@ -204,20 +217,19 @@ class _Activity10IdenticalMatchState extends State<Activity10IdenticalMatch> {
                           ),
                           child: Center(
                             child: isMatched
-                                ? const Icon(Icons.check_circle_rounded, color: AppColors.gentleGreen, size: 52)
-                                : Text(gridItems[index], style: const TextStyle(fontSize: 56)),
+                                ? Icon(Icons.check_circle_rounded, color: AppColors.gentleGreen, size: fontSize)
+                                : Text(gridItems[index], style: TextStyle(fontSize: hasLongText ? 24.0 : fontSize), textAlign: TextAlign.center),
                           ),
                         ),
                       );
-                    },
+                    }),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+            ),
             ],
           ),
         ),
-      ),
     );
   }
 }

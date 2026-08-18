@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
+import 'widgets/shared_game_layout.dart';
 
 /// Activity 3: රටාව මතක තබා ගනිමු (Remember the Pattern)
 /// Template: pattern_memory_game
@@ -24,6 +25,7 @@ class _Activity3RememberPatternState extends State<Activity3RememberPattern> {
 
   final List<String> _userSequence = [];
   bool _isCorrect = false;
+  bool _activityComplete = false;
   int _currentRoundIndex = 0;
 
   @override
@@ -109,12 +111,9 @@ class _Activity3RememberPatternState extends State<Activity3RememberPattern> {
           _currentRoundIndex++;
           _startMemorizeTimer();
         } else {
-          final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
-          if (wrapper != null) {
-            wrapper.completeActivity(context);
-          } else {
-            Navigator.pop(context, 100);
-          }
+          setState(() {
+            _activityComplete = true;
+          });
         }
       });
     }
@@ -146,131 +145,151 @@ class _Activity3RememberPatternState extends State<Activity3RememberPattern> {
       options.shuffle();
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: Text(titleText, style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white)),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // Progress Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'වටය ${_currentRoundIndex + 1} / ${rounds.length}',
-                    style: AppTypography.sinhala(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: (_currentRoundIndex + 1) / rounds.length,
-                backgroundColor: AppColors.borderLight,
-                color: AppColors.gentleGreen,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 20),
+    double itemSize;
+    double spacing;
+    double fontSize;
+    final total = options.length;
+    final bool hasLongText = options.any((opt) => opt.toString().length > 4 || opt.toString().contains(' '));
 
-              // Instruction Banner
-              Text(
-                _isMemorizing ? 'රටාව දෙස බලන්න! (${_countdown}s)' : 'මතකයෙන් රටාව නැවත සකසන්න:',
-                style: AppTypography.sinhala(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: _isMemorizing ? AppColors.softCoral : AppColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
+    if (total <= 2) {
+      itemSize = 120.0;
+      spacing = 24.0;
+      fontSize = 56.0;
+    } else if (total <= 4) {
+      itemSize = 90.0;
+      spacing = 16.0;
+      fontSize = 48.0;
+    } else if (total <= 6) {
+      itemSize = 76.0; 
+      spacing = 12.0;
+      fontSize = 40.0;
+    } else {
+      itemSize = 64.0; 
+      spacing = 8.0;
+      fontSize = 32.0;
+    }
 
-              // Target Pattern View / Recall Slots
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 4))
+    return SharedGameLayout(
+      title: titleText,
+      currentRoundIndex: _currentRoundIndex,
+      totalRounds: rounds.length,
+      isRoundComplete: _isCorrect,
+      isActivityComplete: _activityComplete,
+      onNext: () {
+        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        if (wrapper != null) {
+          wrapper.completeActivity(context);
+        } else {
+          Navigator.pop(context, 100);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          children: [
+
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    // Instruction Banner
+                    Text(
+                      _isMemorizing ? 'රටාව දෙස බලන්න! (${_countdown}s)' : 'මතකයෙන් රටාව නැවත සකසන්න:',
+                      style: AppTypography.sinhala(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: _isMemorizing ? AppColors.softCoral : AppColors.textPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Target Pattern View / Recall Slots
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 4))
+                        ],
+                      ),
+                      child: Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        alignment: WrapAlignment.center,
+                        children: List.generate(targetPattern.length, (i) {
+                          final itemToShow = _isMemorizing
+                              ? targetPattern[i]
+                              : (i < _userSequence.length ? _userSequence[i] : '?');
+                          final isFilled = !_isMemorizing && i < _userSequence.length;
+
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: isFilled ? AppColors.gentleGreen.withValues(alpha: 0.2) : AppColors.cream,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isFilled ? AppColors.gentleGreen : AppColors.borderLight,
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                itemToShow,
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  color: itemToShow == '?' ? AppColors.textSecondary : Colors.black,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+
+                    const SizedBox(height: 64),
+
+                    // Recall Candidate Palette (Disabled while memorizing)
+                    if (!_isMemorizing) ...[
+                      Text('පහත හැඩතල තට්ටු කරන්න:', style: AppTypography.sinhala(fontSize: 16, color: AppColors.textSecondary)),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        alignment: WrapAlignment.center,
+                        children: options.map((opt) {
+                          return GestureDetector(
+                            onTap: () => _addItemToUserSequence(opt, targetPattern, rounds.length),
+                            child: Container(
+                              width: hasLongText ? null : itemSize,
+                          height: hasLongText ? null : itemSize,
+                          padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: AppColors.borderLight, width: 3),
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6, offset: const Offset(0, 3))
+                                ],
+                              ),
+                              child: Center(child: Text(opt, style: TextStyle(fontSize: hasLongText ? 24.0 : fontSize), textAlign: TextAlign.center)),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
                   ],
                 ),
-                child: Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  alignment: WrapAlignment.center,
-                  children: List.generate(targetPattern.length, (i) {
-                    final itemToShow = _isMemorizing
-                        ? targetPattern[i]
-                        : (i < _userSequence.length ? _userSequence[i] : '?');
-                    final isFilled = !_isMemorizing && i < _userSequence.length;
-
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: isFilled ? AppColors.gentleGreen.withValues(alpha: 0.2) : AppColors.cream,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isFilled ? AppColors.gentleGreen : AppColors.borderLight,
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          itemToShow,
-                          style: TextStyle(
-                            fontSize: 32,
-                            color: itemToShow == '?' ? AppColors.textSecondary : Colors.black,
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
               ),
-
-              const Spacer(),
-
-              // Recall Candidate Palette (Disabled while memorizing)
-              if (!_isMemorizing) ...[
-                Text('පහත හැඩතල තට්ටු කරන්න:', style: AppTypography.sinhala(fontSize: 16, color: AppColors.textSecondary)),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  alignment: WrapAlignment.center,
-                  children: options.map((opt) {
-                    return GestureDetector(
-                      onTap: () => _addItemToUserSequence(opt, targetPattern, rounds.length),
-                      child: Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.borderLight, width: 3),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6, offset: const Offset(0, 3))
-                          ],
-                        ),
-                        child: Center(child: Text(opt, style: const TextStyle(fontSize: 36))),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-              const SizedBox(height: 24),
+            ),
             ],
           ),
         ),
-      ),
     );
   }
 }

@@ -4,6 +4,7 @@ import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
+import 'widgets/shared_game_layout.dart';
 
 /// Activity 11: වචන අනුපිළිවෙලට සවන් දී රූප පිලිවෙලින් පෙළගස්වමු (Listen to Audio Sequence & Order Images)
 /// Template: audio_sequence_game
@@ -20,6 +21,7 @@ class _Activity11AudioSequenceState extends State<Activity11AudioSequence> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final List<String> _userSequence = [];
   bool _isCorrect = false;
+  bool _activityComplete = false;
   int _currentRoundIndex = 0;
 
   @override
@@ -89,12 +91,9 @@ class _Activity11AudioSequenceState extends State<Activity11AudioSequence> {
           });
           _playAudioPrompt();
         } else {
-          final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
-          if (wrapper != null) {
-            wrapper.completeActivity(context);
-          } else {
-            Navigator.pop(context, 100);
-          }
+          setState(() {
+            _activityComplete = true;
+          });
         }
       });
     }
@@ -125,41 +124,51 @@ class _Activity11AudioSequenceState extends State<Activity11AudioSequence> {
       }
       options.shuffle();
     }
+
+    double itemSize;
+    double spacing;
+    double fontSize;
+    final total = options.length;
+    final bool hasLongText = options.any((opt) => opt.toString().length > 4 || opt.toString().contains(' '));
+
+    if (total <= 2) {
+      itemSize = 120.0;
+      spacing = 24.0;
+      fontSize = 56.0;
+    } else if (total <= 4) {
+      itemSize = 90.0;
+      spacing = 16.0;
+      fontSize = 48.0;
+    } else if (total <= 6) {
+      itemSize = 76.0; 
+      spacing = 12.0;
+      fontSize = 40.0;
+    } else {
+      itemSize = 64.0; 
+      spacing = 8.0;
+      fontSize = 32.0;
+    }
     final audioPrompt = currentRound['audio_prompt']?.toString() ?? 'අනුපිළිවෙලට සවන් දෙන්න';
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: Text(titleText, style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white)),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // Progress Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'වටය ${_currentRoundIndex + 1} / ${rounds.length}',
-                    style: AppTypography.sinhala(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: (_currentRoundIndex + 1) / rounds.length,
-                backgroundColor: AppColors.borderLight,
-                color: AppColors.gentleGreen,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 20),
-
-              // Audio Sequence Button
+    return SharedGameLayout(
+      title: titleText,
+      currentRoundIndex: _currentRoundIndex,
+      totalRounds: rounds.length,
+      isRoundComplete: _isCorrect,
+      isActivityComplete: _activityComplete,
+      onNext: () {
+        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        if (wrapper != null) {
+          wrapper.completeActivity(context);
+        } else {
+          Navigator.pop(context, 100);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          children: [
+            // Audio Sequence Button
               GestureDetector(
                 onTap: () {
                   context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
@@ -177,9 +186,11 @@ class _Activity11AudioSequenceState extends State<Activity11AudioSequence> {
                     children: [
                       const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 36),
                       const SizedBox(width: 12),
-                      Text(
-                        audioPrompt,
-                        style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      Flexible(
+                        child: Text(
+                          audioPrompt,
+                          style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        ),
                       ),
                     ],
                   ),
@@ -187,70 +198,79 @@ class _Activity11AudioSequenceState extends State<Activity11AudioSequence> {
               ),
               const SizedBox(height: 24),
 
-              // Sequence Ordering Slots (1st, 2nd, 3rd)
-              Text('අනුපිළිවෙලින් සකසන්න:', style: AppTypography.sinhala(fontSize: 16, color: AppColors.textSecondary)),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(targetSequence.length, (i) {
-                  final filled = i < _userSequence.length;
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 6),
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: filled ? AppColors.gentleGreen.withValues(alpha: 0.2) : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: filled ? AppColors.gentleGreen : AppColors.borderLight,
-                        width: 3,
-                      ),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 24),
+                    // Sequence Ordering Slots (1st, 2nd, 3rd)
+                    Text('අනුපිළිවෙලින් සකසන්න:', style: AppTypography.sinhala(fontSize: 16, color: AppColors.textSecondary)),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(targetSequence.length, (i) {
+                        final filled = i < _userSequence.length;
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 6),
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: filled ? AppColors.gentleGreen.withValues(alpha: 0.2) : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: filled ? AppColors.gentleGreen : AppColors.borderLight,
+                              width: 3,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              filled ? _userSequence[i] : '${i + 1}',
+                              style: TextStyle(
+                                fontSize: filled ? 36 : 20,
+                                fontWeight: filled ? FontWeight.normal : FontWeight.bold,
+                                color: filled ? Colors.black : AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
                     ),
-                    child: Center(
-                      child: Text(
-                        filled ? _userSequence[i] : '${i + 1}',
-                        style: TextStyle(
-                          fontSize: filled ? 36 : 20,
-                          fontWeight: filled ? FontWeight.normal : FontWeight.bold,
-                          color: filled ? Colors.black : AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
 
-              const Spacer(),
+                    const SizedBox(height: 64),
 
-              // Selectable Options Palette
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                alignment: WrapAlignment.center,
-                children: options.map((tile) {
-                  return GestureDetector(
-                    onTap: () => _onTileTapped(tile, targetSequence, rounds.length),
-                    child: Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.borderLight, width: 3),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 3))
-                        ],
-                      ),
-                      child: Center(child: Text(tile, style: const TextStyle(fontSize: 40))),
+                    // Selectable Options Palette
+                    Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      alignment: WrapAlignment.center,
+                      children: options.map((tile) {
+                        return GestureDetector(
+                          onTap: () => _onTileTapped(tile, targetSequence, rounds.length),
+                          child: Container(
+                            width: hasLongText ? null : itemSize,
+                          height: hasLongText ? null : itemSize,
+                          padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.borderLight, width: 3),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 3))
+                              ],
+                            ),
+                            child: Center(child: Text(tile, style: TextStyle(fontSize: hasLongText ? 24.0 : fontSize), textAlign: TextAlign.center)),
+                          ),
+                        );
+                      }).toList(),
                     ),
-                  );
-                }).toList(),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
+            ),
             ],
           ),
         ),
-      ),
     );
   }
 }

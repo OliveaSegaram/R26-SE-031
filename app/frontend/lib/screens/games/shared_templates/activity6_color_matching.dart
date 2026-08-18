@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
+import 'widgets/shared_game_layout.dart';
 
 /// Activity 6: වර්ණයට ගැලපෙන රූපය හඳුනා ගනිමු (Identify Image Matching Color)
 /// Template: color_match_game
@@ -19,6 +20,7 @@ class _Activity6ColorMatchingState extends State<Activity6ColorMatching> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
   bool _isCorrect = false;
+  bool _activityComplete = false;
   int _currentRoundIndex = 0;
 
   @override
@@ -53,12 +55,9 @@ class _Activity6ColorMatchingState extends State<Activity6ColorMatching> {
             _isCorrect = false;
           });
         } else {
-          final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
-          if (wrapper != null) {
-            wrapper.completeActivity(context);
-          } else {
-            Navigator.pop(context, 100);
-          }
+          setState(() {
+            _activityComplete = true;
+          });
         }
       });
     } else {
@@ -97,72 +96,92 @@ class _Activity6ColorMatchingState extends State<Activity6ColorMatching> {
       correctIndex = options.indexOf(correctItem);
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: Text(titleText, style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white)),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // Progress Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'වටය ${_currentRoundIndex + 1} / ${rounds.length}',
-                    style: AppTypography.sinhala(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: (_currentRoundIndex + 1) / rounds.length,
-                backgroundColor: AppColors.borderLight,
-                color: AppColors.gentleGreen,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 24),
+    double itemSize;
+    double spacing;
+    double fontSize;
+    final total = options.length;
+    final bool hasLongText = options.any((opt) => opt.toString().length > 4 || opt.toString().contains(' '));
 
-              // Target Color Banner
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4))
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+    if (total <= 2) {
+      itemSize = 128.0;
+      spacing = 32.0;
+      fontSize = 64.0;
+    } else if (total <= 4) {
+      itemSize = 96.0;
+      spacing = 20.0;
+      fontSize = 52.0;
+    } else if (total <= 6) {
+      itemSize = 80.0; 
+      spacing = 16.0;
+      fontSize = 44.0;
+    } else if (total <= 9) {
+      itemSize = 64.0; 
+      spacing = 12.0;
+      fontSize = 32.0;
+    } else {
+      itemSize = 56.0; 
+      spacing = 8.0;
+      fontSize = 28.0;
+    }
+
+    return SharedGameLayout(
+      title: titleText,
+      currentRoundIndex: _currentRoundIndex,
+      totalRounds: rounds.length,
+      isRoundComplete: _isCorrect,
+      isActivityComplete: _activityComplete,
+      onNext: () {
+        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        if (wrapper != null) {
+          wrapper.completeActivity(context);
+        } else {
+          Navigator.pop(context, 100);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
                   children: [
-                    Text(targetColor, style: const TextStyle(fontSize: 48)),
-                    const SizedBox(width: 16),
-                    Text(
-                      colorName,
-                      style: AppTypography.sinhala(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    const SizedBox(height: 16),
+                    // Target Color Banner
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4))
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(targetColor, style: const TextStyle(fontSize: 48)),
+                          const SizedBox(width: 16),
+                          Text(
+                            colorName,
+                            style: AppTypography.sinhala(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'මෙම වර්ණයට ගැලපෙන රූපය තෝරන්න:',
-                style: AppTypography.sinhala(fontSize: 18, color: AppColors.textSecondary),
-              ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'මෙම වර්ණයට ගැලපෙන රූපය තෝරන්න:',
+                      style: AppTypography.sinhala(fontSize: 18, color: AppColors.textSecondary),
+                    ),
 
-              const Spacer(),
+                    const SizedBox(height: 64),
 
               // Color Candidate Options
               Wrap(
-                spacing: 16,
-                runSpacing: 16,
+                spacing: spacing,
+                runSpacing: spacing,
                 alignment: WrapAlignment.center,
                 children: List.generate(options.length, (index) {
                   final isSelected = (_selectedIndex == index);
@@ -173,8 +192,9 @@ class _Activity6ColorMatchingState extends State<Activity6ColorMatching> {
                     onTap: () => _checkAnswer(index, correctIndex, rounds.length),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 250),
-                      width: 88,
-                      height: 88,
+                      width: hasLongText ? null : itemSize,
+                          height: hasLongText ? null : itemSize,
+                          padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
                       decoration: BoxDecoration(
                         color: isRight
                             ? AppColors.gentleGreen.withValues(alpha: 0.3)
@@ -195,18 +215,21 @@ class _Activity6ColorMatchingState extends State<Activity6ColorMatching> {
                         ],
                       ),
                       child: Center(
-                        child: Text(options[index], style: const TextStyle(fontSize: 48)),
+                        child: Text(options[index], style: TextStyle(fontSize: hasLongText ? 24.0 : fontSize), textAlign: TextAlign.center),
                       ),
                     ),
                   );
                 }),
               ),
 
-              const Spacer(),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
             ],
           ),
         ),
-      ),
     );
   }
 }

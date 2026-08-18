@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
+import 'widgets/shared_game_layout.dart';
 
 /// Activity 7: හැඩතලවලට පාට කරමු (Color the Shapes)
 /// Template: coloring_game
@@ -20,6 +21,7 @@ class _Activity7ShapeColoringState extends State<Activity7ShapeColoring> {
   int? _selectedPaletteIndex;
   Color? _shapeFillColor;
   bool _isCorrect = false;
+  bool _activityComplete = false;
   int _currentRoundIndex = 0;
 
   @override
@@ -68,12 +70,9 @@ class _Activity7ShapeColoringState extends State<Activity7ShapeColoring> {
             _isCorrect = false;
           });
         } else {
-          final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
-          if (wrapper != null) {
-            wrapper.completeActivity(context);
-          } else {
-            Navigator.pop(context, 100);
-          }
+          setState(() {
+            _activityComplete = true;
+          });
         }
       });
     } else {
@@ -113,84 +112,103 @@ class _Activity7ShapeColoringState extends State<Activity7ShapeColoring> {
       correctColorIndex = paletteHex.indexOf(correctItem);
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: Text(titleText, style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white)),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // Progress Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'වටය ${_currentRoundIndex + 1} / ${rounds.length}',
-                    style: AppTypography.sinhala(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: (_currentRoundIndex + 1) / rounds.length,
-                backgroundColor: AppColors.borderLight,
-                color: AppColors.gentleGreen,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 20),
+    double itemSize;
+    double spacing;
+    double targetSize;
+    final total = paletteHex.length;
 
-              // Instruction Prompt
-              Text(
-                '$shapeName $colorName න් පාට කරන්න!',
-                style: AppTypography.sinhala(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
+    if (total <= 2) {
+      itemSize = 96.0;
+      spacing = 24.0;
+      targetSize = 180.0;
+    } else if (total <= 4) {
+      itemSize = 72.0;
+      spacing = 16.0;
+      targetSize = 180.0;
+    } else if (total <= 6) {
+      itemSize = 64.0; 
+      spacing = 12.0;
+      targetSize = 140.0;
+    } else if (total <= 9) {
+      itemSize = 56.0; 
+      spacing = 10.0;
+      targetSize = 120.0;
+    } else {
+      itemSize = 48.0; 
+      spacing = 8.0;
+      targetSize = 100.0;
+    }
 
-              // Interactive Shape Canvas Target
-              GestureDetector(
-                onTap: () => _onShapeTapped(correctColorIndex, rounds.length),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: 180,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    color: _shapeFillColor ?? Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: _shapeFillColor != null ? _shapeFillColor! : AppColors.primary,
-                      width: 6,
+    return SharedGameLayout(
+      title: titleText,
+      currentRoundIndex: _currentRoundIndex,
+      totalRounds: rounds.length,
+      isRoundComplete: _isCorrect,
+      isActivityComplete: _activityComplete,
+      onNext: () {
+        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        if (wrapper != null) {
+          wrapper.completeActivity(context);
+        } else {
+          Navigator.pop(context, 100);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    // Instruction Prompt
+                    Text(
+                      '$shapeName $colorName න් පාට කරන්න!',
+                      style: AppTypography.sinhala(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      textAlign: TextAlign.center,
                     ),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 16, offset: const Offset(0, 6))
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      shapeSymbol,
-                      style: TextStyle(
-                        fontSize: 80,
-                        color: _shapeFillColor != null ? Colors.white : Colors.black,
+                    const SizedBox(height: 24),
+
+                    // Interactive Shape Canvas Target
+                    GestureDetector(
+                      onTap: () => _onShapeTapped(correctColorIndex, rounds.length),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: targetSize,
+                        height: targetSize,
+                        decoration: BoxDecoration(
+                          color: _shapeFillColor ?? Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _shapeFillColor != null ? _shapeFillColor! : AppColors.primary,
+                            width: 6,
+                          ),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 16, offset: const Offset(0, 6))
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            shapeSymbol,
+                            style: TextStyle(
+                              fontSize: targetSize * 0.44,
+                              color: _shapeFillColor != null ? Colors.white : Colors.black,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ),
 
-              const Spacer(),
+                    const SizedBox(height: 64),
 
               // Color Palette Selector
               Text('පහතින් නිවැරදි වර්ණය තෝරන්න:', style: AppTypography.sinhala(fontSize: 16, color: AppColors.textSecondary)),
               const SizedBox(height: 12),
               Wrap(
-                spacing: 16,
-                runSpacing: 16,
+                spacing: spacing,
+                runSpacing: spacing,
                 alignment: WrapAlignment.center,
                 children: List.generate(paletteHex.length, (index) {
                   final color = _parseHexColor(paletteHex[index]);
@@ -204,8 +222,8 @@ class _Activity7ShapeColoringState extends State<Activity7ShapeColoring> {
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      width: 64,
-                      height: 64,
+                      width: itemSize,
+                      height: itemSize,
                       decoration: BoxDecoration(
                         color: color,
                         shape: BoxShape.circle,
@@ -222,11 +240,14 @@ class _Activity7ShapeColoringState extends State<Activity7ShapeColoring> {
                   );
                 }),
               ),
-              const SizedBox(height: 24),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
             ],
           ),
         ),
-      ),
     );
   }
 }

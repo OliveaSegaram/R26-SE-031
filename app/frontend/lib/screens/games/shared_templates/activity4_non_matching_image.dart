@@ -3,6 +3,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
+import 'widgets/shared_game_layout.dart';
 
 /// Activity 4: නොගැලපෙන රූපය සොයාමු (Find the Non-Matching Image)
 /// Template: non_matching_image_game
@@ -19,6 +20,7 @@ class _Activity4NonMatchingImageState extends State<Activity4NonMatchingImage> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
   bool _isCorrect = false;
+  bool _activityComplete = false;
   int _currentRoundIndex = 0;
 
   @override
@@ -53,12 +55,9 @@ class _Activity4NonMatchingImageState extends State<Activity4NonMatchingImage> {
             _isCorrect = false;
           });
         } else {
-          final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
-          if (wrapper != null) {
-            wrapper.completeActivity(context);
-          } else {
-            Navigator.pop(context, 100);
-          }
+          setState(() {
+            _activityComplete = true;
+          });
         }
       });
     } else {
@@ -96,67 +95,81 @@ class _Activity4NonMatchingImageState extends State<Activity4NonMatchingImage> {
       correctIndex = items.indexOf(correctItem);
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      appBar: AppBar(
-        title: Text(titleText, style: AppTypography.sinhala(fontWeight: FontWeight.w700, color: Colors.white)),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              // Progress Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'වටය ${_currentRoundIndex + 1} / ${rounds.length}',
-                    style: AppTypography.sinhala(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: (_currentRoundIndex + 1) / rounds.length,
-                backgroundColor: AppColors.borderLight,
-                color: AppColors.gentleGreen,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 24),
+    double itemSize;
+    double spacing;
+    double fontSize;
+    final total = items.length;
+    final bool hasLongText = items.any((opt) => opt.toString().length > 4 || opt.toString().contains(' '));
+
+    if (total <= 2) {
+      itemSize = 160.0;
+      spacing = 32.0;
+      fontSize = 72.0;
+    } else if (total <= 4) {
+      itemSize = 130.0;
+      spacing = 16.0;
+      fontSize = 56.0;
+    } else if (total <= 6) {
+      itemSize = 100.0; 
+      spacing = 12.0;
+      fontSize = 48.0;
+    } else if (total <= 9) {
+      itemSize = 80.0; 
+      spacing = 10.0;
+      fontSize = 40.0;
+    } else {
+      itemSize = 64.0; 
+      spacing = 8.0;
+      fontSize = 32.0;
+    }
+
+    return SharedGameLayout(
+      title: titleText,
+      currentRoundIndex: _currentRoundIndex,
+      totalRounds: rounds.length,
+      isRoundComplete: _isCorrect,
+      isActivityComplete: _activityComplete,
+      onNext: () {
+        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        if (wrapper != null) {
+          wrapper.completeActivity(context);
+        } else {
+          Navigator.pop(context, 100);
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          children: [
               Text(
                 instructionText,
                 style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 64),
 
               // 2x2 Grid of Category Cards
               Expanded(
-                child: Center(
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1.1,
-                    ),
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final isSelected = (_selectedIndex == index);
-                      final isRight = isSelected && (index == correctIndex);
-                      final isWrong = isSelected && (index != correctIndex);
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Center(
+                    child: Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      alignment: WrapAlignment.center,
+                        children: List.generate(items.length, (index) {
+                        final isSelected = (_selectedIndex == index);
+                        final isRight = isSelected && (index == correctIndex);
+                        final isWrong = isSelected && (index != correctIndex);
 
-                      return GestureDetector(
-                        onTap: () => _checkAnswer(index, correctIndex, rounds.length),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          decoration: BoxDecoration(
+                        return GestureDetector(
+                          onTap: () => _checkAnswer(index, correctIndex, rounds.length),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            width: hasLongText ? null : itemSize,
+                          height: hasLongText ? null : itemSize,
+                          padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
+                            decoration: BoxDecoration(
                             color: isRight
                                 ? AppColors.gentleGreen.withValues(alpha: 0.3)
                                 : isWrong
@@ -176,37 +189,18 @@ class _Activity4NonMatchingImageState extends State<Activity4NonMatchingImage> {
                             ],
                           ),
                           child: Center(
-                            child: Text(items[index], style: const TextStyle(fontSize: 56)),
+                            child: Text(items[index], style: TextStyle(fontSize: hasLongText ? 24.0 : fontSize), textAlign: TextAlign.center),
                           ),
                         ),
                       );
-                    },
+                    }),
                   ),
                 ),
               ),
-
-              if (_isCorrect)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.gentleGreen,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.star_rounded, color: Colors.white, size: 32),
-                      const SizedBox(width: 8),
-                      Text('විශිෂ්ටයි!', style: AppTypography.sinhala(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white)),
-                    ],
-                  ),
-                )
-              else
-                const SizedBox(height: 56),
+            ),
             ],
           ),
         ),
-      ),
     );
   }
 }
