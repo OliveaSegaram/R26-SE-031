@@ -12,17 +12,20 @@ class TouchPoint {
   final double xRatio;
   final double yRatio;
   final int timestampMs;
+  final String type;
 
   const TouchPoint({
     required this.xRatio,
     required this.yRatio,
     required this.timestampMs,
+    this.type = 'down',
   });
 
   Map<String, dynamic> toJson() => {
         'x_ratio': xRatio,
         'y_ratio': yRatio,
         'timestamp_ms': timestampMs,
+        'type': type,
       };
 }
 

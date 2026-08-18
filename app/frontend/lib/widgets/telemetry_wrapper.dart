@@ -129,6 +129,23 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     TelemetryService().registerPlugin(eyePlugin);
   }
 
+  /// Pause hesitation tracking while audio is playing.
+  void pauseHesitationTimer() {
+    if (_hesitationStopwatch.isRunning) {
+      _hesitationStopwatch.stop();
+      debugPrint('TELEMETRY: Hesitation timer paused (audio playing).');
+    }
+  }
+
+  /// Resume hesitation tracking after audio completes.
+  void resumeHesitationTimer() {
+    if (!_hesitationStopwatch.isRunning) {
+      _hesitationStopwatch.reset();
+      _hesitationStopwatch.start();
+      debugPrint('TELEMETRY: Hesitation timer resumed.');
+    }
+  }
+
   /// Called by the transparent Listener widget on every pointer event.
   void _recordTouch(PointerEvent details, Size screenSize) {
     // Check for hesitation since last touch
@@ -146,6 +163,11 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       debugPrint('TELEMETRY: First touch at $_firstTouchLatencyMs ms.');
     }
 
+    // Determine touch type
+    String type = 'move';
+    if (details is PointerDownEvent) type = 'down';
+    else if (details is PointerUpEvent) type = 'up';
+
     // Record normalized touch point
     final xRatio = screenSize.width > 0
         ? (details.position.dx / screenSize.width).clamp(0.0, 1.0)
@@ -158,6 +180,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       xRatio: double.parse(xRatio.toStringAsFixed(3)),
       yRatio: double.parse(yRatio.toStringAsFixed(3)),
       timestampMs: _roundStopwatch.elapsedMilliseconds,
+      type: type,
     ));
 
     TelemetryService().broadcastPointerEvent(details);
@@ -280,6 +303,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     return Listener(
       onPointerDown: (e) => _recordTouch(e, screenSize),
       onPointerMove: (e) => _recordTouch(e, screenSize),
+      onPointerUp: (e) => _recordTouch(e, screenSize),
       child: widget.child,
     );
   }
