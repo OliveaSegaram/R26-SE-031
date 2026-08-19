@@ -285,65 +285,63 @@
       },
       {
         "id": "act_5",
-        "title": "වචනය අසමු, කපමු",
-        "description": "ඇසෙන වචනය සොයා එය ඉවත් කරන්න.",
+        "title": "අකුරු පිළිවෙලට සකසමු",
+        "description": "රූපයට අදාළ නම සෑදීමට අකුරු නිසි පිළිවෙලට සකසන්න.",
         "telemetry_tags": [
-          "listening",
-          "word_recognition"
+          "spelling",
+          "anagram",
+          "jumbled_word"
         ],
-        "template_type": "skill3_audio_cut",
+        "template_type": "skill3_jumbled_word",
         "rounds": [
           {
-            "prompt": "ඇසෙන වචනය තෝරන්න: 'මල'",
-            "options": [
-              "ගස",
-              "මල"
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "මල",
+            "scrambled_letters": [
+              "ල",
+              "ම"
             ],
-            "correctOption": "මල",
-            "correct_index": 1
+            "image_url": "assets/images/activity_icons/nature/flower.png"
           },
           {
-            "prompt": "ඇසෙන වචනය තෝරන්න: 'අම්මා'",
-            "options": [
-              "තාත්තා",
-              "අම්මා",
-              "මාමා"
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "පහන",
+            "scrambled_letters": [
+              "හ",
+              "ප",
+              "න"
             ],
-            "correctOption": "අම්මා",
-            "correct_index": 1
+            "image_url": "assets/images/activity_icons/everyday_objects/oil_lamp.png"
           },
           {
-            "prompt": "ඇසෙන වචනය තෝරන්න: 'පොත'",
-            "options": [
-              "පත",
-              "පොත",
-              "පොල්"
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "බසය",
+            "scrambled_letters": [
+              "ස",
+              "බ",
+              "ය"
             ],
-            "correctOption": "පොත",
-            "correct_index": 1
+            "image_url": "assets/images/activity_icons/vehicles/bus.png"
           },
           {
-            "prompt": "ඇසෙන වචනය තෝරන්න: 'ගෙදර'",
-            "options": [
-              "පාසල",
-              "පන්සල",
-              "ගෙදර",
-              "නුවර"
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "මාලය",
+            "scrambled_letters": [
+              "ල",
+              "මා",
+              "ය"
             ],
-            "correctOption": "ගෙදර",
-            "correct_index": 2
+            "image_url": "assets/images/activity_icons/everyday_objects/necklace.png"
           },
           {
-            "prompt": "ඇසෙන වචනය තෝරන්න: 'කිරි'",
-            "options": [
-              "සිරි",
-              "පිරි",
-              "ගිරි",
-              "කිරි",
-              "මිරි"
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "පනාව",
+            "scrambled_letters": [
+              "නා",
+              "ප",
+              "ව"
             ],
-            "correctOption": "කිරි",
-            "correct_index": 3
+            "image_url": "assets/images/activity_icons/everyday_objects/comb.png"
           }
         ]
       }

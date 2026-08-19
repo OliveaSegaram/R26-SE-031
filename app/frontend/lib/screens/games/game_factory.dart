@@ -27,7 +27,7 @@ import 'skill_3/skill3_act1_image_mcq.dart';
 import 'skill_3/skill3_act2_word_formation_mcq.dart';
 import 'skill_3/skill3_act3_audio_mcq.dart';
 import 'skill_3/skill3_act4_fill_blank.dart';
-import 'skill_3/skill3_act5_audio_cut.dart';
+import 'skill_3/skill3_act5_jumbled_word.dart';
 
 // Skill 2 Dedicated Templates
 import 'skill_2/skill2_act3_audio.dart';
@@ -57,8 +57,8 @@ class GameFactory {
       case 'skill3_fill_blank':
         gameContent = Skill3Act4FillBlank(activityNode: node, isRemedial: isRemedial);
         break;
-      case 'skill3_audio_cut':
-        gameContent = Skill3Act5AudioCut(activityNode: node, isRemedial: isRemedial);
+      case 'skill3_jumbled_word':
+        gameContent = Skill3Act5JumbledWord(activityNode: node, isRemedial: isRemedial);
         break;
 
       // --- Picture Recognition (skill_visual) Templates ---
