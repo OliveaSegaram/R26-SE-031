@@ -185,51 +185,44 @@ class _Skill2Act5OddOneOutState extends State<Skill2Act5OddOneOut> {
   }
 
   Widget _buildInstructionCard(String instruction) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFF4A90D9).withOpacity(0.15),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.1),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Flexible(
-            child: Text(
-              instruction,
-              style: AppTypography.sinhala(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF3E3E3E),
-              ),
-              textAlign: TextAlign.center,
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () async {
+            context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+            if (widget.activityNode?.audioUrl != null && widget.activityNode!.audioUrl.isNotEmpty) {
+              await _audioPlayer.play(UrlSource(widget.activityNode!.audioUrl));
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            decoration: BoxDecoration(
+              color: AppColors.warmAmber.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.warmAmber, width: 3),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 40),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    instruction,
+                    style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 16),
-          IconButton(
-            icon: const Icon(Icons.volume_up_rounded, color: Color(0xFF4A90D9), size: 32),
-            onPressed: () async {
-              context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
-              if (widget.activityNode?.audioUrl != null && widget.activityNode!.audioUrl.isNotEmpty) {
-                await _audioPlayer.play(UrlSource(widget.activityNode!.audioUrl));
-              }
-            },
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          '(නැවත ඇසීමට බොත්තම තට්ටු කරන්න)',
+          style: AppTypography.sinhala(fontSize: 14, color: AppColors.textSecondary),
+        ),
+      ],
     );
   }
 
