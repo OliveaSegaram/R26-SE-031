@@ -17,20 +17,25 @@ class Skill2Act6PatternMemory extends StatefulWidget {
   State<Skill2Act6PatternMemory> createState() => _Skill2Act6PatternMemoryState();
 }
 
-class _Skill2Act6PatternMemoryState extends State<Skill2Act6PatternMemory> {
+class _Skill2Act6PatternMemoryState extends State<Skill2Act6PatternMemory> with SingleTickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isMemorizing = true;
   int _countdown = 3;
   Timer? _timer;
+  late AnimationController _timerController;
 
   final List<String> _userSequence = [];
   bool _isCorrect = false;
   bool _activityComplete = false;
   int _currentRoundIndex = 0;
+  
+  String? _wrongTappedOption;
+  String? _correctTappedOption;
 
   @override
   void initState() {
     super.initState();
+    _timerController = AnimationController(vsync: this);
     _startMemorizeTimer();
   }
 
@@ -38,6 +43,7 @@ class _Skill2Act6PatternMemoryState extends State<Skill2Act6PatternMemory> {
   void dispose() {
     _timer?.cancel();
     _audioPlayer.dispose();
+    _timerController.dispose();
     super.dispose();
   }
 
@@ -59,6 +65,9 @@ class _Skill2Act6PatternMemoryState extends State<Skill2Act6PatternMemory> {
       _userSequence.clear();
       _isCorrect = false;
     });
+    
+    _timerController.duration = Duration(seconds: showSeconds);
+    _timerController.forward(from: 0.0);
 
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -76,7 +85,7 @@ class _Skill2Act6PatternMemoryState extends State<Skill2Act6PatternMemory> {
   }
 
   void _addItemToUserSequence(String item, List<String> targetPattern, int totalRounds) async {
-    if (_isCorrect || _isMemorizing) return;
+    if (_isCorrect || _isMemorizing || _wrongTappedOption != null) return;
 
     setState(() {
       _userSequence.add(item);
@@ -86,16 +95,34 @@ class _Skill2Act6PatternMemoryState extends State<Skill2Act6PatternMemory> {
     final currentIndex = _userSequence.length - 1;
     if (_userSequence[currentIndex] != targetPattern[currentIndex]) {
       // Wrong item picked
+      setState(() {
+        _wrongTappedOption = item;
+      });
       await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
           setState(() {
+            _wrongTappedOption = null;
             _userSequence.clear();
           });
         }
       });
       return;
     }
+
+    // Correct item picked
+    setState(() {
+      _correctTappedOption = item;
+    });
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        setState(() {
+          if (_correctTappedOption == item) {
+            _correctTappedOption = null;
+          }
+        });
+      }
+    });
 
     // Check if pattern completed
     if (_userSequence.length == targetPattern.length) {
@@ -194,55 +221,96 @@ class _Skill2Act6PatternMemoryState extends State<Skill2Act6PatternMemory> {
                 child: Column(
                   children: [
                     // Instruction Banner
-                    Text(
-                      _isMemorizing ? 'රටාව දෙස බලන්න! (${_countdown}s)' : 'මතකයෙන් රටාව නැවත සකසන්න:',
-                      style: AppTypography.sinhala(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: _isMemorizing ? AppColors.softCoral : AppColors.textPrimary,
-                      ),
-                      textAlign: TextAlign.center,
+                    _buildInstructionCard(
+                      _isMemorizing ? 'රටාව මතක තබා ගන්න!' : 'රටාව නැවත සකසන්න'
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
+                    
+                    // Timer Bar
+                    _buildTimerBar(),
+                    const SizedBox(height: 16),
 
-                    // Target Pattern View / Recall Slots
+                    // Target Pattern View / Recall Slots (Premium Wooden Board)
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        color: const Color(0xFFF3E5AB), // Light wooden board
+                        borderRadius: BorderRadius.circular(32),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 4))
+                          BoxShadow(
+                            color: Colors.brown.withOpacity(0.2),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                          const BoxShadow(
+                            color: Colors.white,
+                            blurRadius: 4,
+                            offset: Offset(-2, -2),
+                          ),
                         ],
+                        border: Border.all(color: const Color(0xFFD4B872), width: 4),
                       ),
                       child: Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
+                        spacing: 16,
+                        runSpacing: 16,
                         alignment: WrapAlignment.center,
                         children: List.generate(targetPattern.length, (i) {
                           final itemToShow = _isMemorizing
                               ? targetPattern[i]
                               : (i < _userSequence.length ? _userSequence[i] : '?');
-                          final isFilled = !_isMemorizing && i < _userSequence.length;
+                          final isFilled = _isMemorizing || i < _userSequence.length;
+                          final isCurrentWrong = (_wrongTappedOption != null) && (i == _userSequence.length - 1);
 
                           return AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            width: 64,
-                            height: 64,
+                            width: 80,
+                            height: 80,
                             decoration: BoxDecoration(
-                              color: isFilled ? AppColors.gentleGreen.withValues(alpha: 0.2) : AppColors.cream,
-                              borderRadius: BorderRadius.circular(16),
+                              color: isCurrentWrong ? AppColors.softCoral : (isFilled ? Colors.white : Colors.black.withOpacity(0.04)),
+                              borderRadius: BorderRadius.circular(24),
                               border: Border.all(
-                                color: isFilled ? AppColors.gentleGreen : AppColors.borderLight,
+                                color: isCurrentWrong ? Colors.red[800]! : (isFilled ? Colors.white.withOpacity(0.8) : Colors.black.withOpacity(0.1)),
                                 width: 2,
                               ),
+                              boxShadow: isFilled
+                                  ? [
+                                      // 3D bottom edge shadow
+                                      if (!isCurrentWrong)
+                                        const BoxShadow(
+                                          color: Color(0xFFD1D5DB),
+                                          offset: Offset(0, 6),
+                                          blurRadius: 0,
+                                        ),
+                                      if (isCurrentWrong)
+                                        BoxShadow(
+                                          color: Colors.red[900]!,
+                                          offset: const Offset(0, 6),
+                                          blurRadius: 0,
+                                        ),
+                                      // Drop shadow
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.15),
+                                        offset: const Offset(0, 8),
+                                        blurRadius: 8,
+                                      )
+                                    ]
+                                  : [
+                                      // Inner carved shadow effect (simulated)
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 2),
+                                      )
+                                    ],
                             ),
                             child: Center(
                               child: Text(
                                 itemToShow,
                                 style: TextStyle(
-                                  fontSize: 32,
-                                  color: itemToShow == '?' ? AppColors.textSecondary : Colors.black,
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.1,
+                                  color: isCurrentWrong ? Colors.white : (isFilled ? AppColors.textPrimary : Colors.black26),
                                 ),
                               ),
                             ),
@@ -255,28 +323,75 @@ class _Skill2Act6PatternMemoryState extends State<Skill2Act6PatternMemory> {
 
                     // Recall Candidate Palette (Disabled while memorizing)
                     if (!_isMemorizing) ...[
-                      Text('පහත හැඩතල තට්ටු කරන්න:', style: AppTypography.sinhala(fontSize: 16, color: AppColors.textSecondary)),
-                      const SizedBox(height: 12),
+                      Text('පහත හැඩතල තට්ටු කරන්න:', style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                      const SizedBox(height: 16),
                       Wrap(
-                        spacing: spacing,
-                        runSpacing: spacing,
+                        spacing: 16.0,
+                        runSpacing: 16.0,
                         alignment: WrapAlignment.center,
                         children: options.map((opt) {
+                          final isWrong = _wrongTappedOption == opt;
+                          final isCorrect = _correctTappedOption == opt;
+                          final isPressed = isWrong || isCorrect;
+                          
+                          Color tileColor = Colors.white;
+                          Color borderColor = Colors.white.withOpacity(0.5);
+                          Color shadowColor = const Color(0xFFD1D5DB);
+                          Color textColor = AppColors.textPrimary;
+
+                          if (isCorrect) {
+                            tileColor = AppColors.gentleGreen;
+                            borderColor = Colors.green[700]!;
+                            shadowColor = Colors.green[800]!;
+                            textColor = Colors.white;
+                          } else if (isWrong) {
+                            tileColor = AppColors.softCoral;
+                            borderColor = Colors.red[800]!;
+                            shadowColor = Colors.red[900]!;
+                            textColor = Colors.white;
+                          }
+
                           return GestureDetector(
                             onTap: () => _addItemToUserSequence(opt, targetPattern, rounds.length),
-                            child: Container(
-                              width: hasLongText ? null : itemSize,
-                          height: hasLongText ? null : itemSize,
-                          padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              margin: EdgeInsets.only(top: isPressed ? 8.0 : 0.0, bottom: isPressed ? 0.0 : 8.0),
+                              width: hasLongText ? null : 100.0,
+                              height: hasLongText ? null : 100.0,
+                              padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppColors.borderLight, width: 3),
+                                color: tileColor,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(color: isPressed ? borderColor : Colors.white.withOpacity(0.5), width: 2),
                                 boxShadow: [
-                                  BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6, offset: const Offset(0, 3))
+                                  // Premium 3D bottom edge
+                                  if (!isPressed)
+                                    BoxShadow(
+                                      color: shadowColor,
+                                      offset: const Offset(0, 6),
+                                      blurRadius: 0,
+                                    ),
+                                  // Soft drop shadow
+                                  if (!isPressed)
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      offset: const Offset(0, 10),
+                                      blurRadius: 10,
+                                    )
                                 ],
                               ),
-                              child: Center(child: Text(opt, style: TextStyle(fontSize: hasLongText ? 24.0 : fontSize), textAlign: TextAlign.center)),
+                              child: Center(
+                                child: Text(
+                                  opt, 
+                                  style: TextStyle(
+                                    fontSize: hasLongText ? 40.0 : 64.0, 
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.1,
+                                    color: textColor
+                                  ), 
+                                  textAlign: TextAlign.center
+                                ),
+                              ),
                             ),
                           );
                         }).toList(),
@@ -287,9 +402,100 @@ class _Skill2Act6PatternMemoryState extends State<Skill2Act6PatternMemory> {
                 ),
               ),
             ),
-            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInstructionCard(String instruction) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () async {
+            context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+            if (widget.activityNode?.audioUrl != null && widget.activityNode!.audioUrl.isNotEmpty) {
+              await _audioPlayer.play(UrlSource(widget.activityNode!.audioUrl));
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            decoration: BoxDecoration(
+              color: AppColors.warmAmber.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.warmAmber, width: 3),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 40),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    instruction,
+                    style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
+        const SizedBox(height: 12),
+        Text(
+          '(නැවත ඇසීමට බොත්තම තට්ටු කරන්න)',
+          style: AppTypography.sinhala(fontSize: 14, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimerBar() {
+    if (!_isMemorizing) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: AnimatedBuilder(
+        animation: _timerController,
+        builder: (context, child) {
+          final progress = (1.0 - _timerController.value).clamp(0.0, 1.0);
+          
+          Color barColor = const Color(0xFF6DBE6D);
+          if (progress < 0.25) {
+            barColor = const Color(0xFFFF4B4B);
+          } else if (progress < 0.5) {
+            barColor = const Color(0xFFF9C623);
+          }
+
+          return Container(
+            height: 14,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                )
+              ],
+              border: Border.all(color: const Color(0xFFE0E0E0), width: 2),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: progress,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 100),
+                decoration: BoxDecoration(
+                  color: barColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
