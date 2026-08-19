@@ -378,10 +378,27 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                           }),
                         ),
                       ),
-                      const Positioned(
-                        top: 16,
-                        left: 20,
-                        child: Icon(Icons.touch_app_rounded, size: 24, color: Color(0xFF4A90E2)),
+                      Positioned(
+                        top: 14,
+                        left: 22,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4A90E2).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.touch_app_rounded, size: 18, color: Color(0xFF4A90E2)),
+                              SizedBox(width: 4),
+                              Text(
+                                'තෝරන්න',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF4A90E2), fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
