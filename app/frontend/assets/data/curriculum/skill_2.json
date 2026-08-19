@@ -95,92 +95,7 @@
           }
         ]
       },
-      {
-        "id": "act_3",
-        "title": "අකුරු රටාවට සවන් දෙමු",
-        "description": "ඇසෙන අකුරු රටාවට අනුව අකුරු පෙළගස්වන්න.",
-        "telemetry_tags": [
-          "listening",
-          "sequencing"
-        ],
-        "template_type": "skill2_audio_sequence",
-        "rounds": [
-          {
-            "audio_prompt": "අ, ආ",
-            "target_sequence": [
-              "අ",
-              "ආ"
-            ],
-            "options": [
-              "අ",
-              "ආ",
-              "ඇ"
-            ]
-          },
-          {
-            "audio_prompt": "ක, ග, ට",
-            "target_sequence": [
-              "ක",
-              "ග",
-              "ට"
-            ],
-            "options": [
-              "ග",
-              "ක",
-              "ඩ",
-              "ට"
-            ]
-          },
-          {
-            "audio_prompt": "ප, බ, ම",
-            "target_sequence": [
-              "ප",
-              "බ",
-              "ම"
-            ],
-            "options": [
-              "ව",
-              "ප",
-              "ම",
-              "බ",
-              "ය"
-            ]
-          },
-          {
-            "audio_prompt": "ර, ල, ව, ස",
-            "target_sequence": [
-              "ර",
-              "ල",
-              "ව",
-              "ස"
-            ],
-            "options": [
-              "ල",
-              "ර",
-              "ස",
-              "ව",
-              "හ"
-            ]
-          },
-          {
-            "audio_prompt": "ඉ, ඊ, උ, ඌ",
-            "target_sequence": [
-              "ඉ",
-              "ඊ",
-              "උ",
-              "ඌ"
-            ],
-            "options": [
-              "උ",
-              "ඊ",
-              "ඉ",
-              "ඌ",
-              "එ",
-              "ඔ"
-            ]
-          }
-        ]
-      },
+
       {
         "id": "act_4",
         "title": "අකුරු සොයමු",
@@ -546,6 +461,6 @@
         ]
       }
     ],
-    "total_activities": 6
+    "total_activities": 5
   }
 ]
