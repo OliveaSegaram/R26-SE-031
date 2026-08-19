@@ -305,6 +305,15 @@
           },
           {
             "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "ඇස",
+            "scrambled_letters": [
+              "ස",
+              "ඇ"
+            ],
+            "image_url": "assets/images/activity_icons/body_parts/eye.png"
+          },
+          {
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
             "correct_word": "පහන",
             "scrambled_letters": [
               "හ",
@@ -315,26 +324,6 @@
           },
           {
             "prompt": "රූපයට අදාළ වචනය සාදන්න",
-            "correct_word": "බසය",
-            "scrambled_letters": [
-              "ස",
-              "බ",
-              "ය"
-            ],
-            "image_url": "assets/images/activity_icons/vehicles/bus.png"
-          },
-          {
-            "prompt": "රූපයට අදාළ වචනය සාදන්න",
-            "correct_word": "මාලය",
-            "scrambled_letters": [
-              "ල",
-              "මා",
-              "ය"
-            ],
-            "image_url": "assets/images/activity_icons/everyday_objects/necklace.png"
-          },
-          {
-            "prompt": "රූපයට අදාළ වචනය සාදන්න",
             "correct_word": "පනාව",
             "scrambled_letters": [
               "නා",
@@ -342,6 +331,16 @@
               "ව"
             ],
             "image_url": "assets/images/activity_icons/everyday_objects/comb.png"
+          },
+          {
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "පුටුව",
+            "scrambled_letters": [
+              "ටු",
+              "පු",
+              "ව"
+            ],
+            "image_url": "assets/images/activity_icons/everyday_objects/chair.png"
           }
         ]
       }
