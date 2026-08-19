@@ -143,55 +143,60 @@
         "template_type": "skill3_audio_mcq",
         "rounds": [
           {
-            "prompt": "ශබ්දයට සවන් දී 'මල' තෝරන්න",
+            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
+            "audio_text": "අත",
             "options": [
-              "මල",
-              "ගස"
+              "අත",
+              "පය"
             ],
-            "correctOption": "මල",
+            "correctOption": "අත",
             "correct_index": 0
           },
           {
-            "prompt": "ශබ්දයට සවන් දී 'ගස' තෝරන්න",
+            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
+            "audio_text": "පාර",
             "options": [
-              "අත",
-              "ගස",
-              "පය"
+              "වැව",
+              "පාර",
+              "ගඟ"
             ],
-            "correctOption": "ගස",
+            "correctOption": "පාර",
             "correct_index": 1
           },
           {
-            "prompt": "ශබ්දයට සවන් දී 'පොත' තෝරන්න",
-            "options": [
-              "පත",
-              "පෑන",
-              "පොත"
-            ],
-            "correctOption": "පොත",
-            "correct_index": 2
-          },
-          {
-            "prompt": "ශබ්දයට සවන් දී 'අම්මා' තෝරන්න",
-            "options": [
-              "තාත්තා",
-              "අම්මා",
-              "අක්කා",
-              "මාමා"
-            ],
-            "correctOption": "අම්මා",
-            "correct_index": 1
-          },
-          {
-            "prompt": "ශබ්දයට සවන් දී 'පාසල' තෝරන්න",
+            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
+            "audio_text": "ගෙදර",
             "options": [
               "පන්සල",
-              "නුවර",
               "ගෙදර",
-              "පාසල",
               "වත්ත"
             ],
-            "correctOption": "පාසල",
+            "correctOption": "ගෙදර",
+            "correct_index": 1
+          },
+          {
+            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
+            "audio_text": "අක්කා",
+            "options": [
+              "නංගි",
+              "අක්කා",
+              "අයියා",
+              "මල්ලි"
+            ],
+            "correctOption": "අක්කා",
+            "correct_index": 1
+          },
+          {
+            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
+            "audio_text": "බල්ලා",
+            "options": [
+              "පූසා",
+              "එළුවා",
+              "හරකා",
+              "බල්ලා",
+              "ඌරා"
+            ],
+            "correctOption": "බල්ලා",
             "correct_index": 3
           }
         ]
