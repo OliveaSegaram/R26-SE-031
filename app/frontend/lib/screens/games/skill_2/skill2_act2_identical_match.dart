@@ -151,24 +151,41 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFF4F7FB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.white, width: 3),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A90E2).withValues(alpha: 0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF4A90E2).withValues(alpha: 0.12),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      child: Wrap(
-        spacing: 16,
-        runSpacing: 16,
-        alignment: WrapAlignment.center,
-        children: _topLetters
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+               const Icon(Icons.touch_app_rounded, size: 18, color: Color(0xFF4A90E2)),
+               const SizedBox(width: 8),
+               Text("අකුරක් තෝරන්න", style: AppTypography.sinhala(fontSize: 16, color: const Color(0xFF4A90E2), fontWeight: FontWeight.w700)),
+            ]
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            alignment: WrapAlignment.center,
+            children: _topLetters
             .where((letter) => !_matchedLetters.contains(letter))
             .map((letter) {
           final isSelected = _selectedTopLetter == letter;
@@ -215,6 +232,8 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             ),
           );
         }).toList(),
+          ),
+        ],
       ),
     );
   }
@@ -230,28 +249,48 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
       opacity: isActive ? 1.0 : 0.6,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isActive ? Colors.white : const Color(0xFFF8FAFC),
+          gradient: isActive 
+              ? const LinearGradient(
+                  colors: [Colors.white, Color(0xFFF0F5FA)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                )
+              : null,
           borderRadius: BorderRadius.circular(32),
           border: Border.all(
-            color: isActive ? const Color(0xFF4A90E2).withValues(alpha: 0.4) : const Color(0xFFE2E8F0),
-            width: 2,
+            color: isActive ? const Color(0xFF4A90E2).withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
+            width: isActive ? 3 : 2,
           ),
           boxShadow: isActive ? [
             BoxShadow(
-              color: const Color(0xFF4A90E2).withValues(alpha: 0.1),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
+              color: const Color(0xFF4A90E2).withValues(alpha: 0.25),
+              blurRadius: 24,
+              spreadRadius: 2,
+              offset: const Offset(0, 10),
             )
           ] : [],
         ),
-        child: Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          alignment: WrapAlignment.center,
-          children: _bottomLetters
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                 Icon(Icons.search_rounded, size: 18, color: isActive ? const Color(0xFF4A90E2) : AppColors.textSecondary),
+                 const SizedBox(width: 8),
+                 Text("සමාන අකුර හොයන්න", style: AppTypography.sinhala(fontSize: 16, color: isActive ? const Color(0xFF4A90E2) : AppColors.textSecondary, fontWeight: FontWeight.w700)),
+              ]
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              alignment: WrapAlignment.center,
+              children: _bottomLetters
               .where((letter) => !_matchedLetters.contains(letter))
               .map((letter) {
             
@@ -308,6 +347,8 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
               ),
             );
           }).toList(),
+            ),
+          ],
         ),
       ),
     );
