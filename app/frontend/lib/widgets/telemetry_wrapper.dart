@@ -8,6 +8,7 @@ import '../services/telemetry/plugins/eye_tracking_plugin.dart';
 import '../models/curriculum_models.dart';
 import '../screens/activity_complete_screen.dart';
 import '../screens/games/game_factory.dart';
+import '../services/tts_service.dart';
 
 /// A wrapper widget that tracks all touch events, latency, and coordinates
 /// before they reach the underlying game template.
@@ -93,6 +94,10 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     }
     _roundStopwatch.stop();
     _hesitationStopwatch.stop();
+    
+    // Stop any ongoing TTS audio when navigating away from the activity
+    TtsService().stop();
+    
     super.dispose();
   }
 
