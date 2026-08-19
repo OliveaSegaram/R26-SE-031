@@ -8,16 +8,16 @@ import '../shared_templates/widgets/shared_game_layout.dart';
 
 /// Activity 3: රටාව මතක තබා ගනිමු (Remember the Pattern)
 /// Template: pattern_memory_game
-class Skill2Act6PatternMemory extends StatefulWidget {
+class Skill2Act5PatternMemory extends StatefulWidget {
   final ActivityNode? activityNode;
   final bool isRemedial;
-  const Skill2Act6PatternMemory({super.key, this.activityNode, this.isRemedial = false});
+  const Skill2Act5PatternMemory({super.key, this.activityNode, this.isRemedial = false});
 
   @override
-  State<Skill2Act6PatternMemory> createState() => _Skill2Act6PatternMemoryState();
+  State<Skill2Act5PatternMemory> createState() => _Skill2Act5PatternMemoryState();
 }
 
-class _Skill2Act6PatternMemoryState extends State<Skill2Act6PatternMemory> with SingleTickerProviderStateMixin {
+class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with SingleTickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isMemorizing = true;
   int _countdown = 3;

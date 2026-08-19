@@ -8,16 +8,16 @@ import '../shared_templates/widgets/shared_game_layout.dart';
 
 /// Activity 9: වචනයට සවන් දී රූපය සොයමු (Listen to Word & Find Image)
 /// Template: audio_image_match_game
-class Skill2Act1Audio extends StatefulWidget {
+class Skill2Act3Audio extends StatefulWidget {
   final ActivityNode? activityNode;
   final bool isRemedial;
-  const Skill2Act1Audio({super.key, this.activityNode, this.isRemedial = false});
+  const Skill2Act3Audio({super.key, this.activityNode, this.isRemedial = false});
 
   @override
-  State<Skill2Act1Audio> createState() => _Skill2Act1AudioState();
+  State<Skill2Act3Audio> createState() => _Skill2Act3AudioState();
 }
 
-class _Skill2Act1AudioState extends State<Skill2Act1Audio> {
+class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
   bool _isCorrect = false;

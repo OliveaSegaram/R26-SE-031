@@ -6,21 +6,21 @@ import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 
-class Skill2Act5OddOneOut extends StatefulWidget {
+class Skill2Act1OddOneOut extends StatefulWidget {
   final ActivityNode? activityNode;
   final bool isRemedial;
 
-  const Skill2Act5OddOneOut({
+  const Skill2Act1OddOneOut({
     super.key,
     this.activityNode,
     this.isRemedial = false,
   });
 
   @override
-  State<Skill2Act5OddOneOut> createState() => _Skill2Act5OddOneOutState();
+  State<Skill2Act1OddOneOut> createState() => _Skill2Act1OddOneOutState();
 }
 
-class _Skill2Act5OddOneOutState extends State<Skill2Act5OddOneOut> {
+class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   int _currentRoundIndex = 0;
   bool _isRoundComplete = false;

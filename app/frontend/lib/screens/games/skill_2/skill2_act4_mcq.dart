@@ -6,7 +6,7 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 
-/// Activity 9: වචනයට සවන් දී රූපය සොයමු (Listen to Word & Find Image)
+/// Activity 4: වචනයට සවන් දී රූපය සොයමු (Listen to Word & Find Image)
 /// Template: audio_image_match_game
 class Skill2Act4Mcq extends StatefulWidget {
   final ActivityNode? activityNode;

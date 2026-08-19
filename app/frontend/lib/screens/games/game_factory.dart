@@ -23,12 +23,12 @@ import 'skill_1/visual_act4_shadow_matching.dart';
 import 'skill_1/visual_act5_memory_hats.dart';
 
 // Skill 2 Dedicated Templates
-import 'skill_2/skill2_act1_audio.dart';
+import 'skill_2/skill2_act3_audio.dart';
 import 'skill_2/skill2_act2_identical_match.dart';
 
 import 'skill_2/skill2_act4_mcq.dart';
-import 'skill_2/skill2_act5_odd_one_out.dart';
-import 'skill_2/skill2_act6_pattern_memory.dart';
+import 'skill_2/skill2_act1_odd_one_out.dart';
+import 'skill_2/skill2_act5_pattern_memory.dart';
 
 /// Central factory for constructing dynamic game screen instances based on template_type.
 class GameFactory {
@@ -55,7 +55,7 @@ class GameFactory {
 
       // --- Skill 2 Dedicated Templates ---
       case 'skill2_audio':
-        gameContent = Skill2Act1Audio(activityNode: node, isRemedial: isRemedial);
+        gameContent = Skill2Act3Audio(activityNode: node, isRemedial: isRemedial);
         break;
       case 'skill2_identical_match':
         gameContent = Skill2Act2IdenticalMatch(activityNode: node, isRemedial: isRemedial);
@@ -65,10 +65,10 @@ class GameFactory {
         gameContent = Skill2Act4Mcq(activityNode: node, isRemedial: isRemedial);
         break;
       case 'skill2_odd_one_out':
-        gameContent = Skill2Act5OddOneOut(activityNode: node, isRemedial: isRemedial);
+        gameContent = Skill2Act1OddOneOut(activityNode: node, isRemedial: isRemedial);
         break;
       case 'skill2_pattern_memory':
-        gameContent = Skill2Act6PatternMemory(activityNode: node, isRemedial: isRemedial);
+        gameContent = Skill2Act5PatternMemory(activityNode: node, isRemedial: isRemedial);
         break;
 
       // --- Skill 1 Dedicated Templates ---
