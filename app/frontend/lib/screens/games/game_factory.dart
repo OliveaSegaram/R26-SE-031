@@ -17,9 +17,9 @@ import 'shared_templates/activity11_audio_sequence.dart';
 
 // Picture Recognition (skill_visual) Games
 import 'skill_1/visual_act1_hidden_search.dart';
-import 'skill_1/visual_act2_pattern_adventure.dart';
+import 'skill_1/visual_act4_pattern_adventure.dart';
 import 'skill_1/visual_act3_sorting_adventure.dart';
-import 'skill_1/visual_act4_shadow_matching.dart';
+import 'skill_1/visual_act2_shadow_matching.dart';
 import 'skill_1/visual_act5_memory_hats.dart';
 
 // Skill 2 Dedicated Templates
@@ -41,13 +41,13 @@ class GameFactory {
         gameContent = VisualAct1HiddenSearch(activityNode: node);
         break;
       case 'visual_pattern_adventure':
-        gameContent = VisualAct2PatternAdventure(activityNode: node);
+        gameContent = VisualAct4PatternAdventure(activityNode: node);
         break;
       case 'visual_sorting_adventure':
         gameContent = VisualAct3SortingAdventure(activityNode: node);
         break;
       case 'visual_odd_one_out':
-        gameContent = VisualAct4ShadowMatching(activityNode: node);
+        gameContent = VisualAct2ShadowMatching(activityNode: node);
         break;
       case 'visual_memory_hats':
         gameContent = VisualAct5MemoryHats(activityNode: node);

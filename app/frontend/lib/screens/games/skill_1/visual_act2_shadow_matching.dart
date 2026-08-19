@@ -16,18 +16,18 @@ import 'widgets/pattern_background.dart';
 // A polished shadow matching game for Grade 1 children
 // ──────────────────────────────────────────────────────────────
 
-class VisualAct4ShadowMatching extends StatefulWidget {
+class VisualAct2ShadowMatching extends StatefulWidget {
   final ActivityNode activityNode;
 
-  const VisualAct4ShadowMatching({Key? key, required this.activityNode})
+  const VisualAct2ShadowMatching({Key? key, required this.activityNode})
       : super(key: key);
 
   @override
-  _VisualAct4ShadowMatchingState createState() =>
-      _VisualAct4ShadowMatchingState();
+  _VisualAct2ShadowMatchingState createState() =>
+      _VisualAct2ShadowMatchingState();
 }
 
-class _VisualAct4ShadowMatchingState extends State<VisualAct4ShadowMatching>
+class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
     with TickerProviderStateMixin {
   // ── Game state ──
   int _currentRoundIndex = 0;

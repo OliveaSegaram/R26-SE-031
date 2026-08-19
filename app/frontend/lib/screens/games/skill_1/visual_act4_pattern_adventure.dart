@@ -18,19 +18,19 @@ import 'widgets/pattern_answer_token.dart';
 // Grade 1 Pattern Completion Game
 // ──────────────────────────────────────────────────────────────
 
-class VisualAct2PatternAdventure extends StatefulWidget {
+class VisualAct4PatternAdventure extends StatefulWidget {
   final ActivityNode activityNode;
 
-  const VisualAct2PatternAdventure({Key? key, required this.activityNode})
+  const VisualAct4PatternAdventure({Key? key, required this.activityNode})
       : super(key: key);
 
   @override
-  _VisualAct2PatternAdventureState createState() =>
-      _VisualAct2PatternAdventureState();
+  _VisualAct4PatternAdventureState createState() =>
+      _VisualAct4PatternAdventureState();
 }
 
-class _VisualAct2PatternAdventureState
-    extends State<VisualAct2PatternAdventure> with TickerProviderStateMixin {
+class _VisualAct4PatternAdventureState
+    extends State<VisualAct4PatternAdventure> with TickerProviderStateMixin {
   // ── Game state ──
   int _currentRoundIndex = 0;
   late List<PatternRound> _rounds;
