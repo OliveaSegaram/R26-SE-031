@@ -19,7 +19,7 @@ class Skill2Act4Mcq extends StatefulWidget {
 
 class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  int? _selectedIndex;
+  final Set<int> _selectedIndices = {};
   bool _isCorrect = false;
   bool _activityComplete = false;
   int _currentRoundIndex = 0;
@@ -47,40 +47,54 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
     TtsService().speak(audioText);
   }
 
-  void _checkAnswer(int index, int correctIndex, int totalRounds) async {
+  void _checkAnswer(int index, List<int> correctIndices, int totalRounds) async {
     if (_isCorrect) return;
 
     setState(() {
-      _selectedIndex = index;
+      if (_selectedIndices.contains(index)) {
+        _selectedIndices.remove(index);
+      } else {
+        _selectedIndices.add(index);
+      }
     });
 
-    final bool isRight = (index == correctIndex);
-    int score = isRight ? 100 : 0;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
+    if (_selectedIndices.length == correctIndices.length) {
+      bool isRight = _selectedIndices.containsAll(correctIndices);
+      
+      int score = isRight ? 100 : 0;
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
 
-    if (isRight) {
-      setState(() {
-        _isCorrect = true;
-      });
-      await _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      if (isRight) {
+        setState(() {
+          _isCorrect = true;
+        });
+        await _audioPlayer.play(AssetSource('audio/correct.mp3'));
 
-      Future.delayed(const Duration(milliseconds: 1400), () {
-        if (!mounted) return;
-        if (_currentRoundIndex < totalRounds - 1) {
-          setState(() {
-            _currentRoundIndex++;
-            _selectedIndex = null;
-            _isCorrect = false;
-          });
-          _playAudioPrompt();
-        } else {
-          setState(() {
-            _activityComplete = true;
-          });
-        }
-      });
-    } else {
-      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+        Future.delayed(const Duration(milliseconds: 1400), () {
+          if (!mounted) return;
+          if (_currentRoundIndex < totalRounds - 1) {
+            setState(() {
+              _currentRoundIndex++;
+              _selectedIndices.clear();
+              _isCorrect = false;
+            });
+            _playAudioPrompt();
+          } else {
+            setState(() {
+              _activityComplete = true;
+            });
+          }
+        });
+      } else {
+        await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+        Future.delayed(const Duration(milliseconds: 800), () {
+          if (mounted) {
+            setState(() {
+              _selectedIndices.clear();
+            });
+          }
+        });
+      }
     }
   }
 
@@ -102,16 +116,24 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
     final titleText = widget.activityNode?.title ?? 'වචනයට සවන් දී රූපය සොයමු';
     final promptText = currentRound['prompt']?.toString() ?? 'අසා සිටින රූපය තෝරන්න';
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
-    var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
     
-    if (widget.isRemedial && options.length > 2) {
-      // Reduce distractors to max 1 + 1 correct = 2 options total
-      final correctItem = options[correctIndex];
-      var distractors = options.where((item) => item != correctItem).toList();
+    List<int> correctIndices = [];
+    if (currentRound['correct_indices'] != null) {
+      correctIndices = List<int>.from(currentRound['correct_indices']);
+    } else if (currentRound['correct_index'] != null) {
+      correctIndices = [currentRound['correct_index'] as int];
+    } else {
+      correctIndices = [0];
+    }
+    
+    if (widget.isRemedial && options.length > correctIndices.length) {
+      // Reduce distractors to max 1 + correct items
+      List<String> correctItems = correctIndices.map((idx) => options[idx]).toList();
+      var distractors = options.where((item) => !correctItems.contains(item)).toList();
       if (distractors.isNotEmpty) distractors = distractors.sublist(0, 1);
-      options = [correctItem, ...distractors];
+      options = [...correctItems, ...distractors];
       options.shuffle();
-      correctIndex = options.indexOf(correctItem);
+      correctIndices = correctItems.map((item) => options.indexOf(item)).toList();
     }
 
     double itemSize;
@@ -193,7 +215,64 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                 '(නැවත ඇසීමට බොත්තම තට්ටු කරන්න)',
                 style: AppTypography.sinhala(fontSize: 14, color: AppColors.textSecondary),
               ),
-              const SizedBox(height: 64),
+              Builder(
+                builder: (context) {
+                  final RegExp quoteRegex = RegExp(r"'(.*?)'");
+                  final match = quoteRegex.firstMatch(promptText);
+                  final displayWord = currentRound['target_word']?.toString() ?? match?.group(1);
+                  
+                  if (displayWord != null && displayWord.isNotEmpty) {
+                    return Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(32),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF4A90E2).withOpacity(0.15),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8),
+                              )
+                            ],
+                          ),
+                          child: Text(
+                            displayWord,
+                            style: AppTypography.sinhala(
+                              fontSize: 44,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF4A90E2),
+                              height: 1.1,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+              if (correctIndices.length > 1) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3E0),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'අකුරු ${correctIndices.length} ක් තෝරන්න (${_selectedIndices.length}/${correctIndices.length})', 
+                    style: AppTypography.sinhala(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFFE65100)),
+                  ),
+                ),
+                const SizedBox(height: 36),
+              ] else ...[
+                const SizedBox(height: 48),
+              ],
 
               // Image Option Cards Grid
               Expanded(
@@ -205,12 +284,12 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                       runSpacing: spacing,
                       alignment: WrapAlignment.center,
                       children: List.generate(options.length, (index) {
-                      final isSelected = (_selectedIndex == index);
-                      final isRight = isSelected && (index == correctIndex);
-                      final isWrong = isSelected && (index != correctIndex);
+                      final isSelected = _selectedIndices.contains(index);
+                      final isRight = isSelected && correctIndices.contains(index);
+                      final isWrong = isSelected && !correctIndices.contains(index);
 
                       return GestureDetector(
-                        onTap: () => _checkAnswer(index, correctIndex, rounds.length),
+                        onTap: () => _checkAnswer(index, correctIndices, rounds.length),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
                           width: hasLongText ? null : itemSize,
