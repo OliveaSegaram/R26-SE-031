@@ -5,8 +5,7 @@ import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 
-/// Activity 10: එක සමාන රූප හඳුනා ගනිමු (Identify Identical Images)
-/// Template: identical_match_game
+/// Activity 2: එක සමාන අකුරු (Matching Similar Letters)
 class Skill2Act2IdenticalMatch extends StatefulWidget {
   final ActivityNode? activityNode;
   final bool isRemedial;
@@ -18,11 +17,37 @@ class Skill2Act2IdenticalMatch extends StatefulWidget {
 
 class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  int? _firstSelectedIndex;
-  final List<int> _matchedIndices = [];
+  
+  List<String> _topLetters = [];
+  List<String> _bottomLetters = [];
+  String? _selectedTopLetter;
+  String? _tappedBottomLetter;
+  bool _isBottomLetterCorrect = false;
+  final Set<String> _matchedLetters = {};
+  
   bool _isProcessing = false;
   bool _activityComplete = false;
   int _currentRoundIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initRound();
+  }
+
+  void _initRound() {
+    var rounds = widget.activityNode?.rounds ?? [];
+    if (rounds.isNotEmpty && _currentRoundIndex < rounds.length) {
+      final currentRound = rounds[_currentRoundIndex];
+      _topLetters = List<String>.from(currentRound['letters'] ?? []);
+      _bottomLetters = List<String>.from(_topLetters)..shuffle();
+      _selectedTopLetter = null;
+      _tappedBottomLetter = null;
+      _isBottomLetterCorrect = false;
+      _matchedLetters.clear();
+      _isProcessing = false;
+    }
+  }
 
   @override
   void dispose() {
@@ -30,67 +55,262 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
     super.dispose();
   }
 
-  void _onCardTapped(int index, List<String> cardOptions, int totalRounds) async {
-    if (_isProcessing || _matchedIndices.contains(index) || _firstSelectedIndex == index) return;
+  void _playAudioPrompt() async {
+    final promptAudio = widget.activityNode?.audioUrl ?? '';
+    if (promptAudio.isNotEmpty) {
+      await _audioPlayer.play(AssetSource(promptAudio));
+    }
+  }
 
-    if (_firstSelectedIndex == null) {
-      // First card tapped
+  void _onTopLetterTapped(String letter) {
+    if (_isProcessing || _matchedLetters.contains(letter) || _selectedTopLetter != null) return;
+    
+    setState(() {
+      _selectedTopLetter = letter;
+    });
+  }
+
+  void _onBottomLetterTapped(String letter) async {
+    if (_isProcessing || _selectedTopLetter == null || _matchedLetters.contains(letter)) return;
+
+    setState(() {
+      _isProcessing = true;
+      _tappedBottomLetter = letter;
+    });
+
+    if (letter == _selectedTopLetter) {
+      // Match Correct!
       setState(() {
-        _firstSelectedIndex = index;
+        _isBottomLetterCorrect = true;
+      });
+      await _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      
+      // Brief delay to show green color before hiding
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted) {
+          setState(() {
+            _matchedLetters.add(letter);
+            _selectedTopLetter = null;
+            _tappedBottomLetter = null;
+            _isProcessing = false;
+          });
+
+          // Check if round is complete
+          if (_matchedLetters.length == _topLetters.length) {
+            _handleRoundComplete();
+          }
+        }
       });
     } else {
-      // Second card tapped — compare!
+      // Match Incorrect
       setState(() {
-        _isProcessing = true;
+        _isBottomLetterCorrect = false;
       });
-
-      final firstCardVal = cardOptions[_firstSelectedIndex!];
-      final secondCardVal = cardOptions[index];
-
-      if (firstCardVal == secondCardVal) {
-        // Matched!
-        await _audioPlayer.play(AssetSource('audio/correct.mp3'));
-        setState(() {
-          _matchedIndices.add(_firstSelectedIndex!);
-          _matchedIndices.add(index);
-          _firstSelectedIndex = null;
-          _isProcessing = false;
-        });
-
-        // Check if all cards matched in this round
-        if (_matchedIndices.length == cardOptions.length) {
-          if (!mounted) return;
-          context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(100);
-
-          Future.delayed(const Duration(milliseconds: 1200), () {
-            if (!mounted) return;
-            if (_currentRoundIndex < totalRounds - 1) {
-              setState(() {
-                _currentRoundIndex++;
-                _matchedIndices.clear();
-                _firstSelectedIndex = null;
-                _isProcessing = false;
-              });
-            } else {
-              setState(() {
-                _activityComplete = true;
-              });
-            }
+      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      
+      // Briefly show error state, but KEEP the top selection locked!
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          setState(() {
+            _tappedBottomLetter = null;
+            _isProcessing = false;
           });
         }
+      });
+    }
+  }
+
+  void _handleRoundComplete() {
+    final totalRounds = widget.activityNode?.rounds.length ?? 1;
+    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(100);
+
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (!mounted) return;
+      if (_currentRoundIndex < totalRounds - 1) {
+        setState(() {
+          _currentRoundIndex++;
+          _initRound();
+        });
       } else {
-        // Mis-match
-        await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
-        Future.delayed(const Duration(milliseconds: 800), () {
-          if (mounted) {
-            setState(() {
-              _firstSelectedIndex = null;
-              _isProcessing = false;
-            });
-          }
+        setState(() {
+          _activityComplete = true;
         });
       }
-    }
+    });
+  }
+
+  Widget _buildTopBox() {
+    final int letterCount = _topLetters.length - _matchedLetters.length;
+    final double baseTileSize = letterCount <= 2 ? 120.0 : (letterCount == 3 ? 95.0 : 75.0);
+    final double activeTileSize = letterCount <= 2 ? 140.0 : (letterCount == 3 ? 110.0 : 90.0);
+    final double inactiveTileSize = letterCount <= 2 ? 80.0 : (letterCount == 3 ? 70.0 : 60.0);
+    
+    final double baseFontSize = letterCount <= 2 ? 56.0 : (letterCount == 3 ? 48.0 : 36.0);
+    final double activeFontSize = letterCount <= 2 ? 64.0 : (letterCount == 3 ? 56.0 : 44.0);
+    final double inactiveFontSize = letterCount <= 2 ? 40.0 : (letterCount == 3 ? 32.0 : 26.0);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4A90E2).withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        alignment: WrapAlignment.center,
+        children: _topLetters
+            .where((letter) => !_matchedLetters.contains(letter))
+            .map((letter) {
+          final isSelected = _selectedTopLetter == letter;
+          final isOtherSelected = _selectedTopLetter != null && !isSelected;
+
+          return GestureDetector(
+            onTap: () => _onTopLetterTapped(letter),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOut,
+              width: isSelected ? activeTileSize : (isOtherSelected ? inactiveTileSize : baseTileSize),
+              height: isSelected ? activeTileSize : (isOtherSelected ? inactiveTileSize : baseTileSize),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF4A90E2) : Colors.white,
+                borderRadius: BorderRadius.circular(isSelected ? 24 : 16),
+                boxShadow: [
+                  if (!isOtherSelected)
+                    BoxShadow(
+                      color: (isSelected ? const Color(0xFF4A90E2) : Colors.black).withValues(alpha: 0.12),
+                      blurRadius: isSelected ? 16 : 8,
+                      offset: Offset(0, isSelected ? 8 : 4),
+                    )
+                ],
+                border: Border.all(
+                  color: isSelected ? const Color(0xFF4A90E2) : const Color(0xFFE2E8F0),
+                  width: isSelected ? 0 : 2,
+                ),
+              ),
+              child: Center(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  opacity: isOtherSelected ? 0.3 : 1.0,
+                  child: Text(
+                    letter,
+                    style: AppTypography.sinhala(
+                      fontSize: isSelected ? activeFontSize : (isOtherSelected ? inactiveFontSize : baseFontSize),
+                      fontWeight: FontWeight.w800,
+                      color: isSelected ? Colors.white : const Color(0xFF333333),
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildBottomBox() {
+    final bool isActive = _selectedTopLetter != null;
+    final int letterCount = _topLetters.length - _matchedLetters.length;
+    final double baseTileSize = letterCount <= 2 ? 120.0 : (letterCount == 3 ? 95.0 : 75.0);
+    final double baseFontSize = letterCount <= 2 ? 56.0 : (letterCount == 3 ? 48.0 : 36.0);
+
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      opacity: isActive ? 1.0 : 0.6,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(
+            color: isActive ? const Color(0xFF4A90E2).withValues(alpha: 0.4) : const Color(0xFFE2E8F0),
+            width: 2,
+          ),
+          boxShadow: isActive ? [
+            BoxShadow(
+              color: const Color(0xFF4A90E2).withValues(alpha: 0.1),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            )
+          ] : [],
+        ),
+        child: Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          alignment: WrapAlignment.center,
+          children: _bottomLetters
+              .where((letter) => !_matchedLetters.contains(letter))
+              .map((letter) {
+            
+            final isTapped = _tappedBottomLetter == letter;
+            
+            Color boxColor = isActive ? Colors.white : const Color(0xFFF1F5F9);
+            Color borderColor = isActive ? Colors.transparent : const Color(0xFFE2E8F0);
+            Color textColor = isActive ? const Color(0xFF4A90E2) : AppColors.textSecondary;
+            
+            if (isTapped) {
+              if (_isBottomLetterCorrect) {
+                boxColor = Colors.green.withValues(alpha: 0.15);
+                borderColor = Colors.green;
+                textColor = Colors.green;
+              } else {
+                boxColor = Colors.red.withValues(alpha: 0.15);
+                borderColor = Colors.red;
+                textColor = Colors.red;
+              }
+            }
+
+            return GestureDetector(
+              onTap: isActive ? () => _onBottomLetterTapped(letter) : null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: baseTileSize,
+                height: baseTileSize,
+                decoration: BoxDecoration(
+                  color: boxColor,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: isActive && !isTapped ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    )
+                  ] : [],
+                  border: Border.all(
+                    color: borderColor,
+                    width: isTapped ? 2 : 1,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    letter,
+                    style: AppTypography.sinhala(
+                      fontSize: baseFontSize,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -98,64 +318,17 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
     var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('එක සමාන රූප හඳුනා ගනිමු')),
-        body: const Center(child: Text('No rounds available.')),
+        body: Center(child: Text("No rounds found for Activity 2.", style: AppTypography.sinhala())),
       );
     }
-    
-    if (rounds.length > 5) {
-      rounds = rounds.sublist(0, 5);
-    }
 
-    final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'එක සමාන රූප හඳුනා ගනිමු';
-    final instructionText = widget.activityNode?.description ?? 'එකිනෙකට සමාන රූප යුගල වශයෙන් තෝරන්න.';
-    var gridItems = (currentRound['grid_items'] as List?)?.map((e) => e.toString()).toList() ?? ['🍎', '🍌', '🍎', '🍌'];
-    
-    if (widget.isRemedial && gridItems.length > 4) {
-      // Reduce the grid size for remedial students (e.g. from 6 to 4 items)
-      // Make sure we have exactly pairs.
-      final uniqueItems = gridItems.toSet().toList();
-      if (uniqueItems.length > 2) {
-        final allowedItems = uniqueItems.sublist(0, 2);
-        gridItems = [...allowedItems, ...allowedItems];
-        gridItems.shuffle();
-      }
-    }
-
-    double itemSize;
-    double spacing;
-    double fontSize;
-    final total = gridItems.length;
-    final bool hasLongText = gridItems.any((opt) => opt.toString().length > 4 || opt.toString().contains(' '));
-
-    if (total <= 2) {
-      itemSize = 160.0;
-      spacing = 32.0;
-      fontSize = 72.0;
-    } else if (total <= 4) {
-      itemSize = 130.0;
-      spacing = 16.0;
-      fontSize = 56.0;
-    } else if (total <= 6) {
-      itemSize = 100.0; 
-      spacing = 12.0;
-      fontSize = 48.0;
-    } else if (total <= 9) {
-      itemSize = 80.0; 
-      spacing = 10.0;
-      fontSize = 40.0;
-    } else {
-      itemSize = 64.0; 
-      spacing = 8.0;
-      fontSize = 32.0;
-    }
+    final promptText = widget.activityNode?.description ?? "එක සමාන අකුරු යුගල තෝරන්න.";
 
     return SharedGameLayout(
-      title: titleText,
+      title: widget.activityNode?.title ?? "එක සමාන අකුරු",
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,
-      isRoundComplete: _matchedIndices.length == gridItems.length,
+      isRoundComplete: _matchedLetters.length == _topLetters.length && _topLetters.isNotEmpty,
       isActivityComplete: _activityComplete,
       onNext: () {
         final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
@@ -169,67 +342,78 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(
           children: [
-            Text(
-              instructionText,
-              style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 64),
-
-              // Matching Cards Grid
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Center(
-                    child: Wrap(
-                      spacing: spacing,
-                      runSpacing: spacing,
-                      alignment: WrapAlignment.center,
-                      children: List.generate(gridItems.length, (index) {
-                      final isMatched = _matchedIndices.contains(index);
-                      final isSelected = (_firstSelectedIndex == index);
-
-                      return GestureDetector(
-                        onTap: () => _onCardTapped(index, gridItems, rounds.length),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          width: hasLongText ? null : itemSize,
-                          height: hasLongText ? null : itemSize,
-                          padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
-                          decoration: BoxDecoration(
-                            color: isMatched
-                                ? AppColors.gentleGreen.withValues(alpha: 0.25)
-                                : isSelected
-                                    ? AppColors.warmAmber.withValues(alpha: 0.25)
-                                    : Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isMatched
-                                  ? AppColors.gentleGreen
-                                  : isSelected
-                                      ? AppColors.warmAmber
-                                      : AppColors.borderLight,
-                              width: 3,
-                            ),
-                            boxShadow: [
-                              BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4))
-                            ],
-                          ),
-                          child: Center(
-                            child: isMatched
-                                ? Icon(Icons.check_circle_rounded, color: AppColors.gentleGreen, size: fontSize)
-                                : Text(gridItems[index], style: TextStyle(fontSize: hasLongText ? 24.0 : fontSize), textAlign: TextAlign.center),
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
+            // Standardized Audio Prompt Button
+            GestureDetector(
+              onTap: () {
+                context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+                _playAudioPrompt();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.warmAmber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppColors.warmAmber.withValues(alpha: 0.4), width: 2),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 36),
+                    const SizedBox(width: 16),
+                    Flexible(
+                      child: Text(
+                        promptText,
+                        style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFFB37700)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            ],
-          ),
+            const SizedBox(height: 12),
+            Text(
+              '(නැවත ඇසීමට බොත්තම තට්ටු කරන්න)',
+              style: AppTypography.sinhala(fontSize: 14, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+
+            Expanded(
+              child: Column(
+                children: [
+                  // Top Box (Selection)
+                  Expanded(
+                    child: _buildTopBox(),
+                  ),
+                  
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 300),
+                    opacity: _selectedTopLetter != null ? 1.0 : 0.0,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        "පහළින් සමාන අකුර තෝරන්න",
+                        style: AppTypography.sinhala(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4A90E2),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+
+                  // Bottom Box (Matching)
+                  Expanded(
+                    child: _buildBottomBox(),
+                  ),
+                  
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          ],
         ),
+      ),
     );
   }
 }
