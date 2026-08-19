@@ -209,61 +209,15 @@
           {
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
             "sequence": [
-              "අ",
-              null,
-              "මා"
-            ],
-            "options": [
-              "ම්",
-              "ක්"
-            ],
-            "correctOption": "ම්",
-            "correct_index": 0
-          },
-          {
-            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
-            "sequence": [
-              "තා",
-              "ත්",
-              null
-            ],
-            "options": [
-              "මා",
-              "තා",
-              "නා"
-            ],
-            "correctOption": "තා",
-            "correct_index": 1
-          },
-          {
-            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
-            "sequence": [
               null,
               "ස"
             ],
             "options": [
-              "ක",
               "ම",
               "ග"
             ],
             "correctOption": "ග",
-            "correct_index": 2
-          },
-          {
-            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
-            "sequence": [
-              "පා",
-              null,
-              "ල"
-            ],
-            "options": [
-              "ස",
-              "න්",
-              "ර",
-              "ට"
-            ],
-            "correctOption": "ස",
-            "correct_index": 0
+            "correct_index": 1
           },
           {
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
@@ -274,12 +228,58 @@
             "options": [
               "ල",
               "ත",
-              "ර",
-              "ම",
-              "ය"
+              "ර"
             ],
             "correctOption": "ත",
             "correct_index": 1
+          },
+          {
+            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
+            "sequence": [
+              "පා",
+              null,
+              "ල"
+            ],
+            "options": [
+              "ර",
+              "ට",
+              "ස"
+            ],
+            "correctOption": "ස",
+            "correct_index": 2
+          },
+          {
+            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
+            "sequence": [
+              "අ",
+              null,
+              "මා"
+            ],
+            "options": [
+              "ක්",
+              "ම්",
+              "න්",
+              "ල්"
+            ],
+            "correctOption": "ම්",
+            "correct_index": 1
+          },
+          {
+            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
+            "sequence": [
+              "තා",
+              "ත්",
+              null
+            ],
+            "options": [
+              "මා",
+              "නා",
+              "ගා",
+              "තා",
+              "රා"
+            ],
+            "correctOption": "තා",
+            "correct_index": 3
           }
         ]
       },
