@@ -226,30 +226,21 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                       children: [
                         const SizedBox(height: 24),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFFF7ED), // Soft warm highlight background
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(24),
                             border: Border.all(color: const Color(0xFFFFEDD5), width: 2), // Subtle edge
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.push_pin_rounded, color: Color(0xFFF97316), size: 24),
-                              const SizedBox(width: 16),
-                              Text(
-                                displayWord,
-                                style: AppTypography.sinhala(
-                                  fontSize: 60,
-                                  fontWeight: FontWeight.w900,
-                                  color: const Color(0xFF9A3412), // Deep burnt orange text
-                                  height: 1.1,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(width: 16),
-                              const Icon(Icons.push_pin_rounded, color: Color(0xFFF97316), size: 24),
-                            ],
+                          child: Text(
+                            displayWord,
+                            style: AppTypography.sinhala(
+                              fontSize: 60,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF9A3412), // Deep burnt orange text
+                              height: 1.1,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                         const SizedBox(height: 24),
