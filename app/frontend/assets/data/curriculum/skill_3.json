@@ -12,7 +12,7 @@
           "reading_comprehension",
           "visual_context"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill3_image_mcq",
         "rounds": [
           {
             "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
@@ -76,7 +76,7 @@
           "spelling",
           "phonics"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill3_word_formation",
         "rounds": [
           {
             "prompt": "'ම' + 'ල' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
@@ -140,7 +140,7 @@
           "listening_comprehension",
           "decoding"
         ],
-        "template_type": "audio_game",
+        "template_type": "skill3_audio_mcq",
         "rounds": [
           {
             "prompt": "ශබ්දයට සවන් දී 'මල' තෝරන්න",
@@ -204,7 +204,7 @@
           "spelling",
           "phonics"
         ],
-        "template_type": "missing_picture_game",
+        "template_type": "skill3_fill_blank",
         "rounds": [
           {
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
@@ -291,7 +291,7 @@
           "listening",
           "word_recognition"
         ],
-        "template_type": "audio_game",
+        "template_type": "skill3_audio_cut",
         "rounds": [
           {
             "prompt": "ඇසෙන වචනය තෝරන්න: 'මල'",

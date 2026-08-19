@@ -22,6 +22,13 @@ import 'skill_1/visual_act3_sorting_adventure.dart';
 import 'skill_1/visual_act2_shadow_matching.dart';
 import 'skill_1/visual_act5_memory_hats.dart';
 
+// Skill 3 Dedicated Templates
+import 'skill_3/skill3_act1_image_mcq.dart';
+import 'skill_3/skill3_act2_word_formation_mcq.dart';
+import 'skill_3/skill3_act3_audio_mcq.dart';
+import 'skill_3/skill3_act4_fill_blank.dart';
+import 'skill_3/skill3_act5_audio_cut.dart';
+
 // Skill 2 Dedicated Templates
 import 'skill_2/skill2_act3_audio.dart';
 import 'skill_2/skill2_act2_identical_match.dart';
@@ -36,6 +43,24 @@ class GameFactory {
     Widget gameContent;
 
     switch (node.templateType) {
+      
+      // --- Skill 3 Dedicated Templates ---
+      case 'skill3_image_mcq':
+        gameContent = Skill3Act1ImageMcq(activityNode: node, isRemedial: isRemedial);
+        break;
+      case 'skill3_word_formation':
+        gameContent = Skill3Act2WordFormation(activityNode: node, isRemedial: isRemedial);
+        break;
+      case 'skill3_audio_mcq':
+        gameContent = Skill3Act3AudioMcq(activityNode: node, isRemedial: isRemedial);
+        break;
+      case 'skill3_fill_blank':
+        gameContent = Skill3Act4FillBlank(activityNode: node, isRemedial: isRemedial);
+        break;
+      case 'skill3_audio_cut':
+        gameContent = Skill3Act5AudioCut(activityNode: node, isRemedial: isRemedial);
+        break;
+
       // --- Picture Recognition (skill_visual) Templates ---
       case 'visual_hidden_search':
         gameContent = VisualAct1HiddenSearch(activityNode: node);
