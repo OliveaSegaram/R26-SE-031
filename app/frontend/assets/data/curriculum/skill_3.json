@@ -17,54 +17,60 @@
           {
             "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
             "options": [
+              "හඳ",
+              "ඉර"
+            ],
+            "correctOption": "ඉර",
+            "correct_index": 1,
+            "image_url": "assets/images/activity_icons/nature/sun.png"
+          },
+          {
+            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
+            "options": [
+              "හඳ",
               "මල",
               "ගස"
             ],
-            "correctOption": "මල",
-            "correct_index": 0
+            "correctOption": "හඳ",
+            "correct_index": 0,
+            "image_url": "assets/images/activity_icons/nature/moon.png"
           },
           {
             "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
             "options": [
-              "අත",
-              "පය",
-              "ඇස"
+              "බසය",
+              "මල",
+              "ගස",
+              "පොත"
             ],
-            "correctOption": "පය",
-            "correct_index": 1
+            "correctOption": "බසය",
+            "correct_index": 0,
+            "image_url": "assets/images/activity_icons/vehicles/bus.png"
           },
           {
             "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
             "options": [
-              "පොත",
+              "යතුර",
+              "පහන",
+              "වහල",
+              "කඩය"
+            ],
+            "correctOption": "යතුර",
+            "correct_index": 0,
+            "image_url": "assets/images/activity_icons/everyday_objects/key.png"
+          },
+          {
+            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
+            "options": [
+              "සීනුව",
+              "පහන",
               "පනාව",
-              "පෑන"
+              "පුටුව",
+              "යතුර"
             ],
-            "correctOption": "පෑන",
-            "correct_index": 2
-          },
-          {
-            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
-            "options": [
-              "හරකා",
-              "එළදෙන",
-              "එළුවා",
-              "කුකුළා"
-            ],
-            "correctOption": "එළුවා",
-            "correct_index": 2
-          },
-          {
-            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
-            "options": [
-              "කුරුල්ලා",
-              "සමනලයා",
-              "මෞරයා",
-              "වවුලා",
-              "ගිරවා"
-            ],
-            "correctOption": "සමනලයා",
-            "correct_index": 1
+            "correctOption": "සීනුව",
+            "correct_index": 0,
+            "image_url": "assets/images/activity_icons/everyday_objects/bell.png"
           }
         ]
       },
