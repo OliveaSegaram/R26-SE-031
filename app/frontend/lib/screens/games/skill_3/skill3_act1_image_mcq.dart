@@ -194,35 +194,14 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
 
             const Spacer(flex: 1),
 
-            // ── Flashcard Container (Matches Act 5) ──
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(32),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadowMedium,
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-                border: Border.all(color: AppColors.borderLight, width: 2),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // ── Visual Image Card ──
-                  _buildImageCard(imageUrl),
+            const SizedBox(height: 16),
+            // ── Visual Image Card ──
+            _buildImageCard(imageUrl),
 
-                  const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
-                  // ── Premium Answer Pool ──
-                  _buildAnswerPool(options, correctIndex, rounds.length),
-                ],
-              ),
-            ),
+            // ── Premium Answer Pool ──
+            _buildAnswerPool(options, correctIndex, rounds.length),
 
             const Spacer(flex: 2),
           ],
@@ -238,7 +217,8 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
         _playAudioPrompt();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: AppColors.warmAmber.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(24),
@@ -247,16 +227,33 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ScaleTransition(
-              scale: _speakerBounceAnimation,
-              child: const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 40),
-            ),
-            const SizedBox(width: 12),
             Flexible(
               child: Text(
                 promptText,
-                style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                style: AppTypography.sinhala(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
               ),
+            ),
+            const SizedBox(width: 12),
+            ScaleTransition(
+              scale: _speakerBounceAnimation,
+              child: Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.warmAmber,
+              ),
+              child: const Icon(
+                Icons.volume_up_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
             ),
           ],
         ),
@@ -271,41 +268,42 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
         CurvedAnimation(parent: _imageBounceController, curve: Curves.elasticOut),
       ),
       child: Container(
-        width: 160,
-        height: 160,
+        width: 200,
+        height: 200,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.warmAmber.withValues(alpha: 0.4),
+            width: 3,
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.warmAmber.withValues(alpha: 0.2),
               blurRadius: 16,
-              spreadRadius: 4,
               offset: const Offset(0, 4),
             )
           ],
         ),
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return ScaleTransition(scale: animation, child: child);
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return ScaleTransition(scale: animation, child: child);
+            },
+            child: Image.asset(
+              imageUrl,
+              key: ValueKey<String>(imageUrl), // Forces animation on change
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback if the image doesn't exist yet
+                return const Icon(
+                  Icons.image_not_supported_rounded,
+                  color: Colors.grey,
+                  size: 64,
+                );
               },
-              child: Image.asset(
-                imageUrl,
-                key: ValueKey<String>(imageUrl), // Forces animation on change
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  // Fallback if the image doesn't exist yet
-                  return const Icon(
-                    Icons.image_not_supported_rounded,
-                    color: Colors.grey,
-                    size: 64,
-                  );
-                },
-              ),
             ),
           ),
         ),
@@ -315,63 +313,17 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
 
   /// Premium answer pool container with frosted glass effect
   Widget _buildAnswerPool(List<String> options, int correctIndex, int totalRounds) {
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.only(top: 40, bottom: 24, left: 16, right: 16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color(0xFFF0F4F8).withValues(alpha: 0.85),
-                Colors.white.withValues(alpha: 0.5),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            alignment: WrapAlignment.center,
-            children: List.generate(options.length, (index) {
-              return _buildOptionTile(index, options[index], correctIndex, totalRounds, options.length);
-            }),
-          ),
-        ),
-        // Touch indicator badge
-        Positioned(
-          top: 12,
-          left: 20,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF4A90E2).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.touch_app_rounded, size: 16, color: Color(0xFF4A90E2)),
-                SizedBox(width: 6),
-                Text(
-                  'තෝරන්න',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF4A90E2), fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        alignment: WrapAlignment.center,
+        children: List.generate(options.length, (index) {
+          return _buildOptionTile(index, options[index], correctIndex, totalRounds, options.length);
+        }),
+      ),
     );
   }
 
@@ -382,50 +334,47 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     final isWrong = isSelected && (index != correctIndex);
     final isHidden = _isCorrect && (index != correctIndex);
 
-    final isWide = optionText.length > 3;
+    // Unified sizing: all boxes are the same width/height so fonts don't scale unevenly.
+    double tileWidth = 135.0;
+    double tileHeight = 90.0;
+    double fontSize = 42.0;
 
-    double tileWidth;
-    double tileHeight;
-    double fontSize;
-
-    if (totalOptions <= 2) {
-      tileWidth = isWide ? 180.0 : 140.0;
-      tileHeight = 100.0;
-      fontSize = 52.0;
-    } else if (totalOptions <= 3) {
-      tileWidth = isWide ? 160.0 : 130.0;
-      tileHeight = 90.0;
-      fontSize = 46.0;
-    } else if (totalOptions <= 4) {
-      tileWidth = isWide ? 150.0 : 120.0;
-      tileHeight = 85.0;
-      fontSize = 42.0;
-    } else {
-      tileWidth = isWide ? 140.0 : 110.0;
-      tileHeight = 80.0;
-      fontSize = 38.0;
-    }
-
-    List<Color> gradientColors;
-    Color shadowColor;
-    Color borderColor;
-    Color textColor;
+    Color tileColor = Colors.white;
+    Color borderColor = const Color(0xFFE5E7EB);
+    double borderWidth = 1.5;
+    List<BoxShadow> shadows = [
+      BoxShadow(
+        color: const Color(0xFF4A90D9).withValues(alpha: 0.08),
+        blurRadius: 8,
+        offset: const Offset(0, 3),
+      ),
+    ];
+    Color textColor = AppColors.textPrimary;
 
     if (isRight) {
-      gradientColors = const [Color(0xFFA5D6A7), Color(0xFF66BB6A)];
-      shadowColor = const Color(0xFF66BB6A);
-      borderColor = Colors.white;
-      textColor = Colors.white;
+      tileColor = const Color(0xFF6DBE6D).withValues(alpha: 0.15);
+      borderColor = const Color(0xFF6DBE6D);
+      borderWidth = 4.0;
+      shadows = [
+        BoxShadow(
+          color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
+          blurRadius: 16,
+          spreadRadius: 2,
+        )
+      ];
+      
     } else if (isWrong) {
-      gradientColors = const [Color(0xFFFFCDD2), Color(0xFFEF9A9A)];
-      shadowColor = Colors.red;
-      borderColor = Colors.white;
-      textColor = Colors.white;
-    } else {
-      gradientColors = const [Color(0xFFE3F2FD), Color(0xFFBBDEFB)];
-      shadowColor = const Color(0xFF90CAF9);
-      borderColor = Colors.white;
-      textColor = const Color(0xFF1565C0);
+      tileColor = const Color(0xFFE87C6D).withValues(alpha: 0.15);
+      borderColor = const Color(0xFFE87C6D);
+      borderWidth = 4.0;
+      shadows = [
+        BoxShadow(
+          color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
+          blurRadius: 16,
+          spreadRadius: 2,
+        )
+      ];
+      
     }
 
     return GestureDetector(
@@ -433,49 +382,38 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),
         opacity: isHidden ? 0.0 : 1.0,
-        child: AnimatedScale(
-          scale: isWrong ? 0.9 : (isRight ? 1.1 : 1.0),
+        child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          curve: Curves.elasticOut,
-          child: Container(
-            width: tileWidth,
-            height: tileHeight,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: gradientColors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: shadowColor.withValues(alpha: 0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-              border: Border.all(color: borderColor, width: 4),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.all(4.0),
+          width: tileWidth,
+          height: tileHeight,
+          decoration: BoxDecoration(
+            color: tileColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: borderColor,
+              width: borderWidth,
             ),
-            child: Center(
-              child: isRight
-                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 42)
-                  : isWrong
-                      ? const Icon(Icons.close_rounded, color: Colors.white, size: 42)
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              optionText,
-                              style: AppTypography.sinhala(
-                                fontSize: fontSize,
-                                fontWeight: FontWeight.w900,
-                                color: textColor,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
+            boxShadow: shadows,
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  optionText,
+                  maxLines: 1,
+                  style: AppTypography.sinhala(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                    height: 1.3,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
           ),
         ),
