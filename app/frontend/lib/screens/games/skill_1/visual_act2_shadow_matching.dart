@@ -7,6 +7,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../services/tts_service.dart';
 import 'logic/shadow_generator.dart';
 import 'models/shadow_round.dart';
 import 'widgets/pattern_background.dart';
@@ -81,6 +82,10 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   ];
   late String _currentInstruction;
 
+  // ── Speaker animation ──
+  late AnimationController _speakerBounceController;
+  late Animation<double> _speakerBounceAnimation;
+
   // ── Encouragement messages ──
   static const List<String> _encourageMessages = [
     'හොඳට බලන්න! 👀',
@@ -137,8 +142,28 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
       curve: Curves.easeInOut,
     ));
 
+    // Speaker bounce
+    _speakerBounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _speakerBounceAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _speakerBounceController, curve: Curves.elasticOut),
+    );
+
     _initRoundState();
     _roundTransitionController.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playInstruction();
+    });
+  }
+
+  void _playInstruction() {
+    TtsService().speak(_currentInstruction);
+    _speakerBounceController.forward().then((_) {
+      _speakerBounceController.reverse();
+    });
   }
 
   void _initRoundState() {
@@ -201,6 +226,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
     _celebrationController.dispose();
     _roundTransitionController.dispose();
     _wrongShakeController.dispose();
+    _speakerBounceController.dispose();
     _trayScrollController.dispose();
     for (var c in _floatControllers.values) { c.dispose(); }
     for (var c in _shadowGlowControllers.values) { c.dispose(); }
@@ -473,49 +499,36 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
 
   // ── Instruction Card ──
   Widget _buildInstructionCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: _roundComplete ? const Color(0xFF6DBE6D).withOpacity(0.15) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: _roundComplete 
-            ? const Color(0xFF6DBE6D).withOpacity(0.3)
-            : const Color(0xFF4A90D9).withOpacity(0.15),
-          width: 1.5,
+    return GestureDetector(
+      onTap: () {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        _playInstruction();
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.warmAmber.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
-        boxShadow: _roundComplete ? [] : [
-          BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.1),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (_roundComplete) 
-            const Icon(Icons.check_circle_rounded, color: Color(0xFF6DBE6D), size: 28)
-          else
-            const Icon(Icons.touch_app_rounded, color: Color(0xFF4A90D9), size: 28),
-          const SizedBox(width: 10),
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                _roundComplete ? 'නියමයි! සියල්ල ගැලපුවා! 🎉' : _currentInstruction,
-                style: AppTypography.sinhala(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: _roundComplete ? const Color(0xFF4E9E4E) : const Color(0xFF3E3E3E),
-                ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(_currentInstruction, style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary), textAlign: TextAlign.center),
+            ),
+            const SizedBox(width: 12),
+            ScaleTransition(
+              scale: _speakerBounceAnimation,
+              child: Container(
+                width: 48, height: 48,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]),
+                child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -578,6 +591,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   Widget _buildShadowTarget(String object, double size) {
     final isMatched = _matchedObjects.contains(object);
     final glowController = _shadowGlowControllers[object];
+    final showSuccess = _roundComplete && isMatched;
 
     return DragTarget<String>(
       onWillAcceptWithDetails: (details) {
@@ -591,35 +605,48 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
           animation: glowController ?? const AlwaysStoppedAnimation(0),
           builder: (context, child) {
             final glowValue = glowController?.value ?? 0.0;
-            return Container(
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
               width: size,
               height: size,
               decoration: BoxDecoration(
-                color: isMatched ? Colors.transparent : Colors.white.withOpacity(0.4),
+                color: showSuccess
+                    ? const Color(0xFF6DBE6D).withOpacity(0.15)
+                    : (isMatched ? Colors.transparent : Colors.white.withOpacity(0.4)),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: isHovered 
-                      ? const Color(0xFFF9C623) 
-                      : (glowValue > 0 ? const Color(0xFF6DBE6D) : Colors.white.withOpacity(0.8)),
-                  width: isHovered ? 4 : 2,
+                  color: showSuccess
+                      ? const Color(0xFF6DBE6D)
+                      : (isHovered 
+                          ? const Color(0xFFF9C623) 
+                          : (glowValue > 0 ? const Color(0xFF6DBE6D) : Colors.white.withOpacity(0.8))),
+                  width: (showSuccess || isHovered) ? 4 : 2,
                 ),
-                boxShadow: isHovered || glowValue > 0
+                boxShadow: showSuccess
                     ? [
                         BoxShadow(
-                          color: (glowValue > 0 ? const Color(0xFF6DBE6D) : const Color(0xFFF9C623)).withOpacity(0.6),
-                          blurRadius: 20,
-                          spreadRadius: 4,
+                          color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                          blurRadius: 16,
+                          spreadRadius: 2,
                         ),
                       ]
-                    : [
-                        if (!isMatched)
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 8,
-                            spreadRadius: -2,
-                            offset: const Offset(0, 4),
-                          )
-                      ],
+                    : (isHovered || glowValue > 0
+                        ? [
+                            BoxShadow(
+                              color: (glowValue > 0 ? const Color(0xFF6DBE6D) : const Color(0xFFF9C623)).withOpacity(0.6),
+                              blurRadius: 20,
+                              spreadRadius: 4,
+                            ),
+                          ]
+                        : [
+                            if (!isMatched)
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 8,
+                                spreadRadius: -2,
+                                offset: const Offset(0, 4),
+                              )
+                          ]),
               ),
               child: Center(
                 child: Padding(
@@ -679,13 +706,17 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
 
   // ── Object Tray ──
   Widget _buildObjectTray() {
+    if (_roundComplete) {
+      return const SizedBox(height: 150); // Keep space but show nothing
+    }
+    
     return Container(
       height: 150, // Slightly taller for premium look
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.5),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.white, width: 3),
+        border: Border.all(color: Colors.white, width: 3.0),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF4A90D9).withOpacity(0.1),
@@ -694,11 +725,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
           ),
         ],
       ),
-      child: _roundComplete
-          ? const Center(
-              child: Icon(Icons.celebration_rounded, size: 80, color: Color(0xFFF9C623)),
-            )
-          : SingleChildScrollView(
+      child: SingleChildScrollView(
               controller: _trayScrollController,
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
