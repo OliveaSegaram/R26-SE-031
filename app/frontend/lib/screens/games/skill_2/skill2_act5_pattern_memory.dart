@@ -179,22 +179,40 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
     final bool hasLongText = options.any((opt) => opt.toString().length > 4 || opt.toString().contains(' '));
 
     if (total <= 2) {
-      itemSize = 120.0;
+      itemSize = 150.0;
       spacing = 24.0;
-      fontSize = 56.0;
+      fontSize = 80.0;
     } else if (total <= 4) {
-      itemSize = 90.0;
+      itemSize = 120.0;
       spacing = 16.0;
-      fontSize = 48.0;
+      fontSize = 64.0;
     } else if (total <= 6) {
-      itemSize = 76.0; 
+      itemSize = 100.0; 
       spacing = 12.0;
-      fontSize = 40.0;
+      fontSize = 56.0;
     } else {
-      itemSize = 64.0; 
+      itemSize = 80.0; 
       spacing = 8.0;
-      fontSize = 32.0;
+      fontSize = 44.0;
     }
+
+    double topSlotSize = 120.0;
+    double topFontSize = 72.0;
+    double topSlotShrinkSize = 80.0;
+    double topFontShrinkSize = 48.0;
+
+    if (targetPattern.length >= 4) {
+      topSlotSize = 70.0;
+      topFontSize = 40.0;
+      topSlotShrinkSize = 60.0;
+      topFontShrinkSize = 32.0;
+    } else if (targetPattern.length == 3) {
+      topSlotSize = 95.0;
+      topFontSize = 56.0;
+      topSlotShrinkSize = 75.0;
+      topFontShrinkSize = 44.0;
+    }
+
 
     return SharedGameLayout(
       title: titleText,
@@ -216,9 +234,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
           children: [
 
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
+              child: Column(
                   children: [
                     // Instruction Banner
                     _buildInstructionCard(
@@ -263,54 +279,45 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
 
                           return AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            width: 80,
-                            height: 80,
+                            width: _isMemorizing ? topSlotSize : topSlotShrinkSize,
+                            height: _isMemorizing ? topSlotSize : topSlotShrinkSize,
                             decoration: BoxDecoration(
-                              color: isCurrentWrong ? AppColors.softCoral : (isFilled ? Colors.white : Colors.black.withOpacity(0.04)),
-                              borderRadius: BorderRadius.circular(24),
+                              color: isCurrentWrong 
+                                  ? const Color(0xFFE87C6D) 
+                                  : (isFilled 
+                                      ? (_isMemorizing ? Colors.white : const Color(0xFF6DBE6D)) 
+                                      : Colors.black.withOpacity(0.04)),
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isCurrentWrong ? Colors.red[800]! : (isFilled ? Colors.white.withOpacity(0.8) : Colors.black.withOpacity(0.1)),
-                                width: 2,
+                                color: isCurrentWrong 
+                                    ? const Color(0xFFE87C6D) 
+                                    : (isFilled 
+                                        ? (_isMemorizing ? AppColors.warmAmber.withOpacity(0.4) : const Color(0xFF6DBE6D)) 
+                                        : Colors.black.withOpacity(0.1)),
+                                width: 2.0,
                               ),
-                              boxShadow: isFilled
+                              boxShadow: (isFilled && isCurrentWrong)
                                   ? [
-                                      // 3D bottom edge shadow
-                                      if (!isCurrentWrong)
-                                        const BoxShadow(
-                                          color: Color(0xFFD1D5DB),
-                                          offset: Offset(0, 6),
-                                          blurRadius: 0,
-                                        ),
-                                      if (isCurrentWrong)
-                                        BoxShadow(
-                                          color: Colors.red[900]!,
-                                          offset: const Offset(0, 6),
-                                          blurRadius: 0,
-                                        ),
-                                      // Drop shadow
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.15),
-                                        offset: const Offset(0, 8),
-                                        blurRadius: 8,
+                                        color: const Color(0xFFE87C6D).withOpacity(0.3),
+                                        blurRadius: 16,
+                                        spreadRadius: 2,
                                       )
                                     ]
-                                  : [
-                                      // Inner carved shadow effect (simulated)
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
-                                        blurRadius: 2,
-                                        offset: const Offset(0, 2),
-                                      )
-                                    ],
+                                  : null,
                             ),
                             child: Center(
                               child: Text(
                                 itemToShow,
                                 style: TextStyle(
-                                  fontSize: 48,
+                                  fontSize: _isMemorizing ? topFontSize : topFontShrinkSize,
                                   fontWeight: FontWeight.bold,
                                   height: 1.1,
-                                  color: isCurrentWrong ? Colors.white : (isFilled ? AppColors.textPrimary : Colors.black26),
+                                  color: isCurrentWrong 
+                                      ? Colors.white 
+                                      : (isFilled 
+                                          ? (_isMemorizing ? AppColors.textPrimary : Colors.white) 
+                                          : Colors.black26),
                                 ),
                               ),
                             ),
@@ -319,89 +326,106 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
                       ),
                     ),
 
-                    const SizedBox(height: 64),
+                    const SizedBox(height: 32),
 
                     // Recall Candidate Palette (Disabled while memorizing)
                     if (!_isMemorizing) ...[
-                      Text('පහත හැඩතල තට්ටු කරන්න:', style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 16.0,
-                        runSpacing: 16.0,
-                        alignment: WrapAlignment.center,
-                        children: options.map((opt) {
-                          final isWrong = _wrongTappedOption == opt;
-                          final isCorrect = _correctTappedOption == opt;
-                          final isPressed = isWrong || isCorrect;
-                          
-                          Color tileColor = Colors.white;
-                          Color borderColor = Colors.white.withOpacity(0.5);
-                          Color shadowColor = const Color(0xFFD1D5DB);
-                          Color textColor = AppColors.textPrimary;
-
-                          if (isCorrect) {
-                            tileColor = AppColors.gentleGreen;
-                            borderColor = Colors.green[700]!;
-                            shadowColor = Colors.green[800]!;
-                            textColor = Colors.white;
-                          } else if (isWrong) {
-                            tileColor = AppColors.softCoral;
-                            borderColor = Colors.red[800]!;
-                            shadowColor = Colors.red[900]!;
-                            textColor = Colors.white;
-                          }
-
-                          return GestureDetector(
-                            onTap: () => _addItemToUserSequence(opt, targetPattern, rounds.length),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              margin: EdgeInsets.only(top: isPressed ? 8.0 : 0.0, bottom: isPressed ? 0.0 : 8.0),
-                              width: hasLongText ? null : 100.0,
-                              height: hasLongText ? null : 100.0,
-                              padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                               decoration: BoxDecoration(
-                                color: tileColor,
+                                color: const Color(0xFFF8FAFC),
                                 borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: isPressed ? borderColor : Colors.white.withOpacity(0.5), width: 2),
-                                boxShadow: [
-                                  // Premium 3D bottom edge
-                                  if (!isPressed)
-                                    BoxShadow(
-                                      color: shadowColor,
-                                      offset: const Offset(0, 6),
-                                      blurRadius: 0,
-                                    ),
-                                  // Soft drop shadow
-                                  if (!isPressed)
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
-                                      offset: const Offset(0, 10),
-                                      blurRadius: 10,
-                                    )
-                                ],
+                                border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
                               ),
-                              child: Center(
-                                child: Text(
-                                  opt, 
-                                  style: TextStyle(
-                                    fontSize: hasLongText ? 40.0 : 64.0, 
-                                    fontWeight: FontWeight.bold,
-                                    height: 1.1,
-                                    color: textColor
-                                  ), 
-                                  textAlign: TextAlign.center
+                              child: Wrap(
+                          spacing: 16.0,
+                          runSpacing: 16.0,
+                          alignment: WrapAlignment.center,
+                          children: options.map((opt) {
+                            final isWrong = _wrongTappedOption == opt;
+                            final isCorrect = _correctTappedOption == opt;
+                            final isPressed = isWrong || isCorrect;
+                            
+                            Color tileColor = Colors.white;
+                            Color borderColor = Colors.transparent;
+                            Color textColor = AppColors.textPrimary;
+                            double borderWidth = isPressed ? 4.0 : 1.0;
+
+                            if (isCorrect) {
+                              tileColor = const Color(0xFF6DBE6D).withOpacity(0.15);
+                              borderColor = const Color(0xFF6DBE6D);
+                              textColor = const Color(0xFF6DBE6D);
+                            } else if (isWrong) {
+                              tileColor = const Color(0xFFE87C6D).withOpacity(0.15);
+                              borderColor = const Color(0xFFE87C6D);
+                              textColor = const Color(0xFFE87C6D);
+                            }
+
+                            return GestureDetector(
+                              onTap: () => _addItemToUserSequence(opt, targetPattern, rounds.length),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                margin: EdgeInsets.all(spacing / 2),
+                                width: hasLongText ? null : itemSize,
+                                height: hasLongText ? null : itemSize,
+                                padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
+                                decoration: BoxDecoration(
+                                  color: tileColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isPressed ? borderColor : const Color(0xFFE2E8F0), 
+                                    width: borderWidth
+                                  ),
+                                  boxShadow: [
+                                    if (isCorrect)
+                                      BoxShadow(
+                                        color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                                        blurRadius: 16,
+                                        spreadRadius: 2,
+                                      )
+                                    else if (isWrong)
+                                      BoxShadow(
+                                        color: const Color(0xFFE87C6D).withOpacity(0.3),
+                                        blurRadius: 16,
+                                        spreadRadius: 2,
+                                      )
+                                    else if (!isPressed)
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      )
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    opt, 
+                                    style: TextStyle(
+                                      fontSize: hasLongText ? 40.0 : fontSize, 
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.1,
+                                      color: textColor
+                                    ), 
+                                    textAlign: TextAlign.center
+                                  ),
                                 ),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          }).toList(),
+                        ),
+                          ),
+                        ),
                       ),
+                    ] else ...[
+                      const Spacer(),
                     ],
                     const SizedBox(height: 24),
                   ],
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -409,46 +433,50 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
   }
 
   Widget _buildInstructionCard(String instruction) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: () async {
-            context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
-            if (widget.activityNode?.audioUrl != null && widget.activityNode!.audioUrl.isNotEmpty) {
-              await _audioPlayer.play(UrlSource(widget.activityNode!.audioUrl));
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.warmAmber.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.warmAmber, width: 3),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 40),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Text(
-                    instruction,
-                    style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return GestureDetector(
+      onTap: () async {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        if (widget.activityNode?.audioUrl != null && widget.activityNode!.audioUrl.isNotEmpty) {
+          await _audioPlayer.play(UrlSource(widget.activityNode!.audioUrl));
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.warmAmber.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
-        const SizedBox(height: 12),
-        Text(
-          '(නැවත ඇසීමට බොත්තම තට්ටු කරන්න)',
-          style: AppTypography.sinhala(fontSize: 14, color: AppColors.textSecondary),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                instruction,
+                style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.warmAmber,
+                boxShadow: [
+                  BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))
+                ]
+              ),
+              child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
+        
 
   Widget _buildTimerBar() {
     if (!_isMemorizing) return const SizedBox.shrink();
