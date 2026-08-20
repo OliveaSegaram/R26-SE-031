@@ -64,26 +64,47 @@ class _PatternAnswerTokenState extends State<PatternAnswerToken>
   }
 
   Widget _buildTokenContent() {
-    return Container(
-      key: widget.tokenKey,
-      width: 100,
-      height: 100,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFC4A484).withOpacity(0.6), // Crate wood color border
-          width: 3,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 6,
-            offset: const Offset(0, 4),
+    return AnimatedBuilder(
+      animation: widget.shakeAnimation ?? const AlwaysStoppedAnimation(0.0),
+      builder: (context, child) {
+        bool isShaking = false;
+        if (widget.shakeAnimation != null && widget.shakeAnimation!.isAnimating) {
+            isShaking = true;
+        }
+
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          key: widget.tokenKey,
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: isShaking ? const Color(0xFFE87C6D).withOpacity(0.15) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isShaking 
+                  ? const Color(0xFFE87C6D)
+                  : const Color(0xFFC4A484).withOpacity(0.6), // Crate wood color border
+              width: isShaking ? 4.0 : 3.0,
+            ),
+            boxShadow: [
+              if (isShaking)
+                BoxShadow(
+                  color: const Color(0xFFE87C6D).withOpacity(0.3),
+                  blurRadius: 16,
+                  spreadRadius: 2,
+                )
+              else
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 6,
+                  offset: const Offset(0, 4),
+                ),
+            ],
           ),
-        ],
-      ),
-      padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(12),
+          child: child,
+        );
+      },
       child: Image.asset(
         'assets/images/activity_icons/${widget.imagePath}',
         fit: BoxFit.contain,

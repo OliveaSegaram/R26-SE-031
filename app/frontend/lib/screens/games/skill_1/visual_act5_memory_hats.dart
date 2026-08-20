@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../services/tts_service.dart';
 import 'widgets/pattern_background.dart';
 
 // ──────────────────────────────────────────────────────────────
@@ -106,6 +107,10 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   ];
   late String _currentInstruction;
 
+  // ── Speaker animation ──
+  late AnimationController _speakerBounceController;
+  late Animation<double> _speakerBounceAnimation;
+
   @override
   void initState() {
     super.initState();
@@ -155,8 +160,24 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       vsync: this,
     );
 
+    // Speaker bounce
+    _speakerBounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _speakerBounceAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _speakerBounceController, curve: Curves.elasticOut),
+    );
+
     _initRoundState();
     _roundTransitionController.forward();
+  }
+
+  void _playInstruction(String text) {
+    TtsService().speak(text);
+    _speakerBounceController.forward().then((_) {
+      _speakerBounceController.reverse();
+    });
   }
 
   List<MemoryRound> _generateRounds() {
@@ -228,6 +249,8 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       _currentPhase = MemoryPhase.memorizing;
     });
 
+    _playInstruction(_currentInstruction);
+
     _timerController.duration = Duration(milliseconds: _currentRound.memoryDurationMs);
     await _timerController.forward(from: 0.0);
     if (!mounted) return;
@@ -252,6 +275,8 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     setState(() {
       _currentPhase = MemoryPhase.recall;
     });
+
+    _playInstruction('මේ රූපය තිබුණේ කොහෙද?');
   }
 
   @override
@@ -260,6 +285,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     _roundTransitionController.dispose();
     _wrongShakeController.dispose();
     _timerController.dispose();
+    _speakerBounceController.dispose();
     for (var controller in _cardFlipControllers) {
       controller.dispose();
     }
@@ -533,6 +559,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   // ── Instruction Card ──
   Widget _buildInstructionCard() {
     final bool isRecall = _currentPhase == MemoryPhase.recall || _currentPhase == MemoryPhase.success;
+    final String text = isRecall ? 'මේ රූපය තිබුණේ කොහෙද?' : _currentInstruction;
     
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 500),
@@ -543,91 +570,53 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
           child: FadeTransition(opacity: animation, child: child),
         );
       },
-      child: isRecall
-          ? Container(
-              key: const ValueKey('recall'),
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF4A90D9).withOpacity(0.3), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF4A90D9).withOpacity(0.15),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
+      child: GestureDetector(
+        key: ValueKey(isRecall),
+        onTap: () {
+          context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+          _playInstruction(text);
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.warmAmber.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.warmAmber, width: 3),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isRecall) ...[
+                Container(
+                  width: 56,
+                  height: 56,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.warmAmber.withOpacity(0.4), width: 2),
                   ),
-                ],
+                  child: Image.asset('assets/images/activity_icons/${_currentRound.targetAsset}'),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Text(text, style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary), textAlign: TextAlign.center),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 65,
-                    height: 65,
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F4FF),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF4A90D9).withOpacity(0.3), width: 2),
-                    ),
-                    child: Image.asset('assets/images/activity_icons/${_currentRound.targetAsset}'),
-                  ),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        'මේ රූපය තිබුණේ කොහෙද?',
-                        style: AppTypography.sinhala(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF3E3E3E),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 12),
+              ScaleTransition(
+                scale: _speakerBounceAnimation,
+                child: Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]),
+                  child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
+                ),
               ),
-            )
-          : Container(
-              key: const ValueKey('memorize'),
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.visibility_rounded, color: Color(0xFF4A90D9), size: 28),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        _currentInstruction,
-                        style: AppTypography.sinhala(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF3E3E3E),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -718,14 +707,20 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       shakeX = _wrongShakeAnimation.value;
     }
 
+    bool isCorrect = _currentPhase == MemoryPhase.success && isTarget;
+    bool isWrong = _lastMistakeIndex == index;
+
     Color borderColor = const Color(0xFF4A90D9).withOpacity(0.3);
+    Color bgColor = Colors.white;
     double borderWidth = 2.0;
 
-    if (_currentPhase == MemoryPhase.success && isTarget) {
-      borderColor = const Color(0xFF6DBE6D); // Green for correct
+    if (isCorrect) {
+      borderColor = const Color(0xFF6DBE6D);
+      bgColor = const Color(0xFF6DBE6D).withOpacity(0.15);
       borderWidth = 4.0;
-    } else if (_lastMistakeIndex == index) {
-      borderColor = const Color(0xFFFF4B4B); // Red for incorrect
+    } else if (isWrong) {
+      borderColor = const Color(0xFFE87C6D);
+      bgColor = const Color(0xFFE87C6D).withOpacity(0.15);
       borderWidth = 4.0;
     }
 
@@ -765,7 +760,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                     ..rotateY(flipValue * pi),
                   alignment: Alignment.center,
                   child: isFaceUp
-                      ? _buildCardFront(asset, cardWidth, cardHeight, isTarget, borderColor, borderWidth)
+                      ? _buildCardFront(asset, cardWidth, cardHeight, isTarget, borderColor, borderWidth, bgColor, isCorrect, isWrong)
                       : Transform(
                           transform: Matrix4.identity()..rotateY(pi),
                           alignment: Alignment.center,
@@ -780,20 +775,33 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     );
   }
 
-  Widget _buildCardFront(String asset, double width, double height, bool isTarget, Color borderColor, double borderWidth) {
+  Widget _buildCardFront(String asset, double width, double height, bool isTarget, Color borderColor, double borderWidth, Color bgColor, bool isCorrect, bool isWrong) {
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: bgColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor, width: borderWidth),
         boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
+          if (isCorrect)
+            BoxShadow(
+              color: const Color(0xFF6DBE6D).withOpacity(0.3),
+              blurRadius: 16,
+              spreadRadius: 2,
+            )
+          else if (isWrong)
+            BoxShadow(
+              color: const Color(0xFFE87C6D).withOpacity(0.3),
+              blurRadius: 16,
+              spreadRadius: 2,
+            )
+          else
+            BoxShadow(
+              color: const Color(0xFF4A90D9).withOpacity(0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
         ],
       ),
       child: Stack(
@@ -807,8 +815,41 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
             Opacity(
               opacity: 1.0 - _celebrationScale.value.clamp(0.0, 1.0),
               child: Transform.scale(
-                scale: _celebrationScale.value * 2.5,
-                child: const Icon(Icons.star_rounded, color: Color(0xFFF9C623), size: 60),
+                scale: _celebrationScale.value * 0.8, // Scale down slightly as arc is wide
+                child: Builder(
+                  builder: (context) {
+                    final angles = [-0.5, -0.25, 0.0, 0.25, 0.5];
+                    final dy = [25.0, 8.0, 0.0, 8.0, 25.0];
+                    final sizes = [42.0, 54.0, 68.0, 54.0, 42.0];
+
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return Transform.translate(
+                          offset: Offset(0, dy[index] - 15),
+                          child: Transform.rotate(
+                            angle: angles[index],
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                              child: Icon(
+                                Icons.star_rounded,
+                                color: const Color(0xFFFFD700),
+                                size: sizes[index],
+                                shadows: [
+                                  Shadow(
+                                    color: const Color(0xFFFFD700).withOpacity(0.6),
+                                    blurRadius: 12,
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    );
+                  }
+                ),
               ),
             ),
         ],
