@@ -281,33 +281,39 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                                         ? AppColors.gentleGreen.withValues(alpha: 0.2)
                                         : _showError
                                           ? AppColors.softCoral.withValues(alpha: 0.2)
-                                          : isFilled ? Colors.white : AppColors.cream,
+                                          : Colors.white,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
                                         color: _isCorrect
                                           ? AppColors.gentleGreen
                                           : _showError
                                             ? AppColors.softCoral
-                                            : isFilled ? AppColors.calmBlue : AppColors.borderLight,
-                                        width: isFilled ? 3 : 2,
+                                            : isFilled ? AppColors.calmBlue : const Color(0xFF64B5F6),
+                                        width: 3,
                                       ),
-                                      boxShadow: isFilled ? [
+                                      boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.1),
+                                          color: Colors.black.withValues(alpha: 0.06),
                                           blurRadius: 8,
                                           offset: const Offset(0, 4),
                                         )
-                                      ] : [],
+                                      ],
                                     ),
                                     child: Center(
-                                      child: Text(
-                                        isFilled ? slot.letter : '',
-                                        style: AppTypography.sinhala(
-                                          fontSize: 40,
-                                          fontWeight: FontWeight.w700,
-                                          color: _isCorrect ? AppColors.gentleGreen : _showError ? AppColors.softCoral : Colors.black,
-                                        ),
-                                      ),
+                                      child: isFilled 
+                                        ? Text(
+                                            slot.letter,
+                                            style: AppTypography.sinhala(
+                                              fontSize: 40,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.help_outline_rounded,
+                                            size: 32,
+                                            color: Color(0xFF90CAF9),
+                                          ),
                                     ),
                                   ),
                                 );
@@ -343,32 +349,42 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                               child: AnimatedOpacity(
                                 duration: const Duration(milliseconds: 200),
                                 opacity: isAvailable ? 1.0 : 0.0,
-                                child: Container(
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
                                   width: 90,
                                   height: 90,
+                                  margin: const EdgeInsets.all(4.0),
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFFFFEEAA), Color(0xFFFFD54F)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: const Color(0xFFE5E7EB),
+                                      width: 1.5,
                                     ),
-                                    borderRadius: BorderRadius.circular(28),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFFFD54F).withValues(alpha: 0.5),
-                                        blurRadius: 16,
-                                        offset: const Offset(0, 8),
-                                      )
+                                        color: const Color(0xFF4A90D9).withValues(alpha: 0.08),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
                                     ],
-                                    border: Border.all(color: Colors.white, width: 4),
                                   ),
                                   child: Center(
-                                    child: Text(
-                                      letter ?? '',
-                                      style: AppTypography.sinhala(
-                                        fontSize: 46,
-                                        fontWeight: FontWeight.w900,
-                                        color: AppColors.textPrimary,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          letter ?? '',
+                                          maxLines: 1,
+                                          style: AppTypography.sinhala(
+                                            fontSize: 46,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.textPrimary,
+                                            height: 1.3,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -378,28 +394,7 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                           }),
                         ),
                       ),
-                      Positioned(
-                        top: 14,
-                        left: 22,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF4A90E2).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.touch_app_rounded, size: 18, color: Color(0xFF4A90E2)),
-                              SizedBox(width: 4),
-                              Text(
-                                'තෝරන්න',
-                                style: TextStyle(fontSize: 11, color: Color(0xFF4A90E2), fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+
                     ],
                   ),
                   const Spacer(flex: 1),
@@ -413,37 +408,50 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
   }
 
   Widget _buildInstructionCard(String instruction) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: () {
-            context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
-            TtsService().speak(instruction);
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.warmAmber.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.warmAmber, width: 3),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 40),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Text(
-                    instruction,
-                    style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return GestureDetector(
+      onTap: () {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        TtsService().speak(instruction);
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.warmAmber.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
-      ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                instruction,
+                style: AppTypography.sinhala(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.warmAmber,
+              ),
+              child: const Icon(
+                Icons.volume_up_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

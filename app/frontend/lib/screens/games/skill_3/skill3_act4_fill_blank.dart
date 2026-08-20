@@ -185,29 +185,19 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFFDF5), Color(0xFFFFF8E1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.warmAmber.withValues(alpha: 0.4),
+          width: 3,
         ),
-        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFD54F).withValues(alpha: 0.25),
-            blurRadius: 32,
-            spreadRadius: 2,
-            offset: const Offset(0, 12),
-          ),
-          BoxShadow(
-            color: Colors.white.withValues(alpha: 0.8),
-            blurRadius: 2,
-            offset: const Offset(0, -1),
-          ),
+            color: AppColors.warmAmber.withValues(alpha: 0.2),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          )
         ],
-        border: Border.all(
-          color: const Color(0xFFFFE082).withValues(alpha: 0.6),
-          width: 2,
-        ),
       ),
       child: Wrap(
         alignment: WrapAlignment.center,
@@ -216,7 +206,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
         children: sequence.map((item) {
           final isBlank = (item == null);
           final currentText = isBlank ? (_isCorrect ? correctOption : '') : item;
-          final isWide = currentText.length > 1;
+          final isWide = false;
 
           if (isBlank) {
             return _buildBlankSlot(correctOption, isWide);
@@ -304,33 +294,29 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
   }
 
   /// Filled (non-blank) letter slot with premium styling
-  Widget _buildFilledSlot(String text, bool isWide) {
+  Widget _buildFilledSlot(String instruction, bool isWide) {
     return Container(
-      width: isWide ? 104.0 : 80.0,
+      width: 104.0,
       height: 80.0,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFF9C4), Color(0xFFFFF176)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFFE082), width: 2),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFE082).withValues(alpha: 0.4),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF4A90D9).withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Center(
         child: Text(
-          text,
+          instruction,
           style: AppTypography.sinhala(
             fontSize: 42,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF5D4037),
+            color: AppColors.textPrimary,
           ),
         ),
       ),
@@ -339,91 +325,89 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
 
   /// Premium answer pool with bouncy interactive tiles
   Widget _buildAnswerPool(List<String> options, String correctOption, int totalRounds) {
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.only(top: 40, bottom: 24, left: 20, right: 20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withValues(alpha: 0.85),
-                Colors.white.withValues(alpha: 0.5),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            borderRadius: BorderRadius.circular(40),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 20,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Wrap(
-            spacing: 20,
-            runSpacing: 20,
-            alignment: WrapAlignment.center,
-            children: List.generate(options.length, (index) {
-              return _buildOptionTile(index, options[index], correctOption, totalRounds);
-            }),
-          ),
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withValues(alpha: 0.85),
+            Colors.white.withValues(alpha: 0.5),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
-        // Touch indicator badge
-        Positioned(
-          top: 14,
-          left: 22,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF4A90E2).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.touch_app_rounded, size: 18, color: Color(0xFF4A90E2)),
-                SizedBox(width: 4),
-                Text(
-                  'තෝරන්න',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF4A90E2), fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           ),
-        ),
-      ],
+        ],
+      ),
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        alignment: WrapAlignment.center,
+        children: List.generate(options.length, (index) {
+          return _buildOptionTile(index, options[index], correctOption, totalRounds);
+        }),
+      ),
     );
   }
 
-  /// Individual interactive option tile with bouncy feedback
   Widget _buildOptionTile(int index, String optionText, String correctOption, int totalRounds) {
     final isSelected = (_selectedOptionIndex == index);
     final isRight = isSelected && (optionText == correctOption);
     final isWrong = isSelected && (optionText != correctOption);
     final isHidden = _isCorrect && (optionText == correctOption);
-    final isWide = optionText.length > 1;
 
-    // Color scheme for the tile
-    List<Color> gradientColors;
-    Color shadowColor;
-    Color borderColor;
+    final isPressed = isRight || isWrong;
+    
+
+    double tileWidth = 135.0;
+    double tileHeight = 90.0;
+    double fontSize = 48.0;
+
+    Color tileColor = Colors.white;
+    Color borderColor = const Color(0xFFE5E7EB);
+    double borderWidth = 1.5;
+    List<BoxShadow> shadows = [
+      BoxShadow(
+        color: const Color(0xFF4A90D9).withValues(alpha: 0.08),
+        blurRadius: 8,
+        offset: const Offset(0, 3),
+      ),
+    ];
+    Color textColor = AppColors.textPrimary;
 
     if (isRight) {
-      gradientColors = const [Color(0xFFA5D6A7), Color(0xFF66BB6A)];
-      shadowColor = const Color(0xFF66BB6A);
-      borderColor = Colors.white;
+      tileColor = const Color(0xFF6DBE6D).withValues(alpha: 0.15);
+      borderColor = const Color(0xFF6DBE6D);
+      borderWidth = 4.0;
+      shadows = [
+        BoxShadow(
+          color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
+          blurRadius: 16,
+          spreadRadius: 2,
+        )
+      ];
+      
     } else if (isWrong) {
-      gradientColors = const [Color(0xFFFFCDD2), Color(0xFFEF9A9A)];
-      shadowColor = Colors.red;
-      borderColor = Colors.white;
-    } else {
-      gradientColors = const [Color(0xFFE3F2FD), Color(0xFFBBDEFB)];
-      shadowColor = const Color(0xFF90CAF9);
-      borderColor = Colors.white;
+      tileColor = const Color(0xFFE87C6D).withValues(alpha: 0.15);
+      borderColor = const Color(0xFFE87C6D);
+      borderWidth = 4.0;
+      shadows = [
+        BoxShadow(
+          color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
+          blurRadius: 16,
+          spreadRadius: 2,
+        )
+      ];
+      
     }
 
     return GestureDetector(
@@ -431,42 +415,38 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),
         opacity: isHidden ? 0.0 : 1.0,
-        child: AnimatedScale(
-          scale: isWrong ? 0.9 : (isRight ? 1.1 : 1.0),
+        child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          curve: Curves.elasticOut,
-          child: Container(
-            width: isWide ? 104.0 : 90.0,
-            height: 90.0,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: gradientColors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: shadowColor.withValues(alpha: 0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-              border: Border.all(color: borderColor, width: 4),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.all(4.0),
+          width: tileWidth,
+          height: tileHeight,
+          decoration: BoxDecoration(
+            color: tileColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: borderColor,
+              width: borderWidth,
             ),
-            child: Center(
-              child: isRight
-                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 42)
-                  : isWrong
-                      ? const Icon(Icons.close_rounded, color: Colors.white, size: 42)
-                      : Text(
-                          optionText,
-                          style: AppTypography.sinhala(
-                            fontSize: 46,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF1565C0),
-                          ),
-                        ),
+            boxShadow: shadows,
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  optionText,
+                  maxLines: 1,
+                  style: AppTypography.sinhala(
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                    height: 1.3,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
           ),
         ),
@@ -474,14 +454,14 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     );
   }
 
-  /// Premium instruction card with speaker icon
   Widget _buildInstructionCard(String instruction) {
     return GestureDetector(
       onTap: () {
         // TTS placeholder
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: AppColors.warmAmber.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(24),
@@ -490,13 +470,29 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 40),
-            const SizedBox(width: 12),
             Flexible(
               child: Text(
                 instruction,
-                style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                style: AppTypography.sinhala(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
                 textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.warmAmber,
+              ),
+              child: const Icon(
+                Icons.volume_up_rounded,
+                color: Colors.white,
+                size: 28,
               ),
             ),
           ],
@@ -504,4 +500,5 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
       ),
     );
   }
+
 }
