@@ -81,6 +81,15 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
       });
     } else {
       await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && !_isCorrect) {
+          setState(() {
+            if (_selectedIndex == index) {
+              _selectedIndex = null;
+            }
+          });
+        }
+      });
     }
   }
 
@@ -100,7 +109,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
 
     final currentRound = rounds[_currentRoundIndex];
     final titleText = widget.activityNode?.title ?? 'වචනයට සවන් දී රූපය සොයමු';
-    final promptText = currentRound['prompt']?.toString() ?? 'අසා සිටින රූපය තෝරන්න';
+    final promptText = 'ශබ්දයට සවන්දී අකුර තෝරන්න';
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
     var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
     
@@ -121,25 +130,25 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
     final bool hasLongText = options.any((opt) => opt.toString().length > 4 || opt.toString().contains(' '));
 
     if (total <= 2) {
-      itemSize = 160.0;
+      itemSize = 180.0;
       spacing = 32.0;
-      fontSize = 72.0;
+      fontSize = 84.0;
     } else if (total <= 4) {
-      itemSize = 130.0;
+      itemSize = 150.0;
+      spacing = 24.0;
+      fontSize = 72.0;
+    } else if (total <= 6) {
+      itemSize = 120.0; 
       spacing = 16.0;
       fontSize = 56.0;
-    } else if (total <= 6) {
-      itemSize = 100.0; 
-      spacing = 12.0;
-      fontSize = 48.0;
     } else if (total <= 9) {
-      itemSize = 80.0; 
-      spacing = 10.0;
-      fontSize = 40.0;
+      itemSize = 90.0; 
+      spacing = 12.0;
+      fontSize = 44.0;
     } else {
-      itemSize = 64.0; 
+      itemSize = 72.0; 
       spacing = 8.0;
-      fontSize = 32.0;
+      fontSize = 36.0;
     }
 
     return SharedGameLayout(
@@ -160,39 +169,8 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(
           children: [
-            // Spoken Audio Prompt Button
-              GestureDetector(
-                onTap: () {
-                  context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
-                  _playAudioPrompt();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.warmAmber.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.warmAmber, width: 3),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 40),
-                      const SizedBox(width: 12),
-                      Flexible(
-                        child: Text(
-                          promptText,
-                          style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '(නැවත ඇසීමට බොත්තම තට්ටු කරන්න)',
-                style: AppTypography.sinhala(fontSize: 14, color: AppColors.textSecondary),
-              ),
+            // Standardized Instruction Card
+            _buildInstructionCard(promptText),
               const SizedBox(height: 64),
 
               // Image Option Cards Grid
@@ -218,21 +196,38 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
                           padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
                           decoration: BoxDecoration(
                             color: isRight
-                                ? AppColors.gentleGreen.withValues(alpha: 0.3)
+                                ? const Color(0xFF6DBE6D).withOpacity(0.15)
                                 : isWrong
-                                    ? AppColors.softCoral.withValues(alpha: 0.3)
+                                    ? const Color(0xFFE87C6D).withOpacity(0.15)
                                     : Colors.white,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: isRight
-                                  ? AppColors.gentleGreen
+                                  ? const Color(0xFF6DBE6D)
                                   : isWrong
-                                      ? AppColors.softCoral
+                                      ? const Color(0xFFE87C6D)
                                       : AppColors.borderLight,
-                              width: 3,
+                              width: (isRight || isWrong) ? 4.0 : 3.0,
                             ),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4))
+                              if (isRight)
+                                BoxShadow(
+                                  color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                                  blurRadius: 16,
+                                  spreadRadius: 2,
+                                )
+                              else if (isWrong)
+                                BoxShadow(
+                                  color: const Color(0xFFE87C6D).withOpacity(0.3),
+                                  blurRadius: 16,
+                                  spreadRadius: 2,
+                                )
+                              else
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08), 
+                                  blurRadius: 10, 
+                                  offset: const Offset(0, 4)
+                                )
                             ],
                           ),
                           child: Center(
@@ -249,5 +244,49 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
           ),
         ),
     );
+  }
+
+  Widget _buildInstructionCard(String instruction) {
+    return GestureDetector(
+      onTap: () async {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        _playAudioPrompt();
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.warmAmber.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.warmAmber, width: 3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                instruction,
+                style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.warmAmber,
+                boxShadow: [
+                  BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))
+                ]
+              ),
+              child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
+            ),
+          ],
+        ),
+      ),
+    );
+
   }
 }

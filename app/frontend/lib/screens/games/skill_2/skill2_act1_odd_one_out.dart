@@ -144,6 +144,22 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
     final currentRound = rounds[_currentRoundIndex];
     final promptText = currentRound['prompt']?.toString() ?? 'වෙනස් රූපය සොයන්න.';
     final titleText = widget.activityNode?.title ?? 'වෙනස් රූපය සොයමු';
+    
+    String? targetLetter;
+    if (currentRound['items'] != null) {
+      List<String> uniqueLetters = [];
+      for (var item in currentRound['items']) {
+        if (item['is_target'] == true && item['type'] == 'letter') {
+          final val = item['value']?.toString();
+          if (val != null && !uniqueLetters.contains(val)) {
+            uniqueLetters.add(val);
+          }
+        }
+      }
+      if (uniqueLetters.isNotEmpty) {
+        targetLetter = uniqueLetters.join(' ');
+      }
+    }
 
     return SharedGameLayout(
       title: titleText,
@@ -163,8 +179,8 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           children: [
-            // Skill 1 Style Instruction Card
-            _buildInstructionCard(promptText),
+            // Skill 1 Style Instruction Card with Isolated Letter
+            _buildInstructionCard(promptText, targetLetter),
             const SizedBox(height: 12),
             
             // Found Counter
@@ -184,47 +200,86 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
     );
   }
 
-  Widget _buildInstructionCard(String instruction) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: () async {
-            context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
-            if (widget.activityNode?.audioUrl != null && widget.activityNode!.audioUrl.isNotEmpty) {
-              await _audioPlayer.play(UrlSource(widget.activityNode!.audioUrl));
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.warmAmber.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.warmAmber, width: 3),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 40),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Text(
-                    instruction,
-                    style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                    textAlign: TextAlign.center,
+  Widget _buildInstructionCard(String instruction, [String? targetLetter]) {
+    return GestureDetector(
+      onTap: () async {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        if (widget.activityNode?.audioUrl != null && widget.activityNode!.audioUrl.isNotEmpty) {
+          await _audioPlayer.play(UrlSource(widget.activityNode!.audioUrl));
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.warmAmber.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.warmAmber, width: 3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (targetLetter != null) ...[
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.warmAmber.withOpacity(0.4),
+                    width: 2,
                   ),
                 ),
-              ],
+                child: Center(
+                  child: Transform.translate(
+                    offset: Offset(0, (targetLetter.contains('අ') || targetLetter.contains('ආ')) ? -4.0 : 0.0),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          targetLetter,
+                          style: AppTypography.sinhala(
+                            fontSize: 42,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Text(
+                instruction,
+                style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.warmAmber,
+                boxShadow: [
+                  BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))
+                ]
+              ),
+              child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
-        Text(
-          '(නැවත ඇසීමට බොත්තම තට්ටු කරන්න)',
-          style: AppTypography.sinhala(fontSize: 14, color: AppColors.textSecondary),
-        ),
-      ],
+      ),
     );
   }
+        
 
   Widget _buildFoundCounter() {
     return Container(
@@ -335,9 +390,10 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
     
     // Base colors (Clean white for readability)
     Color tileColor = Colors.white;
-    Color borderColor = Colors.black.withValues(alpha: 0.1);
+    Color borderColor = Colors.black.withOpacity(0.1);
     Color shadowColor = const Color(0xFFD1D5DB); // Light grey shadow
     Color textColor = AppColors.textPrimary;
+    double borderWidth = 2.0;
 
     if (isFound) {
       tileColor = AppColors.gentleGreen;
@@ -398,8 +454,8 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
             color: tileColor,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: isPressed ? borderColor : Colors.white.withValues(alpha: 0.5),
-              width: 2,
+              color: isPressed ? borderColor : Colors.white.withOpacity(0.5),
+              width: isPressed ? borderWidth : 2,
             ),
             boxShadow: [
               // The 3D bottom edge shadow
@@ -412,7 +468,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
               // General drop shadow
               if (!isPressed)
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
+                  color: Colors.black.withOpacity(0.25),
                   offset: const Offset(0, 12),
                   blurRadius: 10,
                 )

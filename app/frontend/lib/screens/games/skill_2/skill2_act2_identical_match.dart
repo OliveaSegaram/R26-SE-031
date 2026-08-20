@@ -172,15 +172,6 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-               const Icon(Icons.touch_app_rounded, size: 18, color: Color(0xFF4A90E2)),
-               const SizedBox(width: 8),
-               Text("අකුරක් තෝරන්න", style: AppTypography.sinhala(fontSize: 16, color: const Color(0xFF4A90E2), fontWeight: FontWeight.w700)),
-            ]
-          ),
-          const SizedBox(height: 16),
           Wrap(
             spacing: 16,
             runSpacing: 16,
@@ -190,6 +181,19 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             .map((letter) {
           final isSelected = _selectedTopLetter == letter;
           final isOtherSelected = _selectedTopLetter != null && !isSelected;
+          
+          bool isCorrectlyMatched = isSelected && _tappedBottomLetter != null && _isBottomLetterCorrect;
+          bool isWronglyMatched = isSelected && _tappedBottomLetter != null && !_isBottomLetterCorrect;
+
+          Color tileColor = isCorrectlyMatched 
+              ? const Color(0xFF6DBE6D).withOpacity(0.15) 
+              : (isWronglyMatched ? const Color(0xFFE87C6D).withOpacity(0.15) : (isSelected ? const Color(0xFF4A90E2) : Colors.white));
+          
+          Color borderColor = isCorrectlyMatched 
+              ? const Color(0xFF6DBE6D) 
+              : (isWronglyMatched ? const Color(0xFFE87C6D) : (isSelected ? const Color(0xFF4A90E2) : const Color(0xFFE2E8F0)));
+              
+          double borderWidth = (isCorrectlyMatched || isWronglyMatched) ? 4.0 : (isSelected ? 0 : 2);
 
           return GestureDetector(
             onTap: () => _onTopLetterTapped(letter),
@@ -199,19 +203,31 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
               width: isSelected ? activeTileSize : (isOtherSelected ? inactiveTileSize : baseTileSize),
               height: isSelected ? activeTileSize : (isOtherSelected ? inactiveTileSize : baseTileSize),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF4A90E2) : Colors.white,
+                color: tileColor,
                 borderRadius: BorderRadius.circular(isSelected ? 24 : 16),
                 boxShadow: [
-                  if (!isOtherSelected)
+                  if (isCorrectlyMatched)
                     BoxShadow(
-                      color: (isSelected ? const Color(0xFF4A90E2) : Colors.black).withValues(alpha: 0.12),
+                      color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                    )
+                  else if (isWronglyMatched)
+                    BoxShadow(
+                      color: const Color(0xFFE87C6D).withOpacity(0.3),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                    )
+                  else if (!isOtherSelected)
+                    BoxShadow(
+                      color: (isSelected ? const Color(0xFF4A90E2) : Colors.black).withOpacity(0.12),
                       blurRadius: isSelected ? 16 : 8,
                       offset: Offset(0, isSelected ? 8 : 4),
                     )
                 ],
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF4A90E2) : const Color(0xFFE2E8F0),
-                  width: isSelected ? 0 : 2,
+                  color: borderColor,
+                  width: borderWidth,
                 ),
               ),
               child: Center(
@@ -300,16 +316,41 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             Color borderColor = isActive ? Colors.transparent : const Color(0xFFE2E8F0);
             Color textColor = isActive ? const Color(0xFF4A90E2) : AppColors.textSecondary;
             
+            double borderWidth = isTapped ? 4.0 : 1.0;
+            List<BoxShadow> glowShadows = [];
+            
             if (isTapped) {
               if (_isBottomLetterCorrect) {
-                boxColor = Colors.green.withValues(alpha: 0.15);
-                borderColor = Colors.green;
-                textColor = Colors.green;
+                boxColor = const Color(0xFF6DBE6D).withOpacity(0.15);
+                borderColor = const Color(0xFF6DBE6D);
+                textColor = const Color(0xFF6DBE6D);
+                glowShadows = [
+                  BoxShadow(
+                    color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                    blurRadius: 16,
+                    spreadRadius: 2,
+                  )
+                ];
               } else {
-                boxColor = Colors.red.withValues(alpha: 0.15);
-                borderColor = Colors.red;
-                textColor = Colors.red;
+                boxColor = const Color(0xFFE87C6D).withOpacity(0.15);
+                borderColor = const Color(0xFFE87C6D);
+                textColor = const Color(0xFFE87C6D);
+                glowShadows = [
+                  BoxShadow(
+                    color: const Color(0xFFE87C6D).withOpacity(0.3),
+                    blurRadius: 16,
+                    spreadRadius: 2,
+                  )
+                ];
               }
+            } else if (isActive) {
+              glowShadows = [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                )
+              ];
             }
 
             return GestureDetector(
@@ -321,16 +362,10 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
                 decoration: BoxDecoration(
                   color: boxColor,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: isActive && !isTapped ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    )
-                  ] : [],
+                  boxShadow: glowShadows,
                   border: Border.all(
                     color: borderColor,
-                    width: isTapped ? 2 : 1,
+                    width: borderWidth,
                   ),
                 ),
                 child: Center(
@@ -383,39 +418,9 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(
           children: [
-            // Standardized Audio Prompt Button
-            GestureDetector(
-              onTap: () {
-                context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
-                _playAudioPrompt();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.warmAmber.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.warmAmber.withValues(alpha: 0.4), width: 2),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 36),
-                    const SizedBox(width: 16),
-                    Flexible(
-                      child: Text(
-                        promptText,
-                        style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFFB37700)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            // Standardized Instruction Card
+            _buildInstructionCard(promptText),
             const SizedBox(height: 12),
-            Text(
-              '(නැවත ඇසීමට බොත්තම තට්ටු කරන්න)',
-              style: AppTypography.sinhala(fontSize: 14, color: AppColors.textSecondary),
-            ),
             const SizedBox(height: 12),
 
             Expanded(
@@ -456,5 +461,49 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
         ),
       ),
     );
+  }
+
+  Widget _buildInstructionCard(String instruction) {
+    return GestureDetector(
+      onTap: () async {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        _playAudioPrompt();
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.warmAmber.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.warmAmber, width: 3),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                instruction,
+                style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.warmAmber,
+                boxShadow: [
+                  BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))
+                ]
+              ),
+              child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
+            ),
+          ],
+        ),
+      ),
+    );
+
   }
 }
