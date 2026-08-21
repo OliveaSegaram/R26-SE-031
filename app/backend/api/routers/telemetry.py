@@ -319,7 +319,7 @@ async def export_telemetry_csv(
         "session_id", "student_id", "submitted_at", "session_duration",
         "activity_name", "round_number", "is_correct", "score",
         "first_touch_latency_ms", "total_round_latency_ms", "misclick_count",
-        "hesitation_count", "audio_replay_count", "max_device_motion",
+        "hesitation_count", "audio_replay_count",
         "is_abandoned", "device_os", "device_model"
     ]
     writer.writerow(headers)
@@ -346,7 +346,6 @@ async def export_telemetry_csv(
                 e.get("misclick_count", 0),
                 e.get("hesitation_count", 0),
                 e.get("audio_replay_count", 0),
-                e.get("max_device_motion", 0.0),
                 e.get("is_abandoned", False),
                 d_os, d_mod
             ]

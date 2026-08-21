@@ -44,10 +44,6 @@ class TelemetryEvent(BaseModel):
     )
 
     # --- Behavior Proxies ---
-    max_device_motion: float = Field(
-        default=0.0,
-        description="Peak accelerometer magnitude (proxy for physical fidgeting/frustration)"
-    )
     audio_replay_count: int = Field(
         default=0, ge=0,
         description="Number of times auditory instructions were replayed"
