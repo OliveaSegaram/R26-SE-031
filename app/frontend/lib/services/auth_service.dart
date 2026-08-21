@@ -131,8 +131,12 @@ class AuthService {
         
         return null; // Success
       } else {
-        final data = jsonDecode(response.body);
-        return data['detail'] ?? 'Google login failed on server.';
+        try {
+          final data = jsonDecode(response.body);
+          return data['detail'] ?? 'Google login failed on server.';
+        } catch (_) {
+          return 'Google login failed with status: ${response.statusCode}';
+        }
       }
     } catch (e) {
       print('GOOGLE SIGN IN ERROR: $e');
@@ -201,8 +205,12 @@ class AuthService {
         
         return null; // Success
       } else {
-        final data = jsonDecode(response.body);
-        return data['detail'] ?? 'Microsoft login failed on server.';
+        try {
+          final data = jsonDecode(response.body);
+          return data['detail'] ?? 'Microsoft login failed on server.';
+        } catch (_) {
+          return 'Microsoft login failed with status: ${response.statusCode}';
+        }
       }
     } catch (e) {
       print('MICROSOFT SIGN IN ERROR: $e');
