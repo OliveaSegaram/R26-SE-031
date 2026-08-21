@@ -56,9 +56,6 @@ class TelemetryEvent {
   /// Number of times the student replayed the audio instruction
   final int audioReplayCount;
 
-  /// Maximum absolute device acceleration vector magnitude during the round
-  final double maxDeviceMotion;
-
   /// True if the user exited the activity before completing all rounds
   final bool isAbandoned;
 
@@ -76,7 +73,6 @@ class TelemetryEvent {
     required this.misclickCount,
     required this.hesitationCount,
     required this.audioReplayCount,
-    required this.maxDeviceMotion,
     required this.isAbandoned,
     required this.touchPath,
   });
@@ -92,7 +88,6 @@ class TelemetryEvent {
         'misclick_count': misclickCount,
         'hesitation_count': hesitationCount,
         'audio_replay_count': audioReplayCount,
-        'max_device_motion': maxDeviceMotion,
         'is_abandoned': isAbandoned,
         'touch_path': touchPath.map((p) => p.toJson()).toList(),
       };
