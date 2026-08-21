@@ -29,6 +29,16 @@ import 'skill_3/skill3_act3_audio_mcq.dart';
 import 'skill_3/skill3_act4_fill_blank.dart';
 import 'skill_3/skill3_act5_jumbled_word.dart';
 
+import 'skill_4/skill4_act1_mcq.dart';
+import 'skill_4/skill4_act2_fill_blank.dart';
+import 'skill_4/skill4_act3_mcq.dart';
+import 'skill_4/skill4_act4_jumbled_sentence.dart';
+
+import 'skill_5/skill5_act1_mcq.dart';
+import 'skill_5/skill5_act2_mcq.dart';
+import 'skill_5/skill5_act3_mcq.dart';
+import 'skill_5/skill5_act4_mcq.dart';
+
 // Skill 2 Dedicated Templates
 import 'skill_2/skill2_act3_audio.dart';
 import 'skill_2/skill2_act2_identical_match.dart';
@@ -59,6 +69,34 @@ class GameFactory {
         break;
       case 'skill3_jumbled_word':
         gameContent = Skill3Act5JumbledWord(activityNode: node, isRemedial: isRemedial);
+        break;
+
+      // --- Skill 4 Dedicated Templates ---
+      case 'skill4_act1_mcq':
+        gameContent = Skill4Act1Mcq(activityNode: node);
+        break;
+      case 'skill4_act2_fill_blank':
+        gameContent = Skill4Act2FillBlank(activityNode: node, isRemedial: isRemedial);
+        break;
+      case 'skill4_act3_mcq':
+        gameContent = Skill4Act3Mcq(activityNode: node);
+        break;
+      case 'skill4_act4_jumbled_sentence':
+        gameContent = Skill4Act4JumbledSentence(activityNode: node);
+        break;
+
+      // --- Skill 5 Dedicated Templates ---
+      case 'skill5_act1_mcq':
+        gameContent = Skill5Act1Mcq(activityNode: node);
+        break;
+      case 'skill5_act2_mcq':
+        gameContent = Skill5Act2Mcq(activityNode: node);
+        break;
+      case 'skill5_act3_mcq':
+        gameContent = Skill5Act3Mcq(activityNode: node);
+        break;
+      case 'skill5_act4_mcq':
+        gameContent = Skill5Act4Mcq(activityNode: node);
         break;
 
       // --- Picture Recognition (skill_visual) Templates ---
