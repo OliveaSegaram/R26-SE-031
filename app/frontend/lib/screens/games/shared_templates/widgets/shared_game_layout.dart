@@ -158,22 +158,7 @@ class _SharedGameLayoutState extends State<SharedGameLayout> with TickerProvider
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4A90D9),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        (widget.currentRoundIndex + 1).toString().padLeft(2, '0'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+
                     Flexible(
                       child: Text(
                         widget.title,

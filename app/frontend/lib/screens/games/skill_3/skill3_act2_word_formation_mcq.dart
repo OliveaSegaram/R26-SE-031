@@ -148,7 +148,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'වචනය සකසන්න';
+    final titleText = widget.activityNode?.skillTitle ?? 'වචනය සකසන්න';
     final promptText = currentRound['prompt']?.toString() ?? '';
     
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];

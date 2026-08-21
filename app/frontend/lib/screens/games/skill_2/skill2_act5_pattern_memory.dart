@@ -157,7 +157,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'රටාව මතක තබා ගනිමු';
+    final titleText = widget.activityNode?.skillTitle ?? 'රටාව මතක තබා ගනිමු';
     final targetPattern = (currentRound['pattern'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵'];
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔴', '🔵', '🟢'];
 

@@ -106,7 +106,7 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'වචනයට සවන් දී රූපය සොයමු';
+    final titleText = widget.activityNode?.skillTitle ?? 'වචනයට සවන් දී රූපය සොයමු';
     final promptText = currentRound['prompt']?.toString() ?? 'අසා සිටින රූපය තෝරන්න';
     final imageUrl = currentRound['image_url']?.toString();
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];

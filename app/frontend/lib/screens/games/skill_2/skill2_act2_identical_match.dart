@@ -401,7 +401,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
     final promptText = widget.activityNode?.description ?? "එක සමාන අකුරු යුගල තෝරන්න.";
 
     return SharedGameLayout(
-      title: widget.activityNode?.title ?? "එක සමාන අකුරු",
+      title: widget.activityNode?.skillTitle ?? "එක සමාන අකුරු",
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,
       isRoundComplete: _matchedLetters.length == _topLetters.length && _topLetters.isNotEmpty,

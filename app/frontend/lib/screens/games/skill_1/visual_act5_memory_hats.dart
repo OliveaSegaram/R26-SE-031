@@ -461,25 +461,10 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4A90D9),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        '05',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+
                     Flexible(
                       child: Text(
-                        widget.activityNode.title.isEmpty ? 'මතක අභියෝගය' : widget.activityNode.title,
+                        widget.activityNode.skillTitle.isEmpty ? 'මතක අභියෝගය' : widget.activityNode.skillTitle,
                         style: AppTypography.heading(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,

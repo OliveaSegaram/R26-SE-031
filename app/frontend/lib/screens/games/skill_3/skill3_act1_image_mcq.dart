@@ -153,7 +153,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'රූපයට ගැලපෙන වචනය තෝරන්න';
+    final titleText = widget.activityNode?.skillTitle ?? 'රූපයට ගැලපෙන වචනය තෝරන්න';
     final promptText = currentRound['prompt']?.toString() ?? 'රූපයට ගැලපෙන වචනය තෝරන්න';
     final imageUrl = currentRound['image_url']?.toString() ?? '';
     

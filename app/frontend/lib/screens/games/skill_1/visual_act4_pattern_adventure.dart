@@ -430,22 +430,8 @@ class _VisualAct4PatternAdventureState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4A90D9),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text('02',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          )),
-                    ),
-                    const SizedBox(width: 8),
-                    Text('Pattern Adventure',
+
+                    Text(widget.activityNode.skillTitle.isEmpty ? 'Pattern Adventure' : widget.activityNode.skillTitle,
                         style: AppTypography.heading(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,

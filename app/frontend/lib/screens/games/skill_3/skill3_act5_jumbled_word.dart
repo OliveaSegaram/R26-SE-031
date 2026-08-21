@@ -179,7 +179,7 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'අකුරු පිළිවෙලට සකසමු';
+    final titleText = widget.activityNode?.skillTitle ?? 'අකුරු පිළිවෙලට සකසමු';
     final promptText = currentRound['prompt']?.toString() ?? 'රූපයට අදාළ වචනය සාදන්න';
     final emoji = currentRound['emoji']?.toString();
     final imageUrl = currentRound['image_url']?.toString();

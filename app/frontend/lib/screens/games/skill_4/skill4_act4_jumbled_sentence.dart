@@ -181,7 +181,7 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'වාක්‍යය සකසමු';
+    final titleText = widget.activityNode?.skillTitle ?? 'වාක්‍යය සකසමු';
     final promptText = currentRound['prompt']?.toString() ?? 'රූපයට අදාළ වාක්‍යය සාදන්න';
     final emoji = currentRound['emoji']?.toString();
     final imageUrl = currentRound['image_url']?.toString();

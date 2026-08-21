@@ -447,24 +447,9 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4A90D9),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        '03',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+
                     Text(
-                      widget.activityNode.title,
+                      widget.activityNode.skillTitle,
                       style: AppTypography.heading(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,

@@ -139,7 +139,7 @@ class _Skill5Act2McqState extends State<Skill5Act2Mcq>
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'ශබ්දයට සවන් දී වාක්‍ය තෝරන්න';
+    final titleText = widget.activityNode?.skillTitle ?? 'ශබ්දයට සවන් දී වාක්‍ය තෝරන්න';
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
     var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
 

@@ -143,7 +143,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
 
     final currentRound = rounds[_currentRoundIndex];
     final promptText = currentRound['prompt']?.toString() ?? 'වෙනස් රූපය සොයන්න.';
-    final titleText = widget.activityNode?.title ?? 'වෙනස් රූපය සොයමු';
+    final titleText = widget.activityNode?.skillTitle ?? 'වෙනස් රූපය සොයමු';
     
     String? targetLetter;
     if (currentRound['items'] != null) {
