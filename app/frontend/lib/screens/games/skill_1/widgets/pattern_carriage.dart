@@ -4,6 +4,7 @@ class PatternCarriage extends StatelessWidget {
   final String? imagePath;
   final Color accentColor;
   final bool isMissing;
+  final bool isCorrectRevealed;
   final GlobalKey? carriageKey;
   final Animation<double>? bounceAnimation;
 
@@ -12,6 +13,7 @@ class PatternCarriage extends StatelessWidget {
     this.imagePath,
     required this.accentColor,
     this.isMissing = false,
+    this.isCorrectRevealed = false,
     this.carriageKey,
     this.bounceAnimation,
   }) : super(key: key);
@@ -28,7 +30,7 @@ class PatternCarriage extends StatelessWidget {
             width: 62,
             height: 10,
             decoration: BoxDecoration(
-              color: accentColor,
+              color: isCorrectRevealed ? const Color(0xFF6DBE6D) : accentColor,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
@@ -41,18 +43,28 @@ class PatternCarriage extends StatelessWidget {
             width: 68,
             height: 68,
             decoration: BoxDecoration(
-              color: isMissing ? Colors.white.withOpacity(0.9) : Colors.white,
+              color: isCorrectRevealed 
+                  ? const Color(0xFF6DBE6D).withOpacity(0.15) 
+                  : (isMissing ? Colors.white.withOpacity(0.9) : Colors.white),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(10),
                 bottomRight: Radius.circular(10),
               ),
               border: Border.all(
-                color: isMissing ? Colors.grey.withOpacity(0.5) : accentColor.withOpacity(0.4),
-                width: isMissing ? 2 : 1.5,
-                style: isMissing ? BorderStyle.solid : BorderStyle.solid,
+                color: isCorrectRevealed 
+                    ? const Color(0xFF6DBE6D) 
+                    : (isMissing ? Colors.grey.withOpacity(0.5) : accentColor.withOpacity(0.4)),
+                width: isCorrectRevealed ? 4.0 : (isMissing ? 2 : 1.5),
+                style: BorderStyle.solid,
               ),
               boxShadow: [
-                if (!isMissing)
+                if (isCorrectRevealed)
+                  BoxShadow(
+                    color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                    blurRadius: 16,
+                    spreadRadius: 2,
+                  )
+                else if (!isMissing)
                   BoxShadow(
                     color: accentColor.withOpacity(0.2),
                     blurRadius: 6,

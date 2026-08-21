@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../services/tts_service.dart';
 
 import 'logic/pattern_generator.dart';
 import 'models/pattern_round.dart';
@@ -18,19 +19,19 @@ import 'widgets/pattern_answer_token.dart';
 // Grade 1 Pattern Completion Game
 // ──────────────────────────────────────────────────────────────
 
-class VisualAct2PatternAdventure extends StatefulWidget {
+class VisualAct4PatternAdventure extends StatefulWidget {
   final ActivityNode activityNode;
 
-  const VisualAct2PatternAdventure({Key? key, required this.activityNode})
+  const VisualAct4PatternAdventure({Key? key, required this.activityNode})
       : super(key: key);
 
   @override
-  _VisualAct2PatternAdventureState createState() =>
-      _VisualAct2PatternAdventureState();
+  _VisualAct4PatternAdventureState createState() =>
+      _VisualAct4PatternAdventureState();
 }
 
-class _VisualAct2PatternAdventureState
-    extends State<VisualAct2PatternAdventure> with TickerProviderStateMixin {
+class _VisualAct4PatternAdventureState
+    extends State<VisualAct4PatternAdventure> with TickerProviderStateMixin {
   // ── Game state ──
   int _currentRoundIndex = 0;
   late List<PatternRound> _rounds;
@@ -66,6 +67,9 @@ class _VisualAct2PatternAdventureState
   
   late AnimationController _bounceController;
   late Animation<double> _bounceAnimation;
+
+  late AnimationController _speakerBounceController;
+  late Animation<double> _speakerBounceAnimation;
 
   late ScrollController _trainScrollController;
 
@@ -176,10 +180,31 @@ class _VisualAct2PatternAdventureState
       curve: Curves.easeOut,
     ));
 
+    // Speaker bounce
+    _speakerBounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _speakerBounceAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _speakerBounceController, curve: Curves.elasticOut),
+    );
+
     _roundTransitionController.forward().then((_) {
       _scrollToEndOfTrain();
     });
+
     _initRound();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playInstruction();
+    });
+  }
+
+  void _playInstruction() {
+    TtsService().speak('ඊළඟට එන්නේ මොකක්ද?');
+    _speakerBounceController.forward().then((_) {
+      _speakerBounceController.reverse();
+    });
   }
 
   void _scrollToEndOfTrain() {
@@ -204,10 +229,10 @@ class _VisualAct2PatternAdventureState
     _roundTransitionController.dispose();
     _flyController.dispose();
     _bounceController.dispose();
+    _speakerBounceController.dispose();
     for (var c in _shakeControllers) {
       c.dispose();
     }
-    _bounceController.dispose();
     _trainScrollController.dispose();
     _audioPlayer.dispose();
     super.dispose();
@@ -405,22 +430,8 @@ class _VisualAct2PatternAdventureState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4A90D9),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text('02',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          )),
-                    ),
-                    const SizedBox(width: 8),
-                    Text('Pattern Adventure',
+
+                    Text(widget.activityNode.skillTitle.isEmpty ? 'Pattern Adventure' : widget.activityNode.skillTitle,
                         style: AppTypography.heading(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
@@ -496,46 +507,36 @@ class _VisualAct2PatternAdventureState
 
   // ── Instruction Card ──
   Widget _buildInstructionCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFF4A90D9).withOpacity(0.15),
-          width: 2,
+    return GestureDetector(
+      onTap: () {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        _playInstruction();
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.warmAmber.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.train_rounded,
-              color: Color(0xFF4A90D9), size: 30),
-          const SizedBox(width: 12),
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                'ඊළඟට එන්නේ මොකක්ද?', // "What comes next?"
-                style: AppTypography.sinhala(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF3E3E3E),
-                ),
-                maxLines: 1,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text('ඊළඟට එන්නේ මොකක්ද?', style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary), textAlign: TextAlign.center),
+            ),
+            const SizedBox(width: 12),
+            ScaleTransition(
+              scale: _speakerBounceAnimation,
+              child: Container(
+                width: 48, height: 48,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]),
+                child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -556,6 +557,7 @@ class _VisualAct2PatternAdventureState
           imagePath: isMissing && _answerRevealed ? round.correctAnswer : assetPath,
           accentColor: accent,
           isMissing: isMissing && !_answerRevealed,
+          isCorrectRevealed: isMissing && _answerRevealed,
           carriageKey: isMissing ? _questionSlotKey : null,
           bounceAnimation: (isMissing && _answerRevealed) ? _bounceAnimation : null,
         )
@@ -843,19 +845,45 @@ class _VisualAct2PatternAdventureState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFF8E7),
-                shape: BoxShape.circle,
-              ),
-              child: Image.asset(
-                'assets/images/characters/mascots/star_mascot.png',
-                width: 100,
-                height: 100,
-                errorBuilder: (c, e, s) => const Icon(
-                    Icons.star_rounded, color: Color(0xFFF9C623), size: 100),
-              ),
+            // 5-Star Arc Animation
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.elasticOut,
+              builder: (context, value, child) {
+                final angles = [-0.5, -0.25, 0.0, 0.25, 0.5];
+                final dy = [25.0, 8.0, 0.0, 8.0, 25.0];
+                final sizes = [42.0, 54.0, 68.0, 54.0, 42.0];
+
+                return Transform.scale(
+                  scale: value,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return Transform.translate(
+                        offset: Offset(0, dy[index] - 15),
+                        child: Transform.rotate(
+                          angle: angles[index],
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                            child: Icon(
+                              Icons.star_rounded,
+                              color: const Color(0xFFFFD700),
+                              size: sizes[index],
+                              shadows: [
+                                Shadow(
+                                  color: const Color(0xFFFFD700).withOpacity(0.6),
+                                  blurRadius: 12,
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 24),
             Text(

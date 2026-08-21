@@ -94,24 +94,32 @@ class SkillDetail {
         final String introText = skillMap['intro_text']?.toString() ?? skillMap['description']?.toString() ?? '';
         final String audioUrl = skillMap['audio_url']?.toString() ?? skillMap['intro_audio_url']?.toString() ?? '';
         final List<dynamic> activitiesList = skillMap['activities'] as List<dynamic>? ?? [];
+        final parsedActivities = activitiesList
+            .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
+            .toList();
+        for (var a in parsedActivities) {
+          a.skillTitle = title;
+        }
         return SkillDetail(
           id: id,
           title: title,
           introText: introText,
           audioUrl: audioUrl,
-          activities: activitiesList
-              .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
-              .toList(),
+          activities: parsedActivities,
         );
       } else {
+        final parsedActivities = decodedJson
+            .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
+            .toList();
+        for (var a in parsedActivities) {
+          a.skillTitle = fallbackTitle;
+        }
         return SkillDetail(
           id: fallbackId,
           title: fallbackTitle,
           introText: '',
           audioUrl: '',
-          activities: decodedJson
-              .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
-              .toList(),
+          activities: parsedActivities,
         );
       }
     } else if (decodedJson is Map) {
@@ -121,14 +129,20 @@ class SkillDetail {
       final String introText = skillMap['intro_text']?.toString() ?? skillMap['description']?.toString() ?? '';
       final String audioUrl = skillMap['audio_url']?.toString() ?? skillMap['intro_audio_url']?.toString() ?? '';
       final List<dynamic> activitiesList = skillMap['activities'] as List<dynamic>? ?? [];
+      
+      final parsedActivities = activitiesList
+          .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
+          .toList();
+      for (var a in parsedActivities) {
+        a.skillTitle = title;
+      }
+      
       return SkillDetail(
         id: id,
         title: title,
         introText: introText,
         audioUrl: audioUrl,
-        activities: activitiesList
-            .map((a) => ActivityNode.fromJson(a as Map<String, dynamic>))
-            .toList(),
+        activities: parsedActivities,
       );
     }
 
@@ -168,7 +182,9 @@ class SkillDetail {
         try {
           final String actResponse = await rootBundle.loadString('assets/data/curriculum/${activity.filePath}');
           final Map<String, dynamic> actJson = json.decode(actResponse);
-          resolvedActivities.add(ActivityNode.fromJson(actJson));
+          final resolvedAct = ActivityNode.fromJson(actJson);
+          resolvedAct.skillTitle = skillDetail.title;
+          resolvedActivities.add(resolvedAct);
         } catch (e) {
           resolvedActivities.add(activity);
         }
@@ -189,6 +205,7 @@ class SkillDetail {
 
 class ActivityNode {
   final String id;
+  String skillTitle;
   final String title;
   final String description;
   final String introText;
@@ -200,6 +217,7 @@ class ActivityNode {
 
   ActivityNode({
     required this.id, 
+    this.skillTitle = '',
     required this.title, 
     this.description = '',
     this.introText = '',

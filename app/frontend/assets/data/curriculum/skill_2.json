@@ -6,13 +6,278 @@
     "activities": [
       {
         "id": "act_1",
+        "title": "වෙනස් රූපය සොයමු",
+        "description": "වෙනස් රූපය හෝ අකුර සොයා ඒ මත ඔබන්න.",
+        "telemetry_tags": [
+          "visual_discrimination",
+          "odd_one_out"
+        ],
+        "template_type": "skill2_odd_one_out",
+        "rounds": [
+          {
+            "prompt": "'අ' අකුර සොයන්න.",
+            "items": [
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/fruits_food/apple.png",
+                "is_target": false
+              },
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/fruits_food/apple.png",
+                "is_target": false
+              },
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/fruits_food/apple.png",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "අ",
+                "is_target": true
+              }
+            ]
+          },
+          {
+            "prompt": "'ම' අකුර සොයන්න.",
+            "items": [
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/everyday_objects/spoon.png",
+                "is_target": false
+              },
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/everyday_objects/spoon.png",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ය",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ම",
+                "is_target": true
+              }
+            ]
+          },
+          {
+            "prompt": "'ර' අකුර සොයන්න.",
+            "items": [
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/everyday_objects/flag.png",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ය",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ම",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ර",
+                "is_target": true
+              }
+            ]
+          },
+          {
+            "prompt": "'ඳ' අකුර සොයන්න.",
+            "items": [
+              {
+                "type": "letter",
+                "value": "උ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "උ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "උ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඳ",
+                "is_target": true
+              }
+            ]
+          },
+          {
+            "prompt": "'ධ' අකුර සොයන්න.",
+            "items": [
+              {
+                "type": "letter",
+                "value": "ඔ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඔ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඔ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඔ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඔ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ධ",
+                "is_target": true
+              }
+            ]
+          },
+          {
+            "prompt": "'ට' අකුරු දෙක සොයන්න.",
+            "items": [
+              {
+                "type": "letter",
+                "value": "ඩ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඩ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඩ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඩ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ට",
+                "is_target": true
+              },
+              {
+                "type": "letter",
+                "value": "ට",
+                "is_target": true
+              }
+            ]
+          },
+          {
+            "prompt": "'අ' සහ 'ආ' අකුරු සොයන්න.",
+            "items": [
+              {
+                "type": "letter",
+                "value": "ඇ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඇ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඇ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඇ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "අ",
+                "is_target": true
+              },
+              {
+                "type": "letter",
+                "value": "ආ",
+                "is_target": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "act_2",
+        "title": "එක සමාන අකුරු",
+        "description": "එක සමාන අකුරු යුගල තෝරන්න.",
+        "telemetry_tags": [
+          "matching",
+          "visual_discrimination"
+        ],
+        "template_type": "skill2_identical_match",
+        "rounds": [
+          {
+            "letters": [
+              "ක",
+              "ම"
+            ]
+          },
+          {
+            "letters": [
+              "කා",
+              "ම"
+            ]
+          },
+          {
+            "letters": [
+              "ග",
+              "ටු",
+              "ව"
+            ]
+          },
+          {
+            "letters": [
+              "ර",
+              "ලි",
+              "ස",
+              "දු"
+            ]
+          },
+          {
+            "letters": [
+              "න",
+              "පා",
+              "බ",
+              "මු",
+              "ය"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "act_3",
         "title": "අකුරට සවන් දෙමු",
         "description": "අකුරට සවන් දී නිවැරදි අකුර තෝරන්න.",
         "telemetry_tags": [
           "phonics",
           "listening"
         ],
-        "template_type": "audio_game",
+        "template_type": "skill2_audio",
         "rounds": [
           {
             "prompt": "ශබ්දයට සවන් දී 'අ' තෝරන්න",
@@ -69,160 +334,14 @@
         ]
       },
       {
-        "id": "act_2",
-        "title": "එක සමාන අකුරු",
-        "description": "එක සමාන අකුරු යුගල තෝරන්න.",
-        "telemetry_tags": [
-          "matching",
-          "visual_discrimination"
-        ],
-        "template_type": "identical_match_game",
-        "rounds": [
-          {
-            "grid_items": [
-              "අ",
-              "ආ",
-              "අ",
-              "ආ"
-            ]
-          },
-          {
-            "grid_items": [
-              "ප",
-              "ව",
-              "ප",
-              "ව"
-            ]
-          },
-          {
-            "grid_items": [
-              "ක",
-              "ග",
-              "ට",
-              "ක",
-              "ග",
-              "ට"
-            ]
-          },
-          {
-            "grid_items": [
-              "ම",
-              "ය",
-              "ර",
-              "ම",
-              "ය",
-              "ර"
-            ]
-          },
-          {
-            "grid_items": [
-              "බ",
-              "ඩ",
-              "ච",
-              "ධ",
-              "බ",
-              "ඩ",
-              "ච",
-              "ධ"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "act_3",
-        "title": "අකුරු රටාවට සවන් දෙමු",
-        "description": "ඇසෙන අකුරු රටාවට අනුව අකුරු පෙළගස්වන්න.",
-        "telemetry_tags": [
-          "listening",
-          "sequencing"
-        ],
-        "template_type": "audio_sequence_game",
-        "rounds": [
-          {
-            "audio_prompt": "අ, ආ",
-            "target_sequence": [
-              "අ",
-              "ආ"
-            ],
-            "options": [
-              "අ",
-              "ආ",
-              "ඇ"
-            ]
-          },
-          {
-            "audio_prompt": "ක, ග, ට",
-            "target_sequence": [
-              "ක",
-              "ග",
-              "ට"
-            ],
-            "options": [
-              "ග",
-              "ක",
-              "ඩ",
-              "ට"
-            ]
-          },
-          {
-            "audio_prompt": "ප, බ, ම",
-            "target_sequence": [
-              "ප",
-              "බ",
-              "ම"
-            ],
-            "options": [
-              "ව",
-              "ප",
-              "ම",
-              "බ",
-              "ය"
-            ]
-          },
-          {
-            "audio_prompt": "ර, ල, ව, ස",
-            "target_sequence": [
-              "ර",
-              "ල",
-              "ව",
-              "ස"
-            ],
-            "options": [
-              "ල",
-              "ර",
-              "ස",
-              "ව",
-              "හ"
-            ]
-          },
-          {
-            "audio_prompt": "ඉ, ඊ, උ, ඌ",
-            "target_sequence": [
-              "ඉ",
-              "ඊ",
-              "උ",
-              "ඌ"
-            ],
-            "options": [
-              "උ",
-              "ඊ",
-              "ඉ",
-              "ඌ",
-              "එ",
-              "ඔ"
-            ]
-          }
-        ]
-      },
-      {
         "id": "act_4",
-        "title": "මුල් අකුර සොයමු",
-        "description": "වචනයේ මුල් අකුර කුමක්දැයි තෝරන්න.",
+        "title": "අකුරු සොයමු",
+        "description": "වචනයේ මුල් හෝ අග අකුර කුමක්දැයි තෝරන්න.",
         "telemetry_tags": [
           "decoding",
-          "first_letter"
+          "letter_identification"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill2_mcq",
         "rounds": [
           {
             "prompt": "'මල්' යන වචනයේ මුල් අකුර කුමක්ද?",
@@ -244,202 +363,122 @@
             "correct_index": 1
           },
           {
-            "prompt": "'පොත' යන වචනයේ මුල් අකුර කුමක්ද?",
+            "prompt": "'පොත' යන වචනයේ අග අකුර කුමක්ද?",
             "options": [
-              "ත",
+              "පො",
               "ව",
-              "පො"
+              "ත"
             ],
-            "correctOption": "පො",
+            "correctOption": "ත",
             "correct_index": 2
           },
           {
-            "prompt": "'කිරි' යන වචනයේ මුල් අකුර කුමක්ද?",
+            "prompt": "'අහස' යන වචනයේ අග අකුර කුමක්ද?",
             "options": [
-              "රි",
-              "ගි",
-              "කි",
-              "ති"
+              "අ",
+              "හ",
+              "ය",
+              "ස"
             ],
-            "correctOption": "කි",
-            "correct_index": 2
+            "correctOption": "ස",
+            "correct_index": 3
           },
           {
-            "prompt": "'බල්ලා' යන වචනයේ මුල් අකුර කුමක්ද?",
+            "prompt": "'බල්ලා': මුල් සහ අග අකුරු තෝරන්න",
             "options": [
               "ම",
-              "ඔ",
+              "ලා",
               "ඩ",
               "බ",
-              "ධ"
+              "ඔ",
+              "ය"
             ],
-            "correctOption": "බ",
-            "correct_index": 3
+            "correct_indices": [
+              1,
+              3
+            ]
           }
         ]
       },
       {
         "id": "act_5",
-        "title": "අකුර ලියමු",
-        "description": "තිත් ඉරි මත අකුර ලස්සනට ලියන්න.",
-        "telemetry_tags": [
-          "fine_motor_skills",
-          "tracing"
-        ],
-        "template_type": "coloring_game",
-        "rounds": [
-          {
-            "shape": "ර",
-            "shape_name": "'ර' අකුර",
-            "color_name": "රතු පාටින් (Red)",
-            "target_color": "#FF3B30",
-            "palette": [
-              "#FF3B30",
-              "#007AFF"
-            ],
-            "correct_color_index": 0
-          },
-          {
-            "shape": "ප",
-            "shape_name": "'ප' අකුර",
-            "color_name": "නිල් පාටින් (Blue)",
-            "target_color": "#007AFF",
-            "palette": [
-              "#FF3B30",
-              "#007AFF",
-              "#FFCC00"
-            ],
-            "correct_color_index": 1
-          },
-          {
-            "shape": "ක",
-            "shape_name": "'ක' අකුර",
-            "color_name": "කහ පාටින් (Yellow)",
-            "target_color": "#FFCC00",
-            "palette": [
-              "#FF3B30",
-              "#007AFF",
-              "#FFCC00",
-              "#34C759"
-            ],
-            "correct_color_index": 2
-          },
-          {
-            "shape": "බ",
-            "shape_name": "'බ' අකුර",
-            "color_name": "කොළ පාටින් (Green)",
-            "target_color": "#34C759",
-            "palette": [
-              "#FF3B30",
-              "#007AFF",
-              "#FFCC00",
-              "#34C759"
-            ],
-            "correct_color_index": 3
-          },
-          {
-            "shape": "ළ",
-            "shape_name": "'ළ' අකුර",
-            "color_name": "දම් පාටින් (Purple)",
-            "target_color": "#AF52DE",
-            "palette": [
-              "#FF3B30",
-              "#007AFF",
-              "#FFCC00",
-              "#34C759",
-              "#AF52DE"
-            ],
-            "correct_color_index": 4
-          }
-        ]
-      },
-      {
-        "id": "act_6",
         "title": "මතකයෙන් අකුරු පෙළගස්වමු",
         "description": "පෙන්නුම් කරන අකුරු රටාව මතක තබා ගෙන නැවත සකසන්න.",
         "telemetry_tags": [
           "memory",
           "sequencing"
         ],
-        "template_type": "pattern_memory_game",
+        "template_type": "skill2_pattern_memory",
         "rounds": [
           {
-            "show_seconds": 5,
+            "show_seconds": 6,
             "pattern": [
-              "අ",
-              "ආ"
-            ],
-            "options": [
-              "අ",
-              "ආ",
-              "ඇ"
-            ]
-          },
-          {
-            "show_seconds": 4,
-            "pattern": [
-              "ක",
-              "ග",
+              "ර",
               "ට"
             ],
             "options": [
-              "ක",
-              "ග",
+              "ර",
               "ට",
-              "ඩ"
+              "ම"
             ]
           },
           {
-            "show_seconds": 3,
+            "show_seconds": 5,
             "pattern": [
               "ම",
-              "ය",
-              "ර"
+              "ල්"
             ],
             "options": [
               "ම",
-              "ය",
-              "ර",
-              "ල",
-              "ව"
+              "ක්",
+              "ල්"
+            ]
+          },
+          {
+            "show_seconds": 5,
+            "pattern": [
+              "ග",
+              "ම",
+              "න"
+            ],
+            "options": [
+              "ග",
+              "ම",
+              "ක",
+              "න"
             ]
           },
           {
             "show_seconds": 4,
             "pattern": [
-              "ප",
-              "බ",
-              "ම",
-              "ව"
+              "ග",
+              "ස",
+              "ක්"
             ],
             "options": [
-              "ප",
-              "බ",
-              "ම",
-              "ව",
-              "ච"
+              "ක්",
+              "ස",
+              "ට්",
+              "ග"
             ]
           },
           {
-            "show_seconds": 3,
+            "show_seconds": 4,
             "pattern": [
-              "ඉ",
-              "ඊ",
-              "උ",
-              "ඌ"
+              "මි",
+              "හි",
+              "රි"
             ],
             "options": [
-              "ඉ",
-              "ඊ",
-              "උ",
-              "ඌ",
-              "එ",
-              "ඔ"
+              "හි",
+              "වි",
+              "රි",
+              "මි"
             ]
           }
         ]
       }
     ],
-    "total_activities": 6
+    "total_activities": 5
   }
 ]

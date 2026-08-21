@@ -12,7 +12,7 @@
           "listening_comprehension",
           "interactive_execution"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill5_act1_mcq",
         "rounds": [
           {
             "options": [
@@ -48,7 +48,7 @@
           "reading_comprehension",
           "wh_questions"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill5_act2_mcq",
         "rounds": [
           {
             "options": [
@@ -87,7 +87,7 @@
           "reading_comprehension",
           "wh_questions"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill5_act3_mcq",
         "rounds": [
           {
             "options": [
@@ -117,7 +117,7 @@
           "reading_comprehension",
           "wh_questions"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill5_act4_mcq",
         "rounds": [
           {
             "options": [

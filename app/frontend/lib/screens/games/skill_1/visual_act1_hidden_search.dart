@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../services/tts_service.dart';
 import 'logic/hidden_search_generator.dart';
 import 'widgets/pattern_background.dart';
 
@@ -49,6 +50,12 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   late AnimationController _foundCountBounceController;
   late Animation<double> _foundCountBounce;
   Timer? _hintTimer;
+
+  // ── Speaker & Target Pulse ──
+  late AnimationController _speakerBounceController;
+  late Animation<double> _speakerBounceAnimation;
+  late AnimationController _targetPulseController;
+  late Animation<double> _targetPulseAnimation;
 
   // ── Mascot ──
   static const List<String> _mascots = [
@@ -110,8 +117,31 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
       curve: Curves.easeInOut,
     ));
 
+    // Speaker bounce animation
+    _speakerBounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _speakerBounceAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _speakerBounceController, curve: Curves.elasticOut),
+    );
+
+    // Target image pulse animation
+    _targetPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+    _targetPulseAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _targetPulseController, curve: Curves.easeInOut),
+    );
+
     _initRound();
     _roundTransitionController.forward();
+
+    // Auto-play instruction on first load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playInstruction();
+    });
   }
 
   @override
@@ -120,6 +150,8 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
     _celebrationController.dispose();
     _roundTransitionController.dispose();
     _foundCountBounceController.dispose();
+    _speakerBounceController.dispose();
+    _targetPulseController.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -214,6 +246,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
           _initRound();
         });
         _roundTransitionController.forward();
+        _playInstruction();
       });
     } else {
       // Activity complete!
@@ -232,6 +265,16 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
     } else {
       Navigator.pop(context);
     }
+  }
+
+  /// Play the instruction aloud via TTS and trigger speaker bounce
+  void _playInstruction() {
+    if (_gameData.rounds.isEmpty) return;
+    final round = _gameData.rounds[_currentRoundIndex];
+    TtsService().speak(round.instructionText);
+    _speakerBounceController.forward().then((_) {
+      _speakerBounceController.reverse();
+    });
   }
 
   // ── Build ──
@@ -329,24 +372,9 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4A90D9),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        '01',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
+
                     Text(
-                      'Picture Hunt',
+                      widget.activityNode.skillTitle.isEmpty ? 'Picture Hunt' : widget.activityNode.skillTitle,
                       style: AppTypography.heading(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -428,66 +456,90 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
 
   // ── Instruction Card ──
   Widget _buildInstructionCard(String instruction, String targetPath) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFF4A90D9).withOpacity(0.15),
-          width: 1.5,
+    return GestureDetector(
+      onTap: () {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        _playInstruction();
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.warmAmber.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.1),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Target image preview (large)
-          if (targetPath.isNotEmpty)
-            Container(
-              width: 72,
-              height: 72,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F4FF),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: const Color(0xFF4A90D9).withOpacity(0.2),
-                  width: 1.5,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Target image (prominent, if available)
+            if (targetPath.isNotEmpty) ...[
+              Container(
+                width: 72,
+                height: 72,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.warmAmber.withOpacity(0.4),
+                    width: 2,
+                  ),
+                ),
+                child: Image.asset(
+                  targetPath,
+                  fit: BoxFit.contain,
+                  errorBuilder: (c, e, s) => const Icon(
+                    Icons.image_outlined,
+                    color: AppColors.warmAmber,
+                    size: 32,
+                  ),
                 ),
               ),
-              child: Image.asset(
-                targetPath,
-                fit: BoxFit.contain,
-                errorBuilder: (c, e, s) => const Icon(
-                  Icons.image_outlined,
-                  color: Color(0xFF4A90D9),
-                  size: 32,
+              const SizedBox(width: 8),
+            ],
+
+            // Instruction text
+            Flexible(
+              child: Text(
+                instruction,
+                style: AppTypography.sinhala(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            const SizedBox(width: 12),
+
+            // Speaker button — clearly visible circular amber button
+            ScaleTransition(
+              scale: _speakerBounceAnimation,
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.warmAmber,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.warmAmber.withOpacity(0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.volume_up_rounded,
+                  color: Colors.white,
+                  size: 26,
                 ),
               ),
             ),
-          if (targetPath.isNotEmpty) const SizedBox(width: 16),
-          // Instruction text
-          Flexible(
-            child: Text(
-              instruction,
-              style: AppTypography.sinhala(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF3E3E3E),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -960,26 +1012,36 @@ class _PictureCardState extends State<_PictureCard>
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: isFound
-              ? const Color(0xFF6DBE6D).withOpacity(0.12)
+              ? const Color(0xFF6DBE6D).withOpacity(0.15)
               : isWrong
-                  ? const Color(0xFFE87C6D).withOpacity(0.1)
+                  ? const Color(0xFFE87C6D).withOpacity(0.15)
                   : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isFound
-                ? const Color(0xFF6DBE6D).withOpacity(0.4)
+                ? const Color(0xFF6DBE6D)
                 : isWrong
-                    ? const Color(0xFFE87C6D).withOpacity(0.4)
+                    ? const Color(0xFFE87C6D)
                     : const Color(0xFFE5E7EB),
-            width: isFound || isWrong ? 2.0 : 1.5,
+            width: isFound || isWrong ? 4.0 : 1.5,
           ),
           boxShadow: [
-            if (!isFound)
+            if (isFound)
               BoxShadow(
-                color: isWrong
-                    ? const Color(0xFFE87C6D).withOpacity(0.15)
-                    : const Color(0xFF4A90D9).withOpacity(0.08),
-                blurRadius: isWrong ? 12 : 8,
+                color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                blurRadius: 16,
+                spreadRadius: 2,
+              )
+            else if (isWrong)
+              BoxShadow(
+                color: const Color(0xFFE87C6D).withOpacity(0.3),
+                blurRadius: 16,
+                spreadRadius: 2,
+              )
+            else
+              BoxShadow(
+                color: const Color(0xFF4A90D9).withOpacity(0.08),
+                blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
           ],
@@ -992,7 +1054,7 @@ class _PictureCardState extends State<_PictureCard>
               padding: const EdgeInsets.all(12),
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 300),
-                opacity: isFound ? 0.45 : 1.0,
+                opacity: 1.0, // Always fully visible
                 child: Builder(builder: (context) {
                   Widget img = Image.asset(
                     widget.item.path,
@@ -1014,44 +1076,6 @@ class _PictureCardState extends State<_PictureCard>
                 }),
               ),
             ),
-
-            // ── Found checkmark overlay ──
-            if (isFound)
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6DBE6D),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6DBE6D).withOpacity(0.3),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-
-            // ── Wrong X overlay (brief) ──
-            if (isWrong)
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE87C6D).withOpacity(0.9),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.close_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
           ],
         ),
       ),

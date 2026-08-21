@@ -51,7 +51,9 @@ flutter:
     - assets/images/activity_icons/everyday_objects/
     - assets/images/activity_icons/vehicles/
     - assets/images/activity_icons/nature/
+    - assets/images/activity_icons/body_parts/
     - assets/images/skills/
+    - assets/images/games/
     - assets/audio/
     - assets/data/
     - assets/data/curriculum/

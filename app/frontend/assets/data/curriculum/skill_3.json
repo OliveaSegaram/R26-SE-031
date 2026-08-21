@@ -1,7 +1,7 @@
 [
   {
     "id": "skill_3",
-    "title": "සරල වචන සැකසීම සහ කියවීම",
+    "title": "සරල වචන සැකසීම",
     "description": "අකුරු එකතු කර සරල වචන සාදමු! 🧩",
     "activities": [
       {
@@ -12,59 +12,63 @@
           "reading_comprehension",
           "visual_context"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill3_image_mcq",
         "rounds": [
           {
             "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
             "options": [
+              "හඳ",
+              "ඉර"
+            ],
+            "correctOption": "ඉර",
+            "correct_index": 1,
+            "image_url": "assets/images/activity_icons/nature/sun.png"
+          },
+          {
+            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
+            "options": [
+              "හඳ",
               "මල",
               "ගස"
             ],
-            "correctOption": "මල",
-            "correct_index": 0
+            "correctOption": "හඳ",
+            "correct_index": 0,
+            "image_url": "assets/images/activity_icons/nature/moon.png"
           },
           {
             "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
             "options": [
-              "අත",
-              "පය",
-              "ඇස"
+              "බසය",
+              "මල",
+              "ගස",
+              "පොත"
             ],
-            "correctOption": "පය",
-            "correct_index": 1
+            "correctOption": "බසය",
+            "correct_index": 0,
+            "image_url": "assets/images/activity_icons/vehicles/bus.png"
           },
           {
             "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
             "options": [
-              "පොත",
-              "පනාව",
-              "පෑන"
+              "යතුර",
+              "පහන",
+              "වහල",
+              "කඩය"
             ],
-            "correctOption": "පෑන",
-            "correct_index": 2
+            "correctOption": "යතුර",
+            "correct_index": 0,
+            "image_url": "assets/images/activity_icons/everyday_objects/key.png"
           },
           {
             "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
             "options": [
-              "හරකා",
-              "එළදෙන",
-              "එළුවා",
-              "කුකුළා"
+              "සීනුව",
+              "පහන",
+              "පනාව"
             ],
-            "correctOption": "එළුවා",
-            "correct_index": 2
-          },
-          {
-            "prompt": "රූපයට ගැලපෙන වචනය තෝරන්න",
-            "options": [
-              "කුරුල්ලා",
-              "සමනලයා",
-              "මෞරයා",
-              "වවුලා",
-              "ගිරවා"
-            ],
-            "correctOption": "සමනලයා",
-            "correct_index": 1
+            "correctOption": "සීනුව",
+            "correct_index": 0,
+            "image_url": "assets/images/activity_icons/everyday_objects/bell.png"
           }
         ]
       },
@@ -76,59 +80,57 @@
           "spelling",
           "phonics"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill3_word_formation",
         "rounds": [
           {
             "prompt": "'ම' + 'ල' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
             "options": [
-              "මල",
-              "ගස"
+              "කට",
+              "මල"
             ],
             "correctOption": "මල",
+            "correct_index": 1
+          },
+          {
+            "prompt": "'පෑ' + 'න' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+            "options": [
+              "පෑන",
+              "පැදුර",
+              "කෑම"
+            ],
+            "correctOption": "පෑන",
             "correct_index": 0
           },
           {
-            "prompt": "'අ' + 'ත' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+            "prompt": "'ත' + 'රු' + 'ව' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
             "options": [
-              "පය",
-              "අත",
-              "ඇස"
+              "හඳ",
+              "තරුව",
+              "ඉර"
             ],
-            "correctOption": "අත",
+            "correctOption": "තරුව",
             "correct_index": 1
           },
           {
-            "prompt": "'පො' + 'ත' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+            "prompt": "'ම' + 'ල්' + 'ලි' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
             "options": [
-              "පත",
-              "පොල්",
-              "පොත"
-            ],
-            "correctOption": "පොත",
-            "correct_index": 2
-          },
-          {
-            "prompt": "'පා' + 'ස' + 'ල' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
-            "options": [
-              "පන්සල",
-              "පාසල",
-              "පවුල",
-              "පාර"
-            ],
-            "correctOption": "පාසල",
-            "correct_index": 1
-          },
-          {
-            "prompt": "'අ' + 'ම්' + 'මා' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
-            "options": [
-              "තාත්තා",
-              "අක්කා",
               "මාමා",
-              "අම්මා",
-              "අයියා"
+              "අයියා",
+              "නංගි",
+              "මල්ලි"
             ],
-            "correctOption": "අම්මා",
+            "correctOption": "මල්ලි",
             "correct_index": 3
+          },
+          {
+            "prompt": "'පු' + 'ටු' + 'ව' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+            "options": [
+              "ඇඳ",
+              "මේසය",
+              "පුටුව"
+            ],
+            "correctOption": "පුටුව",
+            "correct_index": 2
           }
         ]
       },
@@ -140,58 +142,62 @@
           "listening_comprehension",
           "decoding"
         ],
-        "template_type": "audio_game",
+        "template_type": "skill3_audio_mcq",
         "rounds": [
           {
-            "prompt": "ශබ්දයට සවන් දී 'මල' තෝරන්න",
+            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
+            "audio_text": "අත",
             "options": [
-              "මල",
-              "ගස"
+              "අත",
+              "පය"
             ],
-            "correctOption": "මල",
+            "correctOption": "අත",
             "correct_index": 0
           },
           {
-            "prompt": "ශබ්දයට සවන් දී 'ගස' තෝරන්න",
+            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
+            "audio_text": "පාර",
             "options": [
-              "අත",
-              "ගස",
-              "පය"
+              "වැව",
+              "පාර",
+              "ගඟ"
             ],
-            "correctOption": "ගස",
+            "correctOption": "පාර",
             "correct_index": 1
           },
           {
-            "prompt": "ශබ්දයට සවන් දී 'පොත' තෝරන්න",
+            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
+            "audio_text": "ගෙදර",
             "options": [
-              "පත",
-              "පෑන",
-              "පොත"
-            ],
-            "correctOption": "පොත",
-            "correct_index": 2
-          },
-          {
-            "prompt": "ශබ්දයට සවන් දී 'අම්මා' තෝරන්න",
-            "options": [
-              "තාත්තා",
-              "අම්මා",
-              "අක්කා",
-              "මාමා"
-            ],
-            "correctOption": "අම්මා",
-            "correct_index": 1
-          },
-          {
-            "prompt": "ශබ්දයට සවන් දී 'පාසල' තෝරන්න",
-            "options": [
-              "පන්සල",
-              "නුවර",
-              "ගෙදර",
               "පාසල",
+              "ගෙදර",
               "වත්ත"
             ],
-            "correctOption": "පාසල",
+            "correctOption": "ගෙදර",
+            "correct_index": 1
+          },
+          {
+            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
+            "audio_text": "අක්කා",
+            "options": [
+              "නංගි",
+              "අක්කා",
+              "අයියා",
+              "මල්ලි"
+            ],
+            "correctOption": "අක්කා",
+            "correct_index": 1
+          },
+          {
+            "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
+            "audio_text": "බල්ලා",
+            "options": [
+              "පූසා",
+              "එළුවා",
+              "හරකා",
+              "බල්ලා"
+            ],
+            "correctOption": "බල්ලා",
             "correct_index": 3
           }
         ]
@@ -204,37 +210,8 @@
           "spelling",
           "phonics"
         ],
-        "template_type": "missing_picture_game",
+        "template_type": "skill3_fill_blank",
         "rounds": [
-          {
-            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
-            "sequence": [
-              "අ",
-              null,
-              "මා"
-            ],
-            "options": [
-              "ම්",
-              "ක්"
-            ],
-            "correctOption": "ම්",
-            "correct_index": 0
-          },
-          {
-            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
-            "sequence": [
-              "තා",
-              "ත්",
-              null
-            ],
-            "options": [
-              "මා",
-              "තා",
-              "නා"
-            ],
-            "correctOption": "තා",
-            "correct_index": 1
-          },
           {
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
             "sequence": [
@@ -242,28 +219,11 @@
               "ස"
             ],
             "options": [
-              "ක",
               "ම",
               "ග"
             ],
             "correctOption": "ග",
-            "correct_index": 2
-          },
-          {
-            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
-            "sequence": [
-              "පා",
-              null,
-              "ල"
-            ],
-            "options": [
-              "ස",
-              "න්",
-              "ර",
-              "ට"
-            ],
-            "correctOption": "ස",
-            "correct_index": 0
+            "correct_index": 1
           },
           {
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
@@ -274,76 +234,119 @@
             "options": [
               "ල",
               "ත",
-              "ර",
-              "ම",
-              "ය"
+              "ර"
             ],
             "correctOption": "ත",
             "correct_index": 1
+          },
+          {
+            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
+            "sequence": [
+              "පා",
+              null,
+              "ල"
+            ],
+            "options": [
+              "ර",
+              "ට",
+              "ස"
+            ],
+            "correctOption": "ස",
+            "correct_index": 2
+          },
+          {
+            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
+            "sequence": [
+              "අ",
+              null,
+              "මා"
+            ],
+            "options": [
+              "ක්",
+              "ම්",
+              "න්",
+              "ල්"
+            ],
+            "correctOption": "ම්",
+            "correct_index": 1
+          },
+          {
+            "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
+            "sequence": [
+              "තා",
+              "ත්",
+              null
+            ],
+            "options": [
+              "මා",
+              "නා",
+              "ගා",
+              "තා",
+              "රා"
+            ],
+            "correctOption": "තා",
+            "correct_index": 3
           }
         ]
       },
       {
         "id": "act_5",
-        "title": "වචනය අසමු, කපමු",
-        "description": "ඇසෙන වචනය සොයා එය ඉවත් කරන්න.",
+        "title": "අකුරු පිළිවෙලට සකසමු",
+        "description": "රූපයට අදාළ නම සෑදීමට අකුරු නිසි පිළිවෙලට සකසන්න.",
         "telemetry_tags": [
-          "listening",
-          "word_recognition"
+          "spelling",
+          "anagram",
+          "jumbled_word"
         ],
-        "template_type": "audio_game",
+        "template_type": "skill3_jumbled_word",
         "rounds": [
           {
-            "prompt": "ඇසෙන වචනය තෝරන්න: 'මල'",
-            "options": [
-              "ගස",
-              "මල"
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "මල",
+            "scrambled_letters": [
+              "ල",
+              "ම"
             ],
-            "correctOption": "මල",
-            "correct_index": 1
+            "image_url": "assets/images/activity_icons/nature/flower.png"
           },
           {
-            "prompt": "ඇසෙන වචනය තෝරන්න: 'අම්මා'",
-            "options": [
-              "තාත්තා",
-              "අම්මා",
-              "මාමා"
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "ඇස",
+            "scrambled_letters": [
+              "ස",
+              "ඇ"
             ],
-            "correctOption": "අම්මා",
-            "correct_index": 1
+            "image_url": "assets/images/activity_icons/body_parts/eye.png"
           },
           {
-            "prompt": "ඇසෙන වචනය තෝරන්න: 'පොත'",
-            "options": [
-              "පත",
-              "පොත",
-              "පොල්"
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "පහන",
+            "scrambled_letters": [
+              "හ",
+              "ප",
+              "න"
             ],
-            "correctOption": "පොත",
-            "correct_index": 1
+            "image_url": "assets/images/activity_icons/everyday_objects/oil_lamp.png"
           },
           {
-            "prompt": "ඇසෙන වචනය තෝරන්න: 'ගෙදර'",
-            "options": [
-              "පාසල",
-              "පන්සල",
-              "ගෙදර",
-              "නුවර"
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "පනාව",
+            "scrambled_letters": [
+              "නා",
+              "ප",
+              "ව"
             ],
-            "correctOption": "ගෙදර",
-            "correct_index": 2
+            "image_url": "assets/images/activity_icons/everyday_objects/comb.png"
           },
           {
-            "prompt": "ඇසෙන වචනය තෝරන්න: 'කිරි'",
-            "options": [
-              "සිරි",
-              "පිරි",
-              "ගිරි",
-              "කිරි",
-              "මිරි"
+            "prompt": "රූපයට අදාළ වචනය සාදන්න",
+            "correct_word": "පුටුව",
+            "scrambled_letters": [
+              "ටු",
+              "පු",
+              "ව"
             ],
-            "correctOption": "කිරි",
-            "correct_index": 3
+            "image_url": "assets/images/activity_icons/everyday_objects/chair.png"
           }
         ]
       }
