@@ -28,13 +28,12 @@ class CognitiveLoadClassifier:
         n = len(telemetry_history)
         
         # Calculate moving averages
-        avg_motion = sum(e.get("max_device_motion", 0.0) for e in telemetry_history) / n
         avg_hesitations = sum(e.get("hesitation_count", 0) for e in telemetry_history) / n
         avg_misclicks = sum(e.get("misclick_count", 0) for e in telemetry_history) / n
         
         # Calculate an abstract "Load Score"
-        # max normal motion ~ 15.0, max normal hesitations ~ 3, max normal misclicks ~ 2
-        frustration_score = (avg_motion / 15.0) + (avg_hesitations / 3.0) + (avg_misclicks / 2.0)
+        # max normal hesitations ~ 3, max normal misclicks ~ 2
+        frustration_score = (avg_hesitations / 3.0) + (avg_misclicks / 2.0)
         
         if frustration_score > 2.5:
             return "OVERWHELMED"
