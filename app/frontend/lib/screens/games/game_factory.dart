@@ -122,60 +122,6 @@ class GameFactory {
         gameContent = Skill2Act5PatternMemory(activityNode: node, isRemedial: isRemedial);
         break;
 
-      // --- Skill 1 Dedicated Templates ---
-      case 'odd_one_out_game':
-      case 'hidden_picture_game':
-        gameContent = Activity1OddShape(activityNode: node, isRemedial: isRemedial);
-        break;
-
-      case 'pattern_game':
-        gameContent = Activity2CompletePattern(activityNode: node);
-        break;
-
-      case 'pattern_memory_game':
-      case 'memory_game':
-        gameContent = Activity3RememberPattern(activityNode: node);
-        break;
-
-      case 'non_matching_image_game':
-        gameContent = Activity4NonMatchingImage(activityNode: node);
-        break;
-
-      case 'direction_game':
-        gameContent = Activity5DirectionRecognition(activityNode: node);
-        break;
-
-      case 'color_match_game':
-        gameContent = Activity6ColorMatching(activityNode: node);
-        break;
-
-      case 'coloring_game':
-        gameContent = Activity7ShapeColoring(activityNode: node);
-        break;
-
-      case 'fill_blank_game':
-      case 'missing_picture_game':
-        gameContent = Activity8FillBlank(activityNode: node);
-        break;
-
-      case 'audio_image_match_game':
-      case 'audio_game':
-      case 'generic_mcq_game':
-      case 'reading_game':
-        gameContent = Activity9AudioImageSearch(activityNode: node);
-        break;
-
-      case 'identical_match_game':
-      case 'matching_game':
-        gameContent = Activity10IdenticalMatch(activityNode: node);
-        break;
-
-      case 'audio_sequence_game':
-      case 'sorting_game':
-      case 'sequence_game':
-        gameContent = Activity11AudioSequence(activityNode: node);
-        break;
-
       // Fallback for unhandled or removed template types
       default:
         gameContent = const Scaffold(body: Center(child: Text("Unknown Game Type")));
