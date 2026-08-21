@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_theme.dart';
+import '../../services/student_service.dart';
+import '../../services/telemetry_service.dart';
+import '../../widgets/telemetry_heatmap.dart';
 
 class TherapistStudentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -14,17 +18,9 @@ class TherapistStudentDetailScreen extends StatefulWidget {
 class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late Future<Map<String, dynamic>> _analyticsFuture;
 
-  // Mock skill data
-  final Map<String, double> _skills = {
-    'phonological awareness': 0.72,
-    'decoding': 0.58,
-    'reading fluency': 0.65,
-    'comprehension': 0.48,
-    'spelling': 0.55,
-  };
-
-  // Mock weekly scores (8 weeks)
+  // Mock weekly scores (8 weeks) for the chart as we don't have historical arrays yet
   final List<double> _weeklyScores = [42, 48, 45, 55, 52, 60, 63, 68];
 
   // Mock session history
@@ -43,64 +39,203 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
       'score': 65,
       'notes': 'Read 42 words per minute (up from 38). Still pausing at multisyllabic words.',
     },
-    {
-      'date': 'Jul 22, 2026',
-      'duration': '45 min',
-      'type': 'Decoding Practice',
-      'score': 62,
-      'notes': 'Worked on CVC and CVCC patterns. Consistent b/d reversals noted.',
-    },
-    {
-      'date': 'Jul 18, 2026',
-      'duration': '35 min',
-      'type': 'Spelling & Morphology',
-      'score': 55,
-      'notes': 'Introduced common prefixes (un-, re-). Good understanding of root words.',
-    },
-    {
-      'date': 'Jul 15, 2026',
-      'duration': '45 min',
-      'type': 'Comprehension',
-      'score': 48,
-      'notes': 'Difficulty with inferential questions. Literal comprehension is strong.',
-    },
   ];
 
-  // Mock intervention suggestions
-  final List<Map<String, dynamic>> _interventions = [
-    {
-      'skill': 'comprehension',
-      'title': 'graphic organizer strategy',
-      'description': 'Use story maps to help visualize narrative structure before answering questions.',
-      'icon': Icons.map_outlined,
-      'color': AppColors.softCoral,
-    },
-    {
-      'skill': 'decoding',
-      'title': 'multisensory phonics drill',
-      'description': 'Practice tracing letters in sand/salt trays while saying sounds aloud.',
-      'icon': Icons.touch_app_rounded,
-      'color': AppColors.warmAmber,
-    },
-    {
-      'skill': 'spelling',
-      'title': 'word sort activity',
-      'description': 'Sort words by spelling pattern (e.g., -ight, -tion) to build pattern recognition.',
-      'icon': Icons.sort_rounded,
-      'color': AppColors.calmBlue,
-    },
-  ];
+  String? _selectedLabel;
+  bool _isSubmittingLabel = false;
+  bool _isDownloadingReport = false;
+  bool _isDownloadingAssessment = false;
+  final List<String> _labelOptions = ["Low Risk", "Moderate Risk", "Needs Attention"];
+
+  String get _studentId => (widget.student['id'] ?? widget.student['_id']).toString();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _analyticsFuture = StudentService().getCognitiveAnalytics(_studentId);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitLabel() async {
+    if (_selectedLabel == null) return;
+    
+    setState(() => _isSubmittingLabel = true);
+    
+    final error = await StudentService().submitClinicianLabel(
+      _studentId, 
+      _selectedLabel!
+    );
+    
+    if (!mounted) return;
+    
+    setState(() => _isSubmittingLabel = false);
+    
+    if (error == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ground Truth Label submitted successfully!'),
+          backgroundColor: AppColors.gentleGreen,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: AppColors.softCoral,
+        ),
+      );
+    }
+  }
+
+  Future<void> _downloadReport() async {
+    setState(() => _isDownloadingReport = true);
+    final error = await StudentService().downloadClinicalReport(_studentId);
+    if (!mounted) return;
+    setState(() => _isDownloadingReport = false);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error),
+        backgroundColor: AppColors.softCoral,
+      ));
+    }
+  }
+
+  Future<void> _downloadAssessmentReport() async {
+    setState(() => _isDownloadingAssessment = true);
+    final error = await StudentService().downloadAssessmentReport(_studentId);
+    if (!mounted) return;
+    setState(() => _isDownloadingAssessment = false);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error),
+        backgroundColor: AppColors.softCoral,
+      ));
+    }
+  }
+
+  Future<void> _showHeatmapsModal() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.calmBlue)),
+    );
+
+    final telemetryData = await StudentService().getTelemetry(_studentId);
+    
+    if (!mounted) return;
+    Navigator.of(context).pop(); // dismiss loading
+
+    if (telemetryData.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('No telemetry data available for this student yet.'),
+        backgroundColor: AppColors.softCoral,
+      ));
+      return;
+    }
+
+    Map<String, List<TouchPoint>> activityPoints = {};
+    for (var session in telemetryData) {
+      final events = session['events'] as List<dynamic>? ?? [];
+      for (var ev in events) {
+        final actName = ev['activity_name'] as String? ?? 'Unknown';
+        final path = ev['touch_path'] as List<dynamic>? ?? [];
+        
+        if (!activityPoints.containsKey(actName)) {
+          activityPoints[actName] = [];
+        }
+        for (var pt in path) {
+          activityPoints[actName]!.add(TouchPoint(
+            xRatio: pt['x_ratio']?.toDouble() ?? 0.0,
+            yRatio: pt['y_ratio']?.toDouble() ?? 0.0,
+            timestampMs: pt['timestamp_ms'] ?? 0,
+          ));
+        }
+      }
+    }
+
+    if (activityPoints.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('No touch paths found in the telemetry data.'),
+        backgroundColor: AppColors.softCoral,
+      ));
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildHeatmapBottomSheet(activityPoints),
+    );
+  }
+
+  Widget _buildHeatmapBottomSheet(Map<String, List<TouchPoint>> activityPoints) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (_, controller) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF8FAFC), // scaffold background
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Interaction Heatmaps',
+                      style: AppTypography.heading(fontSize: 20, color: AppColors.textPrimary),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: ListView.builder(
+                  controller: controller,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: activityPoints.keys.length,
+                  itemBuilder: (context, index) {
+                    final actName = activityPoints.keys.elementAt(index);
+                    final points = activityPoints[actName]!;
+                    return HeatmapVisualizer(
+                      touchPoints: points,
+                      title: 'Activity: $actName',
+                      subtitle: 'Aggregated touch precision tracking',
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -110,207 +245,303 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Custom App Bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardSurface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderLight),
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: _analyticsFuture,
+          builder: (context, snapshot) {
+            
+            String risk = student['risk']?.toString() ?? 'pending';
+            Map<String, dynamic> analytics = {};
+            if (snapshot.hasData && snapshot.data!.isNotEmpty && snapshot.data!['status'] != 'insufficient_data') {
+              analytics = snapshot.data!;
+              if (analytics['risk_assessment'] != null && analytics['risk_assessment'] is Map) {
+                risk = analytics['risk_assessment']['overall_risk']?.toString() ?? risk;
+              }
+            }
+
+            return Column(
+              children: [
+                // Custom App Bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.cardSurface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
+                          child: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 20),
+                        ),
                       ),
-                      child: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'student profile',
-                      style: AppTypography.heading(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'student profile',
+                          style: AppTypography.heading(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                       ),
-                    ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _getRiskColor(risk).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          risk.toLowerCase(),
+                          style: AppTypography.caption(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: _getRiskColor(risk),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Student Header Card
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: _getRiskColor(student['risk']).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppColors.cardSurface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.borderLight),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.calmBlueDark.withValues(alpha: 0.06),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      student['risk'],
-                      style: AppTypography.caption(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: _getRiskColor(student['risk']),
-                      ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: AppColors.slateBg,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(student['avatar'] ?? '👦', style: const TextStyle(fontSize: 28)),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                student['name'] ?? student['first_name'] ?? student['student_name'] ?? 'Unknown',
+                                style: AppTypography.heading(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${student['age'] ?? student['grade'] ?? 'N/A'} · parent: ${student['parent'] ?? student['parent_name'] ?? 'N/A'}',
+                                style: AppTypography.caption(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'connected since ${student['connected'] ?? student['connected_at']?.toString().split('T')[0] ?? 'N/A'}',
+                                style: AppTypography.caption(
+                                  fontSize: 12,
+                                  color: AppColors.textHint,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Overall Progress Circle
+                        SizedBox(
+                          width: 52,
+                          height: 52,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CircularProgressIndicator(
+                                value: (student['progress'] ?? 0) / 100,
+                                strokeWidth: 5,
+                                backgroundColor: AppColors.borderLight,
+                                valueColor: AlwaysStoppedAnimation(_getRiskColor(risk)),
+                              ),
+                              Text(
+                                '${student['progress'] ?? 0}%',
+                                style: AppTypography.caption(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Student Header Card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.cardSurface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.borderLight),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.calmBlueDark.withValues(alpha: 0.06),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.slateBg,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(student['avatar'], style: const TextStyle(fontSize: 28)),
-                      ),
+
+                const SizedBox(height: 16),
+
+                // Tab Bar
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardSurface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.borderLight),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicator: BoxDecoration(
+                      color: AppColors.calmBlue,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            student['name'],
-                            style: AppTypography.heading(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'age ${student['age']} · parent: ${student['parent']}',
-                            style: AppTypography.caption(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'connected since ${student['connected']}',
-                            style: AppTypography.caption(
-                              fontSize: 12,
-                              color: AppColors.textHint,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Overall Progress Circle
-                    SizedBox(
-                      width: 52,
-                      height: 52,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            value: student['progress'] / 100,
-                            strokeWidth: 5,
-                            backgroundColor: AppColors.borderLight,
-                            valueColor: AlwaysStoppedAnimation(_getRiskColor(student['risk'])),
-                          ),
-                          Text(
-                            '${student['progress']}%',
-                            style: AppTypography.caption(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: AppColors.textSecondary,
+                    labelStyle: AppTypography.caption(fontSize: 13, fontWeight: FontWeight.w700),
+                    unselectedLabelStyle: AppTypography.caption(fontSize: 13, fontWeight: FontWeight.w500),
+                    tabs: const [
+                      Tab(text: 'progress'),
+                      Tab(text: 'sessions'),
+                      Tab(text: 'plan'),
+                    ],
+                  ),
                 ),
-              ),
-            ),
 
-            const SizedBox(height: 16),
+                const SizedBox(height: 8),
 
-            // Tab Bar
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: AppColors.calmBlue,
-                  borderRadius: BorderRadius.circular(10),
+                // Tab Content
+                Expanded(
+                  child: snapshot.connectionState == ConnectionState.waiting
+                      ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+                      : TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildProgressTab(analytics),
+                            _buildSessionsTab(),
+                            _buildPlanTab(analytics),
+                          ],
+                        ),
                 ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                labelColor: Colors.white,
-                unselectedLabelColor: AppColors.textSecondary,
-                labelStyle: AppTypography.caption(fontSize: 13, fontWeight: FontWeight.w700),
-                unselectedLabelStyle: AppTypography.caption(fontSize: 13, fontWeight: FontWeight.w500),
-                tabs: const [
-                  Tab(text: 'progress'),
-                  Tab(text: 'sessions'),
-                  Tab(text: 'plan'),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Tab Content
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildProgressTab(),
-                  _buildSessionsTab(),
-                  _buildPlanTab(),
-                ],
-              ),
-            ),
-          ],
+              ],
+            );
+          }
         ),
       ),
     );
   }
 
   // ─── Progress Tab ───
-  Widget _buildProgressTab() {
+  Widget _buildProgressTab(Map<String, dynamic> analytics) {
+    Map<String, dynamic> indices = analytics['cognitive_indices'] ?? {};
+    
+    // Fallback if no analytics exist yet
+    if (indices.isEmpty) {
+      indices = {
+        'waiting for data': 0.0,
+        'needs more play': 0.0,
+      };
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
+
+          // Download Report Button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: _isDownloadingReport ? null : _downloadReport,
+              icon: _isDownloadingReport
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.picture_as_pdf_rounded, size: 20),
+              label: Text(
+                _isDownloadingReport ? 'Generating Report...' : 'Download Clinical Report',
+                style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.calmBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Download Assessment Report Button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: _isDownloadingAssessment ? null : _downloadAssessmentReport,
+              icon: _isDownloadingAssessment
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.calmBlue, strokeWidth: 2))
+                  : const Icon(Icons.assessment_rounded, size: 20),
+              label: Text(
+                _isDownloadingAssessment ? 'Generating Assessment...' : 'Download Assessment PDF',
+                style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.calmBlue,
+                side: const BorderSide(color: AppColors.calmBlue, width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // View Interaction Heatmaps Button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: _showHeatmapsModal,
+              icon: const Icon(Icons.touch_app_rounded, size: 20),
+              label: Text(
+                'View Interaction Heatmaps',
+                style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.gentleGreen,
+                side: const BorderSide(color: AppColors.gentleGreen, width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // Weekly Progress Chart
           Container(
@@ -387,9 +618,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
 
           const SizedBox(height: 20),
 
-          // Skill Breakdown
+          // Real Cognitive Skill Breakdown
           Text(
-            'skill breakdown',
+            'cognitive breakdown',
             style: AppTypography.body(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -398,53 +629,62 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           ),
           const SizedBox(height: 12),
 
-          ..._skills.entries.map((entry) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.borderLight),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        entry.key,
-                        style: AppTypography.body(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+          ...indices.entries.map((entry) {
+            double value = (entry.value is num) ? (entry.value as num).toDouble() : 0.0;
+            // Normalize visual value if it exceeds 1
+            double barValue = value > 1.0 ? 1.0 : (value < 0 ? 0.0 : value);
+            
+            // Format name nicely
+            String name = entry.key.replaceAll('_', ' ').toLowerCase();
+            
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.cardSurface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          name,
+                          style: AppTypography.body(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${(entry.value * 100).round()}%',
-                        style: AppTypography.caption(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: _getSkillColor(entry.value),
+                        Text(
+                          '${(value * 100).round()}%',
+                          style: AppTypography.caption(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: _getSkillColor(barValue),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: entry.value,
-                      minHeight: 8,
-                      backgroundColor: AppColors.borderLight,
-                      valueColor: AlwaysStoppedAnimation(_getSkillColor(entry.value)),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: barValue,
+                        minHeight: 8,
+                        backgroundColor: AppColors.borderLight,
+                        valueColor: AlwaysStoppedAnimation(_getSkillColor(barValue)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          )),
+            );
+          }),
 
           const SizedBox(height: 24),
         ],
@@ -559,52 +799,117 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   }
 
   // ─── Intervention Plan Tab ───
-  Widget _buildPlanTab() {
+  Widget _buildPlanTab(Map<String, dynamic> analytics) {
+    List<dynamic> interventions = analytics['recommendations'] ?? [];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Weakest skills alert
+          // Clinical Labeling Form for ML Pipeline
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.softCoral.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.softCoral.withValues(alpha: 0.3)),
+              color: AppColors.cardSurface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.borderLight),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.calmBlueDark.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.priority_high_rounded, color: AppColors.softCoral, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'areas needing focus',
-                        style: AppTypography.body(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.softCoral,
-                        ),
+                Row(
+                  children: [
+                    const Icon(Icons.psychology_outlined, color: AppColors.calmBlue, size: 24),
+                    const SizedBox(width: 8),
+                    Text(
+                      'provide clinical label',
+                      style: AppTypography.body(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'comprehension (48%) and spelling (55%) are below target',
-                        style: AppTypography.caption(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your assessment feeds our ML models. Please select the ground-truth risk level for this student based on their data.',
+                  style: AppTypography.caption(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.cream,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.borderLight),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedLabel,
+                      hint: Text(
+                        'Select Risk Label',
+                        style: AppTypography.caption(fontSize: 14, color: AppColors.textHint),
                       ),
-                    ],
+                      isExpanded: true,
+                      icon: const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textSecondary),
+                      items: _labelOptions.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: AppTypography.body(fontSize: 14, color: AppColors.textPrimary),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        setState(() {
+                          _selectedLabel = newValue;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _isSubmittingLabel || _selectedLabel == null ? null : _submitLabel,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.calmBlue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: _isSubmittingLabel
+                        ? const SizedBox(
+                            width: 20, 
+                            height: 20, 
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                          )
+                        : Text(
+                            'Submit Ground Truth Label',
+                            style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700),
+                          ),
                   ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           Text(
             'recommended interventions',
@@ -616,75 +921,105 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           ),
           const SizedBox(height: 12),
 
-          ..._interventions.map((intervention) => Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.cardSurface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.borderLight),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.calmBlueDark.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+          if (interventions.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  'No interventions generated yet.\nChild needs to play more games.',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.caption(color: AppColors.textHint, fontSize: 14),
                 ),
-              ],
+              ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: (intervention['color'] as Color).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+
+          ...interventions.map((intervention) {
+            final type = intervention['type'] ?? 'general';
+            final title = intervention['title'] ?? 'Strategy';
+            final description = intervention['description'] ?? '';
+            
+            // Map type to visual
+            Color cardColor = AppColors.calmBlue;
+            IconData cardIcon = Icons.lightbulb_outline_rounded;
+            
+            if (type == 'cognitive') {
+              cardColor = AppColors.warmAmber;
+              cardIcon = Icons.psychology_alt_rounded;
+            } else if (type == 'sensory') {
+              cardColor = AppColors.softCoral;
+              cardIcon = Icons.visibility_rounded;
+            }
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.cardSurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderLight),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.calmBlueDark.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                  child: Icon(intervention['icon'] as IconData, color: intervention['color'] as Color, size: 20),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: (intervention['color'] as Color).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          intervention['skill'],
-                          style: AppTypography.caption(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: intervention['color'] as Color,
+                ],
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: cardColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(cardIcon, color: cardColor, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: cardColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            type,
+                            style: AppTypography.caption(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: cardColor,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        intervention['title'],
-                        style: AppTypography.body(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                        const SizedBox(height: 6),
+                        Text(
+                          title,
+                          style: AppTypography.body(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        intervention['description'],
-                        style: AppTypography.caption(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
+                        const SizedBox(height: 4),
+                        Text(
+                          description,
+                          style: AppTypography.caption(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          )),
+                ],
+              ),
+            );
+          }),
 
           const SizedBox(height: 24),
         ],
@@ -693,15 +1028,12 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   }
 
   Color _getRiskColor(String risk) {
-    switch (risk) {
-      case 'On Track':
-        return AppColors.gentleGreen;
-      case 'Needs Support':
-        return AppColors.warmAmber;
-      case 'At Risk':
-        return AppColors.softCoral;
-      default:
-        return AppColors.textSecondary;
+    if (risk.toLowerCase().contains('on track') || risk.toLowerCase().contains('low')) {
+      return AppColors.gentleGreen;
+    } else if (risk.toLowerCase().contains('moderate') || risk.toLowerCase().contains('support')) {
+      return AppColors.warmAmber;
+    } else {
+      return AppColors.softCoral;
     }
   }
 

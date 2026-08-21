@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../widgets/app_loading_indicator.dart';
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
+import 'therapist_student_detail_screen.dart';
 
 class TherapistStudentsScreen extends StatefulWidget {
   const TherapistStudentsScreen({super.key});
@@ -52,7 +54,7 @@ class _TherapistStudentsScreenState extends State<TherapistStudentsScreen> {
             const SizedBox(height: 24),
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(child: AppLoadingIndicator())
                   : _connections.isEmpty
                   ? Center(
                       child: Column(
@@ -90,22 +92,31 @@ class _TherapistStudentsScreenState extends State<TherapistStudentsScreen> {
                         final parentEmail =
                             conn['parent_email'] ?? 'No email provided';
 
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.cardSurface,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.borderLight),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.shadow.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TherapistStudentDetailScreen(student: conn),
                               ),
-                            ],
-                          ),
-                          child: Column(
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardSurface,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.borderLight),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.shadow.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Student Details Row
@@ -218,8 +229,9 @@ class _TherapistStudentsScreenState extends State<TherapistStudentsScreen> {
                                 ],
                               ),
                             ],
-                          ),
-                        );
+                          ), // Closes Column
+                        ), // Closes Container
+                        ); // Closes GestureDetector
                       },
                     ),
             ),

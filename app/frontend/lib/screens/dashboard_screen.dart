@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
+import '../utils/avatar_utils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../theme/app_theme.dart';
@@ -12,6 +14,7 @@ import 'character_shop_screen.dart';
 import 'progress_analytics_screen.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
+import 'loading_skill_screen.dart';
 
 /// Dashboard Screen
 /// Dyslexia-accessible: crème bg, warm white skill cards, gentle green progress,
@@ -79,7 +82,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final studentName = widget.studentData?['name'] ?? 'Student';
-    final avatarUrl = widget.studentData?['avatar_url'] ?? 'assets/images/solo_blue.png';
+    final avatarUrl = AvatarUtils.getCorrectedAvatarPath(widget.studentData?['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png');
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -121,7 +124,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
               // Skill cards list
               Expanded(
                 child: _curriculum == null 
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(child: AppLoadingIndicator())
                   : _buildSkillsGrid(),
               ),
             ],
@@ -227,7 +230,16 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                     ],
                   ),
                   child: ClipOval(
-                    child: Image.asset(avatarUrl, fit: BoxFit.cover),
+                    child: Image.asset(
+                      avatarUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          'assets/images/characters/human/human_student_1.png',
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -392,28 +404,13 @@ class _AnimatedSkillCard extends StatefulWidget {
   State<_AnimatedSkillCard> createState() => _AnimatedSkillCardState();
 }
 
-class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-    
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.025).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-  }
+  bool _isNavigating = false;
 
   @override
   void dispose() {
     _audioPlayer.dispose();
-    _controller.dispose();
     super.dispose();
   }
 
@@ -669,31 +666,30 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> with SingleTicke
       ),
     );
 
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: GestureDetector(
+    return GestureDetector(
         onTap: () async {
+          if (_isNavigating) return;
+          if (mounted) setState(() => _isNavigating = true);
           try {
-            final skillDetail = await SkillDetail.load(widget.skill.file);
-            if (!mounted) return;
-
-            final bool isIntroSeen = ProgressService().isSkillIntroSeen(skillDetail.id);
-            final Widget targetScreen = isIntroSeen
-                ? LevelMapScreen(skillMap: skillDetail, studentData: widget.studentData)
-                : SkillIntroScreen(skillMap: skillDetail, studentData: widget.studentData);
-
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => targetScreen),
+              MaterialPageRoute(
+                builder: (context) => LoadingSkillScreen(
+                  skill: widget.skill,
+                  studentData: widget.studentData,
+                  onReturn: widget.onReturn,
+                ),
+              ),
             );
             if (!mounted) return;
             widget.onReturn();
           } catch (e) {
-            debugPrint('Error loading skill detail: $e');
+            debugPrint('Error navigating to loading skill screen: $e');
+          } finally {
+            if (mounted) setState(() => _isNavigating = false);
           }
         },
         child: cardContent,
-      ),
     );
   }
 }

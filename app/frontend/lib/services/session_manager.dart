@@ -23,101 +23,59 @@ class SessionManager {
   /// For now, it returns a static progressive list.
   List<SessionActivity> generateDailySession() {
     return [
-      // Phase 1: Warm-up (Visual Skills - ~2 mins)
       SessionActivity(
         screen: GameFactory.buildGame(ActivityNode(
           id: 'act_1',
-          title: 'වෙනස් රූපය සොයන්න',
-          telemetryTags: ['recognizing'],
-          templateType: 'hidden_picture_game',
-          rounds: [
-            {'target': '🌸', 'distractors': ['🌳'], 'target_count': 1, 'distractor_count': 2, 'correct_index': 0},
-            {'target': '🍎', 'distractors': ['🍌'], 'target_count': 1, 'distractor_count': 3, 'correct_index': 1},
-          ],
+          title: 'සැඟවුණු පින්තූර',
+          telemetryTags: ['visual_hidden_search'],
+          templateType: 'visual_hidden_search',
+          rounds: [],
         )),
-        title: 'වෙනස් රූපය සොයන්න',
+        title: 'සැඟවුණු පින්තූර',
         durationSeconds: 60,
       ),
       SessionActivity(
         screen: GameFactory.buildGame(ActivityNode(
           id: 'act_2',
-          title: 'රටාව සම්පූර්ණ කරන්න',
-          telemetryTags: ['patterns'],
-          templateType: 'pattern_game',
-          rounds: [
-            {'pattern': ['🔴', '🔵', '🔴', '?'], 'options': ['🔵', '🔴', '🟡'], 'correct_index': 0},
-            {'pattern': ['⭐', '🌙', '⭐', '?'], 'options': ['🌙', '⭐', '☀️'], 'correct_index': 0},
-          ],
+          title: 'රටා සම්පූර්ණ කරන්න',
+          telemetryTags: ['visual_pattern_adventure'],
+          templateType: 'visual_pattern_adventure',
+          rounds: [],
         )),
-        title: 'රටාව සම්පූර්ණ කරන්න',
+        title: 'රටා සම්පූර්ණ කරන්න',
         durationSeconds: 60,
       ),
-      // Phase 2: Core Cognitive/Phonics (Visual/Memory - ~2.5 mins)
       SessionActivity(
         screen: GameFactory.buildGame(ActivityNode(
           id: 'act_3',
-          title: 'අඩු රූපය සොයන්න',
-          telemetryTags: ['observation'],
-          templateType: 'missing_picture_game',
-          rounds: [
-            {'original': ['🐶', '🐱', '🐭'], 'missing': '🐱', 'options': ['🐶', '🐱', '🐰'], 'correct_index': 1},
-          ],
+          title: 'වර්ගීකරණය',
+          telemetryTags: ['visual_sorting_adventure'],
+          templateType: 'visual_sorting_adventure',
+          rounds: [],
         )),
-        title: 'අඩු රූපය සොයන්න',
-        durationSeconds: 60,
+        title: 'වර්ගීකරණය',
+        durationSeconds: 90,
       ),
       SessionActivity(
         screen: GameFactory.buildGame(ActivityNode(
           id: 'act_4',
-          title: 'මතක තබා ගන්න',
-          telemetryTags: ['memory'],
-          templateType: 'memory_game',
-          rounds: [
-            {'items': ['🍎', '🍐', '🍊'], 'target': '🍎', 'options': ['🍎', '🍉', '🍇'], 'correct_index': 0},
-          ],
+          title: 'වෙනස් රූපය',
+          telemetryTags: ['visual_odd_one_out'],
+          templateType: 'visual_odd_one_out',
+          rounds: [],
         )),
-        title: 'මතක තබා ගන්න',
-        durationSeconds: 90,
+        title: 'වෙනස් රූපය',
+        durationSeconds: 60,
       ),
-      // Phase 3: Application (Sorting/Logic - ~2.5 mins)
       SessionActivity(
         screen: GameFactory.buildGame(ActivityNode(
           id: 'act_5',
-          title: 'වර්ගීකරණය කරන්න',
-          telemetryTags: ['sorting'],
-          templateType: 'sorting_game',
-          rounds: [
-            {'category': 'සතුන්', 'item': '🐶', 'options': ['සතුන්', 'කෑම'], 'correct_index': 0},
-          ],
+          title: 'මතක තබා ගන්න',
+          telemetryTags: ['visual_memory_hats'],
+          templateType: 'visual_memory_hats',
+          rounds: [],
         )),
-        title: 'වර්ගීකරණය කරන්න',
-        durationSeconds: 90,
-      ),
-      SessionActivity(
-        screen: GameFactory.buildGame(ActivityNode(
-          id: 'act_6',
-          title: 'සැඟවුණු හැඩය සොයන්න',
-          telemetryTags: ['shapes'],
-          templateType: 'odd_one_out_game',
-          rounds: [
-            {'target': '🔷', 'distractors': ['🔴'], 'target_count': 1, 'distractor_count': 3, 'correct_index': 0},
-          ],
-        )),
-        title: 'සැඟවුණු හැඩය සොයන්න',
-        durationSeconds: 60,
-      ),
-      // Phase 4: Mastery (Size/Position logic - ~3 mins)
-      SessionActivity(
-        screen: GameFactory.buildGame(ActivityNode(
-          id: 'act_7',
-          title: 'ප්‍රමාණය අනුව පෙළගස්වන්න',
-          telemetryTags: ['size'],
-          templateType: 'generic_mcq_game',
-          rounds: [
-            {'question': 'ලොකුම රූපය තෝරන්න', 'options': ['🐘', '🐭', '🐱'], 'correct_index': 0},
-          ],
-        )),
-        title: 'ප්‍රමාණය අනුව පෙළගස්වන්න',
+        title: 'මතක තබා ගන්න',
         durationSeconds: 90,
       ),
     ];

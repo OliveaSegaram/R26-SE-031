@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/avatar_utils.dart';
 import '../../theme/app_theme.dart';
 import 'consent_screen.dart';
 import '../services/auth_service.dart';
@@ -26,15 +27,28 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
   String? _selectedGrade = 'Grade 1';
   String? _selectedDailyLimit = 'No Limit';
-  String _selectedAvatarUrl = 'assets/images/solo_blue.png';
+  String _selectedAvatarUrl = 'assets/images/characters/mascots/solo_blue.png';
+  bool _isHumanCategory = false;
+  
+  bool _hasNudgedFantasy = false;
+  bool _hasNudgedKids = false;
 
-  final List<String> _avatars = [
-    'assets/images/solo_blue.png',
-    'assets/images/solo_green.png',
-    'assets/images/solo_pink.png',
-    'assets/images/solo_teal.png',
-    'assets/images/solo_orange.png',
-    'assets/images/solo_pink_up.png',
+  final List<String> _humanAvatars = [
+    'assets/images/characters/human/human_student_1.png',
+    'assets/images/characters/human/human_student_2.png',
+    'assets/images/characters/human/human_student_3.png',
+    'assets/images/characters/human/human_student_4.png',
+    'assets/images/characters/human/human_student_5.png',
+    'assets/images/characters/human/human_student_6.png',
+  ];
+
+  final List<String> _monsterAvatars = [
+    'assets/images/characters/mascots/solo_blue.png',
+    'assets/images/characters/mascots/solo_green.png',
+    'assets/images/characters/mascots/solo_pink.png',
+    'assets/images/characters/mascots/solo_teal.png',
+    'assets/images/characters/mascots/solo_orange.png',
+    'assets/images/characters/mascots/solo_pink_up.png',
   ];
 
   final List<String> _limits = [
@@ -62,8 +76,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       _selectedDailyLimit =
           widget.editStudentData!['daily_limit'] ?? 'No Limit';
       _selectedAvatarUrl =
-          widget.editStudentData!['avatar_url'] ??
-          'assets/images/solo_blue.png';
+          AvatarUtils.getCorrectedAvatarPath(widget.editStudentData!['avatar_url'] as String?, 'assets/images/characters/mascots/solo_blue.png');
+      _isHumanCategory = _humanAvatars.contains(_selectedAvatarUrl);
     }
 
     _checkGoogleUser();
@@ -72,20 +86,30 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       if (_avatarScrollController.hasClients) {
         Future.delayed(const Duration(milliseconds: 500), () {
           if (!mounted) return;
-          _avatarScrollController.animateTo(
-            120.0, 
-            duration: const Duration(milliseconds: 600), 
-            curve: Curves.easeOutSine,
-          ).then((_) {
-            if (!mounted) return;
-            _avatarScrollController.animateTo(
-              0.0, 
-              duration: const Duration(milliseconds: 600), 
-              curve: Curves.easeInSine,
-            );
-          });
+          if (_isHumanCategory) {
+            _hasNudgedKids = true;
+          } else {
+            _hasNudgedFantasy = true;
+          }
+          _performNudge();
         });
       }
+    });
+  }
+
+  void _performNudge() {
+    if (!_avatarScrollController.hasClients) return;
+    _avatarScrollController.animateTo(
+      120.0, 
+      duration: const Duration(milliseconds: 600), 
+      curve: Curves.easeOutSine,
+    ).then((_) {
+      if (!mounted) return;
+      _avatarScrollController.animateTo(
+        0.0, 
+        duration: const Duration(milliseconds: 600), 
+        curve: Curves.easeInSine,
+      );
     });
   }
 
@@ -96,6 +120,22 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         _isGoogleUser = provider == 'google';
       });
     }
+  }
+
+  void _switchCategory(bool isHuman) {
+    if (_isHumanCategory == isHuman) return;
+    setState(() => _isHumanCategory = isHuman);
+    
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      if (isHuman && !_hasNudgedKids) {
+        _hasNudgedKids = true;
+        _performNudge();
+      } else if (!isHuman && !_hasNudgedFantasy) {
+        _hasNudgedFantasy = true;
+        _performNudge();
+      }
+    });
   }
 
   @override
@@ -132,54 +172,122 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 12),
                       ],
 
                       Text(
-                        'choose a monster profile picture',
+                        'choose a character profile picture',
                         style: AppTypography.body(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      SingleChildScrollView(
-                        controller: _avatarScrollController,
-                        scrollDirection: Axis.horizontal,
+                      const SizedBox(height: 12),
+                      Container(
+                        height: 48,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.mintBg,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: AppColors.gentleGreen.withValues(alpha: 0.3)),
+                        ),
                         child: Row(
-                          children: _avatars.map((url) {
-                            final isSelected = _selectedAvatarUrl == url;
-                            return GestureDetector(
-                              onTap: () =>
-                                  setState(() => _selectedAvatarUrl = url),
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 16),
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppColors.gentleGreen
-                                        : Colors.transparent,
-                                    width: 3,
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => _switchCategory(false),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeInOut,
+                                  decoration: BoxDecoration(
+                                    color: !_isHumanCategory ? Colors.white : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: !_isHumanCategory ? [
+                                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                                    ] : [],
                                   ),
-                                ),
-                                child: CircleAvatar(
-                                  radius: 36,
-                                  backgroundColor: AppColors.cardSurface,
-                                  backgroundImage: AssetImage(url),
+                                  alignment: Alignment.center,
+                                  child: Text('Fantasy', style: AppTypography.button(fontSize: 14, color: !_isHumanCategory ? AppColors.textPrimary : AppColors.textHint)),
                                 ),
                               ),
-                            );
-                          }).toList(),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => _switchCategory(true),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeInOut,
+                                  decoration: BoxDecoration(
+                                    color: _isHumanCategory ? Colors.white : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: _isHumanCategory ? [
+                                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))
+                                    ] : [],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text('Kids', style: AppTypography.button(fontSize: 14, color: _isHumanCategory ? AppColors.textPrimary : AppColors.textHint)),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 12),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 400),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          return SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0.3, 0.0),
+                              end: Offset.zero,
+                            ).animate(animation),
+                            child: FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: SingleChildScrollView(
+                          key: ValueKey<bool>(_isHumanCategory),
+                          controller: _avatarScrollController,
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: (_isHumanCategory ? _humanAvatars : _monsterAvatars).map((url) {
+                              final isSelected = _selectedAvatarUrl == url;
+                              return GestureDetector(
+                                onTap: () =>
+                                    setState(() => _selectedAvatarUrl = url),
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 16),
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppColors.gentleGreen
+                                          : Colors.transparent,
+                                      width: 3,
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 36,
+                                    backgroundColor: AppColors.cardSurface,
+                                    backgroundImage: AssetImage(url),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
 
                       // Form Fields Container
                       Container(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: AppColors.cardSurface,
                           borderRadius: BorderRadius.circular(24),
@@ -207,7 +315,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                                   ? 'required'
                                   : null,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
 
                             TextFormField(
                               controller: _lastNameController,
@@ -219,7 +327,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                                   ? 'required'
                                   : null,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
 
                             // Grade — locked to Grade 1
                             Container(
@@ -276,7 +384,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
 
                             DropdownButtonFormField<String>(
                               value: _selectedDailyLimit,
@@ -293,12 +401,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                                 setState(() => _selectedDailyLimit = val);
                               },
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 8),
                           ],
                         ),
                       ),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 16),
 
                       // Save Button
                       Align(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
@@ -381,7 +382,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   height: 48,
                   width: double.infinity,
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+                      ? const Center(child: AppLoadingIndicator())
                       : GradientButton(
                           text: 'verify code',
                           onPressed: _verifyOtp,

@@ -43,6 +43,16 @@ class TelemetryEvent(BaseModel):
         description="Normalized touch coordinate path for drag-velocity & tremor analysis"
     )
 
+    # --- Behavior Proxies ---
+    audio_replay_count: int = Field(
+        default=0, ge=0,
+        description="Number of times auditory instructions were replayed"
+    )
+    is_abandoned: bool = Field(
+        default=False,
+        description="True if the child quit the round before finishing"
+    )
+
     # --- Legacy compatibility (optional) ---
     timestamp: Optional[str] = None
     time_since_start_ms: Optional[int] = None

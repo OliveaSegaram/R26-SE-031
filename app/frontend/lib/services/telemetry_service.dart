@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'; // For PointerEvent
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'telemetry/telemetry_plugin.dart';
 import 'student_service.dart';
 
@@ -12,17 +14,20 @@ class TouchPoint {
   final double xRatio;
   final double yRatio;
   final int timestampMs;
+  final String type;
 
   const TouchPoint({
     required this.xRatio,
     required this.yRatio,
     required this.timestampMs,
+    this.type = 'down',
   });
 
   Map<String, dynamic> toJson() => {
         'x_ratio': xRatio,
         'y_ratio': yRatio,
         'timestamp_ms': timestampMs,
+        'type': type,
       };
 }
 
@@ -51,9 +56,6 @@ class TelemetryEvent {
   /// Number of times the student replayed the audio instruction
   final int audioReplayCount;
 
-  /// Maximum absolute device acceleration vector magnitude during the round
-  final double maxDeviceMotion;
-
   /// True if the user exited the activity before completing all rounds
   final bool isAbandoned;
 
@@ -71,7 +73,6 @@ class TelemetryEvent {
     required this.misclickCount,
     required this.hesitationCount,
     required this.audioReplayCount,
-    required this.maxDeviceMotion,
     required this.isAbandoned,
     required this.touchPath,
   });
@@ -87,7 +88,6 @@ class TelemetryEvent {
         'misclick_count': misclickCount,
         'hesitation_count': hesitationCount,
         'audio_replay_count': audioReplayCount,
-        'max_device_motion': maxDeviceMotion,
         'is_abandoned': isAbandoned,
         'touch_path': touchPath.map((p) => p.toJson()).toList(),
       };
@@ -172,6 +172,7 @@ class TelemetryService {
       'student_id': studentId,
       'session_duration_seconds': totalDuration,
       'events': _sessionEvents.map((e) => e.toJson()).toList(),
+      'device_metrics': await _getDeviceMetrics(),
     };
 
     debugPrint('Telemetry: Submitting session (${_sessionEvents.length} events)...');
@@ -232,5 +233,25 @@ class TelemetryService {
     } catch (e) {
       debugPrint('Telemetry: Offline flush error: $e');
     }
+  }
+
+  /// Retrieve device metrics for spatial and acceleration normalization in the backend
+  Future<Map<String, dynamic>> _getDeviceMetrics() async {
+    try {
+      final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      if (kIsWeb) {
+        final webBrowserInfo = await deviceInfo.webBrowserInfo;
+        return {'os': 'web', 'model': webBrowserInfo.userAgent};
+      } else if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        return {'os': 'android', 'model': androidInfo.model, 'brand': androidInfo.brand, 'isPhysicalDevice': androidInfo.isPhysicalDevice};
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        return {'os': 'ios', 'model': iosInfo.utsname.machine, 'systemVersion': iosInfo.systemVersion, 'isPhysicalDevice': iosInfo.isPhysicalDevice};
+      }
+    } catch (e) {
+      debugPrint('Failed to get device info: $e');
+    }
+    return {'os': 'unknown', 'model': 'unknown'};
   }
 }

@@ -91,7 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // UI 1: The Original Character Intro Layout
   Widget _buildPage1() {
     return const OnboardingPageContent(
-      imagePath: 'assets/images/solo_yellow_straight.png',
+      imagePath: 'assets/images/characters/mascots/solo_yellow_straight.png',
       text: "Welcome to Sipsara!\nI'm Moko, your new learning buddy!",
     );
   }
@@ -114,7 +114,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               size: 200,
               animation: MonsterAnimation.none,
               showBody: true,
-              imagePath: 'assets/images/solo_blue.png',
+              imagePath: 'assets/images/characters/human/human_student_1.png',
             ),
           ),
         ),
@@ -206,7 +206,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 size: 250,
                 animation: MonsterAnimation.none,
                 showBody: true,
-                imagePath: 'assets/images/solo_green.png',
+                imagePath: 'assets/images/characters/mascots/solo_green.png',
               ),
             ],
           ),

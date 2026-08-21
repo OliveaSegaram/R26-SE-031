@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 
@@ -156,7 +157,7 @@ class _ComprehensiveAssessmentScreenState extends State<ComprehensiveAssessmentS
           
           SafeArea(
             child: _isLoading 
-                ? const Center(child: CircularProgressIndicator(color: AppColors.calmBlue))
+                ? const Center(child: AppLoadingIndicator())
                 : Column(
                     children: [
                       Padding(
@@ -376,8 +377,8 @@ class _ComprehensiveAssessmentScreenState extends State<ComprehensiveAssessmentS
                   children: [
                     Expanded(
                       child: _buildInteractiveBlock(
-                        text: 'Yes',
-                        subtext: 'ඔව්',
+                        text: 'ඔව්',
+                        subtext: 'Yes',
                         icon: Icons.check_rounded,
                         isSelected: _answers[index] == true,
                         activeGradient: AppColors.greenGradient,
@@ -388,16 +389,12 @@ class _ComprehensiveAssessmentScreenState extends State<ComprehensiveAssessmentS
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildInteractiveBlock(
-                        text: 'No',
-                        subtext: 'නැත',
+                        text: 'නැත',
+                        subtext: 'No',
                         icon: Icons.close_rounded,
                         isSelected: _answers[index] == false,
-                        activeGradient: const LinearGradient(
-                          colors: [Color(0xFFFF7E7E), Color(0xFFE55A5A)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        activeShadow: const Color(0xFFE55A5A),
+                        activeGradient: AppColors.greenGradient,
+                        activeShadow: AppColors.gentleGreen,
                         onTap: () => _onOptionSelected(index, false),
                       ),
                     ),

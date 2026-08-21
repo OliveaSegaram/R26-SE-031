@@ -3,7 +3,16 @@ import soundfile as sf
 import tempfile
 import os
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Fallback Adult Whisper Model
 MODEL_NAME = "AqeelShafy7/Whisper-Sinhala_Audio_to_Text"
+
+# Pediatric LoRA configuration (Stub)
+LORA_MODEL_DIR = "models/pediatric_whisper_lora"
 
 class STTService:
     def __init__(self):
@@ -13,6 +22,19 @@ class STTService:
         self.torch = torch
         self.processor = AutoProcessor.from_pretrained(MODEL_NAME)
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(MODEL_NAME)
+        
+        # Check for Pediatric LoRA fine-tuned weights
+        if os.path.exists(LORA_MODEL_DIR):
+            try:
+                from peft import PeftModel
+                self.model = PeftModel.from_pretrained(self.model, LORA_MODEL_DIR)
+                logger.info("Successfully loaded Pediatric Sinhala LoRA acoustic model.")
+            except Exception as e:
+                logger.error(f"Failed to load LoRA weights: {e}")
+                logger.warning("WARNING: Falling back to zero-shot adult Whisper model. High pediatric WER expected.")
+        else:
+            logger.warning("WARNING: Pediatric Sinhala LoRA model not found. Falling back to zero-shot adult Whisper model. High pediatric WER expected.")
+            
         self.model.eval()
 
     def transcribe_audio_bytes(self, audio_bytes: bytes) -> str:

@@ -153,7 +153,7 @@ class _SignInScreenState extends State<SignInScreen>
                       MonsterCharacter(
                         size: 110,
                         animation: MonsterAnimation.wave,
-                        imagePath: 'assets/images/mascot_blue_jumping.png',
+                        imagePath: 'assets/images/characters/mascots/mascot_blue_jumping.png',
                       ),
                       // Back Button on the left
                       Align(

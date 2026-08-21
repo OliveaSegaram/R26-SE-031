@@ -1,13 +1,13 @@
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:sensors_plus/sensors_plus.dart';
 import '../services/telemetry_service.dart';
 import '../services/telemetry/plugins/voice_analysis_plugin.dart';
 import '../services/telemetry/plugins/eye_tracking_plugin.dart';
 import '../models/curriculum_models.dart';
 import '../screens/activity_complete_screen.dart';
 import '../screens/games/game_factory.dart';
+import '../services/tts_service.dart';
 
 /// A wrapper widget that tracks all touch events, latency, and coordinates
 /// before they reach the underlying game template.
@@ -49,10 +49,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   int _misclickCount = 0;
   int _hesitationCount = 0;
   int _audioReplayCount = 0;
-  double _maxDeviceMotion = 0.0;
   bool _firstTouchRecorded = false;
-  
-  StreamSubscription<UserAccelerometerEvent>? _accelSub;
 
   // ---- Session accumulators ----
   int _totalScore = 0;
@@ -69,14 +66,6 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     _hesitationStopwatch = Stopwatch()..start();
     _initPluginsOnce();
 
-    _accelSub = userAccelerometerEventStream().listen((event) {
-      // Calculate magnitude of acceleration vector
-      double magnitude = sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
-      if (magnitude > _maxDeviceMotion) {
-        _maxDeviceMotion = magnitude;
-      }
-    });
-
     TelemetryService().broadcastRoundStart(
       widget.activityNode.templateType,
       _currentRound,
@@ -86,13 +75,16 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
   @override
   void dispose() {
-    _accelSub?.cancel();
     if (_roundStopwatch.isRunning && _roundsCompletedTotal < widget.activityNode.rounds.length) {
       // The wrapper was disposed before the game finished natively -> Abandonment
       _logAbandonment();
     }
     _roundStopwatch.stop();
     _hesitationStopwatch.stop();
+    
+    // Stop any ongoing TTS audio when navigating away from the activity
+    TtsService().stop();
+    
     super.dispose();
   }
 
@@ -111,7 +103,6 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       misclickCount: _misclickCount,
       hesitationCount: _hesitationCount,
       audioReplayCount: _audioReplayCount,
-      maxDeviceMotion: _maxDeviceMotion,
       isAbandoned: true, // FLAG SET!
       touchPath: List.unmodifiable(_currentTouchPath),
     );
@@ -127,6 +118,23 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
     TelemetryService().registerPlugin(voicePlugin);
     TelemetryService().registerPlugin(eyePlugin);
+  }
+
+  /// Pause hesitation tracking while audio is playing.
+  void pauseHesitationTimer() {
+    if (_hesitationStopwatch.isRunning) {
+      _hesitationStopwatch.stop();
+      debugPrint('TELEMETRY: Hesitation timer paused (audio playing).');
+    }
+  }
+
+  /// Resume hesitation tracking after audio completes.
+  void resumeHesitationTimer() {
+    if (!_hesitationStopwatch.isRunning) {
+      _hesitationStopwatch.reset();
+      _hesitationStopwatch.start();
+      debugPrint('TELEMETRY: Hesitation timer resumed.');
+    }
   }
 
   /// Called by the transparent Listener widget on every pointer event.
@@ -146,6 +154,11 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       debugPrint('TELEMETRY: First touch at $_firstTouchLatencyMs ms.');
     }
 
+    // Determine touch type
+    String type = 'move';
+    if (details is PointerDownEvent) type = 'down';
+    else if (details is PointerUpEvent) type = 'up';
+
     // Record normalized touch point
     final xRatio = screenSize.width > 0
         ? (details.position.dx / screenSize.width).clamp(0.0, 1.0)
@@ -158,6 +171,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       xRatio: double.parse(xRatio.toStringAsFixed(3)),
       yRatio: double.parse(yRatio.toStringAsFixed(3)),
       timestampMs: _roundStopwatch.elapsedMilliseconds,
+      type: type,
     ));
 
     TelemetryService().broadcastPointerEvent(details);
@@ -199,7 +213,6 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       misclickCount: _misclickCount,
       hesitationCount: _hesitationCount,
       audioReplayCount: _audioReplayCount,
-      maxDeviceMotion: _maxDeviceMotion,
       isAbandoned: false,
       touchPath: List.unmodifiable(_currentTouchPath),
     );
@@ -230,7 +243,6 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     _misclickCount = 0;
     _hesitationCount = 0;
     _audioReplayCount = 0;
-    _maxDeviceMotion = 0.0;
     _roundStopwatch.reset();
     _roundStopwatch.start();
     _hesitationStopwatch.reset();
@@ -280,6 +292,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     return Listener(
       onPointerDown: (e) => _recordTouch(e, screenSize),
       onPointerMove: (e) => _recordTouch(e, screenSize),
+      onPointerUp: (e) => _recordTouch(e, screenSize),
       child: widget.child,
     );
   }

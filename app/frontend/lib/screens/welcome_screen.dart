@@ -330,7 +330,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     return SizedBox(
       width: groupWidth,
       child: Image.asset(
-        'assets/images/furry_monsters_group_transparent.png',
+        'assets/images/characters/mascots/furry_monsters_group_transparent.png',
         fit: BoxFit.contain,
       ),
     );

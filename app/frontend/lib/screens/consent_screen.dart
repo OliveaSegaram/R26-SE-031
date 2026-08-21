@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
+import '../utils/avatar_utils.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../widgets/gradient_button.dart';
@@ -86,7 +88,7 @@ class _ConsentScreenState extends State<ConsentScreen>
           builder: (context) => AssessmentPromptScreen(
             studentId: result['id'],
             studentName: studentData['first_name'],
-            avatarUrl: studentData['avatar_url'],
+            avatarUrl: AvatarUtils.getCorrectedAvatarPath(studentData['avatar_url'] as String?),
           ),
         ),
       );
@@ -194,7 +196,7 @@ class _ConsentScreenState extends State<ConsentScreen>
                       radius: 24,
                       backgroundColor: AppColors.cream,
                       backgroundImage: AssetImage(
-                        widget.studentData['avatar_url'] ?? 'assets/images/solo_blue.png',
+                        AvatarUtils.getCorrectedAvatarPath(widget.studentData['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png'),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -346,7 +348,7 @@ class _ConsentScreenState extends State<ConsentScreen>
 
               // --- Agree Button ---
               _isSubmitting
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.gentleGreen))
+                  ? const Center(child: AppLoadingIndicator())
                   : GradientButton(
                       text: 'i agree & continue',
                       icon: Icons.check_circle_rounded,

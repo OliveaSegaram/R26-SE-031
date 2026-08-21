@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
+import '../utils/avatar_utils.dart';
 import '../../theme/app_theme.dart';
 import 'welcome_screen.dart';
 import 'assessment_prompt_screen.dart';
@@ -8,6 +10,8 @@ import 'comprehensive_assessment_screen.dart';
 import 'comprehensive_results_screen.dart';
 import '../services/auth_service.dart';
 import '../services/student_service.dart';
+import '../services/progress_service.dart';
+import '../services/accessibility_service.dart';
 
 /// Parent Account Screen — Frontend Redesign with World-Class UX
 class ParentAccountScreen extends StatefulWidget {
@@ -42,6 +46,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
   }
 
   Future<void> _loadData() async {
+    await AccessibilityService().init();
     final profile = await AuthService().getUserProfile();
     final students = await StudentService().getStudents();
     final provider = await AuthService().getAuthProvider();
@@ -82,8 +87,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.calmBlue))
+            ? const Center(child: AppLoadingIndicator())
             : SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
@@ -286,6 +290,12 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
               icon: Icons.assignment_rounded,
               title: 'comprehensive assessments',
               child: _buildComprehensiveAssessmentsContent(),
+            ),
+            _divider(),
+            _buildExpansionSection(
+              icon: Icons.accessibility_new_rounded,
+              title: 'neuroinclusive settings',
+              child: _buildAccessibilityContent(),
             ),
             _divider(),
             _buildExpansionSection(
@@ -795,8 +805,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
                             radius: 18,
                             backgroundColor: AppColors.cream,
                             backgroundImage: AssetImage(
-                                student['avatar_url'] ??
-                                    'assets/images/solo_blue.png'),
+                                AvatarUtils.getCorrectedAvatarPath(student['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png')),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -826,7 +835,7 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
                                                 student['first_name'] ??
                                                     'Student',
                                             avatarUrl:
-                                                student['avatar_url'],
+                                                AvatarUtils.getCorrectedAvatarPath(student['avatar_url'] as String?),
                                           ),
                                         ),
                                       ).then((_) => _loadData());
@@ -905,6 +914,14 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
                                 ),
                               ).then((_) => _loadData());
                             },
+                          ),
+                          const SizedBox(width: 4),
+                          // Reset Skills
+                          _iconBtn(
+                            Icons.restart_alt_rounded,
+                            AppColors.warmAmber,
+                            () => _showResetSkillsDialog(
+                                student as Map<String, dynamic>),
                           ),
                           const SizedBox(width: 4),
                           // Delete
@@ -1469,6 +1486,92 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
     );
   }
 
+  void _showResetSkillsDialog(Map<String, dynamic> student) {
+    final studentName = student['first_name'] ?? 'this student';
+    final studentId = student['id']?.toString() ?? '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        bool isResetting = false;
+
+        return StatefulBuilder(builder: (ctx, setDialogState) {
+          return AlertDialog(
+            backgroundColor: AppColors.warmWhite,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                const Icon(Icons.restart_alt_rounded,
+                    color: AppColors.warmAmber, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'reset skills?',
+                    style: AppTypography.heading(
+                        fontSize: 20, color: AppColors.warmAmber),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'are you sure you want to reset all skill progress for $studentName? completed activities, scores, and unlock status will be reset back to the start.',
+              style: AppTypography.body(
+                  fontSize: 15, color: AppColors.textPrimary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isResetting ? null : () => Navigator.pop(ctx),
+                child: Text('cancel',
+                    style: AppTypography.body(
+                        fontSize: 14, color: AppColors.textSecondary)),
+              ),
+              ElevatedButton(
+                onPressed: isResetting
+                    ? null
+                    : () async {
+                        setDialogState(() {
+                          isResetting = true;
+                        });
+
+                        await ProgressService().resetStudentProgress(studentId);
+
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'skills progress reset for $studentName!',
+                              style: AppTypography.body(color: Colors.white),
+                            ),
+                            backgroundColor: AppColors.gentleGreen,
+                          ),
+                        );
+
+                        _loadData();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.warmAmber,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: isResetting
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : Text('reset skills',
+                        style: AppTypography.button(fontSize: 14)),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
   void _showDeleteStudentDialog(
       Map<String, dynamic> student) async {
     final studentName = student['first_name'] ?? 'this student';
@@ -1597,6 +1700,99 @@ class _ParentAccountScreenState extends State<ParentAccountScreen>
       SnackBar(
         content: Text('$feature — coming soon!'),
         backgroundColor: AppColors.calmBlue,
+      ),
+    );
+  }
+
+  Widget _buildAccessibilityContent() {
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        AccessibilityService().useDyslexicFont,
+        AccessibilityService().highContrastMode,
+        AccessibilityService().relaxedTimeLimits,
+      ]),
+      builder: (context, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Customize the app to match your child\'s cognitive profile.',
+              style: AppTypography.caption(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            _buildAccessibilityToggle(
+              icon: Icons.font_download_outlined,
+              title: 'OpenDyslexic Font',
+              subtitle: 'Enhances readability by bottom-weighting letters to prevent rotation.',
+              value: AccessibilityService().useDyslexicFont.value,
+              onChanged: (val) => AccessibilityService().setDyslexicFont(val),
+            ),
+            const SizedBox(height: 12),
+            _buildAccessibilityToggle(
+              icon: Icons.contrast_rounded,
+              title: 'High Contrast UI',
+              subtitle: 'Increases visual distinction for children with visual processing difficulties.',
+              value: AccessibilityService().highContrastMode.value,
+              onChanged: (val) => AccessibilityService().setHighContrastMode(val),
+            ),
+            const SizedBox(height: 12),
+            _buildAccessibilityToggle(
+              icon: Icons.timer_off_outlined,
+              title: 'Relaxed Time Limits',
+              subtitle: 'Disables or extends countdown timers to reduce cognitive load and anxiety.',
+              value: AccessibilityService().relaxedTimeLimits.value,
+              onChanged: (val) => AccessibilityService().setRelaxedTimeLimits(val),
+            ),
+          ],
+        );
+      }
+    );
+  }
+
+  Widget _buildAccessibilityToggle({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.slateBg.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.calmBlue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.calmBlue, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTypography.body(fontWeight: FontWeight.w700, fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(subtitle, style: AppTypography.caption(fontSize: 12, color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.calmBlue,
+            activeTrackColor: AppColors.calmBlue.withValues(alpha: 0.3),
+          ),
+        ],
       ),
     );
   }

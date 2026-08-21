@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/avatar_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../theme/app_theme.dart';
 import '../models/curriculum_models.dart';
@@ -115,7 +116,7 @@ class _SkillIntroScreenState extends State<SkillIntroScreen> {
                     ),
                   ),
                   Image.asset(
-                    'assets/images/solo_blue.png',
+                    AvatarUtils.getCorrectedAvatarPath(widget.studentData?['avatar_url'] as String?, 'assets/images/characters/mascots/solo_blue.png'),
                     height: 140,
                     fit: BoxFit.contain,
                   ),

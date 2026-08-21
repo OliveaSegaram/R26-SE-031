@@ -258,7 +258,6 @@ class _TelemetryDebugScreenState extends State<TelemetryDebugScreen> {
             DataColumn(label: Text('Misclicks')),
             DataColumn(label: Text('Hesitations')),
             DataColumn(label: Text('Audio Replays')),
-            DataColumn(label: Text('Max Motion')),
             DataColumn(label: Text('Abandoned')),
           ],
           rows: events.map((e) {
@@ -271,7 +270,6 @@ class _TelemetryDebugScreenState extends State<TelemetryDebugScreen> {
                 DataCell(Text('${e.misclickCount}')),
                 DataCell(Text('${e.hesitationCount}')),
                 DataCell(Text('${e.audioReplayCount}')),
-                DataCell(Text(e.maxDeviceMotion.toStringAsFixed(2))),
                 DataCell(Text(e.isAbandoned ? 'Yes' : 'No')),
               ],
             );

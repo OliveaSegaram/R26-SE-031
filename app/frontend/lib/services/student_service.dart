@@ -1,8 +1,10 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Handles all student-related API calls.
 /// Separated from AuthService for clean architecture.
@@ -67,15 +69,34 @@ class StudentService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as List<dynamic>;
+        final students = jsonDecode(response.body) as List<dynamic>;
+        // Cache the students for instant loading next time
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('cached_students_list', jsonEncode(students));
+        return students;
       }
-      return [];
+      return await getCachedStudents();
     } catch (e) {
-      return [];
+      // Fallback to cache on network error or timeout
+      return await getCachedStudents();
     }
+  }
+
+  /// Get students from local cache for instant UI rendering
+  Future<List<dynamic>> getCachedStudents() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString('cached_students_list');
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        return jsonDecode(cachedStr) as List<dynamic>;
+      }
+    } catch (e) {
+      // Ignore cache errors
+    }
+    return [];
   }
 
   /// Update an existing student's details.
@@ -312,6 +333,89 @@ class StudentService {
       return {};
     } catch (e) {
       return {};
+    }
+  }
+
+  /// Download the PDF Clinical Report
+  Future<String?> downloadClinicalReport(String studentId) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/telemetry/$studentId/report/pdf'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/Clinical_Report_$studentId.pdf');
+        await file.writeAsBytes(response.bodyBytes);
+        await Share.shareXFiles([XFile(file.path)], text: 'Clinical Report');
+        return null;
+      } else {
+        return 'Failed to download report: ${response.statusCode}';
+      }
+    } catch (e) {
+      return 'Error downloading report: $e';
+    }
+  }
+
+  /// Download the PDF Assessment Report
+  Future<String?> downloadAssessmentReport(String studentId) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/students/$studentId/assessment/report/pdf'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/Assessment_Report_$studentId.pdf');
+        await file.writeAsBytes(response.bodyBytes);
+        await Share.shareXFiles([XFile(file.path)], text: 'Comprehensive Assessment Report');
+        return null;
+      } else {
+        return 'Failed to download assessment report: ${response.statusCode}';
+      }
+    } catch (e) {
+      return 'Error downloading assessment report: $e';
+    }
+  }
+
+  /// Submit a clinical ground-truth label for a student to train ML models.
+  Future<String?> submitClinicianLabel(String studentId, String label) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/ml/label/$studentId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'label': label}),
+      );
+
+      if (response.statusCode == 200) {
+        return null; // Success
+      } else {
+        final data = jsonDecode(response.body);
+        if (data['detail'] is String) {
+          return data['detail'];
+        }
+        return 'Failed to submit clinical label.';
+      }
+    } catch (e) {
+      return 'Failed to connect to the server.';
     }
   }
 }

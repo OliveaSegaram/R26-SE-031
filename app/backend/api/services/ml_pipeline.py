@@ -77,15 +77,19 @@ def extract_features(events: list[dict[str, Any]]) -> dict[str, float]:
         avg_ftl = statistics.mean(
             e.get("first_touch_latency_ms", 1500) for e in visual_events
         )
-        # Invert: lower latency → higher score. Baseline = 2000 ms
-        visual_processing_speed = max(0.0, min(100.0, (2000 - avg_ftl) / 20))
+        # Logistic curve: Midpoint at 3500ms, smooth degradation
+        visual_processing_speed = 100.0 / (1.0 + math.exp((avg_ftl - 3500) / 800))
     else:
         visual_processing_speed = 50.0  # neutral when no data
 
     # ---- Motor Precision Score ----------------------------------------------
-    total_taps = sum(
-        len(e.get("touch_path", [])) for e in events
-    )
+    total_taps = 0
+    for e in events:
+        path = e.get("touch_path", [])
+        # Only count discrete taps/downs, fallback to path length if old data
+        taps = sum(1 for p in path if p.get("type", "tap") in ("tap", "down"))
+        total_taps += taps if taps > 0 else len(path)
+        
     total_misclicks = sum(e.get("misclick_count", 0) for e in events)
     if total_taps > 0:
         motor_precision = max(0.0, (1 - total_misclicks / total_taps) * 100)
@@ -125,7 +129,8 @@ def extract_features(events: list[dict[str, Any]]) -> dict[str, float]:
         late_latency = statistics.mean(
             e.get("total_round_latency_ms", 0) for e in events[-3:]
         )
-        fatigue_drift = late_latency - early_latency  # positive = slowing down
+        # Relative fatigue: percentage slowdown
+        fatigue_drift = ((late_latency / early_latency) - 1.0) if early_latency > 0 else 0.0
     else:
         fatigue_drift = 0.0
 
@@ -153,12 +158,12 @@ def compute_cognitive_indices(features: dict[str, float]) -> dict[str, float]:
     # Motor precision is already 0-100
     motor_precision_score = _clamp(features["motor_precision"])
 
-    # Phonological score: invert latency (2500ms baseline)
+    # Phonological score: Logistic curve with midpoint at 4000ms
     phonological_latency = features["phonological_latency"]
-    phonological_awareness_score = _clamp((2500 - phonological_latency) / 25)
+    phonological_awareness_score = 100.0 / (1.0 + math.exp((phonological_latency - 4000) / 1000))
 
-    # Sustained attention: penalise hesitation ratio; cap at 4 hesitations per round
-    sustained_attention_score = _clamp(100 - (features["hesitation_ratio"] / 4) * 100)
+    # Sustained attention: Exponential decay based on hesitation ratio
+    sustained_attention_score = _clamp(100.0 * math.exp(-features["hesitation_ratio"] / 2.0))
 
     return {
         "visual_processing_score": round(visual_processing_score, 1),
@@ -172,10 +177,48 @@ def compute_cognitive_indices(features: dict[str, float]) -> dict[str, float]:
 # Risk Classifier — Rule-Based (upgradeable to sklearn RandomForest)
 # ---------------------------------------------------------------------------
 
+import os
+import joblib
+
+# Optional: define path to ML model
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "dyslexia_rf_model.pkl")
+
 def classify_risk(
     features: dict[str, float],
     indices: dict[str, float],
 ) -> dict[str, str]:
+    """
+    Classify dyslexia subtype risk levels from feature vector and cognitive indices.
+
+    If a trained Scikit-Learn model exists at MODEL_PATH, it uses the Random Forest
+    to predict probabilities. Otherwise, it falls back to the clinical heuristic rules.
+    """
+    if os.path.exists(MODEL_PATH):
+        try:
+            model = joblib.load(MODEL_PATH)
+            # Feature ordering must match training (assuming alphabetical for simplicity in this stub)
+            # In production, use a DictVectorizer or Pandas DataFrame to guarantee order
+            feature_keys = sorted(list(features.keys()))
+            x_input = [[features[k] for k in feature_keys]]
+            
+            # Predict
+            prediction = model.predict(x_input)[0]  # e.g. 0=Low, 1=Moderate, 2=High
+            
+            risk_map = {0: "Low", 1: "Moderate", 2: "High"}
+            overall_risk = risk_map.get(prediction, "Moderate")
+            
+            return {
+                "overall_risk": overall_risk,
+                "dyslexia_risk": overall_risk,
+                "dyspraxia_risk": overall_risk,
+                "adhd_risk": overall_risk,
+                "model_used": "RandomForest"
+            }
+        except Exception as e:
+            # Fallback on error
+            pass
+
+    # --- FALLBACK HEURISTIC RULES ---
     """
     Classify dyslexia subtype risk levels from feature vector and cognitive indices.
 
@@ -284,30 +327,70 @@ def generate_interventions(
     return interventions
 
 
+from services.feature_engineering import extract_advanced_features
+
+
 # ---------------------------------------------------------------------------
 # Full Pipeline Entry Point
 # ---------------------------------------------------------------------------
 
-def run_pipeline(telemetry_sessions: list[dict[str, Any]]) -> dict[str, Any]:
+def normalize_features_for_device(features: dict[str, Any], device_metrics: dict[str, Any]) -> dict[str, Any]:
+    """Normalize kinematics and physical bounds based on the device."""
+    if not device_metrics:
+        return features
+
+    os_type = device_metrics.get("os", "unknown")
+    model = device_metrics.get("model", "").lower()
+    
+    # Rough heuristics for normalization: iPads/Tablets require larger physical drags.
+    scalar = 1.0
+    if "ipad" in model or "tablet" in model:
+        scalar = 0.85
+    elif os_type == "android" or "iphone" in model:
+        scalar = 1.15
+        
+    normalized = features.copy()
+    if "avg_jerkiness" in normalized:
+        normalized["avg_jerkiness"] = round(normalized["avg_jerkiness"] * scalar, 4)
+    if "avg_velocity" in normalized:
+        normalized["avg_velocity"] = round(normalized["avg_velocity"] * (1 / scalar), 4)
+        
+    return normalized
+
+def generate_cognitive_profile(
+    telemetry_sessions: list[dict[str, Any]], 
+    assessment_risk_score: float = 0.0
+) -> dict[str, Any]:
     """
     Full end-to-end ML analytics pipeline.
-
-    Args:
-        telemetry_sessions: List of raw telemetry session documents from MongoDB,
-                            each containing an `events` list of TelemetryEvent dicts.
-
-    Returns:
-        Cognitive profile dict ready for storage in `cognitive_profiles` collection.
     """
-    # Flatten all events across all sessions
     all_events: list[dict[str, Any]] = []
+    latest_device_metrics = {}
+    
     for session in telemetry_sessions:
         all_events.extend(session.get("events", []))
+        if session.get("device_metrics"):
+            latest_device_metrics = session.get("device_metrics")
 
-    features = extract_features(all_events)
-    indices = compute_cognitive_indices(features)
-    risk = classify_risk(features, indices)
-    interventions = generate_interventions(risk, features)
+    base_features = extract_features(all_events)
+    advanced_features = extract_advanced_features(all_events)
+    
+    # Normalize features using device metrics
+    advanced_features = normalize_features_for_device(advanced_features, latest_device_metrics)
+    
+    # Combine into 19-dimensional feature vector (STT features stubbed for now)
+    features = {
+        **base_features,
+        **advanced_features,
+        "word_error_rate": 0.0,
+        "voice_hesitation_ms": 0.0,
+        "assessment_risk_score": round(assessment_risk_score, 4),
+    }
+
+    # Cognitive indices currently only use the base features
+    indices = compute_cognitive_indices(base_features)
+    risk = classify_risk(base_features, indices)
+    interventions = generate_interventions(risk, base_features)
 
     return {
         "feature_vector": features,

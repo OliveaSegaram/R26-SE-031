@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/app_loading_indicator.dart';
 
 import '../theme/app_theme.dart';
 import '../models/assessment_question.dart';
@@ -32,14 +33,14 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
   // 8 cute 3D claymorphic characters to cycle through!
   final List<String> _monsterImages = [
-    'assets/images/solo_blue.png',
-    'assets/images/solo_orange.png',
-    'assets/images/solo_green.png',
-    'assets/images/solo_teal.png',
-    'assets/images/solo_pink.png',
-    'assets/images/solo_yellow.png',
-    'assets/images/solo_yellow_straight.png',
-    'assets/images/solo_pink_up.png',
+    'assets/images/characters/human/human_student_1.png',
+    'assets/images/characters/mascots/solo_orange.png',
+    'assets/images/characters/mascots/solo_green.png',
+    'assets/images/characters/mascots/solo_teal.png',
+    'assets/images/characters/mascots/solo_pink.png',
+    'assets/images/characters/mascots/solo_yellow.png',
+    'assets/images/characters/mascots/solo_yellow_straight.png',
+    'assets/images/characters/mascots/solo_pink_up.png',
   ];
 
   @override
@@ -131,7 +132,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator(color: AppColors.gentleGreen))
+          ? const Center(child: AppLoadingIndicator())
           : SafeArea(
               child: Column(
                 children: [

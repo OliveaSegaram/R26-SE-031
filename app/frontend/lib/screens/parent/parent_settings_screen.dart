@@ -1,6 +1,8 @@
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../widgets/app_loading_indicator.dart';
+import '../../utils/avatar_utils.dart';
 import '../../theme/app_theme.dart';
 import '../welcome_screen.dart';
 import '../assessment_prompt_screen.dart';
@@ -9,6 +11,7 @@ import '../add_student_screen.dart';
 import '../dashboard_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/student_service.dart';
+import '../../services/progress_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 /// Parent Account Screen — Frontend Redesign with World-Class UX
@@ -186,8 +189,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
       backgroundColor: AppColors.cream,
       body: SafeArea(
         child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.calmBlue))
+            ? const Center(child: AppLoadingIndicator())
             : SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
@@ -804,8 +806,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                             radius: 20,
                             backgroundColor: AppColors.cream,
                             backgroundImage: AssetImage(
-                                student['avatar_url'] ??
-                                    'assets/images/solo_blue.png'),
+                                AvatarUtils.getCorrectedAvatarPath(student['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png')),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -833,7 +834,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                                       studentId: student['id'],
                                       studentName:
                                           student['first_name'] ?? 'Student',
-                                      avatarUrl: student['avatar_url'],
+                                      avatarUrl: AvatarUtils.getCorrectedAvatarPath(student['avatar_url'] as String?),
                                     ),
                                   ),
                                 ).then((_) => _loadData());
@@ -918,7 +919,14 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                               ).then((_) => _loadData());
                             },
                           ),
-                          // Action 3: Delete
+                          // Action 3: Reset Skills
+                          _iconBtn(
+                            Icons.restart_alt_rounded,
+                            AppColors.warmAmber,
+                            () => _showResetSkillsDialog(
+                                student as Map<String, dynamic>),
+                          ),
+                          // Action 4: Delete
                           _iconBtn(
                             Icons.delete_outline_rounded,
                             Colors.redAccent,
@@ -1888,6 +1896,92 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
           });
         },
       ),
+    );
+  }
+
+  void _showResetSkillsDialog(Map<String, dynamic> student) {
+    final studentName = student['first_name'] ?? 'this student';
+    final studentId = student['id']?.toString() ?? '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        bool isResetting = false;
+
+        return StatefulBuilder(builder: (ctx, setDialogState) {
+          return AlertDialog(
+            backgroundColor: AppColors.warmWhite,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                const Icon(Icons.restart_alt_rounded,
+                    color: AppColors.warmAmber, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'reset skills?',
+                    style: AppTypography.heading(
+                        fontSize: 20, color: AppColors.warmAmber),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'are you sure you want to reset all skill progress for $studentName? completed activities, scores, and unlock status will be reset back to the start.',
+              style: AppTypography.body(
+                  fontSize: 15, color: AppColors.textPrimary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isResetting ? null : () => Navigator.pop(ctx),
+                child: Text('cancel',
+                    style: AppTypography.body(
+                        fontSize: 14, color: AppColors.textSecondary)),
+              ),
+              ElevatedButton(
+                onPressed: isResetting
+                    ? null
+                    : () async {
+                        setDialogState(() {
+                          isResetting = true;
+                        });
+
+                        await ProgressService().resetStudentProgress(studentId);
+
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'skills progress reset for $studentName!',
+                              style: AppTypography.body(color: Colors.white),
+                            ),
+                            backgroundColor: AppColors.gentleGreen,
+                          ),
+                        );
+
+                        _loadData();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.warmAmber,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: isResetting
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : Text('reset skills',
+                        style: AppTypography.button(fontSize: 14)),
+              ),
+            ],
+          );
+        });
+      },
     );
   }
 }

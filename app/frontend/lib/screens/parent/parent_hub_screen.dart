@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../widgets/app_loading_indicator.dart';
+import '../../utils/avatar_utils.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
@@ -79,8 +81,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
     return Scaffold(
       backgroundColor: AppColors.cream,
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.calmBlue))
+          ? const Center(child: AppLoadingIndicator())
           : FadeTransition(
               opacity: _fadeAnimation,
               child: SafeArea(
@@ -328,14 +329,18 @@ class _ParentHubScreenState extends State<ParentHubScreen>
         'bgColor': AppColors.slateBg,
         'onTap': () {
           if (_students.isNotEmpty) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ChildProgressScreen(
-                  studentData: _students.first as Map<String, dynamic>,
+            if (_students.length == 1) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChildProgressScreen(
+                    studentData: _students.first as Map<String, dynamic>,
+                  ),
                 ),
-              ),
-            );
+              );
+            } else {
+              _showChildSelectionModal(context);
+            }
           } else {
             _showSnackBar('add a student first to view progress');
           }
@@ -500,139 +505,215 @@ class _ParentHubScreenState extends State<ParentHubScreen>
     );
   }
 
+  void _showChildSelectionModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AppColors.cream,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(32),
+            topRight: Radius.circular(32),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'select a child',
+              style: AppTypography.heading(
+                fontSize: 20,
+                color: AppColors.calmBlue,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ..._students.map((student) {
+              final s = student as Map<String, dynamic>;
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.softCoral,
+                  backgroundImage: AssetImage(s['avatar_url'] ?? 'assets/images/mascots/solo_blue.png'),
+                ),
+                title: Text(
+                  s['first_name'] ?? 'student',
+                  style: AppTypography.body(fontWeight: FontWeight.w700),
+                ),
+                trailing: const FaIcon(FontAwesomeIcons.chevronRight, size: 16),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChildProgressScreen(studentData: s),
+                    ),
+                  );
+                },
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildChildCard(Map<String, dynamic> student) {
     final name = student['first_name'] ?? 'student';
     final grade = student['grade'] ?? 'n/a';
-    final avatar = student['avatar_url'] ?? 'assets/images/solo_blue.png';
+    final avatar = AvatarUtils.getCorrectedAvatarPath(
+      student['avatar_url'] as String?, 
+      'assets/images/characters/mascots/solo_blue.png'
+    );
+    final studentId = student['id'] ?? student['_id'];
 
-    // Mock data
-    const int streak = 5;
-    const double weeklyProgress = 0.72;
-    const String lastActive = 'today';
+    return FutureBuilder<List<dynamic>>(
+      future: StudentService().getTelemetry(studentId.toString()),
+      builder: (context, snapshot) {
+        int streak = 0;
+        double weeklyProgress = 0.0;
+        String lastActive = 'never';
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChildProgressScreen(studentData: student),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.borderLight, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Top Row: Avatar + Name + Grade
-            Row(
-              children: [
-                // Avatar
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.calmBlue, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.calmBlue.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(avatar, fit: BoxFit.cover),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Name + Grade
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: AppTypography.heading(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        grade,
-                        style: AppTypography.caption(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Streak badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.warmAmber.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const FaIcon(FontAwesomeIcons.fire,
-                          size: 14, color: AppColors.warmAmber),
-                      const SizedBox(width: 6),
-                      Text(
-                        '$streak day streak',
-                        style: AppTypography.caption(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.warmAmber,
-                        ),
-                      ),
-                    ],
-                  ),
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          final sessions = snapshot.data!;
+          final now = DateTime.now();
+          Set<String> activeDates = {};
+          int actsThisWeek = 0;
+
+          for (final session in sessions) {
+            final submittedAtStr = session['submitted_at'] as String?;
+            if (submittedAtStr != null) {
+              final submittedAt = DateTime.tryParse(submittedAtStr);
+              if (submittedAt != null) {
+                final dStr = "${submittedAt.year}-${submittedAt.month.toString().padLeft(2, '0')}-${submittedAt.day.toString().padLeft(2, '0')}";
+                activeDates.add(dStr);
+                
+                if (now.difference(submittedAt).inDays < 7) {
+                  actsThisWeek += (session['events'] as List?)?.length ?? 0;
+                }
+              }
+            }
+          }
+          
+          if (activeDates.isNotEmpty) {
+             lastActive = 'recent'; 
+          }
+          
+          String todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+          String yesterdayStr = "${now.subtract(const Duration(days: 1)).year}-${now.subtract(const Duration(days: 1)).month.toString().padLeft(2, '0')}-${now.subtract(const Duration(days: 1)).day.toString().padLeft(2, '0')}";
+          
+          DateTime checkDate = now;
+          if (activeDates.contains(todayStr) || activeDates.contains(yesterdayStr)) {
+            checkDate = activeDates.contains(todayStr) ? now : now.subtract(const Duration(days: 1));
+            while (true) {
+              String dStr = "${checkDate.year}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}";
+              if (activeDates.contains(dStr)) {
+                streak++;
+                checkDate = checkDate.subtract(const Duration(days: 1));
+              } else {
+                break;
+              }
+            }
+          }
+
+          weeklyProgress = (actsThisWeek / 20.0).clamp(0.0, 1.0);
+        }
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChildProgressScreen(studentData: student),
+              ),
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.cardSurface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.borderLight, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-
-            const SizedBox(height: 16),
-
-            // Progress bar
-            Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: AppColors.calmBlue.withValues(alpha: 0.1),
+                      backgroundImage: AssetImage(avatar),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: AppTypography.heading(
+                              fontSize: 18,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            grade,
+                            style: AppTypography.caption(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.warmAmber.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const FaIcon(FontAwesomeIcons.fire,
+                              size: 12, color: AppColors.warmAmber),
+                          const SizedBox(width: 6),
+                          Text(
+                            '$streak day streak',
+                            style: AppTypography.caption(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.warmAmber,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'weekly progress',
                       style: AppTypography.caption(
-                        fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
                       ),
                     ),
                     Text(
                       '${(weeklyProgress * 100).round()}%',
                       style: AppTypography.caption(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.gentleGreen,
                       ),
                     ),
@@ -640,58 +721,45 @@ class _ParentHubScreenState extends State<ParentHubScreen>
                 ),
                 const SizedBox(height: 8),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
                     value: weeklyProgress,
-                    backgroundColor: AppColors.borderLight,
-                    color: AppColors.gentleGreen,
                     minHeight: 8,
+                    backgroundColor: AppColors.borderLight,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.gentleGreen),
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
-            // Bottom Row: Last active + View button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+                const SizedBox(height: 16),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    FaIcon(FontAwesomeIcons.clock,
-                        size: 12, color: AppColors.textHint),
-                    const SizedBox(width: 6),
+                    Row(
+                      children: [
+                        const FaIcon(FontAwesomeIcons.clock,
+                            size: 12, color: AppColors.textHint),
+                        const SizedBox(width: 6),
+                        Text(
+                          'last active: $lastActive',
+                          style: AppTypography.caption(
+                              fontSize: 11, color: AppColors.textHint),
+                        ),
+                      ],
+                    ),
                     Text(
-                      'last active: $lastActive',
+                      'view progress →',
                       style: AppTypography.caption(
                         fontSize: 12,
-                        color: AppColors.textHint,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.calmBlue,
                       ),
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.calmBlue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'view progress →',
-                    style: AppTypography.caption(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.calmBlue,
-                    ),
-                  ),
-                ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }
     );
   }
 

@@ -1,1015 +1,484 @@
 [
   {
     "id": "skill_2",
-    "title": "Vowel Identification (ස්වර)",
-    "description": "Dynamic curriculum generated from contents.md with cognitive telemetry",
+    "title": "මූලික අකුරු හඳුනාගැනීම",
+    "description": "විනෝදයෙන් අකුරු ඉගෙන ගනිමු! 🎵",
     "activities": [
       {
         "id": "act_1",
-        "title": "Targeted Search (අ vs distractors)",
-        "description": "",
+        "title": "වෙනස් රූපය සොයමු",
+        "description": "වෙනස් රූපය හෝ අකුර සොයා ඒ මත ඔබන්න.",
         "telemetry_tags": [
-          "decoding",
-          "visual_discrimination"
+          "visual_discrimination",
+          "odd_one_out"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill2_odd_one_out",
         "rounds": [
           {
-            "raw_text": "Find 1 `අ` among 2 `ආ`.",
-            "options": [
-              "අ",
-              "ආ"
-            ],
-            "correctOption": "අ",
-            "correct_index": 0
+            "prompt": "'අ' අකුර සොයන්න.",
+            "items": [
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/fruits_food/apple.png",
+                "is_target": false
+              },
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/fruits_food/apple.png",
+                "is_target": false
+              },
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/fruits_food/apple.png",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "අ",
+                "is_target": true
+              }
+            ]
           },
           {
-            "raw_text": "Find 1 `අ` among 4 `ආ`.",
-            "options": [
-              "අ",
-              "ආ"
-            ],
-            "correctOption": "අ",
-            "correct_index": 0
+            "prompt": "'ම' අකුර සොයන්න.",
+            "items": [
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/everyday_objects/spoon.png",
+                "is_target": false
+              },
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/everyday_objects/spoon.png",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ය",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ම",
+                "is_target": true
+              }
+            ]
           },
           {
-            "raw_text": "Find 2 `අ` among 6 `ආ`.",
-            "options": [
-              "අ",
-              "ආ"
-            ],
-            "correctOption": "අ",
-            "correct_index": 0
+            "prompt": "'ර' අකුර සොයන්න.",
+            "items": [
+              {
+                "type": "icon",
+                "value": "assets/images/activity_icons/everyday_objects/flag.png",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ය",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ම",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ර",
+                "is_target": true
+              }
+            ]
           },
           {
-            "raw_text": "Find 2 `අ` among 8 `ඉ`, `උ`.",
-            "options": [
-              "අ",
-              "ඉ`, `උ"
-            ],
-            "correctOption": "අ",
-            "correct_index": 0
+            "prompt": "'ඳ' අකුර සොයන්න.",
+            "items": [
+              {
+                "type": "letter",
+                "value": "උ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "උ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "උ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඳ",
+                "is_target": true
+              }
+            ]
           },
           {
-            "raw_text": "Find 3 `අ` among 10 `ආ`, `ඇ`.",
-            "options": [
-              "අ",
-              "ආ`, `ඇ"
-            ],
-            "correctOption": "අ",
-            "correct_index": 0
+            "prompt": "'ධ' අකුර සොයන්න.",
+            "items": [
+              {
+                "type": "letter",
+                "value": "ඔ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඔ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඔ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඔ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඔ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ධ",
+                "is_target": true
+              }
+            ]
           },
           {
-            "raw_text": "Find 4 `අ` among 12 `ආ`, `ඇ`, `ඈ`.",
-            "options": [
-              "අ",
-              "ආ`, `ඇ`, `ඈ"
-            ],
-            "correctOption": "අ",
-            "correct_index": 0
+            "prompt": "'ට' අකුරු දෙක සොයන්න.",
+            "items": [
+              {
+                "type": "letter",
+                "value": "ඩ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඩ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඩ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඩ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ට",
+                "is_target": true
+              },
+              {
+                "type": "letter",
+                "value": "ට",
+                "is_target": true
+              }
+            ]
           },
           {
-            "raw_text": "Find 4 `අ` among 15 mixed vowels.",
-            "options": [
-              "අ",
-              "mixed vowels"
-            ],
-            "correctOption": "අ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Find 5 `අ` among 18 visually similar letters (e.g., `ඇ`).",
-            "options": [
-              "අ",
-              "visually similar letters (e.g., `ඇ`)"
-            ],
-            "correctOption": "අ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Find 6 `අ` among 20 mixed letters.",
-            "options": [
-              "අ",
-              "mixed letters"
-            ],
-            "correctOption": "අ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Find 8 `අ` among 25 dense mixed letters.",
-            "options": [
-              "අ",
-              "dense mixed letters"
-            ],
-            "correctOption": "අ",
-            "correct_index": 0
+            "prompt": "'අ' සහ 'ආ' අකුරු සොයන්න.",
+            "items": [
+              {
+                "type": "letter",
+                "value": "ඇ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඇ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඇ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "ඇ",
+                "is_target": false
+              },
+              {
+                "type": "letter",
+                "value": "අ",
+                "is_target": true
+              },
+              {
+                "type": "letter",
+                "value": "ආ",
+                "is_target": true
+              }
+            ]
           }
         ]
       },
       {
         "id": "act_2",
-        "title": "Targeted Search (ආ vs distractors)",
-        "description": "",
+        "title": "එක සමාන අකුරු",
+        "description": "එක සමාන අකුරු යුගල තෝරන්න.",
         "telemetry_tags": [
-          "decoding",
+          "matching",
           "visual_discrimination"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill2_identical_match",
         "rounds": [
           {
-            "raw_text": "Find 1 `ආ` among 2 `අ`.",
-            "options": [
-              "ආ",
-              "අ"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
+            "letters": [
+              "ක",
+              "ම"
+            ]
           },
           {
-            "raw_text": "Find 1 `ආ` among 4 `අ`.",
-            "options": [
-              "ආ",
-              "අ"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
+            "letters": [
+              "කා",
+              "ම"
+            ]
           },
           {
-            "raw_text": "Find 2 `ආ` among 6 `අ`.",
-            "options": [
-              "ආ",
-              "අ"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
+            "letters": [
+              "ග",
+              "ටු",
+              "ව"
+            ]
           },
           {
-            "raw_text": "Find 2 `ආ` among 8 `ඇ`, `ඈ`.",
-            "options": [
-              "ආ",
-              "ඇ`, `ඈ"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
+            "letters": [
+              "ර",
+              "ලි",
+              "ස",
+              "දු"
+            ]
           },
           {
-            "raw_text": "Find 3 `ආ` among 10 `අ`, `ඇ`.",
-            "options": [
-              "ආ",
-              "අ`, `ඇ"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Find 4 `ආ` among 12 `අ`, `ඇ`, `ඈ`.",
-            "options": [
-              "ආ",
-              "අ`, `ඇ`, `ඈ"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Find 4 `ආ` among 15 mixed vowels.",
-            "options": [
-              "ආ",
-              "mixed vowels"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Find 5 `ආ` among 18 visually similar letters.",
-            "options": [
-              "ආ",
-              "visually similar letters"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Find 6 `ආ` among 20 mixed letters.",
-            "options": [
-              "ආ",
-              "mixed letters"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Find 8 `ආ` among 25 dense mixed letters.",
-            "options": [
-              "ආ",
-              "dense mixed letters"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
+            "letters": [
+              "න",
+              "පා",
+              "බ",
+              "මු",
+              "ය"
+            ]
           }
         ]
       },
       {
         "id": "act_3",
-        "title": "Odd One Out (Vowels)",
-        "description": "",
+        "title": "අකුරට සවන් දෙමු",
+        "description": "අකුරට සවන් දී නිවැරදි අකුර තෝරන්න.",
         "telemetry_tags": [
-          "decoding"
+          "phonics",
+          "listening"
         ],
-        "template_type": "odd_one_out_game",
+        "template_type": "skill2_audio",
         "rounds": [
           {
-            "raw_text": "`අ අ ආ අ අ` -> Find `ආ`",
-            "options": [
-              "ආ",
-              "Other"
-            ],
-            "correctOption": "ආ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ඉ ඉ ඉ ඊ ඉ` -> Find `ඊ`",
-            "options": [
-              "ඊ",
-              "Other"
-            ],
-            "correctOption": "ඊ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`උ ඌ උ උ උ` -> Find `ඌ`",
-            "options": [
-              "ඌ",
-              "Other"
-            ],
-            "correctOption": "ඌ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`එ ඒ එ එ එ` -> Find `ඒ`",
-            "options": [
-              "ඒ",
-              "Other"
-            ],
-            "correctOption": "ඒ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ඔ ඔ ඕ ඔ ඔ` -> Find `ඕ`",
-            "options": [
-              "ඕ",
-              "Other"
-            ],
-            "correctOption": "ඕ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ඇ ඇ ඇ ඈ ඇ` -> Find `ඈ`",
-            "options": [
-              "ඈ",
-              "Other"
-            ],
-            "correctOption": "ඈ",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ආ ආ අ ආ ආ` -> Find `අ`",
+            "prompt": "ශබ්දයට සවන් දී 'අ' තෝරන්න",
             "options": [
               "අ",
-              "Other"
+              "ආ"
             ],
             "correctOption": "අ",
             "correct_index": 0
           },
           {
-            "raw_text": "`ඊ ඊ ඉ ඊ ඊ` -> Find `ඉ`",
+            "prompt": "ශබ්දයට සවන් දී 'ම' තෝරන්න",
             "options": [
-              "ඉ",
-              "Other"
+              "ය",
+              "ම",
+              "ර"
             ],
-            "correctOption": "ඉ",
-            "correct_index": 0
+            "correctOption": "ම",
+            "correct_index": 1
           },
           {
-            "raw_text": "`ඌ ඌ උ ඌ ඌ` -> Find `උ`",
+            "prompt": "ශබ්දයට සවන් දී 'ප' තෝරන්න",
             "options": [
-              "උ",
-              "Other"
+              "ව",
+              "ච",
+              "ප"
             ],
-            "correctOption": "උ",
-            "correct_index": 0
+            "correctOption": "ප",
+            "correct_index": 2
           },
           {
-            "raw_text": "Grid of 16 identical vowels, 1 odd one (e.g., 15 `එ`, 1 `ඒ`).",
+            "prompt": "ශබ්දයට සවන් දී 'ට' තෝරන්න",
             "options": [
-              "Option 1",
-              "Option 2"
+              "ඩ",
+              "ට",
+              "ක",
+              "ග"
             ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+            "correctOption": "ට",
+            "correct_index": 1
+          },
+          {
+            "prompt": "ශබ්දයට සවන් දී 'බ' තෝරන්න",
+            "options": [
+              "ම",
+              "ධ",
+              "ඔ",
+              "බ",
+              "ඩ"
+            ],
+            "correctOption": "බ",
+            "correct_index": 3
           }
         ]
       },
       {
         "id": "act_4",
-        "title": "Complete the Vowel Sequence",
-        "description": "",
+        "title": "අකුරු සොයමු",
+        "description": "වචනයේ මුල් හෝ අග අකුර කුමක්දැයි තෝරන්න.",
         "telemetry_tags": [
           "decoding",
-          "spatial_awareness",
-          "logical_reasoning"
+          "letter_identification"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill2_mcq",
         "rounds": [
           {
-            "raw_text": "`අ _ ඉ` (Options: `ආ`, `ඊ`)",
+            "prompt": "'මල්' යන වචනයේ මුල් අකුර කුමක්ද?",
             "options": [
-              "`ආ`",
-              "`ඊ`"
+              "ම",
+              "ය"
             ],
-            "correctOption": "`ආ`",
+            "correctOption": "ම",
             "correct_index": 0
           },
           {
-            "raw_text": "`ඉ _ උ` (Options: `ඊ`, `ඌ`)",
+            "prompt": "'ගස' යන වචනයේ මුල් අකුර කුමක්ද?",
             "options": [
-              "`ඊ`",
-              "`ඌ`"
+              "ස",
+              "ග",
+              "ට"
             ],
-            "correctOption": "`ඊ`",
-            "correct_index": 0
+            "correctOption": "ග",
+            "correct_index": 1
           },
           {
-            "raw_text": "`උ _ එ` (Options: `ඌ`, `ඒ`)",
+            "prompt": "'පොත' යන වචනයේ අග අකුර කුමක්ද?",
             "options": [
-              "`ඌ`",
-              "`ඒ`"
+              "පො",
+              "ව",
+              "ත"
             ],
-            "correctOption": "`ඌ`",
-            "correct_index": 0
+            "correctOption": "ත",
+            "correct_index": 2
           },
           {
-            "raw_text": "`එ _ ඔ` (Options: `ඒ`, `ඕ`)",
+            "prompt": "'අහස' යන වචනයේ අග අකුර කුමක්ද?",
             "options": [
-              "`ඒ`",
-              "`ඕ`"
+              "අ",
+              "හ",
+              "ය",
+              "ස"
             ],
-            "correctOption": "`ඒ`",
-            "correct_index": 0
+            "correctOption": "ස",
+            "correct_index": 3
           },
           {
-            "raw_text": "`අ ආ _ ඊ` (Options: `ඉ`, `උ`)",
+            "prompt": "'බල්ලා': මුල් සහ අග අකුරු තෝරන්න",
             "options": [
-              "`ඉ`",
-              "`උ`"
+              "ම",
+              "ලා",
+              "ඩ",
+              "බ",
+              "ඔ",
+              "ය"
             ],
-            "correctOption": "`ඉ`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`ඉ ඊ _ ඌ` (Options: `උ`, `එ`)",
-            "options": [
-              "`උ`",
-              "`එ`"
-            ],
-            "correctOption": "`උ`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`උ ඌ _ ඒ` (Options: `එ`, `ඔ`)",
-            "options": [
-              "`එ`",
-              "`ඔ`"
-            ],
-            "correctOption": "`එ`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`අ ආ ඉ _ උ` (Options: `ඊ`, `ඌ`)",
-            "options": [
-              "`ඊ`",
-              "`ඌ`"
-            ],
-            "correctOption": "`ඊ`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`එ ඒ ඔ _` (Options: `ඕ`, `අ`)",
-            "options": [
-              "`ඕ`",
-              "`අ`"
-            ],
-            "correctOption": "`ඕ`",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "`අ _ ඉ _ උ` (Options: `ආ/ඊ`, `එ/ඒ`)",
-            "options": [
-              "`ආ/ඊ`",
-              "`එ/ඒ`"
-            ],
-            "correctOption": "`ආ/ඊ`",
-            "correct_index": 0
+            "correct_indices": [
+              1,
+              3
+            ]
           }
         ]
       },
       {
         "id": "act_5",
-        "title": "Arrange Alphabetically",
-        "description": "",
+        "title": "මතකයෙන් අකුරු පෙළගස්වමු",
+        "description": "පෙන්නුම් කරන අකුරු රටාව මතක තබා ගෙන නැවත සකසන්න.",
         "telemetry_tags": [
-          "decoding"
+          "memory",
+          "sequencing"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "skill2_pattern_memory",
         "rounds": [
           {
-            "raw_text": "Sort: `ආ`, `අ`",
+            "show_seconds": 6,
+            "pattern": [
+              "ර",
+              "ට"
+            ],
             "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+              "ර",
+              "ට",
+              "ම"
+            ]
           },
           {
-            "raw_text": "Sort: `ඉ`, `ආ`, `අ`",
+            "show_seconds": 5,
+            "pattern": [
+              "ම",
+              "ල්"
+            ],
             "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+              "ම",
+              "ක්",
+              "ල්"
+            ]
           },
           {
-            "raw_text": "Sort: `ඊ`, `ඉ`, `අ`, `ආ`",
+            "show_seconds": 5,
+            "pattern": [
+              "ග",
+              "ම",
+              "න"
+            ],
             "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+              "ග",
+              "ම",
+              "ක",
+              "න"
+            ]
           },
           {
-            "raw_text": "Sort: `උ`, `ඉ`, `අ`, `ඊ`, `ආ`",
+            "show_seconds": 4,
+            "pattern": [
+              "ග",
+              "ස",
+              "ක්"
+            ],
             "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+              "ක්",
+              "ස",
+              "ට්",
+              "ග"
+            ]
           },
           {
-            "raw_text": "Sort: `ඌ`, `උ`, `අ`, `ආ`",
+            "show_seconds": 4,
+            "pattern": [
+              "මි",
+              "හි",
+              "රි"
+            ],
             "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Sort: `එ`, `ඌ`, `උ`, `ඊ`",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Sort: `ඒ`, `එ`, `ඔ`, `ඕ`",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Sort 6 random vowels.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Sort 8 random vowels.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Sort all 10 core vowels: `අ ආ ඉ ඊ උ ඌ එ ඒ ඔ ඕ`.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          }
-        ]
-      },
-      {
-        "id": "act_6",
-        "title": "Audio Matching",
-        "description": "",
-        "telemetry_tags": [
-          "visual_discrimination",
-          "phonological_awareness"
-        ],
-        "template_type": "matching_game",
-        "rounds": [
-          {
-            "raw_text": "Listen to \"A\" -> Select `අ` (vs `ඉ`).",
-            "options": [
-              "අ` (vs `ඉ`)",
-              "Other"
-            ],
-            "correctOption": "අ` (vs `ඉ`)",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen to \"Aa\" -> Select `ආ` (vs `අ`).",
-            "options": [
-              "ආ` (vs `අ`)",
-              "Other"
-            ],
-            "correctOption": "ආ` (vs `අ`)",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen to \"E\" -> Select `ඉ` (vs `උ`).",
-            "options": [
-              "ඉ` (vs `උ`)",
-              "Other"
-            ],
-            "correctOption": "ඉ` (vs `උ`)",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen to \"Ee\" -> Select `ඊ` (vs `ඉ`).",
-            "options": [
-              "ඊ` (vs `ඉ`)",
-              "Other"
-            ],
-            "correctOption": "ඊ` (vs `ඉ`)",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen to \"U\" -> Select `උ` (vs `එ`).",
-            "options": [
-              "උ` (vs `එ`)",
-              "Other"
-            ],
-            "correctOption": "උ` (vs `එ`)",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen to \"Uu\" -> Select `ඌ` (vs `උ`).",
-            "options": [
-              "ඌ` (vs `උ`)",
-              "Other"
-            ],
-            "correctOption": "ඌ` (vs `උ`)",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen to \"A\" (short 'e') -> Select `එ` (vs `ඒ`).",
-            "options": [
-              "එ` (vs `ඒ`)",
-              "Other"
-            ],
-            "correctOption": "එ` (vs `ඒ`)",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen to \"Ae\" (long 'e') -> Select `ඒ` (vs `එ`).",
-            "options": [
-              "ඒ` (vs `එ`)",
-              "Other"
-            ],
-            "correctOption": "ඒ` (vs `එ`)",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen to \"O\" -> Select `ඔ` (vs `ඕ`).",
-            "options": [
-              "ඔ` (vs `ඕ`)",
-              "Other"
-            ],
-            "correctOption": "ඔ` (vs `ඕ`)",
-            "correct_index": 0
-          },
-          {
-            "raw_text": "Listen to \"Oo\" -> Select `ඕ` (vs `ඔ`).",
-            "options": [
-              "ඕ` (vs `ඔ`)",
-              "Other"
-            ],
-            "correctOption": "ඕ` (vs `ඔ`)",
-            "correct_index": 0
-          }
-        ]
-      },
-      {
-        "id": "act_7",
-        "title": "Hidden Vowel Hunt",
-        "description": "",
-        "telemetry_tags": [
-          "decoding"
-        ],
-        "template_type": "generic_mcq_game",
-        "rounds": [
-          {
-            "raw_text": "Find 2 `ඉ` in a picture of a house.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 3 `උ` in a picture of a tree.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 4 `එ` in a picture of a school.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 5 `ඔ` in a busy playground scene.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 3 `අ` and 3 `ආ` in a forest scene.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 4 `ඉ` and 4 `ඊ` in an ocean scene.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 5 `උ` and 5 `ඌ` in a city scene.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 6 `එ` and 6 `ඒ` in a night sky scene.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find 7 `ඔ` and 7 `ඕ` in a market scene.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Find all 10 vowels hidden across a complex global map.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          }
-        ]
-      },
-      {
-        "id": "act_8",
-        "title": "Missing Letter Vowels",
-        "description": "",
-        "telemetry_tags": [
-          "decoding"
-        ],
-        "template_type": "missing_picture_game",
-        "rounds": [
-          {
-            "raw_text": "`_ ම්මා` (Options: `අ`, `ඉ`) -> Answer: `අ`",
-            "sequence": [
-              null,
-              "Item"
-            ],
-            "correctOption": "Item"
-          },
-          {
-            "raw_text": "`_ රියා` (Options: `ඉ`, `උ`) -> Answer: `ඉ`",
-            "sequence": [
-              null,
-              "Item"
-            ],
-            "correctOption": "Item"
-          },
-          {
-            "raw_text": "`_ රණ` (Options: `උ`, `එ`) -> Answer: `උ`",
-            "sequence": [
-              null,
-              "Item"
-            ],
-            "correctOption": "Item"
-          },
-          {
-            "raw_text": "`_ ළුවා` (Options: `එ`, `ඔ`) -> Answer: `එ`",
-            "sequence": [
-              null,
-              "Item"
-            ],
-            "correctOption": "Item"
-          },
-          {
-            "raw_text": "`_ රුවා` (Options: `ඔ`, `අ`) -> Answer: `ඔ`",
-            "sequence": [
-              null,
-              "Item"
-            ],
-            "correctOption": "Item"
-          },
-          {
-            "raw_text": "`_ ගය` (Options: `ආ`, `ඊ`) -> Answer: `ආ`",
-            "sequence": [
-              null,
-              "Item"
-            ],
-            "correctOption": "Item"
-          },
-          {
-            "raw_text": "`_ තල` (Options: `ඊ`, `ඌ`) -> Answer: `ඊ`",
-            "sequence": [
-              null,
-              "Item"
-            ],
-            "correctOption": "Item"
-          },
-          {
-            "raw_text": "`_ රා` (Options: `ඌ`, `ඒ`) -> Answer: `ඌ`",
-            "sequence": [
-              null,
-              "Item"
-            ],
-            "correctOption": "Item"
-          },
-          {
-            "raw_text": "`_ දණ්ඩ` (Options: `ඒ`, `ඕ`) -> Answer: `ඒ`",
-            "sequence": [
-              null,
-              "Item"
-            ],
-            "correctOption": "Item"
-          },
-          {
-            "raw_text": "`_ විල්ල` (Options: `ඕ`, `ආ`) -> Answer: `ඕ`",
-            "sequence": [
-              null,
-              "Item"
-            ],
-            "correctOption": "Item"
-          }
-        ]
-      },
-      {
-        "id": "act_9",
-        "title": "Vowel Memory",
-        "description": "",
-        "telemetry_tags": [
-          "decoding",
-          "working_memory"
-        ],
-        "template_type": "memory_game",
-        "rounds": [
-          {
-            "raw_text": "Show 2 vowels for 3s. Recall them.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Show 3 vowels for 3s. Recall them.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Show 4 vowels for 5s. Recall them.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Show 5 vowels for 5s. Recall them.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Show 6 vowels for 7s. Recall them.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Show 7 vowels for 7s. Recall them.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Show 8 vowels for 10s. Recall them.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Show 9 vowels for 10s. Recall them.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Show 10 vowels for 15s. Recall them.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Show 10 vowels for 10s. Recall in exact order.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          }
-        ]
-      },
-      {
-        "id": "act_10",
-        "title": "Rapid Vowel Reading (Timed Boss)",
-        "description": "",
-        "telemetry_tags": [
-          "decoding"
-        ],
-        "template_type": "generic_mcq_game",
-        "rounds": [
-          {
-            "raw_text": "Read aloud 4 vowels in 10s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 6 vowels in 10s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 8 vowels in 15s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 10 vowels in 15s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 12 vowels in 20s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 15 vowels in 20s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 18 vowels in 25s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 20 vowels in 25s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 25 vowels in 30s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
-          },
-          {
-            "raw_text": "Read aloud 30 mixed vowels perfectly in 30s.",
-            "options": [
-              "Option 1",
-              "Option 2"
-            ],
-            "correct_index": 0,
-            "correctOption": "Option 1"
+              "හි",
+              "වි",
+              "රි",
+              "මි"
+            ]
           }
         ]
       }
-    ]
+    ],
+    "total_activities": 5
   }
 ]
