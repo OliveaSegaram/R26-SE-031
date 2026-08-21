@@ -25,7 +25,7 @@
   },
   {
     "id": "skill_3",
-    "title": "සරල වචන සැකසීම සහ කියවීම",
+    "title": "සරල වචන සැකසීම",
     "description": "අකුරු එකතු කර සරල වචන සාදමු! 🧩",
     "file_path": "skill_3.json",
     "total_activities": 5,
@@ -37,7 +37,7 @@
   },
   {
     "id": "skill_4",
-    "title": "සරල වාක්‍ය කියවීම",
+    "title": "සරල වාක්‍ය සැකසීම",
     "description": "සරල වාක්‍ය කියවමු! 🏆",
     "file_path": "skill_4.json",
     "total_activities": 4,
