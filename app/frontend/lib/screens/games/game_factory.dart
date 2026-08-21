@@ -2,18 +2,6 @@ import 'package:flutter/material.dart';
 import '../../models/curriculum_models.dart';
 import '../../widgets/telemetry_wrapper.dart';
 
-// Shared Generic Templates (Used by Skills 2-5)
-import 'shared_templates/activity1_odd_shape.dart';
-import 'shared_templates/activity2_complete_pattern.dart';
-import 'shared_templates/activity3_remember_pattern.dart';
-import 'shared_templates/activity4_non_matching_image.dart';
-import 'shared_templates/activity5_direction_recognition.dart';
-import 'shared_templates/activity6_color_matching.dart';
-import 'shared_templates/activity7_shape_coloring.dart';
-import 'shared_templates/activity8_fill_blank.dart';
-import 'shared_templates/activity9_audio_image_search.dart';
-import 'shared_templates/activity10_identical_match.dart';
-import 'shared_templates/activity11_audio_sequence.dart';
 
 // Picture Recognition (skill_visual) Games
 import 'skill_1/visual_act1_hidden_search.dart';
