@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_theme.dart';
 import '../../services/student_service.dart';
+import '../../services/telemetry_service.dart';
+import '../../widgets/telemetry_heatmap.dart';
 
 class TherapistStudentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -41,13 +44,16 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   String? _selectedLabel;
   bool _isSubmittingLabel = false;
   bool _isDownloadingReport = false;
+  bool _isDownloadingAssessment = false;
   final List<String> _labelOptions = ["Low Risk", "Moderate Risk", "Needs Attention"];
+
+  String get _studentId => (widget.student['id'] ?? widget.student['_id']).toString();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _analyticsFuture = StudentService().getCognitiveAnalytics(widget.student['id']);
+    _analyticsFuture = StudentService().getCognitiveAnalytics(_studentId);
   }
 
   @override
@@ -62,7 +68,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     setState(() => _isSubmittingLabel = true);
     
     final error = await StudentService().submitClinicianLabel(
-      widget.student['id'], 
+      _studentId, 
       _selectedLabel!
     );
     
@@ -89,7 +95,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
 
   Future<void> _downloadReport() async {
     setState(() => _isDownloadingReport = true);
-    final error = await StudentService().downloadClinicalReport(widget.student['id']);
+    final error = await StudentService().downloadClinicalReport(_studentId);
     if (!mounted) return;
     setState(() => _isDownloadingReport = false);
     if (error != null) {
@@ -98,6 +104,138 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         backgroundColor: AppColors.softCoral,
       ));
     }
+  }
+
+  Future<void> _downloadAssessmentReport() async {
+    setState(() => _isDownloadingAssessment = true);
+    final error = await StudentService().downloadAssessmentReport(_studentId);
+    if (!mounted) return;
+    setState(() => _isDownloadingAssessment = false);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error),
+        backgroundColor: AppColors.softCoral,
+      ));
+    }
+  }
+
+  Future<void> _showHeatmapsModal() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.calmBlue)),
+    );
+
+    final telemetryData = await StudentService().getTelemetry(_studentId);
+    
+    if (!mounted) return;
+    Navigator.of(context).pop(); // dismiss loading
+
+    if (telemetryData.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('No telemetry data available for this student yet.'),
+        backgroundColor: AppColors.softCoral,
+      ));
+      return;
+    }
+
+    Map<String, List<TouchPoint>> activityPoints = {};
+    for (var session in telemetryData) {
+      final events = session['events'] as List<dynamic>? ?? [];
+      for (var ev in events) {
+        final actName = ev['activity_name'] as String? ?? 'Unknown';
+        final path = ev['touch_path'] as List<dynamic>? ?? [];
+        
+        if (!activityPoints.containsKey(actName)) {
+          activityPoints[actName] = [];
+        }
+        for (var pt in path) {
+          activityPoints[actName]!.add(TouchPoint(
+            xRatio: pt['x_ratio']?.toDouble() ?? 0.0,
+            yRatio: pt['y_ratio']?.toDouble() ?? 0.0,
+            timestampMs: pt['timestamp_ms'] ?? 0,
+          ));
+        }
+      }
+    }
+
+    if (activityPoints.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('No touch paths found in the telemetry data.'),
+        backgroundColor: AppColors.softCoral,
+      ));
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildHeatmapBottomSheet(activityPoints),
+    );
+  }
+
+  Widget _buildHeatmapBottomSheet(Map<String, List<TouchPoint>> activityPoints) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (_, controller) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF8FAFC), // scaffold background
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Interaction Heatmaps',
+                      style: AppTypography.heading(fontSize: 20, color: AppColors.textPrimary),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: ListView.builder(
+                  controller: controller,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: activityPoints.keys.length,
+                  itemBuilder: (context, index) {
+                    final actName = activityPoints.keys.elementAt(index);
+                    final points = activityPoints[actName]!;
+                    return HeatmapVisualizer(
+                      touchPoints: points,
+                      title: 'Activity: $actName',
+                      subtitle: 'Aggregated touch precision tracking',
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -111,13 +249,12 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           future: _analyticsFuture,
           builder: (context, snapshot) {
             
-            // Determine dynamic risk
-            String risk = student['risk'];
+            String risk = student['risk']?.toString() ?? 'pending';
             Map<String, dynamic> analytics = {};
-            if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+            if (snapshot.hasData && snapshot.data!.isNotEmpty && snapshot.data!['status'] != 'insufficient_data') {
               analytics = snapshot.data!;
-              if (analytics['risk_assessment'] != null) {
-                risk = analytics['risk_assessment'];
+              if (analytics['risk_assessment'] != null && analytics['risk_assessment'] is Map) {
+                risk = analytics['risk_assessment']['overall_risk']?.toString() ?? risk;
               }
             }
 
@@ -209,7 +346,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                student['name'] ?? 'Unknown',
+                                student['name'] ?? student['first_name'] ?? student['student_name'] ?? 'Unknown',
                                 style: AppTypography.heading(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w700,
@@ -218,7 +355,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'age ${student['age'] ?? 'N/A'} · parent: ${student['parent'] ?? 'N/A'}',
+                                '${student['age'] ?? student['grade'] ?? 'N/A'} · parent: ${student['parent'] ?? student['parent_name'] ?? 'N/A'}',
                                 style: AppTypography.caption(
                                   fontSize: 13,
                                   color: AppColors.textSecondary,
@@ -226,7 +363,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'connected since ${student['connected'] ?? 'N/A'}',
+                                'connected since ${student['connected'] ?? student['connected_at']?.toString().split('T')[0] ?? 'N/A'}',
                                 style: AppTypography.caption(
                                   fontSize: 12,
                                   color: AppColors.textHint,
@@ -320,7 +457,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
 
   // ─── Progress Tab ───
   Widget _buildProgressTab(Map<String, dynamic> analytics) {
-    Map<String, dynamic> indices = analytics['indices'] ?? {};
+    Map<String, dynamic> indices = analytics['cognitive_indices'] ?? {};
     
     // Fallback if no analytics exist yet
     if (indices.isEmpty) {
@@ -353,6 +490,52 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.calmBlue,
                 foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Download Assessment Report Button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: _isDownloadingAssessment ? null : _downloadAssessmentReport,
+              icon: _isDownloadingAssessment
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.calmBlue, strokeWidth: 2))
+                  : const Icon(Icons.assessment_rounded, size: 20),
+              label: Text(
+                _isDownloadingAssessment ? 'Generating Assessment...' : 'Download Assessment PDF',
+                style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.calmBlue,
+                side: const BorderSide(color: AppColors.calmBlue, width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // View Interaction Heatmaps Button
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: _showHeatmapsModal,
+              icon: const Icon(Icons.touch_app_rounded, size: 20),
+              label: Text(
+                'View Interaction Heatmaps',
+                style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.gentleGreen,
+                side: const BorderSide(color: AppColors.gentleGreen, width: 2),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
               ),

@@ -10,6 +10,54 @@ import statistics
 import numpy as np
 from typing import List, Dict, Any
 from sklearn.cluster import DBSCAN
+import numpy as np
+
+def compute_kinematics(touch_path: List[Dict]) -> Dict[str, float]:
+    """Calculate velocity, acceleration, and jerk from time-series touch data."""
+    if len(touch_path) < 4:
+        return {"avg_velocity": 0.0, "max_acceleration": 0.0, "jerkiness": 0.0}
+
+    # Extract time and positions (assume ratios are normalized to screen)
+    times = np.array([p.get("timestamp_ms", 0) / 1000.0 for p in touch_path])
+    xs = np.array([p.get("x_ratio", 0) for p in touch_path])
+    ys = np.array([p.get("y_ratio", 0) for p in touch_path])
+
+    # Filter out duplicate timestamps to avoid division by zero
+    valid_idx = np.where(np.diff(times) > 0)[0]
+    if len(valid_idx) < 3:
+        return {"avg_velocity": 0.0, "max_acceleration": 0.0, "jerkiness": 0.0}
+    
+    times = times[valid_idx]
+    xs = xs[valid_idx]
+    ys = ys[valid_idx]
+
+    dt = np.diff(times)
+    
+    # Velocity (1st derivative)
+    vx = np.diff(xs) / dt
+    vy = np.diff(ys) / dt
+    velocities = np.sqrt(vx**2 + vy**2)
+    avg_velocity = np.mean(velocities)
+
+    # Acceleration (2nd derivative)
+    dt2 = dt[:-1]
+    ax = np.diff(vx) / dt2
+    ay = np.diff(vy) / dt2
+    accelerations = np.sqrt(ax**2 + ay**2)
+    max_acceleration = np.max(accelerations) if len(accelerations) > 0 else 0.0
+
+    # Jerkiness (3rd derivative) - indicator of tremors/dyspraxia
+    dt3 = dt2[:-1]
+    jx = np.diff(ax) / dt3
+    jy = np.diff(ay) / dt3
+    jerks = np.sqrt(jx**2 + jy**2)
+    jerkiness = np.mean(jerks) if len(jerks) > 0 else 0.0
+
+    return {
+        "avg_velocity": round(avg_velocity, 4),
+        "max_acceleration": round(max_acceleration, 4),
+        "jerkiness": round(jerkiness, 4)
+    }
 
 
 
@@ -50,19 +98,31 @@ def extract_advanced_features(all_events: List[Dict]) -> Dict[str, float]:
     if not all_events:
         return _zero_advanced()
 
-    # Flatten all touch paths
     all_touch_points = []
     all_latencies = []
     all_first_touch = []
+    all_scores = []
     total_rounds = len(all_events)
     total_abandoned = 0
     total_audio_replays = 0
     misclick_per_session = []
 
+    # Accumulate kinematics over all drag paths
+    total_jerkiness = 0.0
+    valid_paths = 0
+
     for e in all_events:
         path = e.get("touch_path", [])
         all_touch_points.extend(path)
+        
+        # Calculate kinematics per path
+        kinematics = compute_kinematics(path)
+        if kinematics["jerkiness"] > 0:
+            total_jerkiness += kinematics["jerkiness"]
+            valid_paths += 1
+
         all_latencies.append(e.get("total_round_latency_ms", 0))
+        all_scores.append(e.get("score", 0))
         ftl = e.get("first_touch_latency_ms", 0)
         if ftl > 0:
             all_first_touch.append(ftl)
@@ -108,6 +168,17 @@ def extract_advanced_features(all_events: List[Dict]) -> Dict[str, float]:
     # Feature 18: Touch Cluster Count
     touch_cluster_count = compute_touch_cluster_count(all_touch_points)
 
+    # Multi-dimensional Fatigue: Accuracy Drift
+    if len(all_scores) >= 6:
+        early_accuracy = statistics.mean(all_scores[:3])
+        late_accuracy = statistics.mean(all_scores[-3:])
+        accuracy_drift = late_accuracy - early_accuracy
+    else:
+        accuracy_drift = 0.0
+
+    # Kinematics: Average Tremor/Jerkiness across all paths
+    avg_jerkiness = total_jerkiness / valid_paths if valid_paths > 0 else 0.0
+
     return {
         "response_consistency": response_consistency,
         "first_touch_variability": first_touch_variability,
@@ -116,6 +187,8 @@ def extract_advanced_features(all_events: List[Dict]) -> Dict[str, float]:
         "misclick_trend_slope": round(misclick_trend_slope, 4),
         "session_duration_ratio": session_duration_ratio,
         "touch_cluster_count": touch_cluster_count,
+        "accuracy_drift": round(accuracy_drift, 4),
+        "avg_jerkiness": round(avg_jerkiness, 4),
     }
 
 
@@ -128,4 +201,6 @@ def _zero_advanced() -> Dict[str, float]:
         "misclick_trend_slope": 0.0,
         "session_duration_ratio": 1.0,
         "touch_cluster_count": 0.0,
+        "accuracy_drift": 0.0,
+        "avg_jerkiness": 0.0,
     }

@@ -363,6 +363,33 @@ class StudentService {
     }
   }
 
+  /// Download the PDF Assessment Report
+  Future<String?> downloadAssessmentReport(String studentId) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return 'Not authenticated.';
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/students/$studentId/assessment/report/pdf'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/Assessment_Report_$studentId.pdf');
+        await file.writeAsBytes(response.bodyBytes);
+        await Share.shareXFiles([XFile(file.path)], text: 'Comprehensive Assessment Report');
+        return null;
+      } else {
+        return 'Failed to download assessment report: ${response.statusCode}';
+      }
+    } catch (e) {
+      return 'Error downloading assessment report: $e';
+    }
+  }
+
   /// Submit a clinical ground-truth label for a student to train ML models.
   Future<String?> submitClinicianLabel(String studentId, String label) async {
     try {
