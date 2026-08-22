@@ -91,3 +91,40 @@ async def analyze_reading(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/analyze-acoustics")
+async def analyze_acoustics(
+    expected_text: str = Form(""),
+    expected_syllables: int = Form(0),
+    t_stimulus: int = Form(0),
+    t_record_start: int = Form(0),
+    file: UploadFile = File(...)
+):
+    """
+    Accepts a raw WAV audio file and analyzes it for acoustic hesitation,
+    latency, syllable peak deltas, and prosodic instability (jitter/shimmer).
+    """
+    if not file:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+        
+    try:
+        audio_bytes = await file.read()
+        if len(audio_bytes) == 0:
+            raise HTTPException(status_code=400, detail="Empty file uploaded")
+            
+        from services.acoustic_service import AcousticAnalysisService
+        acoustic_engine = AcousticAnalysisService()
+        
+        results = acoustic_engine.analyze_audio(
+            wav_bytes=audio_bytes,
+            expected_text=expected_text,
+            expected_syllables=expected_syllables,
+            t_stimulus=t_stimulus,
+            t_record_start=t_record_start
+        )
+        
+        return results
+        
+    except Exception as e:
+        print(f"Acoustic analysis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
