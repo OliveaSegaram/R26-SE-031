@@ -120,21 +120,13 @@ class AcousticAnalysisService:
         import tempfile
         import os
         
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pcm") as temp_pcm:
-            temp_pcm.write(wav_bytes)
-            temp_pcm_path = temp_pcm.name
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_wav:
+            temp_wav.write(wav_bytes)
+            temp_wav_path = temp_wav.name
             
         try:
-            # 1. Load RAW PCM audio with soundfile at 44100Hz (the only universally supported Android hardware rate)
-            y_44k, sr_44k = sf.read(temp_pcm_path, channels=1, samplerate=44100, format='RAW', subtype='PCM_16')
-            
-            # Resample to 16000Hz for fast clinical processing
-            y = librosa.resample(y_44k, orig_sr=sr_44k, target_sr=16000)
-            sr = 16000
-            
-            # Save it back as a valid 16kHz WAV so parselmouth can read it later
-            temp_wav_path = temp_pcm_path.replace(".pcm", ".wav")
-            sf.write(temp_wav_path, y, sr, subtype='PCM_16')
+            # 1. Load audio with librosa (flutter_sound creates a perfect WAV file at 16000Hz)
+            y, sr = librosa.load(temp_wav_path, sr=16000)
 
             # 2. VAD & Latency
             t_voice_onset = self.find_voice_onset(y, sr)
