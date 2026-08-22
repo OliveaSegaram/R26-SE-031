@@ -2,7 +2,8 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class VoiceAnalysisService {
@@ -10,7 +11,8 @@ class VoiceAnalysisService {
   factory VoiceAnalysisService() => _instance;
   VoiceAnalysisService._internal();
 
-  final AudioRecorder _record = AudioRecorder();
+  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  bool _isRecorderInitialized = false;
   String? _currentRecordingPath;
 
   static String get _baseUrl {
@@ -23,27 +25,33 @@ class VoiceAnalysisService {
     return prefs.getString('access_token');
   }
 
+  Future<void> _initRecorder() async {
+    if (_isRecorderInitialized) return;
+    
+    final status = await Permission.microphone.request();
+    if (status != PermissionStatus.granted) {
+      throw RecordingPermissionException('Microphone permission not granted');
+    }
+    
+    await _recorder.openRecorder();
+    _isRecorderInitialized = true;
+  }
+
   /// Starts recording audio from the device microphone (Raw WAV for acoustic analysis)
   Future<void> startRecording() async {
     try {
-      // Check and request permissions
-      if (await _record.hasPermission()) {
-        final dir = await getTemporaryDirectory();
-        // Saving as .pcm instead of .wav since there is no header
-        _currentRecordingPath = '${dir.path}/reading_sample_${DateTime.now().millisecondsSinceEpoch}.pcm';
-        
-        await _record.start(
-          const RecordConfig(
-            encoder: AudioEncoder.pcm16bits, // 100% universal support on all Android hardware
-            sampleRate: 44100, // MUST be 44100 for some strict Android devices to initialize AudioRecord
-            numChannels: 1,            // Mono
-          ), 
-          path: _currentRecordingPath!
-        );
-        print('VoiceAnalysisService: Started recording to $_currentRecordingPath');
-      } else {
-        print('VoiceAnalysisService Error: Audio permission was denied by the user.');
-      }
+      await _initRecorder();
+      
+      final dir = await getTemporaryDirectory();
+      _currentRecordingPath = '${dir.path}/reading_sample_${DateTime.now().millisecondsSinceEpoch}.wav';
+      
+      await _recorder.startRecorder(
+        toFile: _currentRecordingPath,
+        codec: Codec.pcm16WAV,
+        sampleRate: 16000,
+        numChannels: 1,
+      );
+      print('VoiceAnalysisService: Started recording to $_currentRecordingPath');
     } catch (e) {
       print('VoiceAnalysisService Error: Failed to start recording - $e');
     }
@@ -52,10 +60,14 @@ class VoiceAnalysisService {
   /// Stops recording and returns the raw audio file
   Future<File?> stopRecording() async {
     try {
-      final path = await _record.stop();
+      if (!_isRecorderInitialized) return null;
+      
+      final path = await _recorder.stopRecorder();
       if (path != null) {
         print('VoiceAnalysisService: Stopped recording. File saved at $path');
         return File(path);
+      } else if (_currentRecordingPath != null) {
+        return File(_currentRecordingPath!);
       }
     } catch (e) {
       print('VoiceAnalysisService Error: Failed to stop recording - $e');
