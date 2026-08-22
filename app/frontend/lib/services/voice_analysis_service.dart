@@ -14,8 +14,8 @@ class VoiceAnalysisService {
   String? _currentRecordingPath;
 
   static String get _baseUrl {
-    return 'http://127.0.0.1:8000/api/v1/auth/stt';
-    // return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth/stt';
+    // return 'http://10.0.2.2:8000/api/v1/auth/stt';
+    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth/stt';
   }
 
   Future<String?> _getAccessToken() async {
@@ -29,17 +29,20 @@ class VoiceAnalysisService {
       // Check and request permissions
       if (await _record.hasPermission()) {
         final dir = await getTemporaryDirectory();
-        _currentRecordingPath = '${dir.path}/reading_sample_${DateTime.now().millisecondsSinceEpoch}.wav';
+        // Saving as .pcm instead of .wav since there is no header
+        _currentRecordingPath = '${dir.path}/reading_sample_${DateTime.now().millisecondsSinceEpoch}.pcm';
         
         await _record.start(
           const RecordConfig(
-            encoder: AudioEncoder.wav, // MUST BE WAV for clinical analysis
-            sampleRate: 16000,         
+            encoder: AudioEncoder.pcm16bits, // 100% universal support on all Android hardware
+            sampleRate: 44100, // MUST be 44100 for some strict Android devices to initialize AudioRecord
             numChannels: 1,            // Mono
           ), 
           path: _currentRecordingPath!
         );
         print('VoiceAnalysisService: Started recording to $_currentRecordingPath');
+      } else {
+        print('VoiceAnalysisService Error: Audio permission was denied by the user.');
       }
     } catch (e) {
       print('VoiceAnalysisService Error: Failed to start recording - $e');
