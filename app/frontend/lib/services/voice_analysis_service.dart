@@ -23,19 +23,19 @@ class VoiceAnalysisService {
     return prefs.getString('access_token');
   }
 
-  /// Starts recording audio from the device microphone
+  /// Starts recording audio from the device microphone (Raw WAV for acoustic analysis)
   Future<void> startRecording() async {
     try {
       // Check and request permissions
       if (await _record.hasPermission()) {
         final dir = await getTemporaryDirectory();
-        _currentRecordingPath = '${dir.path}/reading_sample_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        _currentRecordingPath = '${dir.path}/reading_sample_${DateTime.now().millisecondsSinceEpoch}.wav';
         
         await _record.start(
           const RecordConfig(
-            encoder: AudioEncoder.aacLc, // Standard cross-platform format
-            sampleRate: 16000,           // Whisper loves 16kHz
-            numChannels: 1,              // Mono
+            encoder: AudioEncoder.wav, // MUST BE WAV for clinical analysis
+            sampleRate: 16000,         
+            numChannels: 1,            // Mono
           ), 
           path: _currentRecordingPath!
         );
@@ -60,10 +60,17 @@ class VoiceAnalysisService {
     return null;
   }
 
-  /// Analyzes the audio for pauses, hesitation, and Word Error Rate (WER)
-  /// using the backend FastAPI STT service.
-  Future<Map<String, dynamic>> analyzeAudio(File audioFile, String expectedText) async {
-    print('VoiceAnalysisService: Sending audio to STT API for analysis...');
+  /// Analyzes the audio for acoustic features (latency, stuttering, jitter)
+  Future<Map<String, dynamic>> analyzeAudio(
+    File audioFile, 
+    String expectedText,
+    {
+      int expectedSyllables = 0,
+      int tStimulus = 0,
+      int tRecordStart = 0,
+    }
+  ) async {
+    print('VoiceAnalysisService: Sending audio to Acoustic API for analysis...');
     
     try {
       final token = await _getAccessToken();
@@ -71,10 +78,14 @@ class VoiceAnalysisService {
         throw Exception('Not authenticated');
       }
 
-      var request = http.MultipartRequest('POST', Uri.parse('$_baseUrl/analyze-reading'));
+      var request = http.MultipartRequest('POST', Uri.parse('$_baseUrl/analyze-acoustics'));
       request.headers['Authorization'] = 'Bearer $token';
       
       request.fields['expected_text'] = expectedText;
+      request.fields['expected_syllables'] = expectedSyllables.toString();
+      request.fields['t_stimulus'] = tStimulus.toString();
+      request.fields['t_record_start'] = tRecordStart.toString();
+      
       request.files.add(await http.MultipartFile.fromPath('file', audioFile.path));
       
       var streamedResponse = await request.send();
@@ -82,17 +93,14 @@ class VoiceAnalysisService {
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return {
-          'transcription': data['transcription'],
-          'word_error_rate': data['word_error_rate'],
-          'hesitation_ms': 500, // Mock hesitation for now until silence detection is built
-        };
+        print('Acoustic Results: $data');
+        return data;
       } else {
         print('VoiceAnalysisService API Error: ${response.body}');
         return {
           'transcription': '',
           'word_error_rate': 1.0,
-          'hesitation_ms': 0,
+          'Acoustic_Latency_ms': 0,
         };
       }
     } catch (e) {
@@ -100,7 +108,7 @@ class VoiceAnalysisService {
       return {
         'transcription': '',
         'word_error_rate': 1.0,
-        'hesitation_ms': 0,
+        'Acoustic_Latency_ms': 0,
       };
     }
   }
