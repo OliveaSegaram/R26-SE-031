@@ -14,8 +14,8 @@ class VoiceAnalysisService {
   String? _currentRecordingPath;
 
   static String get _baseUrl {
-    // return 'http://127.0.0.1:8015/api/v1/auth/stt';
-    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth/stt';
+    return 'http://127.0.0.1:8000/api/v1/auth/stt';
+    // return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth/stt';
   }
 
   Future<String?> _getAccessToken() async {
