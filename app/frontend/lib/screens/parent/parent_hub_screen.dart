@@ -79,31 +79,36 @@ class _ParentHubScreenState extends State<ParentHubScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: _isLoading
-          ? const Center(child: AppLoadingIndicator())
-          : FadeTransition(
-              opacity: _fadeAnimation,
-              child: SafeArea(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 24),
-                      _buildQuickStats(),
-                      const SizedBox(height: 28),
-                      _buildNavigationGrid(),
-                      const SizedBox(height: 28),
-                      _buildChildrenSection(),
-                      const SizedBox(height: 32),
-                    ],
+    return ListenableBuilder(
+      listenable: LocalizationService.instance,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: AppColors.cream,
+          body: _isLoading
+              ? const Center(child: AppLoadingIndicator())
+              : FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SafeArea(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeader(),
+                          const SizedBox(height: 24),
+                          _buildQuickStats(),
+                          const SizedBox(height: 28),
+                          _buildNavigationGrid(),
+                          const SizedBox(height: 28),
+                          _buildChildrenSection(),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
+        );
+      },
     );
   }
 
@@ -343,7 +348,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
               _showChildSelectionModal(context);
             }
           } else {
-            _showSnackBar('add a student first to view progress');
+            _showSnackBar(LocalizationService.instance.t('add_student_first_msg'));
           }
         },
       },
@@ -495,7 +500,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'go to settings to add your first student',
+            LocalizationService.instance.t('add_student_settings_hint'),
             style: AppTypography.caption(
               fontSize: 14,
               color: AppColors.textHint,
@@ -574,7 +579,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
       builder: (context, snapshot) {
         int streak = 0;
         double weeklyProgress = 0.0;
-        String lastActive = 'never';
+        String lastActive = LocalizationService.instance.t('never');
 
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
           final sessions = snapshot.data!;
@@ -598,7 +603,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
           }
           
           if (activeDates.isNotEmpty) {
-             lastActive = 'recent'; 
+             lastActive = LocalizationService.instance.t('recent'); 
           }
           
           String todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
@@ -668,7 +673,9 @@ class _ParentHubScreenState extends State<ParentHubScreen>
                             ),
                           ),
                           Text(
-                            grade,
+                            grade.toLowerCase().replaceAll(' ', '_') == 'grade_1' 
+                                ? LocalizationService.instance.t('grade_1') 
+                                : grade,
                             style: AppTypography.caption(
                               fontSize: 12,
                               color: AppColors.textSecondary,
@@ -689,7 +696,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
                               size: 12, color: AppColors.warmAmber),
                           const SizedBox(width: 6),
                           Text(
-                            '$streak day streak',
+                            '$streak ${LocalizationService.instance.t("day_streak")}',
                             style: AppTypography.caption(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -740,14 +747,14 @@ class _ParentHubScreenState extends State<ParentHubScreen>
                             size: 12, color: AppColors.textHint),
                         const SizedBox(width: 6),
                         Text(
-                          'last active: $lastActive',
+                          '${LocalizationService.instance.t("last_active_prefix")}$lastActive',
                           style: AppTypography.caption(
                               fontSize: 11, color: AppColors.textHint),
                         ),
                       ],
                     ),
                     Text(
-                      'view progress →',
+                      LocalizationService.instance.t('view_progress_btn'),
                       style: AppTypography.caption(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
