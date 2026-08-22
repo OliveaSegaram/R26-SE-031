@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../services/student_service.dart';
 import 'skill_detail_progress_screen.dart';
 import '../therapist/therapist_student_detail_screen.dart';
+import '../../services/localization_service.dart';
 /// Child Progress Screen — Visual dashboard showing a specific child's
 /// learning journey: weekly activity chart, overall stats, skill progress.
 class ChildProgressScreen extends StatefulWidget {
@@ -312,7 +313,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "$name's progress",
+                  LocalizationService.instance.t('progress_report'),
                   style: AppTypography.heading(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -340,16 +341,16 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _buildMiniStat(FontAwesomeIcons.gamepad, '$_totalActivities', 'activities',
+          _buildMiniStat(FontAwesomeIcons.gamepad, '$_totalActivities', LocalizationService.instance.t('activities'),
               AppColors.calmBlue),
           const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.bullseye, '$_overallAccuracy%', 'accuracy',
+          _buildMiniStat(FontAwesomeIcons.bullseye, '$_overallAccuracy%', LocalizationService.instance.t('accuracy'),
               AppColors.gentleGreen),
           const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.fire, '$_dayStreak', 'day streak',
+          _buildMiniStat(FontAwesomeIcons.fire, '$_dayStreak', LocalizationService.instance.t('day_streak'),
               AppColors.warmAmber),
           const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.star, '$_totalStars', 'stars',
+          _buildMiniStat(FontAwesomeIcons.star, '$_totalStars', LocalizationService.instance.t('stars_earned'),
               AppColors.softCoral),
         ],
       ),
@@ -420,7 +421,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'weekly activity',
+                  LocalizationService.instance.t('weekly_activity'),
                   style: AppTypography.heading(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -524,7 +525,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'skill progress',
+            LocalizationService.instance.t('recent_skills'),
             style: AppTypography.heading(
               fontSize: 20,
               fontWeight: FontWeight.w700,
