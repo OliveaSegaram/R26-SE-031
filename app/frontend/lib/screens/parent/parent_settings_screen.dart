@@ -13,6 +13,7 @@ import '../../services/auth_service.dart';
 import '../../services/student_service.dart';
 import '../../services/progress_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../services/localization_service.dart';
 
 /// Parent Account Screen — Frontend Redesign with World-Class UX
 class ParentSettingsScreen extends StatefulWidget {
@@ -418,7 +419,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
             _divider(),
             _buildExpansionSection(
               icon: Icons.school_rounded,
-              title: 'my students',
+              title: LocalizationService.instance.t('my_students'),
               trailing: _students.isNotEmpty
                   ? Container(
                       padding: const EdgeInsets.symmetric(
@@ -442,7 +443,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
             _divider(),
             _buildExpansionSection(
               icon: Icons.diamond_outlined,
-              title: 'subscription',
+              title: LocalizationService.instance.t('subscription'),
               trailing: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -451,7 +452,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  'coming soon',
+                  LocalizationService.instance.t('coming_soon'),
                   style: AppTypography.caption(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -464,13 +465,13 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
             _divider(),
             _buildExpansionSection(
               icon: Icons.notifications_none_rounded,
-              title: 'notifications',
+              title: LocalizationService.instance.t('notifications'),
               child: _buildNotificationsContent(),
             ),
             _divider(),
             _buildExpansionSection(
               icon: Icons.help_outline_rounded,
-              title: 'help & support',
+              title: LocalizationService.instance.t('help_support'),
               child: _buildHelpContent(),
             ),
           ],
@@ -539,22 +540,28 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
     return Column(
       children: [
         _buildEditableRow(
-          label: 'full name',
+          label: LocalizationService.instance.t('full_name'),
           value: _userName,
           onEdit: () => _showEditNameDialog(),
         ),
         _buildEditableRow(
-          label: 'email',
+          label: LocalizationService.instance.t('email'),
           value: _userEmail,
           onEdit: _isSocialLogin ? null : () => _showEditEmailDialog(),
           subtitle: _isSocialLogin ? 'managed by $_authProvider' : null,
         ),
         _buildEditableRow(
-          label: 'password',
+          label: LocalizationService.instance.t('password'),
           value: '••••••••',
-          editLabel: 'change',
+          editLabel: LocalizationService.instance.t('change'),
           onEdit: _isSocialLogin ? null : () => _showChangePasswordDialog(),
           subtitle: _isSocialLogin ? 'managed by $_authProvider' : null,
+        ),
+        _buildEditableRow(
+          label: LocalizationService.instance.t('language'),
+          value: LocalizationService.instance.currentLocale == 'en' ? 'English' : 'සිංහල',
+          editLabel: LocalizationService.instance.t('change'),
+          onEdit: () => _showLanguageBottomSheet(),
         ),
         const SizedBox(height: 24),
         // Delete Account
@@ -565,7 +572,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
             icon: const Icon(Icons.delete_forever_rounded,
                 color: Colors.redAccent, size: 20),
             label: Text(
-              'delete account',
+              LocalizationService.instance.t('delete_account'),
               style: AppTypography.body(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -636,7 +643,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  editLabel ?? 'edit',
+                  editLabel ?? LocalizationService.instance.t('edit'),
                   style: AppTypography.caption(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -743,7 +750,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                     color: AppColors.textHint, size: 36),
                 const SizedBox(height: 8),
                 Text(
-                  'no students yet',
+                  LocalizationService.instance.t('no_students_yet'),
                   style: AppTypography.body(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -853,7 +860,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                                         size: 13, color: AppColors.warmAmber),
                                     const SizedBox(width: 4),
                                     Text(
-                                      'Pending',
+                                      LocalizationService.instance.t('pending'),
                                       style: AppTypography.caption(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
@@ -948,7 +955,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
             child: TextButton(
               onPressed: () => setState(() => _showAllStudents = true),
               child: Text(
-                'view all ${_students.length} students →',
+                LocalizationService.instance.t('view_all_students').replaceFirst('දෙනාම', '${_students.length} දෙනාම').replaceFirst('all', 'all ${_students.length}'),
                 style: AppTypography.body(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -963,7 +970,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
             child: TextButton(
               onPressed: () => setState(() => _showAllStudents = false),
               child: Text(
-                'show less',
+                LocalizationService.instance.t('show_less'),
                 style: AppTypography.body(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -1011,7 +1018,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
           ).then((_) => _loadData());
         },
         icon: const Icon(Icons.add_rounded, size: 18),
-        label: Text('add student',
+        label: Text(LocalizationService.instance.t('add_student'),
             style: AppTypography.body(
                 fontSize: 14, fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(
@@ -1044,7 +1051,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
               color: AppColors.warmAmber, size: 32),
           const SizedBox(height: 10),
           Text(
-            'premium plans coming soon!',
+            LocalizationService.instance.t('premium_coming_soon'),
             style: AppTypography.body(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -1053,7 +1060,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
           ),
           const SizedBox(height: 6),
           Text(
-            'we\'re crafting amazing premium features to supercharge your child\'s learning journey.',
+            LocalizationService.instance.t('premium_desc'),
             textAlign: TextAlign.center,
             style: AppTypography.body(
               fontSize: 13,
@@ -1072,20 +1079,20 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
     return Column(
       children: [
         _buildNotifToggle(
-          'login alerts',
-          'get notified when your account is accessed from a new device.',
+          LocalizationService.instance.t('login_alerts'),
+          LocalizationService.instance.t('login_alerts_desc'),
           _loginAlertsEnabled,
           (v) => _toggleLoginAlerts(v),
         ),
         _buildNotifToggle(
-          'learning progress',
-          'get notified when your child completes a screening or milestone.',
+          LocalizationService.instance.t('learning_progress'),
+          LocalizationService.instance.t('learning_progress_desc'),
           _progressEmails,
           (v) => setState(() => _progressEmails = v),
         ),
         _buildNotifToggle(
-          'app updates & features',
-          'receive important announcements about new educational tools.',
+          LocalizationService.instance.t('app_updates'),
+          LocalizationService.instance.t('app_updates_desc'),
           _periodicUpdates,
           (v) => setState(() => _periodicUpdates = v),
         ),
@@ -1239,6 +1246,100 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  DIALOGS (Frontend only logic for Name / Email updates)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  void _showLanguageBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppColors.cardSurface,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                LocalizationService.instance.t('select_language'),
+                style: AppTypography.heading(fontSize: 20, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 24),
+              _buildLanguageOptionSheet(
+                ctx,
+                title: 'English',
+                localeCode: 'en',
+                icon: Icons.language_rounded,
+              ),
+              const SizedBox(height: 12),
+              _buildLanguageOptionSheet(
+                ctx,
+                title: 'සිංහල',
+                localeCode: 'si',
+                icon: Icons.translate_rounded,
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLanguageOptionSheet(BuildContext ctx, {required String title, required String localeCode, required IconData icon}) {
+    final bool isSelected = LocalizationService.instance.currentLocale == localeCode;
+    return GestureDetector(
+      onTap: () {
+        LocalizationService.instance.setLocale(localeCode);
+        Navigator.pop(ctx);
+        setState(() {});
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.calmBlue.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppColors.calmBlue : AppColors.borderLight,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isSelected ? AppColors.calmBlue : AppColors.textSecondary, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: AppTypography.body(
+                  fontSize: 16,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: isSelected ? AppColors.calmBlue : AppColors.textPrimary,
+                ),
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check_circle_rounded, color: AppColors.calmBlue, size: 24),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _showEditNameDialog() {
     final controller = TextEditingController(text: _userName);
