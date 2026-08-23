@@ -186,8 +186,8 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
           bool isWronglyMatched = isSelected && _tappedBottomLetter != null && !_isBottomLetterCorrect;
 
           Color tileColor = isCorrectlyMatched 
-              ? const Color(0xFF6DBE6D).withOpacity(0.15) 
-              : (isWronglyMatched ? const Color(0xFFE87C6D).withOpacity(0.15) : (isSelected ? const Color(0xFF4A90E2) : Colors.white));
+              ? const Color(0xFF6DBE6D).withValues(alpha: 0.15) 
+              : (isWronglyMatched ? const Color(0xFFE87C6D).withValues(alpha: 0.15) : (isSelected ? const Color(0xFF4A90E2) : Colors.white));
           
           Color borderColor = isCorrectlyMatched 
               ? const Color(0xFF6DBE6D) 
@@ -208,19 +208,19 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
                 boxShadow: [
                   if (isCorrectlyMatched)
                     BoxShadow(
-                      color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                      color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                       blurRadius: 16,
                       spreadRadius: 2,
                     )
                   else if (isWronglyMatched)
                     BoxShadow(
-                      color: const Color(0xFFE87C6D).withOpacity(0.3),
+                      color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
                       blurRadius: 16,
                       spreadRadius: 2,
                     )
                   else if (!isOtherSelected)
                     BoxShadow(
-                      color: (isSelected ? const Color(0xFF4A90E2) : Colors.black).withOpacity(0.12),
+                      color: (isSelected ? const Color(0xFF4A90E2) : Colors.black).withValues(alpha: 0.12),
                       blurRadius: isSelected ? 16 : 8,
                       offset: Offset(0, isSelected ? 8 : 4),
                     )
@@ -321,23 +321,23 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             
             if (isTapped) {
               if (_isBottomLetterCorrect) {
-                boxColor = const Color(0xFF6DBE6D).withOpacity(0.15);
+                boxColor = const Color(0xFF6DBE6D).withValues(alpha: 0.15);
                 borderColor = const Color(0xFF6DBE6D);
                 textColor = const Color(0xFF6DBE6D);
                 glowShadows = [
                   BoxShadow(
-                    color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                    color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                     blurRadius: 16,
                     spreadRadius: 2,
                   )
                 ];
               } else {
-                boxColor = const Color(0xFFE87C6D).withOpacity(0.15);
+                boxColor = const Color(0xFFE87C6D).withValues(alpha: 0.15);
                 borderColor = const Color(0xFFE87C6D);
                 textColor = const Color(0xFFE87C6D);
                 glowShadows = [
                   BoxShadow(
-                    color: const Color(0xFFE87C6D).withOpacity(0.3),
+                    color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
                     blurRadius: 16,
                     spreadRadius: 2,
                   )
@@ -346,7 +346,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             } else if (isActive) {
               glowShadows = [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 )
@@ -473,7 +473,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.warmAmber.withOpacity(0.15),
+          color: AppColors.warmAmber.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
@@ -495,7 +495,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
                 shape: BoxShape.circle,
                 color: AppColors.warmAmber,
                 boxShadow: [
-                  BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))
+                  BoxShadow(color: AppColors.warmAmber.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))
                 ]
               ),
               child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),

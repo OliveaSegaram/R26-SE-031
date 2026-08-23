@@ -254,7 +254,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
                         borderRadius: BorderRadius.circular(32),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.brown.withOpacity(0.2),
+                            color: Colors.brown.withValues(alpha: 0.2),
                             blurRadius: 16,
                             offset: const Offset(0, 8),
                           ),
@@ -286,20 +286,20 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
                                   ? const Color(0xFFE87C6D) 
                                   : (isFilled 
                                       ? (_isMemorizing ? Colors.white : const Color(0xFF6DBE6D)) 
-                                      : Colors.black.withOpacity(0.04)),
+                                      : Colors.black.withValues(alpha: 0.04)),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isCurrentWrong 
                                     ? const Color(0xFFE87C6D) 
                                     : (isFilled 
-                                        ? (_isMemorizing ? AppColors.warmAmber.withOpacity(0.4) : const Color(0xFF6DBE6D)) 
-                                        : Colors.black.withOpacity(0.1)),
+                                        ? (_isMemorizing ? AppColors.warmAmber.withValues(alpha: 0.4) : const Color(0xFF6DBE6D)) 
+                                        : Colors.black.withValues(alpha: 0.1)),
                                 width: 2.0,
                               ),
                               boxShadow: (isFilled && isCurrentWrong)
                                   ? [
                                       BoxShadow(
-                                        color: const Color(0xFFE87C6D).withOpacity(0.3),
+                                        color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
                                         blurRadius: 16,
                                         spreadRadius: 2,
                                       )
@@ -355,11 +355,11 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
                             double borderWidth = isPressed ? 4.0 : 1.0;
 
                             if (isCorrect) {
-                              tileColor = const Color(0xFF6DBE6D).withOpacity(0.15);
+                              tileColor = const Color(0xFF6DBE6D).withValues(alpha: 0.15);
                               borderColor = const Color(0xFF6DBE6D);
                               textColor = const Color(0xFF6DBE6D);
                             } else if (isWrong) {
-                              tileColor = const Color(0xFFE87C6D).withOpacity(0.15);
+                              tileColor = const Color(0xFFE87C6D).withValues(alpha: 0.15);
                               borderColor = const Color(0xFFE87C6D);
                               textColor = const Color(0xFFE87C6D);
                             }
@@ -382,19 +382,19 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
                                   boxShadow: [
                                     if (isCorrect)
                                       BoxShadow(
-                                        color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                                        color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                                         blurRadius: 16,
                                         spreadRadius: 2,
                                       )
                                     else if (isWrong)
                                       BoxShadow(
-                                        color: const Color(0xFFE87C6D).withOpacity(0.3),
+                                        color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
                                         blurRadius: 16,
                                         spreadRadius: 2,
                                       )
                                     else if (!isPressed)
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.08),
+                                        color: Colors.black.withValues(alpha: 0.08),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
                                       )
@@ -444,7 +444,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.warmAmber.withOpacity(0.15),
+          color: AppColors.warmAmber.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
@@ -466,7 +466,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
                 shape: BoxShape.circle,
                 color: AppColors.warmAmber,
                 boxShadow: [
-                  BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))
+                  BoxShadow(color: AppColors.warmAmber.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))
                 ]
               ),
               child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
@@ -503,7 +503,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 )

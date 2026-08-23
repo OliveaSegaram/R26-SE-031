@@ -166,7 +166,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
         'color': color,
         'progress': (avgScore / 100.0).clamp(0.0, 1.0),
         'accuracy': avgScore.round(),
-        'levels': '${evts.length} rounds',
+        'levels': evts.length,
         'lastPlayed': 'recent',
         'events': evts,
       };
@@ -176,12 +176,12 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
     if (_skills.isEmpty) {
       _skills = [
          {
-          'name': 'No activities played yet',
+          'name': 'no_activities_played',
           'icon': FontAwesomeIcons.ghost,
           'color': AppColors.borderLight,
           'progress': 0.0,
           'accuracy': 0,
-          'levels': '0 rounds',
+          'levels': 0,
           'lastPlayed': 'never',
         }
       ];
@@ -197,12 +197,19 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
   @override
   Widget build(BuildContext context) {
     final name = widget.studentData['first_name'] ?? 'student';
-    final grade = widget.studentData['grade'] ?? 'n/a';
+    String rawGrade = widget.studentData['grade'] ?? 'n/a';
+    if (rawGrade.toLowerCase().contains('grade 1')) {
+      rawGrade = LocalizationService.instance.t('grade_1');
+    }
+    final grade = rawGrade;
     final avatar =
         AvatarUtils.getCorrectedAvatarPath(widget.studentData['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png');
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
+    return ListenableBuilder(
+      listenable: LocalizationService.instance,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: AppColors.cream,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SafeArea(
@@ -234,9 +241,9 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                         );
                       },
                       icon: const Icon(Icons.analytics_rounded, color: Colors.white),
-                      label: const Text(
-                        'View Advanced Reports & Heatmap',
-                        style: TextStyle(
+                      label: Text(
+                        LocalizationService.instance.t('view_advanced_reports'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -260,6 +267,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
         ),
       ),
     );
+  });
   }
 
   // ─── Header ───
@@ -436,7 +444,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '${_weeklyMinutes.reduce((a, b) => a + b).round()} min total',
+                    '${_weeklyMinutes.reduce((a, b) => a + b).round()} ${LocalizationService.instance.t('minutes')}',
                     style: AppTypography.caption(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -598,7 +606,9 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        skill['name'] as String,
+                        skill['name'] == 'no_activities_played'
+                            ? LocalizationService.instance.t('no_activities_played')
+                            : LocalizationService.instance.t((skill['name'] as String).toLowerCase().replaceAll(' ', '_')),
                         style: AppTypography.body(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -630,14 +640,14 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'levels: ${skill['levels']}',
+                        '${LocalizationService.instance.t('levels')}: ${skill['levels']}',
                         style: AppTypography.caption(
                           fontSize: 11,
                           color: AppColors.textHint,
                         ),
                       ),
                       Text(
-                        'last: ${skill['lastPlayed']}',
+                        '${LocalizationService.instance.t('last_active_prefix')}${LocalizationService.instance.t(skill['lastPlayed'] as String)}',
                         style: AppTypography.caption(
                           fontSize: 11,
                           color: AppColors.textHint,

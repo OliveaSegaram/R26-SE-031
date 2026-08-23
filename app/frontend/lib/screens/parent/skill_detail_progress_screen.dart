@@ -1,7 +1,7 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
+import '../../services/localization_service.dart';
 
 /// Skill Detail Progress Screen — Drill-down for a specific skill
 /// showing activity-by-activity breakdown and performance trend.
@@ -25,7 +25,7 @@ class SkillDetailProgressScreen extends StatelessWidget {
   List<Map<String, dynamic>> get _activities {
     if (events.isEmpty) {
       return [
-        {'name': 'No Attempts Yet', 'score': 0, 'time': '--', 'attempts': 0, 'status': 'locked'},
+        {'name': LocalizationService.instance.t('no_attempts_yet'), 'score': 0, 'time': '--', 'attempts': 0, 'status': 'locked'},
       ];
     }
     
@@ -40,7 +40,7 @@ class SkillDetailProgressScreen extends StatelessWidget {
       final timeStr = mins > 0 ? '${mins}m ${secs}s' : '${secs}s';
       
       return {
-        'name': 'Attempt $rNumber',
+        'name': '${LocalizationService.instance.t('attempt')} $rNumber',
         'score': score,
         'time': timeStr,
         'attempts': 1,
@@ -141,7 +141,7 @@ class SkillDetailProgressScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      skillName,
+                      LocalizationService.instance.t(skillName.toLowerCase().replaceAll(' ', '_')),
                       style: AppTypography.heading(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
@@ -149,7 +149,7 @@ class SkillDetailProgressScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "$childName's progress",
+                      "$childName${LocalizationService.instance.t('child_progress_suffix')}",
                       style: AppTypography.caption(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -177,7 +177,7 @@ class SkillDetailProgressScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'accuracy',
+                      LocalizationService.instance.t('accuracy'),
                       style: AppTypography.caption(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -220,7 +220,7 @@ class SkillDetailProgressScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'performance trend',
+              LocalizationService.instance.t('performance_trend'),
               style: AppTypography.heading(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -229,7 +229,7 @@ class SkillDetailProgressScreen extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'accuracy over last 7 sessions',
+              LocalizationService.instance.t('accuracy_over_sessions'),
               style: AppTypography.caption(
                 fontSize: 12,
                 color: AppColors.textHint,
@@ -350,7 +350,7 @@ class SkillDetailProgressScreen extends StatelessWidget {
                 ),
                 if (!isLocked)
                   Text(
-                    '${activity['time']} · ${activity['attempts']} attempt${(activity['attempts'] as int) > 1 ? 's' : ''}',
+                    '${activity['time']} · ${activity['attempts']} ${(activity['attempts'] as int) > 1 ? LocalizationService.instance.t('attempts') : LocalizationService.instance.t('attempt')}',
                     style: AppTypography.caption(
                       fontSize: 11,
                       color: AppColors.textHint,
