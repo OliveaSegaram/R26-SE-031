@@ -433,7 +433,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.12),
+            color: const Color(0xFF4A90D9).withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -532,7 +532,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                       ? const Color(0xFFF9C623)
                       : const Color(0xFFE0E0E0),
               border: isCurrent
-                  ? Border.all(color: const Color(0xFFF9C623).withOpacity(0.3), width: 2)
+                  ? Border.all(color: const Color(0xFFF9C623).withValues(alpha: 0.3), width: 2)
                   : null,
             ),
           );
@@ -565,7 +565,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
           margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: AppColors.warmAmber.withOpacity(0.15),
+            color: AppColors.warmAmber.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AppColors.warmAmber, width: 3),
           ),
@@ -580,7 +580,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.warmAmber.withOpacity(0.4), width: 2),
+                    border: Border.all(color: AppColors.warmAmber.withValues(alpha: 0.4), width: 2),
                   ),
                   child: Image.asset('assets/images/activity_icons/${_currentRound.targetAsset}'),
                 ),
@@ -594,7 +594,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                 scale: _speakerBounceAnimation,
                 child: Container(
                   width: 48, height: 48,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]),
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))]),
                   child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
                 ),
               ),
@@ -635,7 +635,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 )
@@ -695,17 +695,17 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     bool isCorrect = _currentPhase == MemoryPhase.success && isTarget;
     bool isWrong = _lastMistakeIndex == index;
 
-    Color borderColor = const Color(0xFF4A90D9).withOpacity(0.3);
+    Color borderColor = const Color(0xFF4A90D9).withValues(alpha: 0.3);
     Color bgColor = Colors.white;
     double borderWidth = 2.0;
 
     if (isCorrect) {
       borderColor = const Color(0xFF6DBE6D);
-      bgColor = const Color(0xFF6DBE6D).withOpacity(0.15);
+      bgColor = const Color(0xFF6DBE6D).withValues(alpha: 0.15);
       borderWidth = 4.0;
     } else if (isWrong) {
       borderColor = const Color(0xFFE87C6D);
-      bgColor = const Color(0xFFE87C6D).withOpacity(0.15);
+      bgColor = const Color(0xFFE87C6D).withValues(alpha: 0.15);
       borderWidth = 4.0;
     }
 
@@ -771,19 +771,19 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
         boxShadow: [
           if (isCorrect)
             BoxShadow(
-              color: const Color(0xFF6DBE6D).withOpacity(0.3),
+              color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
               blurRadius: 16,
               spreadRadius: 2,
             )
           else if (isWrong)
             BoxShadow(
-              color: const Color(0xFFE87C6D).withOpacity(0.3),
+              color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
               blurRadius: 16,
               spreadRadius: 2,
             )
           else
             BoxShadow(
-              color: const Color(0xFF4A90D9).withOpacity(0.15),
+              color: const Color(0xFF4A90D9).withValues(alpha: 0.15),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -823,7 +823,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                                 size: sizes[index],
                                 shadows: [
                                   Shadow(
-                                    color: const Color(0xFFFFD700).withOpacity(0.6),
+                                    color: const Color(0xFFFFD700).withValues(alpha: 0.6),
                                     blurRadius: 12,
                                   )
                                 ],
@@ -855,13 +855,13 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
         border: Border.all(
-          color: Colors.white.withOpacity(0.5),
+          color: Colors.white.withValues(alpha: 0.5),
           width: 3,
         ),
       ),
@@ -885,12 +885,12 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFFDF00).withOpacity(0.4),
+                  color: const Color(0xFFFFDF00).withValues(alpha: 0.4),
                   blurRadius: 12,
                   spreadRadius: 2,
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 6,
                   offset: const Offset(0, 3),
                 )
@@ -937,13 +937,13 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4A90D9).withOpacity(0.15),
+                    color: const Color(0xFF4A90D9).withValues(alpha: 0.15),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
                 border: Border.all(
-                  color: const Color(0xFF4A90D9).withOpacity(0.3),
+                  color: const Color(0xFF4A90D9).withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
@@ -972,7 +972,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       child: FadeTransition(
         opacity: _celebrationScale,
         child: Container(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1023,7 +1023,7 @@ class _CardPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.12)
+      ..color = Colors.white.withValues(alpha: 0.12)
       ..style = PaintingStyle.fill;
 
     // Draw soft, playful circles (bokeh effect)
@@ -1036,7 +1036,7 @@ class _CardPatternPainter extends CustomPainter {
     
     // Draw magical sparkling stars
     final starPaint = Paint()
-      ..color = Colors.white.withOpacity(0.25)
+      ..color = Colors.white.withValues(alpha: 0.25)
       ..style = PaintingStyle.fill;
       
     _drawSparkle(canvas, Offset(size.width * 0.5, size.height * 0.12), 6, starPaint);

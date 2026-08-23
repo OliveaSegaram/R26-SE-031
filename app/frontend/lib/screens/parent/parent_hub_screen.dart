@@ -538,10 +538,22 @@ class _ParentHubScreenState extends State<ParentHubScreen>
             const SizedBox(height: 16),
             ..._students.map((student) {
               final s = student as Map<String, dynamic>;
+              final avatar = AvatarUtils.getCorrectedAvatarPath(
+                s['avatar_url'] as String?,
+                'assets/images/characters/human/human_student_1.png'
+              );
               return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: AppColors.softCoral,
-                  backgroundImage: AssetImage(s['avatar_url'] ?? 'assets/images/mascots/solo_blue.png'),
+                leading: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.5), width: 2),
+                    color: AppColors.cream,
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(avatar, fit: BoxFit.cover),
+                  ),
                 ),
                 title: Text(
                   s['first_name'] ?? 'student',

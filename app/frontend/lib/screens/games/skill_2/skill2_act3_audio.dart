@@ -196,9 +196,9 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
                           padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
                           decoration: BoxDecoration(
                             color: isRight
-                                ? const Color(0xFF6DBE6D).withOpacity(0.15)
+                                ? const Color(0xFF6DBE6D).withValues(alpha: 0.15)
                                 : isWrong
-                                    ? const Color(0xFFE87C6D).withOpacity(0.15)
+                                    ? const Color(0xFFE87C6D).withValues(alpha: 0.15)
                                     : Colors.white,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
@@ -212,19 +212,19 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
                             boxShadow: [
                               if (isRight)
                                 BoxShadow(
-                                  color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                                  color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                                   blurRadius: 16,
                                   spreadRadius: 2,
                                 )
                               else if (isWrong)
                                 BoxShadow(
-                                  color: const Color(0xFFE87C6D).withOpacity(0.3),
+                                  color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
                                   blurRadius: 16,
                                   spreadRadius: 2,
                                 )
                               else
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08), 
+                                  color: Colors.black.withValues(alpha: 0.08), 
                                   blurRadius: 10, 
                                   offset: const Offset(0, 4)
                                 )
@@ -256,7 +256,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.warmAmber.withOpacity(0.15),
+          color: AppColors.warmAmber.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
@@ -278,7 +278,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
                 shape: BoxShape.circle,
                 color: AppColors.warmAmber,
                 boxShadow: [
-                  BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))
+                  BoxShadow(color: AppColors.warmAmber.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))
                 ]
               ),
               child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
