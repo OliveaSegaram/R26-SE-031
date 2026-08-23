@@ -35,6 +35,8 @@ import 'skill_2/skill2_act4_mcq.dart';
 import 'skill_2/skill2_act1_odd_one_out.dart';
 import 'skill_2/skill2_act5_pattern_memory.dart';
 
+import 'shared_templates/interactive_story_game.dart';
+
 /// Central factory for constructing dynamic game screen instances based on template_type.
 class GameFactory {
   static Widget buildGame(ActivityNode node, {bool isRemedial = false}) {
@@ -120,6 +122,11 @@ class GameFactory {
         break;
       case 'skill2_pattern_memory':
         gameContent = Skill2Act5PatternMemory(activityNode: node, isRemedial: isRemedial);
+        break;
+
+      // --- Interactive Story ---
+      case 'interactive_story':
+        gameContent = InteractiveStoryGame(activityNode: node);
         break;
 
       // Fallback for unhandled or removed template types

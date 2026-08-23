@@ -324,7 +324,29 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       itemCount: _curriculum!.skills.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      separatorBuilder: (context, index) {
+        final skill = _curriculum!.skills[index];
+        if (skill.id == 'skill_4') {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+              const Divider(thickness: 2, color: AppColors.borderLight),
+              const SizedBox(height: 16),
+              Text(
+                '📖 reading practice',
+                style: AppTypography.heading(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          );
+        }
+        return const SizedBox(height: 16);
+      },
       itemBuilder: (context, index) {
         final skill = _curriculum!.skills[index];
 

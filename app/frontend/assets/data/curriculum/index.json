@@ -58,5 +58,17 @@
     "emoji": "🧠",
     "audio_url": "",
     "is_locked": true
+  },
+  {
+    "id": "skill_6",
+    "title": "සිංහල පෙළපොත",
+    "description": "1 ශ්‍රේණියේ සිංහල පෙළපොත ඇසුරින් කියවමු! 📚",
+    "file_path": "skill_6.json",
+    "total_activities": 2,
+    "image_path": "assets/images/skills/s4.png",
+    "color_hex": "#5CA9D6",
+    "emoji": "📚",
+    "audio_url": "",
+    "is_locked": true
   }
 ]
