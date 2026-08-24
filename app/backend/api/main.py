@@ -27,7 +27,6 @@ from config import PORT, CORS_ORIGINS
 from routers.auth import router as auth_router, limiter as auth_limiter
 from routers.students import router as students_router
 from routers.specialists import router as specialists_router
-from routers.telemetry import router as telemetry_router
 from routers.activities import router as activities_router
 from routers.therapist import router as therapist_router
 
@@ -62,12 +61,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(auth_router)
 app.include_router(students_router)
 app.include_router(specialists_router)
-app.include_router(telemetry_router)
 app.include_router(activities_router)
 app.include_router(therapist_router)
-
-from routers.ml import router as ml_router
-app.include_router(ml_router)
 
 # Mount static folder (Moved to speech-monitoring-v1)
 
