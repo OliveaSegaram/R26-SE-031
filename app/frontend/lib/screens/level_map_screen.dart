@@ -862,17 +862,27 @@ class _LevelMapScreenState extends State<LevelMapScreen>
               ],
             ),
             if (!isLocked)
-              Positioned(
-                bottom: -4,
-                child: _buildStarBadge(score, isCompleted ? AppColors.gentleGreen : AppColors.warmAmber),
-              ),
+              Builder(builder: (context) {
+                int starCount = 1;
+                if (widget.skillMap.id == 'skill_4' && index == 3) {
+                  starCount = 2;
+                }
+                return Positioned(
+                  bottom: -4,
+                  child: _buildStarBadge(
+                    score,
+                    isCompleted ? AppColors.gentleGreen : AppColors.warmAmber,
+                    starCount: starCount,
+                  ),
+                );
+              }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStarBadge(int score, Color baseColor) {
+  Widget _buildStarBadge(int score, Color baseColor, {int starCount = 1}) {
     final bool fullyCompleted = score >= 100;
     final double targetValue = fullyCompleted ? 1.0 : 0.0;
 
@@ -906,10 +916,16 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                 ),
             ],
           ),
-          child: Icon(
-            Icons.star_rounded,
-            color: iconColor,
-            size: 16,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(
+              starCount,
+              (index) => Icon(
+                Icons.star_rounded,
+                color: iconColor,
+                size: 16,
+              ),
+            ),
           ),
         );
       },
@@ -1046,6 +1062,9 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       }
 
       if (finalScore >= 100) {
+        // Mark it completed instantly in cache so dashboard updates immediately if user exits early.
+        await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
+
         // Show progress filling up to 100% first
         setState(() {
           _animatingProgressForLevel = index;
@@ -1053,9 +1072,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         
         // Wait for the TweenAnimationBuilder to complete its 1.2s animation
         await Future.delayed(const Duration(milliseconds: 1200));
-
-        // Now mark it completed to turn it solid green
-        await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
         
         if (mounted) {
           setState(() {

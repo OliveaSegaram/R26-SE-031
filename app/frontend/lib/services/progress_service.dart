@@ -148,10 +148,19 @@ class ProgressService {
     List<String> completed = _prefs?.getStringList(key) ?? [];
     
     int count = 0;
+    bool hasAct4 = false;
     for (String id in completed) {
       if (id.startsWith('${skillId}_')) {
         count++;
+        if (id == '${skillId}_act_4') {
+          hasAct4 = true;
+        }
       }
+    }
+
+    // Special rule for skill_4: act_4 counts as two activities for progress calculation
+    if (skillId == 'skill_4' && hasAct4) {
+      count++;
     }
 
     // Fallback check against activity scores if not listed in completed array
@@ -161,10 +170,17 @@ class ProgressService {
       if (scoresJson != null) {
         try {
           final Map<String, dynamic> scoresMap = json.decode(scoresJson);
+          bool fallbackHasAct4 = false;
           for (String k in scoresMap.keys) {
             if (k.startsWith('${skillId}_') && (scoresMap[k] as num) >= 100) {
               count++;
+              if (k == '${skillId}_act_4') {
+                fallbackHasAct4 = true;
+              }
             }
+          }
+          if (skillId == 'skill_4' && fallbackHasAct4) {
+            count++;
           }
         } catch (_) {}
       }
@@ -207,8 +223,13 @@ class ProgressService {
 
     // Progression rule: All activities in previous skill must be completed
     if (prevSkillId != null && prevTotalActivities > 0) {
-      final prevCompleted = getCompletedActivitiesCount(prevSkillId);
-      if (prevCompleted >= prevTotalActivities) return true;
+      int completedCount = 0;
+      for (int i = 0; i < prevTotalActivities; i++) {
+        if (isActivityCompleted(prevSkillId, 'act_${i + 1}')) {
+          completedCount++;
+        }
+      }
+      if (completedCount >= prevTotalActivities) return true;
     }
 
     // Trial rule: 1st activity of this skill completed with any score > 0
