@@ -42,10 +42,34 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
       }
     });
     
+    // Add hardware diagnostic popup
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _runDiagnostic();
+    });
+    
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
+  }
+
+  void _runDiagnostic() async {
+    final report = await VoiceAnalysisService().runHardwareDiagnostic();
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('Hardware Diagnostic'),
+          content: SingleChildScrollView(child: Text(report)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('OK'),
+            )
+          ],
+        )
+      );
+    }
   }
 
   @override
@@ -134,10 +158,12 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
       setState(() {
         _isAnalyzing = false;
       });
+      final errorStr = VoiceAnalysisService().lastError ?? "Unknown error";
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to record audio. Check permissions.'),
+        SnackBar(
+          content: Text('Failed to record audio. Check permissions.\nError: $errorStr'),
           backgroundColor: AppColors.softCoral,
+          duration: const Duration(seconds: 10),
         ),
       );
     }
