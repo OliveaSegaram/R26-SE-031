@@ -6,6 +6,7 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/tts_service.dart';
+import '../../../../services/progress_service.dart';
 
 import 'logic/pattern_generator.dart';
 import 'models/pattern_round.dart';
@@ -105,6 +106,11 @@ class _VisualAct4PatternAdventureState
     
     // Generate randomized rounds dynamically
     _rounds = PatternGenerator.generateRounds();
+    _currentRoundIndex = ProgressService().getActivityState(
+      widget.activityNode.skillId,
+      widget.activityNode.id,
+    );
+    if (_currentRoundIndex >= _rounds.length) _currentRoundIndex = 0;
 
     _trainScrollController = ScrollController();
     _choiceKeys = List.generate(4, (_) => GlobalKey()); // Max 4 choices
@@ -305,11 +311,30 @@ class _VisualAct4PatternAdventureState
           _currentRoundIndex++;
           _initRound();
         });
+        ProgressService().saveActivityState(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          _currentRoundIndex,
+        );
+        ProgressService().saveActivityScore(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          ((_currentRoundIndex / _rounds.length) * 100).toInt(),
+        );
         _roundTransitionController.forward().then((_) {
           _scrollToEndOfTrain();
         });
       });
     } else {
+      ProgressService().clearActivityState(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+      );
+      ProgressService().saveActivityScore(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+        100,
+      );
       setState(() => _activityComplete = true);
       _celebrationController.forward();
     }

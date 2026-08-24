@@ -5,6 +5,7 @@ import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
+import '../../../../services/progress_service.dart';
 
 /// Skill 3 Activity 1 (Image MCQ)
 /// Premium redesign: Displays a central Image and the child must select the matching word.
@@ -35,6 +36,15 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
   @override
   void initState() {
     super.initState();
+    final skillId = widget.activityNode?.skillId ?? '';
+    final activityId = widget.activityNode?.id ?? '';
+    if (skillId.isNotEmpty && activityId.isNotEmpty) {
+      _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
+    }
+    final rounds = widget.activityNode?.rounds ?? [];
+    if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
+      _currentRoundIndex = 0;
+    }
 
     // Pulsing glow for the speaker button
     _pulseController = AnimationController(
@@ -115,6 +125,13 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
         if (_currentRoundIndex < totalRounds - 1) {
           setState(() {
             _currentRoundIndex++;
+              final sId = widget.activityNode?.skillId ?? '';
+              final aId = widget.activityNode?.id ?? '';
+              if (sId.isNotEmpty && aId.isNotEmpty) {
+                int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
+                ProgressService().saveActivityScore(sId, aId, progress);
+                ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+              }
             _selectedIndex = null;
             _isCorrect = false;
           });

@@ -7,6 +7,7 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/tts_service.dart';
+import '../../../../services/progress_service.dart';
 import 'widgets/pattern_background.dart';
 
 // ──────────────────────────────────────────────────────────────
@@ -115,6 +116,11 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   void initState() {
     super.initState();
     _rounds = _generateRounds();
+    _currentRoundIndex = ProgressService().getActivityState(
+      widget.activityNode.skillId,
+      widget.activityNode.id,
+    );
+    if (_currentRoundIndex >= _rounds.length) _currentRoundIndex = 0;
     
     final rng = Random();
     _currentInstruction = _instructions[rng.nextInt(_instructions.length)];
@@ -356,11 +362,30 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
         setState(() {
           _currentRoundIndex++;
         });
+        ProgressService().saveActivityState(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          _currentRoundIndex,
+        );
+        ProgressService().saveActivityScore(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          ((_currentRoundIndex / _rounds.length) * 100).toInt(),
+        );
         _initRoundState();
         _roundTransitionController.forward();
       });
     } else {
       // Activity complete!
+      ProgressService().clearActivityState(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+      );
+      ProgressService().saveActivityScore(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+        100,
+      );
       setState(() {
         _activityComplete = true;
       });
