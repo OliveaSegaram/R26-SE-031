@@ -4,6 +4,7 @@ import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
+import '../../../../services/progress_service.dart';
 
 /// Activity 2: එක සමාන අකුරු (Matching Similar Letters)
 class Skill2Act2IdenticalMatch extends StatefulWidget {
@@ -32,6 +33,15 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
   @override
   void initState() {
     super.initState();
+    final skillId = widget.activityNode?.skillId ?? '';
+    final activityId = widget.activityNode?.id ?? '';
+    if (skillId.isNotEmpty && activityId.isNotEmpty) {
+      _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
+    }
+    final rounds = widget.activityNode?.rounds ?? [];
+    if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
+      _currentRoundIndex = 0;
+    }
     _initRound();
   }
 
@@ -129,6 +139,13 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
       if (_currentRoundIndex < totalRounds - 1) {
         setState(() {
           _currentRoundIndex++;
+              final sId = widget.activityNode?.skillId ?? '';
+              final aId = widget.activityNode?.id ?? '';
+              if (sId.isNotEmpty && aId.isNotEmpty) {
+                int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
+                ProgressService().saveActivityScore(sId, aId, progress);
+                ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+              }
           _initRound();
         });
       } else {
