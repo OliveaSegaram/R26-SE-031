@@ -8,6 +8,7 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/tts_service.dart';
+import '../../../../services/progress_service.dart';
 import 'logic/shadow_generator.dart';
 import 'models/shadow_round.dart';
 import 'widgets/pattern_background.dart';
@@ -100,6 +101,11 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   void initState() {
     super.initState();
     _rounds = ShadowGenerator.generateRounds();
+    _currentRoundIndex = ProgressService().getActivityState(
+      widget.activityNode.skillId,
+      widget.activityNode.id,
+    );
+    if (_currentRoundIndex >= _rounds.length) _currentRoundIndex = 0;
     
     final rng = Random();
     _currentMascot = _mascots[rng.nextInt(_mascots.length)];
@@ -298,11 +304,30 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
           _currentInstruction = _instructions[rng.nextInt(_instructions.length)];
           _currentEncouragement = _encourageMessages[rng.nextInt(_encourageMessages.length)];
         });
+        ProgressService().saveActivityState(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          _currentRoundIndex,
+        );
+        ProgressService().saveActivityScore(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          ((_currentRoundIndex / _rounds.length) * 100).toInt(),
+        );
         _initRoundState();
         _roundTransitionController.forward();
       });
     } else {
       // Activity complete!
+      ProgressService().clearActivityState(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+      );
+      ProgressService().saveActivityScore(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+        100,
+      );
       setState(() {
         _activityComplete = true;
       });

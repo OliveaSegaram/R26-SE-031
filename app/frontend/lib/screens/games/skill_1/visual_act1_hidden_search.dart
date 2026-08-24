@@ -7,6 +7,7 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/tts_service.dart';
+import '../../../../services/progress_service.dart';
 import 'logic/hidden_search_generator.dart';
 import 'widgets/pattern_background.dart';
 
@@ -82,6 +83,11 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   void initState() {
     super.initState();
     _gameData = HiddenSearchGenerator.generateGame();
+    _currentRoundIndex = ProgressService().getActivityState(
+      widget.activityNode.skillId,
+      widget.activityNode.id,
+    );
+    if (_currentRoundIndex >= _gameData.rounds.length) _currentRoundIndex = 0;
 
     // Pick a random mascot for this session
     final rng = Random();
@@ -245,11 +251,30 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
           _currentRoundIndex++;
           _initRound();
         });
+        ProgressService().saveActivityState(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          _currentRoundIndex,
+        );
+        ProgressService().saveActivityScore(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          ((_currentRoundIndex / _gameData.rounds.length) * 100).toInt(),
+        );
         _roundTransitionController.forward();
         _playInstruction();
       });
     } else {
       // Activity complete!
+      ProgressService().clearActivityState(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+      );
+      ProgressService().saveActivityScore(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+        100,
+      );
       setState(() {
         _activityComplete = true;
       });

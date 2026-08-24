@@ -185,8 +185,8 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     // Use a fixed, consistent premium spacing for all skills
     double nodeSpacing = 130.0;
 
-    // Determine map height
-    double contentHeight = levels.length * nodeSpacing + 160;
+    // Determine map height (added more bottom padding so the last node's star is fully visible)
+    double contentHeight = levels.length * nodeSpacing + 260;
     double mapHeight = max(screenHeight, contentHeight);
     bool shouldScroll = contentHeight > screenHeight;
 
@@ -216,8 +216,9 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
                     // Map content overlay
                     Padding(
-                      padding: const EdgeInsets.only(top: 120, bottom: 40),
+                      padding: const EdgeInsets.only(top: 120, bottom: 120),
                       child: Stack(
+                        clipBehavior: Clip.none,
                         children: [
                           // Animated Path
                           AnimatedBuilder(
@@ -723,9 +724,11 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     if (isCompleted) {
       bgColor = AppColors.gentleGreen;
       borderColor = AppColors.gentleGreenDark;
+      contentColor = Colors.white;
     } else if (isCurrent) {
-      bgColor = AppColors.warmAmber;
-      borderColor = AppColors.orangeDark;
+      bgColor = Colors.white;
+      borderColor = AppColors.borderLight;
+      contentColor = AppColors.warmAmber;
     } else {
       bgColor = Colors.white;
       borderColor = AppColors.borderLight;
@@ -778,51 +781,82 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                         : 1.0;
                     return Transform.scale(scale: scale, child: child);
                   },
-                  child: Container(
-                    width: size,
-                    height: size,
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: borderColor, width: borderWidth),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          offset: const Offset(0, 6),
-                          blurRadius: 8,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: size,
+                        height: size,
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: borderColor, width: borderWidth),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              offset: const Offset(0, 6),
+                              blurRadius: 8,
+                            ),
+                            if (isCurrent && _animatingFromLevel == -1)
+                              BoxShadow(
+                                color: AppColors.warmAmber.withValues(
+                                  alpha: 0.2 + (_pulseController.value * 0.35),
+                                ),
+                                blurRadius: 16 + (_pulseController.value * 10),
+                                spreadRadius: 2 + (_pulseController.value * 4),
+                              ),
+                          ],
                         ),
-                        if (isCurrent)
-                          BoxShadow(
-                            color: AppColors.warmAmber.withValues(alpha: 0.4),
-                            blurRadius: 20,
-                            spreadRadius: 4,
+                        child: Center(
+                          child: isLocked
+                              ? Icon(Icons.lock_rounded, color: AppColors.borderLight, size: 32)
+                              : (isCompleted && type != 'trophy'
+                                  ? Icon(Icons.check_rounded, color: Colors.white, size: iconSize)
+                                  : (type == 'trophy'
+                                      ? ((isCurrent && _animatingFromLevel == -1)
+                                          ? const SizedBox.shrink()
+                                          : Text(
+                                              '🏆',
+                                              style: AppTypography.button(
+                                                fontSize: fontSize,
+                                                color: contentColor,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ))
+                                      : const SizedBox.shrink())),
+                        ),
+                      ),
+                        if (!isLocked)
+                          SizedBox(
+                            width: size + 8,
+                            height: size + 8,
+                            child: TweenAnimationBuilder<double>(
+                              duration: const Duration(milliseconds: 1200),
+                              curve: Curves.easeOutCubic,
+                              tween: Tween<double>(
+                                begin: 0.0,
+                                end: (score / 100.0).clamp(0.0, 1.0),
+                              ),
+                              builder: (context, animatedProgress, child) {
+                                return CustomPaint(
+                                  painter: NodeProgressPainter(
+                                    progress: animatedProgress,
+                                    strokeWidth: 6.0,
+                                    color: score >= 100
+                                        ? AppColors.gentleGreen
+                                        : AppColors.warmAmber,
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                      ],
-                    ),
-                    child: Center(
-                      child: isLocked
-                          ? Icon(Icons.lock_rounded, color: AppColors.borderLight, size: 32)
-                          : (isCompleted && type != 'trophy'
-                              ? Icon(Icons.check_rounded, color: Colors.white, size: iconSize)
-                              : (type == 'trophy'
-                                  ? ((isCurrent && _animatingFromLevel == -1)
-                                      ? const SizedBox.shrink()
-                                      : Text(
-                                          '🏆',
-                                          style: AppTypography.button(
-                                            fontSize: fontSize,
-                                            color: contentColor,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ))
-                                  : const SizedBox.shrink())),
-                    ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
               ],
             ),
-            if (isCompleted || (isCurrent && score > 0))
+            if (!isLocked)
               Positioned(
                 bottom: -4,
                 child: _buildStarBadge(score, isCompleted ? AppColors.gentleGreen : AppColors.warmAmber),
@@ -834,37 +868,46 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   }
 
   Widget _buildStarBadge(int score, Color baseColor) {
-    int starCount = 1;
-    if (score >= 80) {
-      starCount = 3;
-    } else if (score >= 50) {
-      starCount = 2;
-    }
+    final bool fullyCompleted = score >= 100;
+    final double targetValue = fullyCompleted ? 1.0 : 0.0;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: AppColors.warmAmber,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.orangeDark, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          )
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(
-          starCount,
-          (i) => const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 1.0),
-            child: Icon(Icons.star_rounded, color: Colors.white, size: 13),
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 900),
+      curve: Curves.easeInOut,
+      tween: Tween<double>(begin: 0.0, end: targetValue),
+      builder: (context, value, child) {
+        // Smooth color transition: grey → warm amber
+        final bgColor = Color.lerp(Colors.grey[350], AppColors.warmAmber, value)!;
+        final borderClr = Color.lerp(Colors.grey[400], AppColors.orangeDark, value)!;
+        final iconColor = Color.lerp(Colors.grey[400], Colors.white, value)!;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderClr, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+              if (value > 0.3)
+                BoxShadow(
+                  color: AppColors.warmAmber.withValues(alpha: value * 0.45),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+            ],
           ),
-        ),
-      ),
+          child: Icon(
+            Icons.star_rounded,
+            color: iconColor,
+            size: 16,
+          ),
+        );
+      },
     );
   }
 
@@ -969,27 +1012,28 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         MaterialPageRoute(builder: (context) => nextScreen),
       );
 
-      // Extract score result if provided as int or default to 100 on continue
-      int scoreToSave = 100;
+      // Extract score result if provided as int
+      int? returnedScore;
       if (result != null && result is int) {
-        scoreToSave = result;
+        returnedScore = result;
       }
       
       // Submit the telemetry session that was recorded during this activity
       final studentId = ProgressService().currentStudentId;
       await TelemetryService().endSessionAndSubmit(studentId);
 
-      // DDA: Update failure count
-      if (scoreToSave < 40) {
-        await ProgressService().incrementFailureCount(widget.skillMap.id, level.id);
-      } else if (scoreToSave >= 40 && fails > 0) {
-        await ProgressService().resetFailureCount(widget.skillMap.id, level.id);
-      }
-
-      // Mark level as completed persistently
+      // The games save partial state and score themselves. 
+      // Read the latest score from the service to know exactly where we stand.
       final currentScore = ProgressService().getActivityScore(widget.skillMap.id, level.id);
-      if (scoreToSave > currentScore || !isCompleted) {
-        await ProgressService().saveActivityScore(widget.skillMap.id, level.id, scoreToSave);
+      final finalScore = returnedScore ?? currentScore;
+
+      // DDA: Update failure count (only if they actually returned a score)
+      if (returnedScore != null) {
+        if (returnedScore < 40) {
+          await ProgressService().incrementFailureCount(widget.skillMap.id, level.id);
+        } else if (returnedScore >= 40) {
+          await ProgressService().resetFailureCount(widget.skillMap.id, level.id);
+        }
       }
       await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
 
@@ -1010,8 +1054,35 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           }
         });
 
+      if (finalScore >= 100) {
+        await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
+
+        // Rebuild to trigger the 100% progress and star animations
+        setState(() {});
+        
+        // Let the user admire the "Color Up" and progress fill for 1.5 seconds
+        await Future.delayed(const Duration(milliseconds: 1500));
+
+        final nextLevelIndex = index + 1;
+        if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
+          setState(() {
+            _animatingFromLevel = currentLevel;
+            currentLevel = nextLevelIndex;
+          });
+
+          // Trigger smooth avatar glide animation to the newly unlocked activity
+          _unlockController.forward(from: 0.0).then((_) {
+            if (mounted) {
+              setState(() {
+                _animatingFromLevel = -1;
+              });
+            }
+          });
+        }
         _scrollToCurrentLevel();
       } else {
+        // Rebuild UI to show partial progress
+        setState(() {});
         _refreshCurrentLevel();
       }
     } finally {
@@ -1167,3 +1238,70 @@ class PathPainter extends CustomPainter {
            oldDelegate.pathAnimationProgress != pathAnimationProgress;
   }
 }
+
+class NodeProgressPainter extends CustomPainter {
+  final double progress;   // 0.0 – 1.0
+  final double strokeWidth;
+  final Color color;
+
+  NodeProgressPainter({
+    required this.progress,
+    required this.strokeWidth,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // Arc geometry — starts just to the left of the star (bottom-center)
+    // and sweeps clockwise around the top, ending just to the right.
+    // The 60° gap at the bottom keeps the star badge clear.
+    const double gapDeg = 60;
+    const double startDeg = 90 + (gapDeg / 2);       // 120°
+    const double maxSweepDeg = 360 - gapDeg;          // 300°
+    const double startRad = startDeg * (pi / 180);
+    const double maxSweepRad = maxSweepDeg * (pi / 180);
+
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    // ── 1.  Background track (subtle ring showing "empty" portion) ──
+    final trackPaint = Paint()
+      ..color = color.withValues(alpha: 0.12)
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, startRad, maxSweepRad, false, trackPaint);
+
+    if (progress <= 0) return;
+
+    final sweepRad = maxSweepRad * progress.clamp(0.0, 1.0);
+
+    // ── 2.  Gradient progress arc ──
+    final gradientPaint = Paint()
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..shader = SweepGradient(
+        startAngle: startRad,
+        endAngle: startRad + sweepRad,
+        colors: [
+          color.withValues(alpha: 0.6),
+          color,
+          Color.lerp(color, Colors.white, 0.2)!,
+        ],
+        stops: const [0.0, 0.7, 1.0],
+      ).createShader(rect);
+
+    canvas.drawArc(rect, startRad, sweepRad, false, gradientPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant NodeProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+           oldDelegate.strokeWidth != strokeWidth ||
+           oldDelegate.color != color;
+  }
+}
+
