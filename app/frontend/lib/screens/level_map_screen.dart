@@ -995,6 +995,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
       final nextLevelIndex = index + 1;
       if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
+        if (!mounted) return;
         setState(() {
           _animatingFromLevel = currentLevel;
           currentLevel = nextLevelIndex;
