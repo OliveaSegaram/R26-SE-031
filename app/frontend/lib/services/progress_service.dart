@@ -13,6 +13,7 @@ class ProgressService {
   static const String _keyCurrentStudentId = 'current_student_id';
   static const String _keyCompletedActivitiesPrefix = 'completed_'; // + studentId
   static const String _keyActivityScoresPrefix = 'scores_'; // + studentId
+  static const String _keyActivityStatePrefix = 'state_'; // + studentId
   static const String _keyLastActiveDate = 'last_active_date';
   static const String _keyStreakCount = 'streak_count';
   static const String _keyStreakEarned = 'streak_earned_by_activity';
@@ -128,15 +129,15 @@ class ProgressService {
     }
   }
 
-  /// Checks if an activity is completed (or has any recorded score > 0)
+  /// Checks if an activity is completed
   bool isActivityCompleted(String skillId, String activityId) {
     final key = '$_keyCompletedActivitiesPrefix$currentStudentId';
     List<String> completed = _prefs?.getStringList(key) ?? [];
     if (completed.contains('${skillId}_$activityId')) return true;
 
-    // Fallback: If student played and earned any score > 0, consider it completed so they can continue
+    // Fallback: If student played and earned a full score, consider it completed
     final score = getActivityScore(skillId, activityId);
-    return score > 0;
+    return score >= 100;
   }
 
   /// Get the number of completed activities for a given skill
@@ -159,7 +160,7 @@ class ProgressService {
         try {
           final Map<String, dynamic> scoresMap = json.decode(scoresJson);
           for (String k in scoresMap.keys) {
-            if (k.startsWith('${skillId}_') && (scoresMap[k] as num) > 0) {
+            if (k.startsWith('${skillId}_') && (scoresMap[k] as num) >= 100) {
               count++;
             }
           }
@@ -246,6 +247,49 @@ class ProgressService {
       if (val is num) return val.toInt();
     } catch (_) {}
     return 0;
+  }
+
+  // --- Partial Progress State ---
+
+  Future<void> saveActivityState(String skillId, String activityId, int currentRoundIndex) async {
+    final prefs = await _ensurePrefs();
+    final key = '$_keyActivityStatePrefix$currentStudentId';
+    String? stateJson = prefs.getString(key);
+    Map<String, dynamic> states = {};
+    if (stateJson != null) {
+      try {
+        states = json.decode(stateJson);
+      } catch (_) {}
+    }
+    
+    states['${skillId}_$activityId'] = currentRoundIndex;
+    await prefs.setString(key, json.encode(states));
+  }
+
+  int getActivityState(String skillId, String activityId) {
+    final key = '$_keyActivityStatePrefix$currentStudentId';
+    String? stateJson = _prefs?.getString(key);
+    if (stateJson == null) return 0;
+    
+    try {
+      Map<String, dynamic> states = json.decode(stateJson);
+      final val = states['${skillId}_$activityId'];
+      if (val is num) return val.toInt();
+    } catch (_) {}
+    return 0;
+  }
+
+  Future<void> clearActivityState(String skillId, String activityId) async {
+    final prefs = await _ensurePrefs();
+    final key = '$_keyActivityStatePrefix$currentStudentId';
+    String? stateJson = prefs.getString(key);
+    if (stateJson != null) {
+      try {
+        Map<String, dynamic> states = json.decode(stateJson);
+        states.remove('${skillId}_$activityId');
+        await prefs.setString(key, json.encode(states));
+      } catch (_) {}
+    }
   }
 
   // --- Failure Tracking (Dynamic Difficulty Adjustment) ---

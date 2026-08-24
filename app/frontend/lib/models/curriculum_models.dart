@@ -193,6 +193,10 @@ class SkillDetail {
       }
     }
 
+    for (var act in resolvedActivities) {
+      act.skillId = skillDetail.id;
+    }
+
     return SkillDetail(
       id: skillDetail.id,
       title: skillDetail.title,
@@ -205,6 +209,7 @@ class SkillDetail {
 
 class ActivityNode {
   final String id;
+  String skillId;
   String skillTitle;
   final String title;
   final String description;
@@ -217,6 +222,7 @@ class ActivityNode {
 
   ActivityNode({
     required this.id, 
+    this.skillId = '',
     this.skillTitle = '',
     required this.title, 
     this.description = '',
