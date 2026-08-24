@@ -102,8 +102,14 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
           });
         } else {
           setState(() {
-            _activityComplete = true;
-          });
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
         }
       });
     } else {
