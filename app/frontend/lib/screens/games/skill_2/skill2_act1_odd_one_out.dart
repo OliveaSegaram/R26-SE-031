@@ -133,6 +133,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
               final aId = widget.activityNode?.id ?? '';
               if (sId.isNotEmpty && aId.isNotEmpty) {
                 ProgressService().saveActivityScore(sId, aId, 100);
+                ProgressService().clearActivityState(sId, aId);
               }
             });
           }

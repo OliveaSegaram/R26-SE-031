@@ -113,7 +113,7 @@ class ProgressService {
 
   /// Marks an activity as completed for the current student
   Future<void> markActivityCompleted(String skillId, String activityId) async {
-    final prefs = await _ensurePrefs();
+    final prefs = _prefs ?? await _ensurePrefs();
     final key = '$_keyCompletedActivitiesPrefix$currentStudentId';
     List<String> completed = prefs.getStringList(key) ?? [];
     
@@ -127,6 +127,8 @@ class ProgressService {
       await prefs.setBool(_keyStreakEarned, true);
       _triggerCloudSync();
     }
+    // Automatically clear any partial progress since it's fully completed now!
+    await clearActivityState(skillId, activityId);
   }
 
   /// Checks if an activity is completed
@@ -221,7 +223,7 @@ class ProgressService {
   // --- Scoring ---
 
   Future<void> saveActivityScore(String skillId, String activityId, int score) async {
-    final prefs = await _ensurePrefs();
+    final prefs = _prefs ?? await _ensurePrefs();
     final key = '$_keyActivityScoresPrefix$currentStudentId';
     String? scoresJson = prefs.getString(key);
     Map<String, dynamic> scores = {};
@@ -232,7 +234,7 @@ class ProgressService {
     }
     
     scores['${skillId}_$activityId'] = score;
-    await prefs.setString(key, json.encode(scores));
+    prefs.setString(key, json.encode(scores));
     _triggerCloudSync();
   }
 
@@ -252,7 +254,7 @@ class ProgressService {
   // --- Partial Progress State ---
 
   Future<void> saveActivityState(String skillId, String activityId, int currentRoundIndex) async {
-    final prefs = await _ensurePrefs();
+    final prefs = _prefs ?? await _ensurePrefs();
     final key = '$_keyActivityStatePrefix$currentStudentId';
     String? stateJson = prefs.getString(key);
     Map<String, dynamic> states = {};
@@ -263,7 +265,7 @@ class ProgressService {
     }
     
     states['${skillId}_$activityId'] = currentRoundIndex;
-    await prefs.setString(key, json.encode(states));
+    prefs.setString(key, json.encode(states));
   }
 
   int getActivityState(String skillId, String activityId) {
@@ -280,14 +282,14 @@ class ProgressService {
   }
 
   Future<void> clearActivityState(String skillId, String activityId) async {
-    final prefs = await _ensurePrefs();
+    final prefs = _prefs ?? await _ensurePrefs();
     final key = '$_keyActivityStatePrefix$currentStudentId';
     String? stateJson = prefs.getString(key);
     if (stateJson != null) {
       try {
         Map<String, dynamic> states = json.decode(stateJson);
         states.remove('${skillId}_$activityId');
-        await prefs.setString(key, json.encode(states));
+        prefs.setString(key, json.encode(states));
       } catch (_) {}
     }
   }
@@ -387,10 +389,12 @@ class ProgressService {
     final completedKey = '$_keyCompletedActivitiesPrefix$studentId';
     final scoresKey = '$_keyActivityScoresPrefix$studentId';
     final failsKey = '$_keyFailureCountPrefix$studentId';
+    final stateKey = '$_keyActivityStatePrefix$studentId';
 
     await prefs.remove(completedKey);
     await prefs.remove(scoresKey);
     await prefs.remove(failsKey);
+    await prefs.remove(stateKey);
 
     // Clear skill intro seen flags for all skills
     for (int i = 0; i <= 10; i++) {
