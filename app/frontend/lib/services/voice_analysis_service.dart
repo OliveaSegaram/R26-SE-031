@@ -68,8 +68,15 @@ class VoiceAnalysisService {
     return log.toString();
   }
 
+  // Toggle this to 'true' before building the final APK for deployment
+  static const bool _isProduction = false;
+
   static String get _baseUrl {
-    // New speech-monitoring-v1 service runs on port 8020
+    if (_isProduction) {
+      // Replace this with your actual deployed Render/AWS URL
+      return 'https://sipsara-speech-api.onrender.com/stt'; 
+    }
+    // Local development URL
     return 'http://10.0.2.2:8020/stt';
   }
 
