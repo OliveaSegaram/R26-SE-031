@@ -19,7 +19,13 @@ from __future__ import annotations
 
 import math
 import statistics
+import os
+import joblib
 from typing import Any, Optional
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+
+from services.comp2_kinematics import extract_comp2_features
 
 
 # ---------------------------------------------------------------------------
@@ -284,13 +290,13 @@ def generate_interventions(
 
     if risk["visual_dyslexia_risk"] in ("Moderate", "High"):
         interventions.append(
-            "Increase practice on Visual Skills (Skills 1 & 2) — "
+            "Increase practice on Visual Skills (Skills 1 & 2) - "
             "Spot the Difference and Hidden Picture activities improve visual scanning."
         )
 
     if risk["phonological_dyslexia_risk"] in ("Moderate", "High"):
         interventions.append(
-            "Focus on Phonological Awareness activities (Skills 5 & 6) — "
+            "Focus on Phonological Awareness activities (Skills 5 & 6) - "
             "Syllable tapping and letter-sound matching exercises strengthen phonemic awareness."
         )
 
@@ -399,6 +405,70 @@ def generate_cognitive_profile(
         "recommended_interventions": interventions,
         "data_points": len(all_events),
     }
+
+# ---------------------------------------------------------------------------
+# Component 2: Visual-Orthographic Tabular ML Pipeline
+# ---------------------------------------------------------------------------
+
+def generate_comp2_profile(telemetry_sessions: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    Component 2 Engine: Extracts rigorous kinematic features and runs them through
+    a Random Forest classifier to output the visual dyslexia risk score.
+    """
+    all_events: list[dict[str, Any]] = []
+    student_id = "unknown"
+    for session in telemetry_sessions:
+        if student_id == "unknown":
+            student_id = session.get("student_id", "unknown")
+        all_events.extend(session.get("events", []))
+        
+    visual_feature_vector = extract_comp2_features(all_events)
+    
+    # Machine Learning Classification (Tabular ML)
+    # 1. Load model if exists
+    risk_score = 0.5 # Default moderate
+    model_path = os.path.join(os.path.dirname(__file__), "..", "models", "comp2_rf_model.pkl")
+    
+    # Ordered features for the model
+    feature_arr = [
+        visual_feature_vector.get("time_to_first_touch_ms", 0),
+        visual_feature_vector.get("orthographic_confusion_index", 0),
+        visual_feature_vector.get("path_efficiency_ratio", 1),
+        visual_feature_vector.get("dimensionless_jerk", 0),
+        visual_feature_vector.get("mean_dwell_time_ms", 0)
+    ]
+    
+    if os.path.exists(model_path):
+        try:
+            model = joblib.load(model_path)
+            prediction = model.predict_proba([feature_arr])[0][1] # Probability of being dyslexic
+            risk_score = round(prediction, 2)
+        except Exception:
+            risk_score = _heuristic_comp2_risk(visual_feature_vector)
+    else:
+        # Fallback to heuristic risk scoring if model isn't trained yet
+        risk_score = _heuristic_comp2_risk(visual_feature_vector)
+        
+    visual_feature_vector["visual_dyslexia_risk_score"] = risk_score
+    
+    return {
+        "student_id": student_id,
+        "component": "Component_2_Visual_Orthographic",
+        "visual_feature_vector": visual_feature_vector
+    }
+
+def _heuristic_comp2_risk(features: dict[str, float]) -> float:
+    # A heuristic mimicking the RF until data is trained
+    oci = features.get("orthographic_confusion_index", 0.0)
+    pe = features.get("path_efficiency_ratio", 1.0)
+    
+    risk = 0.0
+    if oci > 0.6:
+        risk += 0.4
+    if pe < 0.7:
+        risk += 0.3
+        
+    return min(1.0, round(risk, 2))
 
 
 # ---------------------------------------------------------------------------

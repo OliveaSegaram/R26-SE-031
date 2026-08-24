@@ -148,6 +148,15 @@ class SkillDetail {
 
     return SkillDetail(id: fallbackId, title: fallbackTitle, introText: '', audioUrl: '', activities: []);
   }
+  // Toggle this to 'true' before building the final APK for deployment
+  static const bool _isProduction = false;
+
+  static String get _baseUrl {
+    if (_isProduction) {
+      return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
+    }
+    return 'http://10.0.2.2:8015/api/v1/auth';
+  }
 
   static Future<SkillDetail> load(String fileName) async {
     final skillId = fileName.replaceAll('.json', '');
@@ -156,7 +165,7 @@ class SkillDetail {
     try {
       // 1. Try fetching from CMS backend first
       final studentId = ProgressService().currentStudentId;
-      final url = Uri.parse('http://10.0.2.2:8015/api/v1/auth/activities/$skillId?student_id=$studentId');
+      final url = Uri.parse('$_baseUrl/activities/$skillId?student_id=$studentId');
       final res = await http.get(url).timeout(const Duration(seconds: 3));
       if (res.statusCode == 200) {
         final decoded = json.decode(res.body);
@@ -193,6 +202,10 @@ class SkillDetail {
       }
     }
 
+    for (var act in resolvedActivities) {
+      act.skillId = skillDetail.id;
+    }
+
     return SkillDetail(
       id: skillDetail.id,
       title: skillDetail.title,
@@ -205,6 +218,7 @@ class SkillDetail {
 
 class ActivityNode {
   final String id;
+  String skillId;
   String skillTitle;
   final String title;
   final String description;
@@ -217,6 +231,7 @@ class ActivityNode {
 
   ActivityNode({
     required this.id, 
+    this.skillId = '',
     this.skillTitle = '',
     required this.title, 
     this.description = '',

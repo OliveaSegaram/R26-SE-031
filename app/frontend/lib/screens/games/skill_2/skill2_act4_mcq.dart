@@ -5,6 +5,7 @@ import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
+import '../../../../services/progress_service.dart';
 
 /// Activity 4: වචනයට සවන් දී රූපය සොයමු (Listen to Word & Find Image)
 /// Template: audio_image_match_game
@@ -27,6 +28,15 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
   @override
   void initState() {
     super.initState();
+    final skillId = widget.activityNode?.skillId ?? '';
+    final activityId = widget.activityNode?.id ?? '';
+    if (skillId.isNotEmpty && activityId.isNotEmpty) {
+      _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
+    }
+    final rounds = widget.activityNode?.rounds ?? [];
+    if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
+      _currentRoundIndex = 0;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _playAudioPrompt();
     });
@@ -75,14 +85,27 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
           if (_currentRoundIndex < totalRounds - 1) {
             setState(() {
               _currentRoundIndex++;
+              final sId = widget.activityNode?.skillId ?? '';
+              final aId = widget.activityNode?.id ?? '';
+              if (sId.isNotEmpty && aId.isNotEmpty) {
+                int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
+                ProgressService().saveActivityScore(sId, aId, progress);
+                ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+              }
               _selectedIndices.clear();
               _isCorrect = false;
             });
             _playAudioPrompt();
           } else {
             setState(() {
-              _activityComplete = true;
-            });
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
           }
         });
       } else {
@@ -200,7 +223,7 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: AppColors.warmAmber.withOpacity(0.4),
+                              color: AppColors.warmAmber.withValues(alpha: 0.4),
                               width: 2,
                             ),
                           ),
@@ -263,9 +286,9 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                           padding: hasLongText ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) : null,
                           decoration: BoxDecoration(
                             color: isRight
-                                ? const Color(0xFF6DBE6D).withOpacity(0.15)
+                                ? const Color(0xFF6DBE6D).withValues(alpha: 0.15)
                                 : isWrong
-                                    ? const Color(0xFFE87C6D).withOpacity(0.15)
+                                    ? const Color(0xFFE87C6D).withValues(alpha: 0.15)
                                     : Colors.white,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
@@ -279,19 +302,19 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                             boxShadow: [
                               if (isRight)
                                 BoxShadow(
-                                  color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                                  color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                                   blurRadius: 16,
                                   spreadRadius: 2,
                                 )
                               else if (isWrong)
                                 BoxShadow(
-                                  color: const Color(0xFFE87C6D).withOpacity(0.3),
+                                  color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
                                   blurRadius: 16,
                                   spreadRadius: 2,
                                 )
                               else
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08), 
+                                  color: Colors.black.withValues(alpha: 0.08), 
                                   blurRadius: 10, 
                                   offset: const Offset(0, 4)
                                 )
@@ -323,7 +346,7 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.warmAmber.withOpacity(0.15),
+          color: AppColors.warmAmber.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
@@ -345,7 +368,7 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                 shape: BoxShape.circle,
                 color: AppColors.warmAmber,
                 boxShadow: [
-                  BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))
+                  BoxShadow(color: AppColors.warmAmber.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))
                 ]
               ),
               child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),

@@ -5,6 +5,7 @@ import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
+import '../../../../services/progress_service.dart';
 
 /// Skill 3 Activity 4 (Fill Blank Slot Matching Image)
 /// Template: fill_blank_game
@@ -34,6 +35,15 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
   @override
   void initState() {
     super.initState();
+    final skillId = widget.activityNode?.skillId ?? '';
+    final activityId = widget.activityNode?.id ?? '';
+    if (skillId.isNotEmpty && activityId.isNotEmpty) {
+      _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
+    }
+    final rounds = widget.activityNode?.rounds ?? [];
+    if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
+      _currentRoundIndex = 0;
+    }
 
     // Pulsing glow for the blank slot
     _pulseController = AnimationController(
@@ -86,6 +96,13 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
         if (_currentRoundIndex < totalRounds - 1) {
           setState(() {
             _currentRoundIndex++;
+              final sId = widget.activityNode?.skillId ?? '';
+              final aId = widget.activityNode?.id ?? '';
+              if (sId.isNotEmpty && aId.isNotEmpty) {
+                int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
+                ProgressService().saveActivityScore(sId, aId, progress);
+                ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+              }
             _selectedOptionIndex = null;
             _isCorrect = false;
           });
@@ -93,8 +110,14 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
           _bounceController.reset();
         } else {
           setState(() {
-            _activityComplete = true;
-          });
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
         }
       });
     } else {

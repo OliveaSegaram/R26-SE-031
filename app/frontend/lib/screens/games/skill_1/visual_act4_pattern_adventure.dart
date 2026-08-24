@@ -6,6 +6,7 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/tts_service.dart';
+import '../../../../services/progress_service.dart';
 
 import 'logic/pattern_generator.dart';
 import 'models/pattern_round.dart';
@@ -105,6 +106,11 @@ class _VisualAct4PatternAdventureState
     
     // Generate randomized rounds dynamically
     _rounds = PatternGenerator.generateRounds();
+    _currentRoundIndex = ProgressService().getActivityState(
+      widget.activityNode.skillId,
+      widget.activityNode.id,
+    );
+    if (_currentRoundIndex >= _rounds.length) _currentRoundIndex = 0;
 
     _trainScrollController = ScrollController();
     _choiceKeys = List.generate(4, (_) => GlobalKey()); // Max 4 choices
@@ -142,7 +148,7 @@ class _VisualAct4PatternAdventureState
         // Bounce the carriage
         _bounceController.forward(from: 0).then((_) {
           // Sparkle sound
-          _audioPlayer.play(AssetSource('audio/success.mp3'));
+          _audioPlayer.play(AssetSource('audio/correct.mp3'));
           
           Future.delayed(const Duration(milliseconds: 800), () {
             if (!mounted) return;
@@ -305,11 +311,30 @@ class _VisualAct4PatternAdventureState
           _currentRoundIndex++;
           _initRound();
         });
+        ProgressService().saveActivityState(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          _currentRoundIndex,
+        );
+        ProgressService().saveActivityScore(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          ((_currentRoundIndex / _rounds.length) * 100).toInt(),
+        );
         _roundTransitionController.forward().then((_) {
           _scrollToEndOfTrain();
         });
       });
     } else {
+      ProgressService().clearActivityState(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+      );
+      ProgressService().saveActivityScore(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+        100,
+      );
       setState(() => _activityComplete = true);
       _celebrationController.forward();
     }
@@ -397,11 +422,11 @@ class _VisualAct4PatternAdventureState
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -495,7 +520,7 @@ class _VisualAct4PatternAdventureState
                       : const Color(0xFFE0E0E0),
               border: isCurrent
                   ? Border.all(
-                      color: const Color(0xFFF9C623).withOpacity(0.3),
+                      color: const Color(0xFFF9C623).withValues(alpha: 0.3),
                       width: 2)
                   : null,
             ),
@@ -516,7 +541,7 @@ class _VisualAct4PatternAdventureState
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.warmAmber.withOpacity(0.15),
+          color: AppColors.warmAmber.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
@@ -531,7 +556,7 @@ class _VisualAct4PatternAdventureState
               scale: _speakerBounceAnimation,
               child: Container(
                 width: 48, height: 48,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))]),
                 child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
               ),
             ),
@@ -750,7 +775,7 @@ class _VisualAct4PatternAdventureState
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha: 0.15),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
                   )
@@ -786,11 +811,11 @@ class _VisualAct4PatternAdventureState
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -819,7 +844,7 @@ class _VisualAct4PatternAdventureState
       animation: _celebrationScale,
       builder: (context, child) {
         return Container(
-          color: Colors.black.withOpacity(0.4 * _celebrationScale.value),
+          color: Colors.black.withValues(alpha: 0.4 * _celebrationScale.value),
           child: Center(
             child: Transform.scale(
               scale: _celebrationScale.value,
@@ -836,7 +861,7 @@ class _VisualAct4PatternAdventureState
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4A90D9).withOpacity(0.2),
+              color: const Color(0xFF4A90D9).withValues(alpha: 0.2),
               blurRadius: 30,
               spreadRadius: 5,
             ),
@@ -872,7 +897,7 @@ class _VisualAct4PatternAdventureState
                               size: sizes[index],
                               shadows: [
                                 Shadow(
-                                  color: const Color(0xFFFFD700).withOpacity(0.6),
+                                  color: const Color(0xFFFFD700).withValues(alpha: 0.6),
                                   blurRadius: 12,
                                 )
                               ],

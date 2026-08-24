@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/localization_service.dart';
 import '../../services/auth_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../theme/app_theme.dart';
@@ -57,7 +58,10 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ListenableBuilder(
+      listenable: LocalizationService.instance,
+      builder: (context, _) {
+        return Scaffold(
       backgroundColor: AppColors.cream,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
@@ -73,7 +77,7 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
         backgroundColor: AppColors.calmBlue,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: Text(
-          'add therapist',
+          LocalizationService.instance.t('add_therapist'),
           style: AppTypography.button(fontSize: 14),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -109,6 +113,7 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
         ),
       ),
     );
+  });
   }
 
   Widget _buildHeader() {
@@ -146,7 +151,7 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'therapist connections',
+                  LocalizationService.instance.t('therapist_connections'),
                   style: AppTypography.heading(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -154,7 +159,7 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
                   ),
                 ),
                 Text(
-                  'manage specialist access to your child\'s data',
+                  LocalizationService.instance.t('manage_specialist_access'),
                   style: AppTypography.caption(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -195,7 +200,7 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'no therapists connected',
+              LocalizationService.instance.t('no_therapists_connected'),
               style: AppTypography.heading(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -204,7 +209,7 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'connect your child\'s reading specialist or speech-language pathologist to share learning data securely.',
+              LocalizationService.instance.t('connect_reading_specialist'),
               textAlign: TextAlign.center,
               style: AppTypography.body(
                 fontSize: 15,
@@ -289,7 +294,7 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    isActive ? 'active' : 'pending',
+                    isActive ? LocalizationService.instance.t('active') : LocalizationService.instance.t('pending'),
                     style: AppTypography.caption(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -308,12 +313,12 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
 
             // Detail rows
             _buildDetailRow(
-                FontAwesomeIcons.hospital, 'clinic', therapist['clinic'] as String),
+                FontAwesomeIcons.hospital, LocalizationService.instance.t('clinic'), therapist['clinic'] as String),
             const SizedBox(height: 10),
-            _buildDetailRow(FontAwesomeIcons.child, 'connected child',
+            _buildDetailRow(FontAwesomeIcons.child, LocalizationService.instance.t('connected_child'),
                 therapist['child'] as String),
             const SizedBox(height: 10),
-            _buildDetailRow(FontAwesomeIcons.calendar, 'connected since',
+            _buildDetailRow(FontAwesomeIcons.calendar, LocalizationService.instance.t('connected_since'),
                 therapist['connectedDate'] as String),
 
             const SizedBox(height: 20),
@@ -327,7 +332,7 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
                     icon: const FaIcon(FontAwesomeIcons.linkSlash,
                         size: 14, color: AppColors.softCoral),
                     label: Text(
-                      'disconnect',
+                      LocalizationService.instance.t('disconnect'),
                       style: AppTypography.button(
                           fontSize: 13, color: AppColors.softCoral),
                     ),
@@ -344,14 +349,14 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('messaging feature coming soon!')),
+                        SnackBar(
+                            content: Text(LocalizationService.instance.t('messaging_coming_soon'))),
                       );
                     },
                     icon: const FaIcon(FontAwesomeIcons.envelope,
                         size: 14, color: AppColors.calmBlue),
                     label: Text(
-                      'message',
+                      LocalizationService.instance.t('message'),
                       style: AppTypography.button(
                           fontSize: 13, color: AppColors.calmBlue),
                     ),
@@ -404,19 +409,19 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
         backgroundColor: AppColors.cardSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
-          'disconnect therapist?',
+          LocalizationService.instance.t('disconnect_therapist'),
           style: AppTypography.heading(
               fontSize: 20, color: AppColors.textPrimary),
         ),
         content: Text(
-          'this will revoke ${therapist['name']}\'s access to ${therapist['child']}\'s learning data. you can reconnect later.',
+          LocalizationService.instance.t('disconnect_desc_full'),
           style: AppTypography.body(
               fontSize: 15, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('cancel',
+            child: Text(LocalizationService.instance.t('cancel'),
                 style: AppTypography.body(
                     fontSize: 14, color: AppColors.textSecondary)),
           ),
@@ -453,8 +458,8 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
                     _disconnectingIds.remove(connectionId);
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('therapist disconnected'),
+                    SnackBar(
+                      content: Text(LocalizationService.instance.t('therapist_disconnected')),
                       backgroundColor: AppColors.softCoral,
                     ),
                   );
@@ -466,7 +471,7 @@ class _TherapistManagementScreenState extends State<TherapistManagementScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text('disconnect',
+            child: Text(LocalizationService.instance.t('disconnect'),
                 style: AppTypography.button(fontSize: 14)),
           ),
         ],

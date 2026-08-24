@@ -324,7 +324,29 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       itemCount: _curriculum!.skills.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
+      separatorBuilder: (context, index) {
+        final skill = _curriculum!.skills[index];
+        if (skill.id == 'skill_4') {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+              const Divider(thickness: 2, color: AppColors.borderLight),
+              const SizedBox(height: 16),
+              Text(
+                '📖 reading practice',
+                style: AppTypography.heading(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          );
+        }
+        return const SizedBox(height: 16);
+      },
       itemBuilder: (context, index) {
         final skill = _curriculum!.skills[index];
 
@@ -416,10 +438,24 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
 
   @override
   Widget build(BuildContext context) {
-    final cfg = widget.dashConfig;
-    final maxStars = cfg?.progress.maxStars ?? 5;
-    final progress = ProgressService().getSkillProgress(widget.skill.id, widget.skill.totalActivities);
-    final filledStars = (progress * maxStars).round();
+    // Show exactly one star per activity in the skill
+    final maxStars = widget.skill.totalActivities > 0 ? widget.skill.totalActivities : 5;
+    
+    // Count exactly how many are completed
+    int filledStars = 0;
+    for (int i = 0; i < maxStars; i++) {
+      String activityIdToCheck = 'act_${i + 1}';
+      
+      // Special rule for skill_4: it only has 4 activities, but displays 5 stars.
+      // The 4th activity (act_4) grants both the 4th and 5th stars.
+      if (widget.skill.id == 'skill_4' && i == 4) {
+        activityIdToCheck = 'act_4';
+      }
+      
+      if (ProgressService().isActivityCompleted(widget.skill.id, activityIdToCheck)) {
+        filledStars++;
+      }
+    }
 
     final cardContent = Container(
       height: 145,

@@ -10,11 +10,13 @@ import 'package:share_plus/share_plus.dart';
 /// Separated from AuthService for clean architecture.
 class StudentService {
   static String get _baseUrl {
-    // Local Testing (using your Mac's IP address):
-    // return 'http://127.0.0.1:8015/api/v1/auth';
-    
     // Cloud Server (Render):
     return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
+  }
+
+  static String get _telemetryBaseUrl {
+    // Local Testing for the new microservice (Port 8025)
+    return 'http://10.0.2.2:8025/api/v1/auth';
   }
 
   Future<String?> _getAccessToken() async {
@@ -263,7 +265,7 @@ class StudentService {
       if (token == null) return 'Not authenticated.';
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/telemetry'),
+        Uri.parse('$_telemetryBaseUrl/telemetry'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -292,7 +294,7 @@ class StudentService {
       if (token == null) return [];
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/telemetry/$studentId'),
+        Uri.parse('$_telemetryBaseUrl/telemetry/$studentId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -320,7 +322,7 @@ class StudentService {
       if (token == null) return {};
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/telemetry/$studentId/analytics'),
+        Uri.parse('$_telemetryBaseUrl/telemetry/$studentId/analytics'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -343,7 +345,7 @@ class StudentService {
       if (token == null) return 'Not authenticated.';
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/telemetry/$studentId/report/pdf'),
+        Uri.parse('$_telemetryBaseUrl/telemetry/$studentId/report/pdf'),
         headers: {
           'Authorization': 'Bearer $token',
         },
@@ -370,7 +372,7 @@ class StudentService {
       if (token == null) return 'Not authenticated.';
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/students/$studentId/assessment/report/pdf'),
+        Uri.parse('$_telemetryBaseUrl/students/$studentId/assessment/report/pdf'),
         headers: {
           'Authorization': 'Bearer $token',
         },
@@ -397,7 +399,7 @@ class StudentService {
       if (token == null) return 'Not authenticated.';
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/ml/label/$studentId'),
+        Uri.parse('$_telemetryBaseUrl/ml/label/$studentId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

@@ -5,6 +5,7 @@ import 'screens/splash_screen.dart';
 import 'services/progress_service.dart';
 import 'dart:io';
 import 'http_overrides.dart';
+import 'services/localization_service.dart';
 
 final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -21,6 +22,9 @@ void main() async {
 
   // Initialize ProgressService (no longer bypassing student ID)
   await ProgressService().init();
+  
+  // Initialize Localization Service
+  await LocalizationService.instance.init();
 
   // Set status bar style for light backgrounds (dark icons)
   SystemChrome.setSystemUIOverlayStyle(
@@ -44,12 +48,17 @@ class SipsaraApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sipsara',
-      debugShowCheckedModeBanner: false,
-      navigatorKey: globalNavigatorKey,
-      theme: AppTheme.lightTheme,
-      home: const SplashScreen(),
+    return ListenableBuilder(
+      listenable: LocalizationService.instance,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'Sipsara',
+          debugShowCheckedModeBanner: false,
+          navigatorKey: globalNavigatorKey,
+          theme: AppTheme.lightTheme,
+          home: const SplashScreen(),
+        );
+      },
     );
   }
 }

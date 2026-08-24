@@ -8,6 +8,7 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/tts_service.dart';
+import '../../../../services/progress_service.dart';
 import 'logic/sorting_generator.dart';
 import 'models/sorting_round.dart';
 import 'widgets/pattern_background.dart';
@@ -114,6 +115,11 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   void initState() {
     super.initState();
     _rounds = SortingGenerator.generateRounds();
+    _currentRoundIndex = ProgressService().getActivityState(
+      widget.activityNode.skillId,
+      widget.activityNode.id,
+    );
+    if (_currentRoundIndex >= _rounds.length) _currentRoundIndex = 0;
     
     final rng = Random();
     _currentMascot = _mascots[rng.nextInt(_mascots.length)];
@@ -339,14 +345,39 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
           final rng = Random();
           _currentInstruction = _instructions[rng.nextInt(_instructions.length)];
         });
+        ProgressService().saveActivityState(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          _currentRoundIndex,
+        );
+        ProgressService().saveActivityScore(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          ((_currentRoundIndex / _rounds.length) * 100).toInt(),
+        );
         _initRoundState();
         _roundTransitionController.forward();
       });
     } else {
       // Activity complete!
+      ProgressService().clearActivityState(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+      );
+      ProgressService().saveActivityScore(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+        100,
+      );
       setState(() {
-        _activityComplete = true;
-      });
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
       _celebrationController.forward();
     }
   }
@@ -418,7 +449,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.12),
+            color: const Color(0xFF4A90D9).withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -514,7 +545,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                       ? const Color(0xFFF9C623)
                       : const Color(0xFFE0E0E0),
               border: isCurrent
-                  ? Border.all(color: const Color(0xFFF9C623).withOpacity(0.3), width: 2)
+                  ? Border.all(color: const Color(0xFFF9C623).withValues(alpha: 0.3), width: 2)
                   : null,
             ),
           );
@@ -534,7 +565,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.warmAmber.withOpacity(0.15),
+          color: AppColors.warmAmber.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
@@ -549,7 +580,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
               scale: _speakerBounceAnimation,
               child: Container(
                 width: 48, height: 48,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))]),
                 child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
               ),
             ),
@@ -576,10 +607,10 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 Container(
                   width: 12,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                       width: 1,
                     ),
                   ),
@@ -599,7 +630,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                   borderRadius: BorderRadius.circular(6),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6DBE6D).withOpacity(0.25),
+                      color: const Color(0xFF6DBE6D).withValues(alpha: 0.25),
                       blurRadius: 4,
                       spreadRadius: 1,
                       offset: const Offset(0, 2),
@@ -630,10 +661,10 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 ? const SizedBox() // Disappear entirely when round is complete
                 : Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.4),
+                      color: Colors.white.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.5), 
+                        color: Colors.white.withValues(alpha: 0.5), 
                         width: 2.0,
                       ),
                     ),
@@ -709,18 +740,18 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       height: 120,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isWrong ? const Color(0xFFE87C6D).withOpacity(0.15) : Colors.white,
+        color: isWrong ? const Color(0xFFE87C6D).withValues(alpha: 0.15) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           if (isWrong)
             BoxShadow(
-              color: const Color(0xFFE87C6D).withOpacity(0.3),
+              color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
               blurRadius: 16,
               spreadRadius: 2,
             )
           else
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -728,7 +759,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         border: Border.all(
           color: isWrong 
               ? const Color(0xFFE87C6D)
-              : const Color(0xFF4A90D9).withOpacity(0.15),
+              : const Color(0xFF4A90D9).withValues(alpha: 0.15),
           width: isWrong ? 4.0 : 2.0,
         ),
       ),
@@ -749,11 +780,11 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
           height: 140,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.95),
+            color: Colors.white.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 20,
                 spreadRadius: 2,
                 offset: const Offset(0, 10),
@@ -778,10 +809,10 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       width: 120,
       height: 120,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: Colors.grey.withOpacity(0.3),
+          color: Colors.grey.withValues(alpha: 0.3),
           width: 2,
           style: BorderStyle.none,
         ),
@@ -793,7 +824,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
-              color: Colors.grey.withOpacity(0.4),
+              color: Colors.grey.withValues(alpha: 0.4),
               width: 2,
             ), // A dashed effect would be better, but standard border works
           ),
@@ -1032,7 +1063,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
               width: 86,
               height: 22,
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
+                color: Colors.black.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(40),
               ),
             ),
@@ -1069,19 +1100,19 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 boxShadow: [
                   if (isCorrect)
                     BoxShadow(
-                      color: const Color(0xFF6DBE6D).withOpacity(0.6),
+                      color: const Color(0xFF6DBE6D).withValues(alpha: 0.6),
                       blurRadius: 16,
                       spreadRadius: 2,
                     )
                   else if (isWrong)
                     BoxShadow(
-                      color: const Color(0xFFE87C6D).withOpacity(0.6),
+                      color: const Color(0xFFE87C6D).withValues(alpha: 0.6),
                       blurRadius: 16,
                       spreadRadius: 2,
                     )
                   else
                     BoxShadow(
-                      color: secondaryColor.withOpacity(0.5),
+                      color: secondaryColor.withValues(alpha: 0.5),
                       offset: const Offset(0, 6),
                       blurRadius: 10,
                     ),
@@ -1095,7 +1126,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                     top: 15,
                     child: Transform.rotate(
                       angle: -0.2,
-                      child: Text(decorationPattern, style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.5))),
+                      child: Text(decorationPattern, style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.5))),
                     ),
                   ),
                   Positioned(
@@ -1103,7 +1134,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                     bottom: 25,
                     child: Transform.rotate(
                       angle: 0.2,
-                      child: Text(decorationPattern, style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.5))),
+                      child: Text(decorationPattern, style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.5))),
                     ),
                   ),
                   // Shine highlight on left edge
@@ -1114,7 +1145,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                     child: Container(
                       width: 8,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
@@ -1134,13 +1165,13 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withOpacity(0.4),
-                    Colors.white.withOpacity(0.0),
+                    Colors.white.withValues(alpha: 0.4),
+                    Colors.white.withValues(alpha: 0.0),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(55),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   width: 3,
                 ),
               ),
@@ -1158,7 +1189,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 border: Border.all(color: accentColor, width: 3),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
                   ),
@@ -1207,13 +1238,13 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4A90D9).withOpacity(0.15),
+                    color: const Color(0xFF4A90D9).withValues(alpha: 0.15),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
                 border: Border.all(
-                  color: const Color(0xFF4A90D9).withOpacity(0.3),
+                  color: const Color(0xFF4A90D9).withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
@@ -1242,7 +1273,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       animation: _celebrationScale,
       builder: (context, child) {
         return Container(
-          color: Colors.black.withOpacity(0.4 * _celebrationScale.value),
+          color: Colors.black.withValues(alpha: 0.4 * _celebrationScale.value),
           child: Center(
             child: Transform.scale(
               scale: _celebrationScale.value,
@@ -1259,7 +1290,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4A90D9).withOpacity(0.2),
+              color: const Color(0xFF4A90D9).withValues(alpha: 0.2),
               blurRadius: 30,
               spreadRadius: 5,
             ),
@@ -1317,7 +1348,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                      color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),

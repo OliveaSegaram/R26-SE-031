@@ -8,6 +8,7 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/tts_service.dart';
+import '../../../../services/progress_service.dart';
 import 'logic/shadow_generator.dart';
 import 'models/shadow_round.dart';
 import 'widgets/pattern_background.dart';
@@ -100,6 +101,11 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   void initState() {
     super.initState();
     _rounds = ShadowGenerator.generateRounds();
+    _currentRoundIndex = ProgressService().getActivityState(
+      widget.activityNode.skillId,
+      widget.activityNode.id,
+    );
+    if (_currentRoundIndex >= _rounds.length) _currentRoundIndex = 0;
     
     final rng = Random();
     _currentMascot = _mascots[rng.nextInt(_mascots.length)];
@@ -298,14 +304,39 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
           _currentInstruction = _instructions[rng.nextInt(_instructions.length)];
           _currentEncouragement = _encourageMessages[rng.nextInt(_encourageMessages.length)];
         });
+        ProgressService().saveActivityState(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          _currentRoundIndex,
+        );
+        ProgressService().saveActivityScore(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          ((_currentRoundIndex / _rounds.length) * 100).toInt(),
+        );
         _initRoundState();
         _roundTransitionController.forward();
       });
     } else {
       // Activity complete!
+      ProgressService().clearActivityState(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+      );
+      ProgressService().saveActivityScore(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+        100,
+      );
       setState(() {
-        _activityComplete = true;
-      });
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
       _celebrationController.forward();
     }
   }
@@ -377,7 +408,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.12),
+            color: const Color(0xFF4A90D9).withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -473,7 +504,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                       ? const Color(0xFFF9C623)
                       : const Color(0xFFE0E0E0),
               border: isCurrent
-                  ? Border.all(color: const Color(0xFFF9C623).withOpacity(0.3), width: 2)
+                  ? Border.all(color: const Color(0xFFF9C623).withValues(alpha: 0.3), width: 2)
                   : null,
             ),
           );
@@ -493,7 +524,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.warmAmber.withOpacity(0.15),
+          color: AppColors.warmAmber.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
@@ -508,7 +539,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
               scale: _speakerBounceAnimation,
               child: Container(
                 width: 48, height: 48,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))]),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))]),
                 child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
               ),
             ),
@@ -525,12 +556,12 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.4),
+          color: Colors.white.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withOpacity(0.6), width: 3),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 3),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               spreadRadius: 2,
             )
@@ -596,21 +627,21 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
               height: size,
               decoration: BoxDecoration(
                 color: showSuccess
-                    ? const Color(0xFF6DBE6D).withOpacity(0.15)
-                    : (isMatched ? Colors.transparent : Colors.white.withOpacity(0.4)),
+                    ? const Color(0xFF6DBE6D).withValues(alpha: 0.15)
+                    : (isMatched ? Colors.transparent : Colors.white.withValues(alpha: 0.4)),
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
                   color: showSuccess
                       ? const Color(0xFF6DBE6D)
                       : (isHovered 
                           ? const Color(0xFFF9C623) 
-                          : (glowValue > 0 ? const Color(0xFF6DBE6D) : Colors.white.withOpacity(0.8))),
+                          : (glowValue > 0 ? const Color(0xFF6DBE6D) : Colors.white.withValues(alpha: 0.8))),
                   width: (showSuccess || isHovered) ? 4 : 2,
                 ),
                 boxShadow: showSuccess
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                          color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                           blurRadius: 16,
                           spreadRadius: 2,
                         ),
@@ -618,7 +649,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                     : (isHovered || glowValue > 0
                         ? [
                             BoxShadow(
-                              color: (glowValue > 0 ? const Color(0xFF6DBE6D) : const Color(0xFFF9C623)).withOpacity(0.6),
+                              color: (glowValue > 0 ? const Color(0xFF6DBE6D) : const Color(0xFFF9C623)).withValues(alpha: 0.6),
                               blurRadius: 20,
                               spreadRadius: 4,
                             ),
@@ -626,7 +657,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                         : [
                             if (!isMatched)
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Colors.black.withValues(alpha: 0.08),
                                 blurRadius: 8,
                                 spreadRadius: -2,
                                 offset: const Offset(0, 4),
@@ -699,12 +730,12 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
       height: 150, // Slightly taller for premium look
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
+        color: Colors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(32),
         border: Border.all(color: Colors.white, width: 3.0),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.1),
+            color: const Color(0xFF4A90D9).withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, -5),
           ),
@@ -781,13 +812,13 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
           end: Alignment.bottomRight,
           colors: [
             Colors.white,
-            Colors.white.withOpacity(0.8),
+            Colors.white.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(28), // Rounded squircle
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.12),
+            color: const Color(0xFF4A90D9).withValues(alpha: 0.12),
             blurRadius: 20,
             spreadRadius: -2,
             offset: const Offset(0, 10),
@@ -821,14 +852,14 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.95),
-                  Colors.white.withOpacity(0.85),
+                  Colors.white.withValues(alpha: 0.95),
+                  Colors.white.withValues(alpha: 0.85),
                 ],
               ),
               borderRadius: BorderRadius.circular(32),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF4A90D9).withOpacity(0.4),
+                  color: const Color(0xFF4A90D9).withValues(alpha: 0.4),
                   blurRadius: 24,
                   spreadRadius: 4,
                   offset: const Offset(0, 12),
@@ -854,10 +885,10 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
       width: 120,
       height: 120,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: Colors.grey.withOpacity(0.3),
+          color: Colors.grey.withValues(alpha: 0.3),
           width: 2,
           style: BorderStyle.none,
         ),
@@ -869,7 +900,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
-              color: Colors.grey.withOpacity(0.4),
+              color: Colors.grey.withValues(alpha: 0.4),
               width: 2,
             ),
           ),
@@ -907,13 +938,13 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4A90D9).withOpacity(0.15),
+                    color: const Color(0xFF4A90D9).withValues(alpha: 0.15),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ],
                 border: Border.all(
-                  color: const Color(0xFF4A90D9).withOpacity(0.3),
+                  color: const Color(0xFF4A90D9).withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),
@@ -940,7 +971,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
       animation: _celebrationScale,
       builder: (context, child) {
         return Container(
-          color: Colors.black.withOpacity(0.4 * _celebrationScale.value),
+          color: Colors.black.withValues(alpha: 0.4 * _celebrationScale.value),
           child: Center(
             child: Transform.scale(
               scale: _celebrationScale.value,
@@ -957,7 +988,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4A90D9).withOpacity(0.2),
+              color: const Color(0xFF4A90D9).withValues(alpha: 0.2),
               blurRadius: 30,
               spreadRadius: 5,
             ),
@@ -1015,7 +1046,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                      color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),

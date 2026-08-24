@@ -7,6 +7,7 @@ import '../../theme/app_theme.dart';
 import '../../services/student_service.dart';
 import 'skill_detail_progress_screen.dart';
 import '../therapist/therapist_student_detail_screen.dart';
+import '../../services/localization_service.dart';
 /// Child Progress Screen — Visual dashboard showing a specific child's
 /// learning journey: weekly activity chart, overall stats, skill progress.
 class ChildProgressScreen extends StatefulWidget {
@@ -165,7 +166,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
         'color': color,
         'progress': (avgScore / 100.0).clamp(0.0, 1.0),
         'accuracy': avgScore.round(),
-        'levels': '${evts.length} rounds',
+        'levels': evts.length,
         'lastPlayed': 'recent',
         'events': evts,
       };
@@ -175,12 +176,12 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
     if (_skills.isEmpty) {
       _skills = [
          {
-          'name': 'No activities played yet',
+          'name': 'no_activities_played',
           'icon': FontAwesomeIcons.ghost,
           'color': AppColors.borderLight,
           'progress': 0.0,
           'accuracy': 0,
-          'levels': '0 rounds',
+          'levels': 0,
           'lastPlayed': 'never',
         }
       ];
@@ -196,12 +197,19 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
   @override
   Widget build(BuildContext context) {
     final name = widget.studentData['first_name'] ?? 'student';
-    final grade = widget.studentData['grade'] ?? 'n/a';
+    String rawGrade = widget.studentData['grade'] ?? 'n/a';
+    if (rawGrade.toLowerCase().contains('grade 1')) {
+      rawGrade = LocalizationService.instance.t('grade_1');
+    }
+    final grade = rawGrade;
     final avatar =
         AvatarUtils.getCorrectedAvatarPath(widget.studentData['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png');
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
+    return ListenableBuilder(
+      listenable: LocalizationService.instance,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: AppColors.cream,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SafeArea(
@@ -233,9 +241,9 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                         );
                       },
                       icon: const Icon(Icons.analytics_rounded, color: Colors.white),
-                      label: const Text(
-                        'View Advanced Reports & Heatmap',
-                        style: TextStyle(
+                      label: Text(
+                        LocalizationService.instance.t('view_advanced_reports'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -259,6 +267,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
         ),
       ),
     );
+  });
   }
 
   // ─── Header ───
@@ -312,7 +321,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "$name's progress",
+                  LocalizationService.instance.t('progress_report'),
                   style: AppTypography.heading(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -340,16 +349,16 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _buildMiniStat(FontAwesomeIcons.gamepad, '$_totalActivities', 'activities',
+          _buildMiniStat(FontAwesomeIcons.gamepad, '$_totalActivities', LocalizationService.instance.t('activities'),
               AppColors.calmBlue),
           const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.bullseye, '$_overallAccuracy%', 'accuracy',
+          _buildMiniStat(FontAwesomeIcons.bullseye, '$_overallAccuracy%', LocalizationService.instance.t('accuracy'),
               AppColors.gentleGreen),
           const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.fire, '$_dayStreak', 'day streak',
+          _buildMiniStat(FontAwesomeIcons.fire, '$_dayStreak', LocalizationService.instance.t('day_streak'),
               AppColors.warmAmber),
           const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.star, '$_totalStars', 'stars',
+          _buildMiniStat(FontAwesomeIcons.star, '$_totalStars', LocalizationService.instance.t('stars_earned'),
               AppColors.softCoral),
         ],
       ),
@@ -420,7 +429,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'weekly activity',
+                  LocalizationService.instance.t('weekly_activity'),
                   style: AppTypography.heading(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -435,7 +444,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '${_weeklyMinutes.reduce((a, b) => a + b).round()} min total',
+                    '${_weeklyMinutes.reduce((a, b) => a + b).round()} ${LocalizationService.instance.t('minutes')}',
                     style: AppTypography.caption(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -524,7 +533,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'skill progress',
+            LocalizationService.instance.t('recent_skills'),
             style: AppTypography.heading(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -597,7 +606,9 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        skill['name'] as String,
+                        skill['name'] == 'no_activities_played'
+                            ? LocalizationService.instance.t('no_activities_played')
+                            : LocalizationService.instance.t((skill['name'] as String).toLowerCase().replaceAll(' ', '_')),
                         style: AppTypography.body(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -629,14 +640,14 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'levels: ${skill['levels']}',
+                        '${LocalizationService.instance.t('levels')}: ${skill['levels']}',
                         style: AppTypography.caption(
                           fontSize: 11,
                           color: AppColors.textHint,
                         ),
                       ),
                       Text(
-                        'last: ${skill['lastPlayed']}',
+                        '${LocalizationService.instance.t('last_active_prefix')}${LocalizationService.instance.t(skill['lastPlayed'] as String)}',
                         style: AppTypography.caption(
                           fontSize: 11,
                           color: AppColors.textHint,

@@ -177,7 +177,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
         tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         shape: const Border(),
         leading: CircleAvatar(
-          backgroundColor: AppColors.calmBlue.withOpacity(0.1),
+          backgroundColor: AppColors.calmBlue.withValues(alpha: 0.1),
           radius: 25,
           child: Icon(Icons.star_rounded, color: AppColors.warmAmber, size: 30),
         ),
@@ -250,7 +250,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.warmAmber.withOpacity(0.2),
+                                  color: AppColors.warmAmber.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(

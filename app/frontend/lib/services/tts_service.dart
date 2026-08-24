@@ -7,7 +7,16 @@ class TtsService {
   factory TtsService() => _instance;
 
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final String _baseUrl = 'https://adaptedmind-auth-api.onrender.com';
+  // Toggle this to 'true' before building the final APK for deployment
+  static const bool _isProduction = false;
+
+  String get _baseUrl {
+    if (_isProduction) {
+      return 'https://sipsara-speech-api.onrender.com';
+    }
+    // Local development URL for speech-monitoring-v1
+    return 'http://10.0.2.2:8020';
+  }
   
   TtsService._internal();
 

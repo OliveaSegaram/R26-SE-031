@@ -352,7 +352,7 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen>
                                     errorMessage = error;
                                   });
                                 } else {
-                                  if (!ctx.mounted) return;
+                                  if (!ctx.mounted || !mounted) return;
                                   Navigator.pop(ctx);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
@@ -1130,7 +1130,7 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen>
                                     errorMessage = error;
                                   });
                                 } else {
-                                  if (!ctx.mounted) return;
+                                  if (!ctx.mounted || !mounted) return;
                                   Navigator.pop(ctx);
                                   setState(() => _userName = newName);
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1330,7 +1330,7 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen>
                                     errorMessage = error;
                                   });
                                 } else {
-                                  if (!ctx.mounted) return;
+                                  if (!ctx.mounted || !mounted) return;
                                   Navigator.pop(ctx);
                                   _showEmailOtpDialog(newEmail);
                                 }
@@ -1461,7 +1461,7 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen>
                             });
                           } else {
                             await AuthService().logout();
-                            if (!ctx.mounted) return;
+                            if (!ctx.mounted || !mounted) return;
                             Navigator.pushAndRemoveUntil(
                               ctx,
                               MaterialPageRoute(
@@ -1756,7 +1756,7 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen>
                                     errorMessage = error;
                                   });
                                 } else {
-                                  if (!ctx.mounted) return;
+                                  if (!ctx.mounted || !mounted) return;
                                   Navigator.pop(ctx);
                                   setState(() => _userEmail = newEmail);
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1956,7 +1956,7 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen>
                                     errorMessage = error;
                                   });
                                 } else {
-                                  if (!ctx.mounted) return;
+                                  if (!ctx.mounted || !mounted) return;
                                   Navigator.pop(ctx);
                                   setState(() => _clinicName = newName);
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -2156,7 +2156,7 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen>
                                     errorMessage = error;
                                   });
                                 } else {
-                                  if (!ctx.mounted) return;
+                                  if (!ctx.mounted || !mounted) return;
                                   Navigator.pop(ctx);
                                   setState(() => _specialization = newName);
                                   ScaffoldMessenger.of(context).showSnackBar(

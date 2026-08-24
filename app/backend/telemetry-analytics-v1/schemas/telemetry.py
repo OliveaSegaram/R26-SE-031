@@ -3,10 +3,17 @@ from typing import Optional, List
 
 
 class TouchPoint(BaseModel):
-    """A single normalized screen touch coordinate captured during a round."""
+    """Legacy: A single normalized screen touch coordinate captured during a round."""
     x_ratio: float = Field(..., ge=0.0, le=1.0, description="Horizontal position as fraction of screen width")
     y_ratio: float = Field(..., ge=0.0, le=1.0, description="Vertical position as fraction of screen height")
     timestamp_ms: int = Field(..., ge=0, description="Milliseconds elapsed since round start")
+
+class TouchStreamPoint(BaseModel):
+    """Component 2: Standardized stream point with actions."""
+    t_offset_ms: int = Field(..., ge=0)
+    x: float = Field(..., ge=0.0, le=1.0)
+    y: float = Field(..., ge=0.0, le=1.0)
+    action: str = Field(..., description="DOWN, MOVE, or UP")
 
 
 class TelemetryEvent(BaseModel):
@@ -40,7 +47,16 @@ class TelemetryEvent(BaseModel):
     # --- Motor Analysis ---
     touch_path: List[TouchPoint] = Field(
         default_factory=list,
-        description="Normalized touch coordinate path for drag-velocity & tremor analysis"
+        description="Legacy: Normalized touch coordinate path for drag-velocity & tremor analysis"
+    )
+    
+    # --- Component 2: Visual-Orthographic Engine ---
+    target_stimulus: Optional[str] = None
+    selected_stimulus: Optional[str] = None
+    stimulus_rendered_ts: Optional[int] = None
+    touch_stream: List[TouchStreamPoint] = Field(
+        default_factory=list,
+        description="Component 2: Action-based touch stream for deterministic kinematic extraction."
     )
 
     # --- Behavior Proxies ---

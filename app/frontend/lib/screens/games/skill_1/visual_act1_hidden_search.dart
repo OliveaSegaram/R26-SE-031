@@ -7,6 +7,7 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/tts_service.dart';
+import '../../../../services/progress_service.dart';
 import 'logic/hidden_search_generator.dart';
 import 'widgets/pattern_background.dart';
 
@@ -82,6 +83,11 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   void initState() {
     super.initState();
     _gameData = HiddenSearchGenerator.generateGame();
+    _currentRoundIndex = ProgressService().getActivityState(
+      widget.activityNode.skillId,
+      widget.activityNode.id,
+    );
+    if (_currentRoundIndex >= _gameData.rounds.length) _currentRoundIndex = 0;
 
     // Pick a random mascot for this session
     final rng = Random();
@@ -245,14 +251,39 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
           _currentRoundIndex++;
           _initRound();
         });
+        ProgressService().saveActivityState(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          _currentRoundIndex,
+        );
+        ProgressService().saveActivityScore(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          ((_currentRoundIndex / _gameData.rounds.length) * 100).toInt(),
+        );
         _roundTransitionController.forward();
         _playInstruction();
       });
     } else {
       // Activity complete!
+      ProgressService().clearActivityState(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+      );
+      ProgressService().saveActivityScore(
+        widget.activityNode.skillId,
+        widget.activityNode.id,
+        100,
+      );
       setState(() {
-        _activityComplete = true;
-      });
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
       _celebrationController.forward();
     }
   }
@@ -340,7 +371,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4A90D9).withOpacity(0.12),
+            color: const Color(0xFF4A90D9).withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -445,7 +476,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                       ? const Color(0xFFF9C623)
                       : const Color(0xFFE0E0E0),
               border: isCurrent
-                  ? Border.all(color: const Color(0xFFF9C623).withOpacity(0.3), width: 2)
+                  ? Border.all(color: const Color(0xFFF9C623).withValues(alpha: 0.3), width: 2)
                   : null,
             ),
           );
@@ -465,7 +496,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.warmAmber.withOpacity(0.15),
+          color: AppColors.warmAmber.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppColors.warmAmber, width: 3),
         ),
@@ -482,7 +513,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.warmAmber.withOpacity(0.4),
+                    color: AppColors.warmAmber.withValues(alpha: 0.4),
                     width: 2,
                   ),
                 ),
@@ -525,7 +556,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                   color: AppColors.warmAmber,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.warmAmber.withOpacity(0.4),
+                      color: AppColors.warmAmber.withValues(alpha: 0.4),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -561,13 +592,13 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: _foundCount == _targetCount
-              ? const Color(0xFF6DBE6D).withOpacity(0.15)
-              : const Color(0xFFF9C623).withOpacity(0.15),
+              ? const Color(0xFF6DBE6D).withValues(alpha: 0.15)
+              : const Color(0xFFF9C623).withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: _foundCount == _targetCount
-                ? const Color(0xFF6DBE6D).withOpacity(0.3)
-                : const Color(0xFFF9C623).withOpacity(0.3),
+                ? const Color(0xFF6DBE6D).withValues(alpha: 0.3)
+                : const Color(0xFFF9C623).withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -684,7 +715,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -713,7 +744,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
       animation: _celebrationScale,
       builder: (context, child) {
         return Container(
-          color: Colors.black.withOpacity(0.4 * _celebrationScale.value),
+          color: Colors.black.withValues(alpha: 0.4 * _celebrationScale.value),
           child: Center(
             child: Transform.scale(
               scale: _celebrationScale.value,
@@ -730,7 +761,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF4A90D9).withOpacity(0.2),
+              color: const Color(0xFF4A90D9).withValues(alpha: 0.2),
               blurRadius: 30,
               spreadRadius: 5,
             ),
@@ -791,7 +822,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                      color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -1012,9 +1043,9 @@ class _PictureCardState extends State<_PictureCard>
         curve: Curves.easeOut,
         decoration: BoxDecoration(
           color: isFound
-              ? const Color(0xFF6DBE6D).withOpacity(0.15)
+              ? const Color(0xFF6DBE6D).withValues(alpha: 0.15)
               : isWrong
-                  ? const Color(0xFFE87C6D).withOpacity(0.15)
+                  ? const Color(0xFFE87C6D).withValues(alpha: 0.15)
                   : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
@@ -1028,19 +1059,19 @@ class _PictureCardState extends State<_PictureCard>
           boxShadow: [
             if (isFound)
               BoxShadow(
-                color: const Color(0xFF6DBE6D).withOpacity(0.3),
+                color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                 blurRadius: 16,
                 spreadRadius: 2,
               )
             else if (isWrong)
               BoxShadow(
-                color: const Color(0xFFE87C6D).withOpacity(0.3),
+                color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
                 blurRadius: 16,
                 spreadRadius: 2,
               )
             else
               BoxShadow(
-                color: const Color(0xFF4A90D9).withOpacity(0.08),
+                color: const Color(0xFF4A90D9).withValues(alpha: 0.08),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
