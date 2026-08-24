@@ -951,7 +951,10 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         }
 
         final avatarUrl = AvatarUtils.getCorrectedAvatarPath(widget.studentData?['avatar_url'] as String?, 'assets/images/characters/mascots/solo_blue.png');
-        final double scaleFactor = 1.05;
+        double scaleFactor = 1.05;
+        if (avatarUrl.contains('solo_blue')) {
+          scaleFactor = 0.85; // Reduce size to match visual scale of solo_green
+        }
         final double containerSize = 76;
         final double halfSize = containerSize / 2;
 
