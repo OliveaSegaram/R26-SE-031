@@ -139,7 +139,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     final hour = DateTime.now().hour;
     final greeting = config != null
         ? config.greetingFor(hour, name)
-        : (hour < 12 ? 'Good morning, $name! ☀️' : hour < 17 ? 'Good afternoon, $name! 🌤️' : 'Good evening, $name! 🌙');
+        : (hour < 12 ? 'Good morning, $name! ☀️' : hour < 17 ? 'Good afternoon, $name! 🌤️' : hour < 20 ? 'Good evening, $name! 🌙' : 'Good night, $name! ✨');
     final subtitle = _streak > 1 ? (config?.subtitleFor(_streak) ?? '🔥 $_streak day streak! Keep going!') : '';
 
     return Padding(

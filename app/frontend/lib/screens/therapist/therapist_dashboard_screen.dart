@@ -191,6 +191,18 @@ class _DashboardHome extends StatelessWidget {
                     initials = parts[0][0].toUpperCase();
                   }
 
+                  final hour = DateTime.now().hour;
+                  String greetingText;
+                  if (hour < 12) {
+                    greetingText = 'Good morning,';
+                  } else if (hour < 17) {
+                    greetingText = 'Good afternoon,';
+                  } else if (hour < 20) {
+                    greetingText = 'Good evening,';
+                  } else {
+                    greetingText = 'Good night,';
+                  }
+
                   return Row(
                     children: [
                       Expanded(
@@ -198,7 +210,7 @@ class _DashboardHome extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'good morning,',
+                              greetingText,
                               style: AppTypography.body(
                                 fontSize: 16,
                                 color: AppColors.textSecondary,
