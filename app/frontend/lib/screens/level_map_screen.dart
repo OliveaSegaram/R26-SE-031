@@ -1035,6 +1035,24 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           await ProgressService().resetFailureCount(widget.skillMap.id, level.id);
         }
       }
+      await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
+
+      final nextLevelIndex = index + 1;
+      if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
+        if (!mounted) return;
+        setState(() {
+          _animatingFromLevel = currentLevel;
+          currentLevel = nextLevelIndex;
+        });
+
+        // Trigger smooth avatar glide animation to the newly unlocked activity
+        _unlockController.forward(from: 0.0).then((_) {
+          if (mounted) {
+            setState(() {
+              _animatingFromLevel = -1;
+            });
+          }
+        });
 
       if (finalScore >= 100) {
         await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);

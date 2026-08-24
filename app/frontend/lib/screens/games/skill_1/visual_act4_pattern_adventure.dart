@@ -148,7 +148,7 @@ class _VisualAct4PatternAdventureState
         // Bounce the carriage
         _bounceController.forward(from: 0).then((_) {
           // Sparkle sound
-          _audioPlayer.play(AssetSource('audio/success.mp3'));
+          _audioPlayer.play(AssetSource('audio/correct.mp3'));
           
           Future.delayed(const Duration(milliseconds: 800), () {
             if (!mounted) return;

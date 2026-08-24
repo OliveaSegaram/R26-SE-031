@@ -14,10 +14,70 @@ class VoiceAnalysisService {
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
   bool _isRecorderInitialized = false;
   String? _currentRecordingPath;
+  String? lastError; // Added to expose the last error to the UI
+
+  Future<String> runHardwareDiagnostic() async {
+    StringBuffer log = StringBuffer();
+    log.writeln('--- Audio Hardware Diagnostic ---');
+    try {
+      final status = await Permission.microphone.status;
+      log.writeln('Microphone Permission Status: $status');
+      
+      if (status != PermissionStatus.granted) {
+        final newStatus = await Permission.microphone.request();
+        log.writeln('Requested Permission. New Status: $newStatus');
+      }
+
+      log.writeln('Initializing FlutterSoundRecorder...');
+      await _recorder.openRecorder();
+      _isRecorderInitialized = true;
+      log.writeln('FlutterSoundRecorder initialized successfully.');
+      
+      final dir = await getTemporaryDirectory();
+      String path = '${dir.path}/diagnostic_test.wav';
+      
+      log.writeln('Attempting to start recording at 16000Hz (Codec.pcm16WAV)...');
+      await _recorder.startRecorder(
+        toFile: path,
+        codec: Codec.pcm16WAV,
+        sampleRate: 16000,
+        numChannels: 1,
+      );
+      log.writeln('Started successfully!');
+      
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      log.writeln('Attempting to stop recording...');
+      final savedPath = await _recorder.stopRecorder();
+      log.writeln('Stopped successfully! Path: $savedPath');
+      
+      if (savedPath != null && File(savedPath).existsSync()) {
+        final bytes = await File(savedPath).length();
+        log.writeln('File exists. Size: $bytes bytes');
+      } else {
+        log.writeln('WARNING: File does not exist at path!');
+      }
+
+    } catch (e, stacktrace) {
+      log.writeln('\nEXCEPTION CAUGHT:');
+      log.writeln(e.toString());
+    } finally {
+      log.writeln('--- End of Diagnostic ---');
+    }
+    
+    return log.toString();
+  }
+
+  // Toggle this to 'true' before building the final APK for deployment
+  static const bool _isProduction = false;
 
   static String get _baseUrl {
-    // return 'http://10.0.2.2:8000/api/v1/auth/stt';
-    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth/stt';
+    if (_isProduction) {
+      // Replace this with your actual deployed Render/AWS URL
+      return 'https://sipsara-speech-api.onrender.com/stt'; 
+    }
+    // Local development URL
+    return 'http://10.0.2.2:8020/stt';
   }
 
   Future<String?> _getAccessToken() async {
@@ -39,6 +99,7 @@ class VoiceAnalysisService {
 
   /// Starts recording audio from the device microphone (Raw WAV for acoustic analysis)
   Future<void> startRecording() async {
+    lastError = null;
     try {
       await _initRecorder();
       
@@ -53,6 +114,7 @@ class VoiceAnalysisService {
       );
       print('VoiceAnalysisService: Started recording to $_currentRecordingPath');
     } catch (e) {
+      lastError = e.toString();
       print('VoiceAnalysisService Error: Failed to start recording - $e');
     }
   }
@@ -70,6 +132,7 @@ class VoiceAnalysisService {
         return File(_currentRecordingPath!);
       }
     } catch (e) {
+      lastError = e.toString();
       print('VoiceAnalysisService Error: Failed to stop recording - $e');
     }
     return null;
