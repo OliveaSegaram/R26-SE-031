@@ -290,13 +290,13 @@ def generate_interventions(
 
     if risk["visual_dyslexia_risk"] in ("Moderate", "High"):
         interventions.append(
-            "Increase practice on Visual Skills (Skills 1 & 2) — "
+            "Increase practice on Visual Skills (Skills 1 & 2) - "
             "Spot the Difference and Hidden Picture activities improve visual scanning."
         )
 
     if risk["phonological_dyslexia_risk"] in ("Moderate", "High"):
         interventions.append(
-            "Focus on Phonological Awareness activities (Skills 5 & 6) — "
+            "Focus on Phonological Awareness activities (Skills 5 & 6) - "
             "Syllable tapping and letter-sound matching exercises strengthen phonemic awareness."
         )
 
