@@ -40,6 +40,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
   bool _isNavigating = false;
   bool _isBottomSheetOpen = false;
   int _animatingFromLevel = -1; // Tracks the level we are animating from
+  int _animatingProgressForLevel = -1; // To show the progress ring filling up to 100% before solidifying
 
   List<ActivityNode> get levels => widget.skillMap.activities;
 
@@ -660,6 +661,10 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         final nodeY = index * nodeSpacing + 20;
 
         bool isCompleted = ProgressService().isActivityCompleted(widget.skillMap.id, level.id);
+        if (_animatingProgressForLevel == index) {
+          isCompleted = false; // Keep it white with progress ring filling up
+        }
+        
         int score = ProgressService().getActivityScore(widget.skillMap.id, level.id);
         bool isCurrent = index == currentLevel;
         bool isLocked = index > currentLevel;
@@ -1020,12 +1025,16 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       
       // Submit the telemetry session that was recorded during this activity
       final studentId = ProgressService().currentStudentId;
-      await TelemetryService().endSessionAndSubmit(studentId);
+      TelemetryService().endSessionAndSubmit(studentId); // Fire and forget so we don't freeze the map
 
       // The games save partial state and score themselves. 
       // Read the latest score from the service to know exactly where we stand.
       final currentScore = ProgressService().getActivityScore(widget.skillMap.id, level.id);
       final finalScore = returnedScore ?? currentScore;
+
+      // NEW: Wait for the screen transition to completely finish before triggering UI updates,
+      // so the user can fully witness the progress bar animating!
+      await Future.delayed(const Duration(milliseconds: 400));
 
       // DDA: Update failure count (only if they actually returned a score)
       if (returnedScore != null) {
@@ -1035,33 +1044,27 @@ class _LevelMapScreenState extends State<LevelMapScreen>
           await ProgressService().resetFailureCount(widget.skillMap.id, level.id);
         }
       }
-      await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
-
-      final nextLevelIndex = index + 1;
-      if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
-        if (!mounted) return;
-        setState(() {
-          _animatingFromLevel = currentLevel;
-          currentLevel = nextLevelIndex;
-        });
-
-        // Trigger smooth avatar glide animation to the newly unlocked activity
-        _unlockController.forward(from: 0.0).then((_) {
-          if (mounted) {
-            setState(() {
-              _animatingFromLevel = -1;
-            });
-          }
-        });
 
       if (finalScore >= 100) {
-        await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
-
-        // Rebuild to trigger the 100% progress and star animations
-        setState(() {});
+        // Show progress filling up to 100% first
+        setState(() {
+          _animatingProgressForLevel = index;
+        });
         
-        // Let the user admire the "Color Up" and progress fill for 1.5 seconds
-        await Future.delayed(const Duration(milliseconds: 1500));
+        // Wait for the TweenAnimationBuilder to complete its 1.2s animation
+        await Future.delayed(const Duration(milliseconds: 1200));
+
+        // Now mark it completed to turn it solid green
+        await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
+        
+        if (mounted) {
+          setState(() {
+            _animatingProgressForLevel = -1;
+          });
+        }
+        
+        // Wait a tiny bit for the user to admire the green "pop"
+        await Future.delayed(const Duration(milliseconds: 500));
 
         final nextLevelIndex = index + 1;
         if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
