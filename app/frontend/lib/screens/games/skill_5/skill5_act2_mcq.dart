@@ -126,8 +126,14 @@ class _Skill5Act2McqState extends State<Skill5Act2Mcq>
           _playAudioPrompt();
         } else {
           setState(() {
-            _activityComplete = true;
-          });
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
         }
       });
     } else {

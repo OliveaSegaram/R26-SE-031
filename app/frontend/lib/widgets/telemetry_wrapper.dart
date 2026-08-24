@@ -262,7 +262,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       finalScore = (_totalScore / _roundsCompletedTotal).round().clamp(0, 100);
     }
 
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ActivityCompleteScreen(
@@ -271,19 +271,27 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
           score: finalScore,
           isRevisiting: false,
           onRetake: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => GameFactory.buildGame(widget.activityNode),
-              ),
-            );
+            Navigator.pop(context, 'retake');
           },
           onContinue: () {
             Navigator.pop(context, finalScore);
           },
         ),
       ),
-    );
+    ).then((value) {
+      if (mounted) {
+        if (value == 'retake') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => GameFactory.buildGame(widget.activityNode),
+            ),
+          );
+        } else {
+          Navigator.pop(context, value ?? finalScore);
+        }
+      }
+    });
   }
 
   @override

@@ -329,8 +329,14 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
         100,
       );
       setState(() {
-        _activityComplete = true;
-      });
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
       _celebrationController.forward();
     }
   }

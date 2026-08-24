@@ -71,15 +71,7 @@ class _SkillIntroScreenState extends State<SkillIntroScreen> {
     await ProgressService().markSkillIntroSeen(widget.skillMap.id);
     if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LevelMapScreen(
-          skillMap: widget.skillMap,
-          studentData: widget.studentData,
-        ),
-      ),
-    );
+    Navigator.pop(context, true);
   }
 
   @override

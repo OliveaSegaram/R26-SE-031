@@ -6,7 +6,7 @@
     "intro_audio_url": "",
     "activities": [
       {
-        "id": "visual_act_1",
+        "id": "act_1",
         "title": "සඟවා ඇති පින්තූර සෙවීම",
         "description": "සඟවා ඇති පින්තූර සොයන්න.",
         "file_path": "",
@@ -63,7 +63,7 @@
         ]
       },
       {
-        "id": "visual_act_2",
+        "id": "act_2",
         "title": "වෙනස් දේ සෙවීම",
         "description": "වෙනස් පින්තූරය තෝරන්න.",
         "file_path": "skill_visual/activity_4.json",
@@ -75,7 +75,7 @@
         "rounds": []
       },
       {
-        "id": "visual_act_3",
+        "id": "act_3",
         "title": "වර්ග කිරීමේ ත්‍යාගය",
         "description": "පින්තූර නිවැරදි තැනට දමන්න.",
         "file_path": "skill_visual/activity_3.json",
@@ -87,7 +87,7 @@
         "rounds": []
       },
       {
-        "id": "visual_act_4",
+        "id": "act_4",
         "title": "රටාව සම්පූර්ණ කිරීම",
         "description": "මීළඟට එන පින්තූරය තෝරන්න.",
         "file_path": "skill_visual/activity_2.json",
@@ -99,7 +99,7 @@
         "rounds": []
       },
       {
-        "id": "visual_act_5",
+        "id": "act_5",
         "title": "මතක අභියෝගය",
         "description": "තොප්පි යට ඇති දේවල් මතක තබාගන්න.",
         "file_path": "skill_visual/activity_5.json",
