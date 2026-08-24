@@ -462,37 +462,71 @@ class _LevelMapScreenState extends State<LevelMapScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.warmAmber.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.warmAmber.withValues(alpha: 0.3), width: 1),
                   ),
-                  child: Text(
-                    'ක්‍රියාකාරකම ${index + 1}',
-                    style: AppTypography.sinhala(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.warmAmber),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.extension_rounded, size: 16, color: AppColors.warmAmber),
+                      const SizedBox(width: 6),
+                      Text(
+                        'ක්‍රියාකාරකම ${index + 1}',
+                        style: AppTypography.sinhala(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.warmAmber),
+                      ),
+                    ],
                   ),
                 ),
-                if (isCompleted) ...[
-                  const SizedBox(width: 8),
-                  _buildStarBadge(score, AppColors.gentleGreen),
-                ],
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              level.title,
-              textAlign: TextAlign.center,
-              style: AppTypography.sinhala(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
-            ),
-            if (level.description.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                level.description,
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                level.title,
                 textAlign: TextAlign.center,
-                style: AppTypography.sinhala(fontSize: 15, color: AppColors.textSecondary),
+                style: AppTypography.sinhala(
+                  fontSize: 22, 
+                  fontWeight: FontWeight.w700, 
+                  color: AppColors.textPrimary,
+                  height: 1.4,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ),
+            
+            // Show a celebratory completion badge below the title
+            if (isCompleted) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.gentleGreen.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.gentleGreen.withValues(alpha: 0.3), width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildStarBadge(score, AppColors.gentleGreen),
+                    const SizedBox(width: 8),
+                    Text(
+                      'සම්පූර්ණයි', // "Completed"
+                      style: AppTypography.sinhala(
+                        fontSize: 14, 
+                        fontWeight: FontWeight.w800, 
+                        color: AppColors.gentleGreen,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
-            const SizedBox(height: 16),
+            
+            const SizedBox(height: 24),
 
             // Speaker Audio Instruction Button
             GestureDetector(
@@ -532,8 +566,14 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   elevation: 4,
                 ),
-                icon: const Icon(Icons.play_arrow_rounded, size: 28),
-                label: Text('ක්‍රීඩා කරමු', style: AppTypography.button(fontSize: 18)),
+                icon: Icon(
+                  isCompleted ? Icons.replay_rounded : Icons.play_arrow_rounded, 
+                  size: 28,
+                ),
+                label: Text(
+                  isCompleted ? 'නැවත ක්‍රීඩා කරමු' : 'ක්‍රීඩා කරමු', 
+                  style: AppTypography.button(fontSize: 18),
+                ),
               ),
             ),
           ],
