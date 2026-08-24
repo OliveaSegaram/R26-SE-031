@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from shared.database import get_db
 from dependencies import get_current_user
 from schemas.telemetry import TelemetrySessionSubmit
-from services.ml_pipeline import generate_cognitive_profile
+from services.ml_pipeline import generate_cognitive_profile, generate_comp2_profile
 from services.ml_engine import CognitiveLoadClassifier
 from services.report_generator import generate_pdf_report
 from services.assessment_report_generator import generate_assessment_report
@@ -224,6 +224,45 @@ async def get_cognitive_analytics(
         "status": "ok",
         **profile,
     }
+
+# ---------------------------------------------------------------------------
+# GET /telemetry/{student_id}/comp2  — Component 2 Feature Vector (Integration)
+# ---------------------------------------------------------------------------
+
+@router.get("/telemetry/{student_id}/comp2")
+async def get_comp2_analytics(
+    student_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Returns the Component 2 specific visual-orthographic kinematic feature vector.
+    Used for integration with Component 3 (Fusion Engine).
+    """
+    db = get_db()
+    
+    try:
+        student_oid = ObjectId(student_id)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid student ID format.",
+        )
+        
+    cursor = db.telemetry_events.find(
+        {"student_id": student_id}
+    ).sort("submitted_at", -1).limit(500)
+    sessions = await cursor.to_list(length=500)
+    
+    if not sessions:
+        return {
+            "student_id": student_id,
+            "status": "insufficient_data",
+            "message": "Complete at least one visual orthographic activity."
+        }
+        
+    comp2_profile = generate_comp2_profile(sessions)
+    
+    return comp2_profile
 
 # ---------------------------------------------------------------------------
 # GET /telemetry/{student_id}/report/pdf  — Clinical PDF Report
