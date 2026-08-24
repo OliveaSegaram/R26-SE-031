@@ -21,6 +21,7 @@ from schemas.telemetry import TelemetrySessionSubmit
 from services.ml_pipeline import generate_cognitive_profile
 from services.ml_engine import CognitiveLoadClassifier
 from services.report_generator import generate_pdf_report
+from services.assessment_report_generator import generate_assessment_report
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Telemetry"])
 
@@ -351,9 +352,42 @@ async def export_telemetry_csv(
             ]
             writer.writerow(row)
             
-    return StreamingResponse(
+            return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=sipsara_telemetry_datalake.csv"}
     )
+
+# ---------------------------------------------------------------------------
+# GET /students/{student_id}/assessment/report/pdf
+# ---------------------------------------------------------------------------
+@router.get("/students/{student_id}/assessment/report/pdf")
+async def get_assessment_report_pdf(student_id: str, current_user: dict = Depends(get_current_user)):
+    """Generate and return a PDF report of the student's comprehensive assessment answers."""
+    try:
+        obj_id = ObjectId(student_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid student ID")
+
+    db = get_db()
+    
+    # Allow either the parent or the assigned therapist to access this
+    student = await db.students.find_one({"_id": obj_id})
+    if not student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+        
+    is_parent = student.get("parent_id") == current_user["_id"]
+    is_therapist = current_user.get("role") == "therapist" and student.get("therapist_id") == current_user["_id"]
+    
+    if not (is_parent or is_therapist):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view this student's assessment")
+        
+    pdf_bytes = generate_assessment_report(student)
+    
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes), 
+        media_type="application/pdf", 
+        headers={"Content-Disposition": f"attachment; filename=Assessment_Report_{student_id}.pdf"}
+    )
+
 
