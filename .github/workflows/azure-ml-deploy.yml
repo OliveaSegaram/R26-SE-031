@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - dev
+    paths:
+      - 'app/backend/speech-monitoring-v1/**'
+      - 'app/backend/telemetry-analytics-v1/**'
+      - 'app/backend/diagnostic-fusion-v1/**'
+      - 'app/backend/adaptive-tutoring-v1/**'
+      - 'Dockerfile.azure'
+      - 'requirements-azure.txt'
+      - 'azure_gateway.py'
 
 env:
   ACR_NAME: "sipsaramlacr2026"
