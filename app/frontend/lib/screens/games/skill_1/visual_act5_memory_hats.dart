@@ -71,7 +71,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   static const List<String> _encourageMessages = [
     'හොඳට බලන්න! 👀',
     'ඔයාට පුළුවන්! 💪',
-    'නියමයි, දිගටම! ⭐',
+    'හොඳයි, දිගටම! ⭐',
     'මනාව! 🌟',
     'සුපිරියි! 🎉',
   ];
@@ -980,7 +980,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
               ),
               child: Text(
                 _activityComplete
-                    ? 'නියමයි! 🎉'
+                    ? 'හොඳයි! 🎉'
                     : _currentPhase == MemoryPhase.success
                         ? 'සුපිරියි! ✨'
                         : _currentEncouragement,
@@ -1014,7 +1014,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'නියමයි! ඔයා හරිම දක්ෂයි!',
+                  'හොඳයි! ඔයා හරිම දක්ෂයි!',
                   style: AppTypography.sinhala(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,

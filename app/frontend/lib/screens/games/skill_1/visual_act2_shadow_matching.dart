@@ -91,7 +91,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   static const List<String> _encourageMessages = [
     'හොඳට බලන්න! 👀',
     'ඔයාට පුළුවන්! 💪',
-    'නියමයි, දිගටම! ⭐',
+    'හොඳයි, දිගටම! ⭐',
     'මනාව! 🌟',
     'සුපිරියි! 🎉',
   ];
@@ -950,7 +950,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
               ),
               child: Text(
                 _roundComplete
-                    ? 'නියමයි! 🎉'
+                    ? 'හොඳයි! 🎉'
                     : _currentEncouragement,
                 style: AppTypography.sinhala(
                   fontSize: 15,
@@ -1017,7 +1017,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
             ),
             const SizedBox(height: 16),
             Text(
-              'නියමයි! 🎉',
+              'හොඳයි! 🎉',
               style: AppTypography.sinhala(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,

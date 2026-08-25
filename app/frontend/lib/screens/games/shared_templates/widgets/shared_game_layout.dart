@@ -46,7 +46,7 @@ class _SharedGameLayoutState extends State<SharedGameLayout> with TickerProvider
   static const List<String> _encourageMessages = [
     'හොඳට බලන්න! 👀',
     'ඔයාට පුළුවන්! 💪',
-    'නියමයි, දිගටම! ⭐',
+    'හොඳයි, දිගටම! ⭐',
     'මනාව! 🌟',
     'සුපිරියි! 🎉',
   ];
@@ -270,7 +270,7 @@ class _SharedGameLayoutState extends State<SharedGameLayout> with TickerProvider
               ),
               child: Text(
                 widget.isRoundComplete
-                    ? 'නියමයි! 🎉'
+                    ? 'හොඳයි! 🎉'
                     : _currentEncouragement,
                 style: AppTypography.sinhala(
                   fontSize: 15,
@@ -336,7 +336,7 @@ class _SharedGameLayoutState extends State<SharedGameLayout> with TickerProvider
             ),
             const SizedBox(height: 16),
             Text(
-              'නියමයි! 🎉',
+              'හොඳයි! 🎉',
               style: AppTypography.sinhala(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,

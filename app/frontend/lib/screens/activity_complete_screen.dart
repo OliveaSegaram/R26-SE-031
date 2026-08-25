@@ -24,7 +24,7 @@ class ActivityCompleteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stars = (score / 100 * 5).round().clamp(1, 5);
-    final titleText = score >= 100 ? 'නියමයි! ඔයා විශිෂ්ටයි! 🌟' : 'සුබ පැතුම්! 👏';
+    final titleText = score >= 100 ? 'හොඳයි! ඔයා විශිෂ්ටයි! 🌟' : 'සුබ පැතුම්! 👏';
     final subtitleText = score >= 100
         ? 'ඔයා සියලු ප්‍රශ්න සාර්ථකව විසඳුවා!'
         : 'ඔයා හොඳ ප්‍රගතියක් ලබා ගත්තා!';

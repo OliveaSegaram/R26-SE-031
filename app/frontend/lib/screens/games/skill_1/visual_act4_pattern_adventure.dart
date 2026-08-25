@@ -94,7 +94,7 @@ class _VisualAct4PatternAdventureState
   static const List<String> _encourageMessages = [
     'හොඳට බලන්න! 👀',
     'ඔයාට පුළුවන්! 💪',
-    'නියමයි, දිගටම! ⭐',
+    'හොඳයි, දිගටම! ⭐',
     'මනාව! 🌟',
     'සුපිරියි! 🎉',
   ];
@@ -823,7 +823,7 @@ class _VisualAct4PatternAdventureState
               ),
               child: Text(
                 _roundComplete
-                    ? 'නියමයි! 🎉'
+                    ? 'හොඳයි! 🎉'
                     : _currentEncouragement,
                 style: AppTypography.sinhala(
                   fontSize: 16,
@@ -912,7 +912,7 @@ class _VisualAct4PatternAdventureState
             ),
             const SizedBox(height: 24),
             Text(
-              'නියමයි! ඔයා දිනුම්!',
+              'හොඳයි! ඔයා දිනුම්!',
               style: AppTypography.sinhala(
                 fontSize: 26,
                 fontWeight: FontWeight.w900,

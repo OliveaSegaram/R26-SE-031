@@ -94,7 +94,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   static const List<String> _encourageMessages = [
     'හොඳට බලන්න! 👀',
     'ඔයාට පුළුවන්! 💪',
-    'නියමයි, දිගටම! ⭐',
+    'හොඳයි, දිගටම! ⭐',
     'මනාව! 🌟',
     'සුපිරියි! 🎉',
   ];
@@ -1250,7 +1250,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
               ),
               child: Text(
                 _roundComplete
-                    ? 'නියමයි! 🎉'
+                    ? 'හොඳයි! 🎉'
                     : _lastCorrectCategory != null
                         ? 'සුපිරියි! ✨'
                         : _currentEncouragement,
@@ -1319,7 +1319,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
             ),
             const SizedBox(height: 16),
             Text(
-              'නියමයි! 🎉',
+              'හොඳයි! 🎉',
               style: AppTypography.sinhala(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,
