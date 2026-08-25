@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import '../../../widgets/app_loading_indicator.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
@@ -150,7 +151,7 @@ class _VisualAct4PatternAdventureState
         // Bounce the carriage
         _bounceController.forward(from: 0).then((_) {
           // Sparkle sound
-          _audioPlayer.play(AssetSource('audio/correct.mp3'));
+          SoundUtils.playFeedback('audio/correct.mp3');
           
           Future.delayed(const Duration(milliseconds: 800), () {
             if (!mounted) return;
@@ -246,6 +247,7 @@ class _VisualAct4PatternAdventureState
     super.dispose();
   }
 
+
   void _initRound() {
     if (_currentRoundIndex >= _rounds.length) return;
     _roundComplete = false;
@@ -263,7 +265,7 @@ class _VisualAct4PatternAdventureState
     final choicePath = currentRound.options[index];
 
     if (choicePath == currentRound.correctAnswer) {
-      _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
       _capturePositions(index);
 
       setState(() {
@@ -275,7 +277,7 @@ class _VisualAct4PatternAdventureState
 
       _flyController.forward(from: 0);
     } else {
-      _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       if (index < _shakeControllers.length) {
         _shakeControllers[index].forward(from: 0);
       }

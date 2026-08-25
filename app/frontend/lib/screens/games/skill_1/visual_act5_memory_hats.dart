@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import '../../../widgets/app_loading_indicator.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
@@ -297,9 +298,11 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     for (var controller in _cardFlipControllers) {
       controller.dispose();
     }
+
     _audioPlayer.dispose();
     super.dispose();
   }
+
 
   // ── Game logic ──
 
@@ -315,7 +318,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       _isProcessingTap = true;
       _cardFlipControllers[index].reverse();
       
-      _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
       final rng = Random();
       _currentEncouragement = _encourageMessages[rng.nextInt(_encourageMessages.length)];
       
@@ -331,7 +334,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     } else {
       // Wrong!
       _isProcessingTap = true;
-      _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       context.findAncestorStateOfType<TelemetryWrapperState>()?.recordMisclick();
       
       // Briefly flip to show they got it wrong, then flip back

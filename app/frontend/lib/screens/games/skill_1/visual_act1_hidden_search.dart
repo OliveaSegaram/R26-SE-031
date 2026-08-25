@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import '../../../widgets/app_loading_indicator.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
@@ -164,6 +165,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
     super.dispose();
   }
 
+
   // ── Round initialization ──
   void _initRound() {
     if (_currentRoundIndex >= _gameData.rounds.length) return;
@@ -208,7 +210,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
     });
 
     if (item.isTarget) {
-      _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
       setState(() {
         item.isFound = true;
         _foundCount++;
@@ -224,7 +226,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
         });
       }
     } else {
-      _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       setState(() {
         item.showWrongFeedback = true;
       });

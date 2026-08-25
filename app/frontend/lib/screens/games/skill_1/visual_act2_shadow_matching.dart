@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import '../../../widgets/app_loading_indicator.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
@@ -242,6 +243,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
     super.dispose();
   }
 
+
   // ── Game logic ──
 
   ShadowRound get _currentRound => _rounds[_currentRoundIndex];
@@ -253,7 +255,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
 
     if (object == targetShadow) {
       // Correct!
-      _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
       
       setState(() {
         _matchedObjects.add(object);
@@ -270,7 +272,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
       }
     } else {
       // Wrong!
-      _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       context.findAncestorStateOfType<TelemetryWrapperState>()?.recordMisclick();
       
       setState(() {
@@ -787,7 +789,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                   data: object,
                   maxSimultaneousDrags: 1,
                   onDragStarted: () {
-                    _audioPlayer.play(AssetSource('audio/pop.mp3'));
+                    SoundUtils.playFeedback('audio/pop.mp3');
                     setState(() { _isDragging = true; });
                   },
                   onDragEnd: (_) {

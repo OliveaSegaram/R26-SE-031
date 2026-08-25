@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
@@ -102,7 +103,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
       setState(() {
         _foundIndices.add(index);
       });
-      await _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
       
       if (_foundIndices.length == _targetCount) {
         setState(() {
@@ -143,7 +144,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
       setState(() {
         _wrongIndices.add(index);
       });
-      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       
       context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(0);
       

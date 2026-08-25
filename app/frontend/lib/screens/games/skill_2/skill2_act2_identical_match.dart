@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
@@ -95,7 +96,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
       setState(() {
         _isBottomLetterCorrect = true;
       });
-      await _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
       
       // Brief delay to show green color before hiding
       Future.delayed(const Duration(milliseconds: 400), () {
@@ -118,7 +119,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
       setState(() {
         _isBottomLetterCorrect = false;
       });
-      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       
       // Briefly show error state, but KEEP the top selection locked!
       Future.delayed(const Duration(milliseconds: 600), () {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import '../../../widgets/app_loading_indicator.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../models/curriculum_models.dart';
@@ -254,6 +255,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     super.dispose();
   }
 
+
   // ── Game logic ──
 
   SortingRound get _currentRound => _rounds[_currentRoundIndex];
@@ -270,7 +272,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     
     if (correctCategory == categoryKey) {
       // Correct!
-      _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
       
       setState(() {
         _visibleObjects.remove(object);
@@ -305,7 +307,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       }
     } else {
       // Wrong!
-      _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       context.findAncestorStateOfType<TelemetryWrapperState>()?.recordMisclick();
       
       setState(() {
