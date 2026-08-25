@@ -1087,40 +1087,45 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         // Mark it completed instantly in cache so dashboard updates immediately if user exits early.
         await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
 
-        // Show progress filling up to 100% first
-        setState(() {
-          _animatingProgressForLevel = index;
-        });
-        
-        // Wait for the TweenAnimationBuilder to complete its 1.2s animation
-        await Future.delayed(const Duration(milliseconds: 1200));
-        
-        if (mounted) {
+        if (!isCompleted) {
+          // Show progress filling up to 100% first
           setState(() {
-            _animatingProgressForLevel = -1;
+            _animatingProgressForLevel = index;
           });
-        }
-        
-        // Wait a tiny bit for the user to admire the green "pop"
-        await Future.delayed(const Duration(milliseconds: 500));
+          
+          // Wait for the TweenAnimationBuilder to complete its 1.2s animation
+          await Future.delayed(const Duration(milliseconds: 1200));
+          
+          if (mounted) {
+            setState(() {
+              _animatingProgressForLevel = -1;
+            });
+          }
+          
+          // Wait a tiny bit for the user to admire the green "pop"
+          await Future.delayed(const Duration(milliseconds: 500));
 
-        final nextLevelIndex = index + 1;
-        if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
-          setState(() {
-            _animatingFromLevel = currentLevel;
-            currentLevel = nextLevelIndex;
-          });
+          final nextLevelIndex = index + 1;
+          if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
+            setState(() {
+              _animatingFromLevel = currentLevel;
+              currentLevel = nextLevelIndex;
+            });
 
-          // Trigger smooth avatar glide animation to the newly unlocked activity
-          _unlockController.forward(from: 0.0).then((_) {
-            if (mounted) {
-              setState(() {
-                _animatingFromLevel = -1;
-              });
-            }
-          });
+            // Trigger smooth avatar glide animation to the newly unlocked activity
+            _unlockController.forward(from: 0.0).then((_) {
+              if (mounted) {
+                setState(() {
+                  _animatingFromLevel = -1;
+                });
+              }
+            });
+          }
+          _scrollToCurrentLevel();
+        } else {
+          setState(() {});
+          _refreshCurrentLevel();
         }
-        _scrollToCurrentLevel();
       } else {
         // Rebuild UI to show partial progress
         setState(() {});
