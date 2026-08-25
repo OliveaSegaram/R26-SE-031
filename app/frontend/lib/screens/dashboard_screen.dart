@@ -608,36 +608,38 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                     ],
                   ),
 
-                  // Bottom Action Row: FittedBox with mainAxisSize: MainAxisSize.min prevents right overflow on narrow screens
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Stars Row
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(
-                            maxStars,
-                            (i) => Padding(
-                              padding: const EdgeInsets.only(right: 2),
-                              child: Icon(
-                                i < filledStars
-                                    ? Icons.star_rounded
-                                    : Icons.star_outline_rounded,
-                                color: i < filledStars
-                                    ? AppColors.warmAmber
-                                    : AppColors.borderLight,
-                                size: 20,
+                  // Bottom Action Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // Stars Row
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(
+                              maxStars,
+                              (i) => Padding(
+                                padding: const EdgeInsets.only(right: 2),
+                                child: Icon(
+                                  i < filledStars
+                                      ? Icons.star_rounded
+                                      : Icons.star_outline_rounded,
+                                  color: i < filledStars
+                                      ? AppColors.warmAmber
+                                      : AppColors.borderLight,
+                                  size: 20,
+                                ),
                               ),
                             ),
                           ),
                         ),
+                      ),
 
-                        const SizedBox(width: 8),
+                      const SizedBox(width: 4),
 
                         // Chunky 3D Play / Try Button
                         if (!widget.isLocked)
@@ -669,7 +671,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                                     color: Colors.white, size: 18),
                                 SizedBox(width: 3),
                                 Text(
-                                  'Play',
+                                  'අරඹමු',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w900,
@@ -697,7 +699,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                                     color: AppColors.warmAmber, size: 15),
                                 const SizedBox(width: 3),
                                 Text(
-                                  'Try',
+                                  'උත්සාහ කරමු',
                                   style: AppTypography.heading(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w900,
@@ -709,7 +711,6 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                           ),
                       ],
                     ),
-                  ),
                 ],
               ),
             ),
