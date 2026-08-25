@@ -73,7 +73,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   static const List<String> _encourageMessages = [
     'හොඳට බලන්න! 👀',
     'ඔයාට පුළුවන්! 💪',
-    'නියමයි, දිගටම! ⭐',
+    'හොඳයි, දිගටම! ⭐',
     'මනාව! 🌟',
     'සුපිරියි! 🎉',
   ];
@@ -343,11 +343,10 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                   Expanded(
                     child: FadeTransition(
                       opacity: _roundFadeAnimation,
-                      child: _buildCardGrid(),
+                      child: Center(child: _buildCardGrid()),
                     ),
                   ),
-                  _buildMascotArea(),
-                  const SizedBox(height: 8),
+
                 ],
               ),
             ),
@@ -405,7 +404,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                   children: [
 
                     Text(
-                      widget.activityNode.skillTitle.isEmpty ? 'Picture Hunt' : widget.activityNode.skillTitle,
+                      widget.activityNode.title.isEmpty ? 'Picture Hunt' : widget.activityNode.title,
                       style: AppTypography.heading(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -663,31 +662,40 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
       hPadding = 8.0; 
     }
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      // Dynamic padding to squeeze every drop of width for harder levels
-      padding: EdgeInsets.symmetric(vertical: 12, horizontal: hPadding),
-      child: SizedBox(
-        width: double.infinity,
-        child: Wrap(
-          alignment: WrapAlignment.center,
-          spacing: spacing,
-          runSpacing: spacing,
-          children: List.generate(_items.length, (index) {
-            return SizedBox(
-              width: itemSize,
-              height: itemSize,
-              child: _PictureCard(
-                key: ValueKey('${_currentRoundIndex}_${_items[index].path}_$index'),
-                item: _items[index],
-                onTap: () => _onItemTapped(_items[index]),
-                showHint: _showHint && _items[index].isTarget && !_items[index].isFound,
-                animationDelay: index * 0.05,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          // Dynamic padding to squeeze every drop of width for harder levels
+          padding: EdgeInsets.symmetric(vertical: 12, horizontal: hPadding),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: List.generate(_items.length, (index) {
+                    return SizedBox(
+                      width: itemSize,
+                      height: itemSize,
+                      child: _PictureCard(
+                        key: ValueKey('${_currentRoundIndex}_${_items[index].path}_$index'),
+                        item: _items[index],
+                        onTap: () => _onItemTapped(_items[index]),
+                        showHint: _showHint && _items[index].isTarget && !_items[index].isFound,
+                        animationDelay: index * 0.05,
+                      ),
+                    );
+                  }),
+                ),
               ),
-            );
-          }),
-        ),
-      ),
+            ),
+          ),
+        );
+      }
     );
   }
 
@@ -723,7 +731,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
               ),
               child: Text(
                 _roundComplete
-                    ? 'නියමයි! 🎉'
+                    ? 'හොඳයි! 🎉'
                     : _currentEncouragement,
                 style: AppTypography.sinhala(
                   fontSize: 15,
@@ -792,7 +800,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
             ),
             const SizedBox(height: 16),
             Text(
-              'නියමයි! 🎉',
+              'හොඳයි! 🎉',
               style: AppTypography.sinhala(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,

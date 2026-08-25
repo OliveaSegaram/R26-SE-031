@@ -7,7 +7,7 @@ import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
 
-/// Activity 9: වචනයට සවන් දී රූපය සොයමු (Listen to Word & Find Image)
+/// Activity 9: වචනයට සවන් දී පින්තූරය සොයමු (Listen to Word & Find Image)
 /// Template: audio_image_match_game
 class Skill4Act1Mcq extends StatefulWidget {
   final ActivityNode? activityNode;
@@ -119,7 +119,7 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
     var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('වචනයට සවන් දී රූපය සොයමු')),
+        appBar: AppBar(title: const Text('වචනයට සවන් දී පින්තූරය සොයමු')),
         body: const Center(child: Text('No rounds available.')),
       );
     }
@@ -129,8 +129,8 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.skillTitle ?? 'වචනයට සවන් දී රූපය සොයමු';
-    final promptText = currentRound['prompt']?.toString() ?? 'අසා සිටින රූපය තෝරන්න';
+    final titleText = widget.activityNode?.title ?? 'වචනයට සවන් දී පින්තූරය සොයමු';
+    final promptText = currentRound['prompt']?.toString() ?? 'අසා සිටින පින්තූරය තෝරන්න';
     final imageUrl = currentRound['image_url']?.toString();
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
     var correctIndex = (currentRound['correct_index'] as int?) ?? 0;

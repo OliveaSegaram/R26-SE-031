@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../theme/app_theme.dart';
 import '../models/dashboard_config.dart';
+import '../services/localization_service.dart';
 import 'level_map_screen.dart';
 import 'skill_intro_screen.dart';
 import 'select_student_screen.dart';
@@ -81,7 +82,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final studentName = widget.studentData?['name'] ?? 'Student';
+    final studentName = widget.studentData?['first_name'] ?? widget.studentData?['name'] ?? 'Student';
     final avatarUrl = AvatarUtils.getCorrectedAvatarPath(widget.studentData?['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png');
 
     return Scaffold(
@@ -108,7 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                 child: Row(
                   children: [
                     Text(
-                      '🚀 learning path',
+                      LocalizationService.instance.t('dash_learning_path'),
                       style: AppTypography.heading(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -137,10 +138,21 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
   Widget _buildHeader(String name, String avatarUrl) {
     final config = _dashConfig;
     final hour = DateTime.now().hour;
-    final greeting = config != null
-        ? config.greetingFor(hour, name)
-        : (hour < 12 ? 'Good morning, $name! ☀️' : hour < 17 ? 'Good afternoon, $name! 🌤️' : 'Good evening, $name! 🌙');
-    final subtitle = _streak > 1 ? (config?.subtitleFor(_streak) ?? '🔥 $_streak day streak! Keep going!') : '';
+    final greetingKey = hour < 12 
+        ? 'dash_greeting_morning' 
+        : hour < 17 
+            ? 'dash_greeting_afternoon' 
+            : hour < 20 
+                ? 'dash_greeting_evening' 
+                : 'dash_greeting_night';
+    
+    final greeting = LocalizationService.instance.t(greetingKey).replaceAll('{name}', name);
+    final streakKey = _streak == 0 
+        ? 'dash_streak_0' 
+        : _streak <= 2 
+            ? 'dash_streak_low' 
+            : 'dash_streak_high';
+    final subtitle = LocalizationService.instance.t(streakKey).replaceAll('{streak}', _streak.toString());
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
@@ -179,7 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
           // Right Side: Streak badge + Avatar
           Row(
             children: [
-              if (_streak > 0) ...[
+
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
@@ -206,7 +218,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                   ),
                 ),
                 const SizedBox(width: 12),
-              ],
+
               GestureDetector(
                 onTap: () {
                   Navigator.pushReplacement(
@@ -261,14 +273,18 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
 
           return Expanded(
             child: GestureDetector(
-              onTap: () {
+              onTap: () async {
                 setState(() => _activeNavIndex = index);
                 final route = item['route'] as Widget?;
                 if (route != null) {
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => route),
                   );
+                  if (mounted) {
+                    setState(() => _activeNavIndex = 0);
+                    _loadStreak();
+                  }
                 }
               },
               child: AnimatedContainer(
@@ -293,7 +309,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                   ],
                 ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     FaIcon(
                       item['icon'] as FaIconData,
@@ -302,7 +318,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      item['label'] as String,
+                      LocalizationService.instance.t(item['label'] as String),
                       style: AppTypography.caption(
                         fontSize: 12,
                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
@@ -334,7 +350,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
               const Divider(thickness: 2, color: AppColors.borderLight),
               const SizedBox(height: 16),
               Text(
-                '📖 reading practice',
+                LocalizationService.instance.t('dash_reading_practice'),
                 style: AppTypography.heading(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -375,27 +391,27 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     );
   }
 
-  static const List<Map<String, dynamic>> _navItems = [
+  static final List<Map<String, dynamic>> _navItems = [
     {
-      'label': 'home',
+      'label': 'dash_nav_home',
       'icon': FontAwesomeIcons.house,
       'color': AppColors.calmBlue,
       'route': null,
     },
     {
-      'label': 'shop',
+      'label': 'dash_nav_shop',
       'icon': FontAwesomeIcons.store,
       'color': AppColors.softCoral,
-      'route': CharacterShopScreen(),
+      'route': const CharacterShopScreen(),
     },
     {
-      'label': 'progress',
+      'label': 'dash_nav_progress',
       'icon': FontAwesomeIcons.trophy,
       'color': AppColors.warmAmber,
-      'route': ProgressAnalyticsScreen(),
+      'route': const ProgressAnalyticsScreen(),
     },
     {
-      'label': 'parents',
+      'label': 'dash_nav_parents',
       'icon': FontAwesomeIcons.userGroup,
       'color': AppColors.gentleGreen,
       'route': ParentHubScreen(),
@@ -592,36 +608,38 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                     ],
                   ),
 
-                  // Bottom Action Row: FittedBox with mainAxisSize: MainAxisSize.min prevents right overflow on narrow screens
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Stars Row
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(
-                            maxStars,
-                            (i) => Padding(
-                              padding: const EdgeInsets.only(right: 2),
-                              child: Icon(
-                                i < filledStars
-                                    ? Icons.star_rounded
-                                    : Icons.star_outline_rounded,
-                                color: i < filledStars
-                                    ? AppColors.warmAmber
-                                    : AppColors.borderLight,
-                                size: 20,
+                  // Bottom Action Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // Stars Row
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(
+                              maxStars,
+                              (i) => Padding(
+                                padding: const EdgeInsets.only(right: 2),
+                                child: Icon(
+                                  i < filledStars
+                                      ? Icons.star_rounded
+                                      : Icons.star_outline_rounded,
+                                  color: i < filledStars
+                                      ? AppColors.warmAmber
+                                      : AppColors.borderLight,
+                                  size: 20,
+                                ),
                               ),
                             ),
                           ),
                         ),
+                      ),
 
-                        const SizedBox(width: 8),
+                      const SizedBox(width: 4),
 
                         // Chunky 3D Play / Try Button
                         if (!widget.isLocked)
@@ -653,7 +671,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                                     color: Colors.white, size: 18),
                                 SizedBox(width: 3),
                                 Text(
-                                  'Play',
+                                  'අරඹමු',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w900,
@@ -681,7 +699,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                                     color: AppColors.warmAmber, size: 15),
                                 const SizedBox(width: 3),
                                 Text(
-                                  'Try',
+                                  'උත්සාහ කරමු',
                                   style: AppTypography.heading(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w900,
@@ -693,7 +711,6 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                           ),
                       ],
                     ),
-                  ),
                 ],
               ),
             ),

@@ -162,7 +162,7 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.skillTitle ?? 'ශබ්දයට සවන් දී වචනය තෝරන්න';
+    final titleText = widget.activityNode?.title ?? 'ශබ්දයට සවන් දී වචනය තෝරන්න';
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
     var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
 
