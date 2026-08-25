@@ -41,8 +41,4 @@ jobs:
       run: |
         docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
 
-    - name: Deploy to Azure Web App for Containers
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: ${{ env.WEBAPP_NAME }}
-        images: '${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest'
+
