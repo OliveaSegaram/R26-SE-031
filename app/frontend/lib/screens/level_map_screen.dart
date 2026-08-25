@@ -83,7 +83,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToCurrentLevel();
-      _autoStartFirstLevel();
     });
   }
 
@@ -104,16 +103,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     }
   }
 
-  void _autoStartFirstLevel() {
-    bool firstCompleted = ProgressService().isActivityCompleted(widget.skillMap.id, levels[0].id);
-    if (currentLevel == 0 && !firstCompleted) {
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted && currentLevel == 0 && !_isNavigating) {
-          _navigateToLevel(0);
-        }
-      });
-    }
-  }
+
 
   void _scrollToCurrentLevel() {
 

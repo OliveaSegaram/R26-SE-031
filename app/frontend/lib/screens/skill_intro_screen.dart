@@ -78,11 +78,6 @@ class _SkillIntroScreenState extends State<SkillIntroScreen> {
   Widget build(BuildContext context) {
     String introText = widget.skillMap.introText;
     
-    // If the provided intro text is empty or just repeating the short title, 
-    // generate a simple, fun sentence related to the skill for a Grade 1 kid.
-    if (introText.isEmpty || introText.length < 25) {
-      introText = 'අපි ${widget.skillMap.title} ගැන විනෝදයෙන් ඉගෙන ගමු!';
-    }
 
     return Scaffold(
       backgroundColor: AppColors.cream,
