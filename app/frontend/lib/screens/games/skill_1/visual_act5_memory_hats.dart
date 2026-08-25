@@ -104,7 +104,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
 
   static const List<String> _instructions = [
     'හොඳින් මතක තබා ගන්න!', // Look carefully!
-    'රූප තිබෙන තැන් මතක තියාගන්න!', // Remember where the pictures are!
+    'පින්තූර තිබෙන තැන් මතක තියාගන්න!', // Remember where the pictures are!
   ];
   late String _currentInstruction;
 
@@ -282,7 +282,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       _currentPhase = MemoryPhase.recall;
     });
 
-    _playInstruction('මේ රූපය තිබුණේ කොහෙද?');
+    _playInstruction('මේ පින්තූරය තිබුණේ කොහෙද?');
   }
 
   @override
@@ -495,7 +495,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
 
                     Flexible(
                       child: Text(
-                        widget.activityNode.skillTitle.isEmpty ? 'මතක අභියෝගය' : widget.activityNode.skillTitle,
+                        widget.activityNode.title.isEmpty ? 'මතක අභියෝගය' : widget.activityNode.title,
                         style: AppTypography.heading(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -575,7 +575,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   // ── Instruction Card ──
   Widget _buildInstructionCard() {
     final bool isRecall = _currentPhase == MemoryPhase.recall || _currentPhase == MemoryPhase.success;
-    final String text = isRecall ? 'මේ රූපය තිබුණේ කොහෙද?' : _currentInstruction;
+    final String text = isRecall ? 'මේ පින්තූරය තිබුණේ කොහෙද?' : _currentInstruction;
     
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 500),

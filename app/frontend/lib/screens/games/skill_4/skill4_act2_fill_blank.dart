@@ -7,7 +7,7 @@ import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
 
-/// Activity 8: රූපයට ගැලපෙන හිස්තැන පුරවමු (Fill Blank Slot Matching Image)
+/// Activity 8: පින්තූරයට ගැලපෙන හිස්තැන පුරවමු (Fill Blank Slot Matching Image)
 /// Template: fill_blank_game
 class Skill4Act2FillBlank extends StatefulWidget {
   final ActivityNode? activityNode;
@@ -139,8 +139,8 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.skillTitle ?? 'රූපයට ගැලපෙන හිස්තැන පුරවමු';
-    final instructionText = widget.activityNode?.description ?? 'රූප පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි රූපය තෝරන්න.';
+    final titleText = widget.activityNode?.title ?? 'පින්තූරයට ගැලපෙන හිස්තැන පුරවමු';
+    final instructionText = widget.activityNode?.description ?? 'පින්තූර පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි පින්තූරය තෝරන්න.';
 
     final sequence = (currentRound['sequence'] as List?)?.map((e) => e?.toString()).toList() ?? ['🔴', '🔵', null, '🟢'];
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🟡', '🟣', '🔴', '⭐'];

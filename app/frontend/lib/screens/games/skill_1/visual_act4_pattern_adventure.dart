@@ -456,7 +456,7 @@ class _VisualAct4PatternAdventureState
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
 
-                    Text(widget.activityNode.skillTitle.isEmpty ? 'Pattern Adventure' : widget.activityNode.skillTitle,
+                    Text(widget.activityNode.title.isEmpty ? 'Pattern Adventure' : widget.activityNode.title,
                         style: AppTypography.heading(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,

@@ -405,7 +405,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                   children: [
 
                     Text(
-                      widget.activityNode.skillTitle.isEmpty ? 'Picture Hunt' : widget.activityNode.skillTitle,
+                      widget.activityNode.title.isEmpty ? 'Picture Hunt' : widget.activityNode.title,
                       style: AppTypography.heading(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,

@@ -166,7 +166,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('රූපයට ගැලපෙන වචනය තෝරන්න')),
+        appBar: AppBar(title: const Text('පින්තූරයට ගැලපෙන වචනය තෝරන්න')),
         body: const Center(child: Text('No rounds available.')),
       );
     }
@@ -176,8 +176,8 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.skillTitle ?? 'රූපයට ගැලපෙන වචනය තෝරන්න';
-    final promptText = currentRound['prompt']?.toString() ?? 'රූපයට ගැලපෙන වචනය තෝරන්න';
+    final titleText = widget.activityNode?.title ?? 'පින්තූරයට ගැලපෙන වචනය තෝරන්න';
+    final promptText = currentRound['prompt']?.toString() ?? 'පින්තූරයට ගැලපෙන වචනය තෝරන්න';
     final imageUrl = currentRound['image_url']?.toString() ?? '';
     
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];

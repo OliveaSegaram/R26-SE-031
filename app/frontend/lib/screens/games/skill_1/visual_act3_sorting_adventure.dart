@@ -480,7 +480,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                   children: [
 
                     Text(
-                      widget.activityNode.skillTitle,
+                      widget.activityNode.title,
                       style: AppTypography.heading(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,

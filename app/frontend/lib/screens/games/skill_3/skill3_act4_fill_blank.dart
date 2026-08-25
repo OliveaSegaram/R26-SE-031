@@ -146,8 +146,8 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.skillTitle ?? 'රූපයට ගැලපෙන හිස්තැන පුරවමු';
-    final instructionText = widget.activityNode?.description ?? 'රූප පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි රූපය තෝරන්න.';
+    final titleText = widget.activityNode?.title ?? 'පින්තූරයට ගැලපෙන හිස්තැන පුරවමු';
+    final instructionText = widget.activityNode?.description ?? 'පින්තූර පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි පින්තූරය තෝරන්න.';
 
     final sequence = (currentRound['sequence'] as List?)?.map((e) => e?.toString()).toList() ?? ['🔴', '🔵', null, '🟢'];
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🟡', '🟣', '🔴', '⭐'];
