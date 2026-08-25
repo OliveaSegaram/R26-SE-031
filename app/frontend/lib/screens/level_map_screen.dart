@@ -368,23 +368,12 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                         Text(
                           level.title,
                           style: AppTypography.sinhala(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
+                            height: 1.2,
                           ),
                         ),
-                        if (level.description.isNotEmpty) ...[
-                          const SizedBox(height: 3),
-                          Text(
-                            level.description,
-                            style: AppTypography.sinhala(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
                       ],
                     ),
                   ),
