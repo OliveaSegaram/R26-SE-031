@@ -343,11 +343,10 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                   Expanded(
                     child: FadeTransition(
                       opacity: _roundFadeAnimation,
-                      child: _buildCardGrid(),
+                      child: Center(child: _buildCardGrid()),
                     ),
                   ),
-                  _buildMascotArea(),
-                  const SizedBox(height: 8),
+
                 ],
               ),
             ),
@@ -663,31 +662,40 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
       hPadding = 8.0; 
     }
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      // Dynamic padding to squeeze every drop of width for harder levels
-      padding: EdgeInsets.symmetric(vertical: 12, horizontal: hPadding),
-      child: SizedBox(
-        width: double.infinity,
-        child: Wrap(
-          alignment: WrapAlignment.center,
-          spacing: spacing,
-          runSpacing: spacing,
-          children: List.generate(_items.length, (index) {
-            return SizedBox(
-              width: itemSize,
-              height: itemSize,
-              child: _PictureCard(
-                key: ValueKey('${_currentRoundIndex}_${_items[index].path}_$index'),
-                item: _items[index],
-                onTap: () => _onItemTapped(_items[index]),
-                showHint: _showHint && _items[index].isTarget && !_items[index].isFound,
-                animationDelay: index * 0.05,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          // Dynamic padding to squeeze every drop of width for harder levels
+          padding: EdgeInsets.symmetric(vertical: 12, horizontal: hPadding),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: List.generate(_items.length, (index) {
+                    return SizedBox(
+                      width: itemSize,
+                      height: itemSize,
+                      child: _PictureCard(
+                        key: ValueKey('${_currentRoundIndex}_${_items[index].path}_$index'),
+                        item: _items[index],
+                        onTap: () => _onItemTapped(_items[index]),
+                        showHint: _showHint && _items[index].isTarget && !_items[index].isFound,
+                        animationDelay: index * 0.05,
+                      ),
+                    );
+                  }),
+                ),
               ),
-            );
-          }),
-        ),
-      ),
+            ),
+          ),
+        );
+      }
     );
   }
 

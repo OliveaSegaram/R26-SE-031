@@ -384,8 +384,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                   const SizedBox(height: 16),
                   _buildObjectTray(),
                   const SizedBox(height: 16),
-                  _buildMascotArea(),
-                  const SizedBox(height: 8),
+
                 ],
               ),
             ),

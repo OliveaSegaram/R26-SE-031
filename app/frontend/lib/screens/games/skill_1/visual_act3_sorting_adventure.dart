@@ -425,8 +425,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                   const SizedBox(height: 16),
                   _buildCategoryZones(),
                   const SizedBox(height: 16),
-                  _buildMascotArea(),
-                  const SizedBox(height: 8),
+
                 ],
               ),
             ),

@@ -440,8 +440,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                   const SizedBox(height: 4),
                   _buildGameArea(),
                   const SizedBox(height: 12),
-                  _buildMascotArea(),
-                  const SizedBox(height: 8),
+
                 ],
               ),
             ),
@@ -690,25 +689,31 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     );
   }
 
-  // ── Main Game Area (Wrap Layout for Cards) ──
   Widget _buildGameArea() {
     return Expanded(
-      child: Center(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Wrap(
-              spacing: 16,
-              runSpacing: 24,
-              alignment: WrapAlignment.center,
-              children: List.generate(_currentRound.itemCount, (index) {
-                final asset = _currentRound.assets[index];
-                return _buildCardWidget(index, asset);
-              }),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 24,
+                    alignment: WrapAlignment.center,
+                    children: List.generate(_currentRound.itemCount, (index) {
+                      final asset = _currentRound.assets[index];
+                      return _buildCardWidget(index, asset);
+                    }),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

@@ -398,8 +398,7 @@ class _VisualAct4PatternAdventureState
 
                   const Spacer(flex: 1),
                   
-                  _buildMascotArea(),
-                  const SizedBox(height: 16),
+
                 ],
               ),
             ),

@@ -31,32 +31,9 @@ class _SharedGameLayoutState extends State<SharedGameLayout> with TickerProvider
   late AnimationController _celebrationController;
   late Animation<double> _celebrationScale;
 
-  late String _currentMascot;
-  late String _currentEncouragement;
-
-  static const List<String> _mascots = [
-    'assets/images/characters/human/human_student_1.png',
-    'assets/images/characters/mascots/solo_green.png',
-    'assets/images/characters/mascots/solo_orange.png',
-    'assets/images/characters/mascots/solo_pink.png',
-    'assets/images/characters/mascots/solo_yellow.png',
-    'assets/images/characters/mascots/solo_teal.png',
-  ];
-
-  static const List<String> _encourageMessages = [
-    'හොඳට බලන්න! 👀',
-    'ඔයාට පුළුවන්! 💪',
-    'හොඳයි, දිගටම! ⭐',
-    'මනාව! 🌟',
-    'සුපිරියි! 🎉',
-  ];
-
   @override
   void initState() {
     super.initState();
-    final rng = Random();
-    _currentMascot = _mascots[rng.nextInt(_mascots.length)];
-    _currentEncouragement = _encourageMessages[rng.nextInt(_encourageMessages.length)];
 
     _celebrationController = AnimationController(
       vsync: this,
@@ -72,12 +49,6 @@ class _SharedGameLayoutState extends State<SharedGameLayout> with TickerProvider
     super.didUpdateWidget(oldWidget);
     if (widget.isActivityComplete && !oldWidget.isActivityComplete) {
       _celebrationController.forward();
-    }
-    if (widget.currentRoundIndex != oldWidget.currentRoundIndex) {
-      final rng = Random();
-      setState(() {
-        _currentEncouragement = _encourageMessages[rng.nextInt(_encourageMessages.length)];
-      });
     }
   }
 
@@ -104,8 +75,6 @@ class _SharedGameLayoutState extends State<SharedGameLayout> with TickerProvider
                 _buildTopHUD(),
                 const SizedBox(height: 8),
                 Expanded(child: widget.child),
-                _buildMascotArea(),
-                const SizedBox(height: 8),
               ],
             ),
           ),
@@ -241,50 +210,6 @@ class _SharedGameLayoutState extends State<SharedGameLayout> with TickerProvider
     );
   }
 
-  Widget _buildMascotArea() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        children: [
-          Image.asset(
-            _currentMascot,
-            width: 50,
-            height: 50,
-            fit: BoxFit.contain,
-            errorBuilder: (c, e, s) => const SizedBox(width: 50, height: 50),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Text(
-                widget.isRoundComplete
-                    ? 'හොඳයි! 🎉'
-                    : _currentEncouragement,
-                style: AppTypography.sinhala(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF5D7A9E),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCelebrationOverlay() {
     return AnimatedBuilder(
       animation: _celebrationScale,
@@ -328,7 +253,7 @@ class _SharedGameLayoutState extends State<SharedGameLayout> with TickerProvider
             ),
             const SizedBox(height: 20),
             Image.asset(
-              _currentMascot,
+              'assets/images/characters/mascots/solo_green.png',
               width: 80,
               height: 80,
               fit: BoxFit.contain,
