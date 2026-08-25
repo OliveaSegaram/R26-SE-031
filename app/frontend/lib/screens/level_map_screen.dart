@@ -1044,7 +1044,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       final fails = ProgressService().getFailureCount(widget.skillMap.id, level.id);
       final bool isRemedial = fails >= 2;
 
-      Widget nextScreen = GameFactory.buildGame(level, isRemedial: isRemedial);
+      Widget nextScreen = GameFactory.buildGame(level, isRemedial: isRemedial, studentData: widget.studentData);
       
       // Start a new telemetry session for this activity
       TelemetryService().startSession();

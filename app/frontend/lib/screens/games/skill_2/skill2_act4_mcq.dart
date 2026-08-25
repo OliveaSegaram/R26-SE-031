@@ -6,13 +6,15 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Activity 4: වචනයට සවන් දී පින්තූරය සොයමු (Listen to Word & Find Image)
 /// Template: audio_image_match_game
 class Skill2Act4Mcq extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill2Act4Mcq({super.key, this.activityNode, this.isRemedial = false});
+  const Skill2Act4Mcq({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill2Act4Mcq> createState() => _Skill2Act4McqState();
@@ -188,6 +190,8 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
     }
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

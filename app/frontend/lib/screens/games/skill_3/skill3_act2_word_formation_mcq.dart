@@ -6,13 +6,15 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Skill 3 Activity 2 (Word Formation MCQ)
 /// Premium redesign: separates instruction from visual equation.
 class Skill3Act2WordFormation extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill3Act2WordFormation({super.key, this.activityNode, this.isRemedial = false});
+  const Skill3Act2WordFormation({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill3Act2WordFormation> createState() => _Skill3Act2WordFormationState();
@@ -189,6 +191,8 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     final equationParts = _extractEquationParts(promptText);
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

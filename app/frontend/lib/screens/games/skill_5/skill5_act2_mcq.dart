@@ -6,13 +6,15 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Skill 5 Activity 2
 /// Premium redesign with interactive animations and world-class UI
 class Skill5Act2Mcq extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill5Act2Mcq({super.key, this.activityNode, this.isRemedial = false});
+  const Skill5Act2Mcq({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill5Act2Mcq> createState() => _Skill5Act2McqState();
@@ -176,6 +178,8 @@ class _Skill5Act2McqState extends State<Skill5Act2Mcq>
     }
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

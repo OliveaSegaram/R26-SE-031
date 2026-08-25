@@ -5,12 +5,14 @@ import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Activity 2: එක සමාන අකුරු (Matching Similar Letters)
 class Skill2Act2IdenticalMatch extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill2Act2IdenticalMatch({super.key, this.activityNode, this.isRemedial = false});
+  const Skill2Act2IdenticalMatch({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill2Act2IdenticalMatch> createState() => _Skill2Act2IdenticalMatchState();
@@ -424,6 +426,8 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
     final promptText = widget.activityNode?.description ?? "එක සමාන අකුරු යුගල තෝරන්න.";
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: widget.activityNode?.title ?? "එක සමාන අකුරු",
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

@@ -6,13 +6,15 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Activity 8: පින්තූරයට ගැලපෙන හිස්තැන පුරවමු (Fill Blank Slot Matching Image)
 /// Template: fill_blank_game
 class Skill4Act2FillBlank extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill4Act2FillBlank({super.key, this.activityNode, this.isRemedial = false});
+  const Skill4Act2FillBlank({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill4Act2FillBlank> createState() => _Skill4Act2FillBlankState();
@@ -154,6 +156,8 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
     }
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

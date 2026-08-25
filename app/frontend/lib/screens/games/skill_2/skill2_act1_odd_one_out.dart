@@ -6,16 +6,16 @@ import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 class Skill2Act1OddOneOut extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
 
-  const Skill2Act1OddOneOut({
-    super.key,
+  const Skill2Act1OddOneOut({super.key,
     this.activityNode,
-    this.isRemedial = false,
-  });
+    this.isRemedial = false, this.studentData});
 
   @override
   State<Skill2Act1OddOneOut> createState() => _Skill2Act1OddOneOutState();
@@ -185,6 +185,8 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
     }
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

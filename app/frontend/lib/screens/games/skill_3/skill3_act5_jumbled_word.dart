@@ -7,6 +7,7 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 class PlacedLetter {
   final String letter;
@@ -17,7 +18,8 @@ class PlacedLetter {
 class Skill3Act5JumbledWord extends StatefulWidget {
   final ActivityNode? activityNode;
   final bool isRemedial;
-  const Skill3Act5JumbledWord({super.key, this.activityNode, this.isRemedial = false});
+  final Map<String, dynamic>? studentData;
+  const Skill3Act5JumbledWord({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill3Act5JumbledWord> createState() => _Skill3Act5JumbledWordState();
@@ -208,6 +210,8 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
     final imageUrl = currentRound['image_url']?.toString();
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

@@ -12,6 +12,7 @@ import '../../../../services/progress_service.dart';
 import 'logic/sorting_generator.dart';
 import 'models/sorting_round.dart';
 import 'widgets/pattern_background.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 // ──────────────────────────────────────────────────────────────
 // Activity 03: Sorting Adventure (Premium Drag & Drop Redesign)
@@ -20,8 +21,9 @@ import 'widgets/pattern_background.dart';
 
 class VisualAct3SortingAdventure extends StatefulWidget {
   final ActivityNode activityNode;
+  final Map<String, dynamic>? studentData;
 
-  const VisualAct3SortingAdventure({Key? key, required this.activityNode})
+  const VisualAct3SortingAdventure({Key? key, required this.activityNode, this.studentData})
       : super(key: key);
 
   @override
@@ -1268,103 +1270,12 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
 
   // ── Celebration Overlay ──
   Widget _buildCelebrationOverlay() {
-    return AnimatedBuilder(
-      animation: _celebrationScale,
-      builder: (context, child) {
-        return Container(
-          color: Colors.black.withValues(alpha: 0.4 * _celebrationScale.value),
-          child: Center(
-            child: Transform.scale(
-              scale: _celebrationScale.value,
-              child: child,
-            ),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF4A90D9).withValues(alpha: 0.2),
-              blurRadius: 30,
-              spreadRadius: 5,
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildStar(36),
-                const SizedBox(width: 10),
-                _buildStar(52),
-                const SizedBox(width: 10),
-                _buildStar(36),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Image.asset(
-              _currentMascot,
-              width: 80,
-              height: 80,
-              fit: BoxFit.contain,
-              errorBuilder: (c, e, s) => const SizedBox(width: 80, height: 80),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'හොඳයි! 🎉',
-              style: AppTypography.sinhala(
-                fontSize: 32,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF3E3E3E),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'ඔබ සියල්ල වර්ග කළා!',
-              style: AppTypography.sinhala(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF6B7280),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            GestureDetector(
-              onTap: _finishActivity,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6DBE6D), Color(0xFF4E9E4E)],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  'ඉදිරියට යමු →',
-                  style: AppTypography.sinhala(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+    return Positioned.fill(
+      child: SharedCelebrationPopup(
+        studentData: widget.studentData,
+        activityTitle: widget.activityNode.title,
+        scaleAnimation: _celebrationScale,
+        onFinish: _finishActivity,
       ),
     );
   }

@@ -9,6 +9,7 @@ import '../../../../theme/app_theme.dart';
 import '../../../../services/tts_service.dart';
 import '../../../../services/progress_service.dart';
 import 'widgets/pattern_background.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 // ──────────────────────────────────────────────────────────────
 // Activity 05: Memory Adventure
@@ -34,7 +35,8 @@ class MemoryRound {
 
 class VisualAct5MemoryHats extends StatefulWidget {
   final ActivityNode activityNode;
-  const VisualAct5MemoryHats({Key? key, required this.activityNode}) : super(key: key);
+  final Map<String, dynamic>? studentData;
+  const VisualAct5MemoryHats({Key? key, required this.activityNode, this.studentData}) : super(key: key);
 
   @override
   _VisualAct5MemoryAdventureState createState() => _VisualAct5MemoryAdventureState();
@@ -1005,51 +1007,11 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   // ── Celebration Overlay ──
   Widget _buildCelebrationOverlay() {
     return Positioned.fill(
-      child: FadeTransition(
-        opacity: _celebrationScale,
-        child: Container(
-          color: Colors.white.withValues(alpha: 0.9),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ScaleTransition(
-                  scale: _celebrationScale,
-                  child: const Icon(Icons.star_rounded, color: Color(0xFFF9C623), size: 120),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'හොඳයි! ඔයා හරිම දක්ෂයි!',
-                  style: AppTypography.sinhala(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF3E3E3E),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: _finishActivity,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4A90D9),
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    elevation: 4,
-                  ),
-                  child: Text(
-                    'ඉදිරියට යමු',
-                    style: AppTypography.sinhala(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      child: SharedCelebrationPopup(
+        studentData: widget.studentData,
+        activityTitle: widget.activityNode.title,
+        scaleAnimation: _celebrationScale,
+        onFinish: _finishActivity,
       ),
     );
   }

@@ -6,13 +6,15 @@ import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Skill 3 Activity 4 (Fill Blank Slot Matching Image)
 /// Template: fill_blank_game
 class Skill3Act4FillBlank extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill3Act4FillBlank({super.key, this.activityNode, this.isRemedial = false});
+  const Skill3Act4FillBlank({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill3Act4FillBlank> createState() => _Skill3Act4FillBlankState();
@@ -161,6 +163,8 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     }
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

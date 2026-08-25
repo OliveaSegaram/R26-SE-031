@@ -6,13 +6,15 @@ import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Activity 3: රටාව මතක තබා ගනිමු (Remember the Pattern)
 /// Template: pattern_memory_game
 class Skill2Act5PatternMemory extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill2Act5PatternMemory({super.key, this.activityNode, this.isRemedial = false});
+  const Skill2Act5PatternMemory({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill2Act5PatternMemory> createState() => _Skill2Act5PatternMemoryState();
@@ -238,6 +240,8 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
 
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,
