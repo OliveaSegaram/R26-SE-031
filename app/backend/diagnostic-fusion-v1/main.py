@@ -1,18 +1,36 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 import logging
+from datetime import datetime
 
 from schemas import FusionRequest, FusionResponse
 from services.xai_engine import get_xai_engine, XAIEngine
+from database import connect_to_mongo, close_mongo_connection, get_db
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("Initializing XAI Engine and MongoDB...")
+    try:
+        await connect_to_mongo()
+        get_xai_engine()
+        logger.info("XAI Engine & DB initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize services: {e}")
+    yield
+    # Shutdown
+    await close_mongo_connection()
+
 app = FastAPI(
     title="C3 — Diagnostic Fusion & XAI Engine",
     description="Multi-Modal Late Fusion XGBoost API with SHAP Explainability",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS config
@@ -23,22 +41,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Initializing XAI Engine...")
-    try:
-        # Pre-load the model into memory
-        get_xai_engine()
-        logger.info("XAI Engine initialized successfully.")
-    except Exception as e:
-        logger.error(f"Failed to load ML models: {e}")
-
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "diagnostic-fusion-v1"}
 
 @app.post("/diagnose", response_model=FusionResponse)
-def diagnose_patient(
+async def diagnose_patient(
     request: FusionRequest,
     engine: XAIEngine = Depends(get_xai_engine)
 ):
@@ -62,6 +70,13 @@ def diagnose_patient(
             clinical_assessment=analysis_result["clinical_assessment"],
             shap_explanations=analysis_result["shap_explanations"]
         )
+        
+        # Save to database
+        db = get_db()
+        diagnosis_doc = response.dict()
+        diagnosis_doc["created_at"] = datetime.utcnow()
+        await db.diagnoses.insert_one(diagnosis_doc)
+        
         return response
         
     except Exception as e:
