@@ -135,7 +135,7 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
         // Success
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('නියමයි! (Great job!)'),
+            content: Text('හොඳයි! (Great job!)'),
             backgroundColor: AppColors.gentleGreen,
           ),
         );
@@ -485,7 +485,7 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
             const Icon(Icons.check_circle_outline_rounded, size: 100, color: AppColors.gentleGreen),
             const SizedBox(height: 24),
             Text(
-              'නියමයි!', 
+              'හොඳයි!', 
               style: AppTypography.sinhala(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.gentleGreenDark),
             ),
             const SizedBox(height: 16),
