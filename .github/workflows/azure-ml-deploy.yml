@@ -12,6 +12,7 @@ on:
       - 'Dockerfile.azure'
       - 'requirements-azure.txt'
       - 'azure_gateway.py'
+      - '.github/workflows/**'
 
 env:
   ACR_NAME: "sipsaramlacr2026"
