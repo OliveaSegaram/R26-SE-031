@@ -633,64 +633,64 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
 
   // ── Card Grid ──
   Widget _buildCardGrid() {
-    // Dynamic sizing and spacing to beautifully balance rows and item visibility
-    double itemSize;
-    double spacing;
-    double hPadding;
-    final total = _items.length;
-    
-    if (total <= 4) {
-      itemSize = 155.0; // Task 1: Nice and large
-      spacing = 16.0;
-      hPadding = 22.0;
-    } else if (total <= 6) {
-      itemSize = 130.0; 
-      spacing = 16.0;
-      hPadding = 22.0;
-    } else if (total <= 9) {
-      itemSize = 105.0; 
-      spacing = 14.0;
-      hPadding = 16.0;
-    } else if (total <= 12) {
-      itemSize = 98.0; // Task 4: Increased slightly
-      spacing = 12.0;
-      hPadding = 16.0;
-    } else {
-      // Task 5: Use maximum screen width to force 4 objects per row and avoid excessive vertical scrolling
-      itemSize = 86.0; 
-      spacing = 8.0;
-      hPadding = 8.0; 
-    }
-
     return LayoutBuilder(
       builder: (context, constraints) {
-        return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          // Dynamic padding to squeeze every drop of width for harder levels
-          padding: EdgeInsets.symmetric(vertical: 12, horizontal: hPadding),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: SizedBox(
-                width: double.infinity,
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: spacing,
-                  runSpacing: spacing,
-                  children: List.generate(_items.length, (index) {
-                    return SizedBox(
-                      width: itemSize,
-                      height: itemSize,
-                      child: _PictureCard(
-                        key: ValueKey('${_currentRoundIndex}_${_items[index].path}_$index'),
-                        item: _items[index],
-                        onTap: () => _onItemTapped(_items[index]),
-                        showHint: _showHint && _items[index].isTarget && !_items[index].isFound,
-                        animationDelay: index * 0.05,
-                      ),
-                    );
-                  }),
-                ),
+        final total = _items.length;
+        if (total == 0) return const SizedBox();
+
+        // Target ideal layout (force slightly larger margins if few items)
+        double hPadding = total <= 6 ? 22.0 : 12.0;
+        double spacing = total <= 6 ? 16.0 : 10.0;
+
+        double maxItemSize = 0.0;
+        
+        // Find best layout (cols/rows) that maximizes item size while fitting entirely within screen
+        for (int cols = 1; cols <= total; cols++) {
+          int rows = (total / cols).ceil();
+          
+          double availableWidth = constraints.maxWidth - (hPadding * 2);
+          double availableHeight = constraints.maxHeight - 24; // Some vertical padding
+
+          double widthPerItem = (availableWidth - (cols - 1) * spacing) / cols;
+          double heightPerItem = (availableHeight - (rows - 1) * spacing) / rows;
+          
+          double currentSize = min(widthPerItem, heightPerItem);
+          
+          // Add a penalty for extremely wide single-row layouts if not necessary
+          if (cols > rows + 2) {
+             currentSize *= 0.8; 
+          }
+
+          if (currentSize > maxItemSize) {
+            maxItemSize = currentSize;
+          }
+        }
+        
+        // Cap the maximum size so they don't get comically huge on tablets or early rounds
+        if (maxItemSize > 160.0) maxItemSize = 160.0;
+
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: hPadding),
+            child: SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: spacing,
+                runSpacing: spacing,
+                children: List.generate(_items.length, (index) {
+                  return SizedBox(
+                    width: maxItemSize,
+                    height: maxItemSize,
+                    child: _PictureCard(
+                      key: ValueKey('${_currentRoundIndex}_${_items[index].path}_$index'),
+                      item: _items[index],
+                      onTap: () => _onItemTapped(_items[index]),
+                      showHint: _showHint && _items[index].isTarget && !_items[index].isFound,
+                      animationDelay: index * 0.05,
+                    ),
+                  );
+                }),
               ),
             ),
           ),
@@ -1002,6 +1002,18 @@ class _PictureCardState extends State<_PictureCard>
     _tapController.reverse();
   }
 
+  List<double> _getHueRotationMatrix(double degrees) {
+    double radians = degrees * pi / 180.0;
+    double c = cos(radians);
+    double s = sin(radians);
+    return [
+      0.213 + c * 0.787 - s * 0.213, 0.715 - c * 0.715 - s * 0.715, 0.072 - c * 0.072 + s * 0.928, 0, 0,
+      0.213 - c * 0.213 + s * 0.143, 0.715 + c * 0.285 + s * 0.140, 0.072 - c * 0.072 - s * 0.283, 0, 0,
+      0.213 - c * 0.213 - s * 0.787, 0.715 - c * 0.715 + s * 0.715, 0.072 + c * 0.928 + s * 0.072, 0, 0,
+      0,                             0,                             0,                             1, 0,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -1098,16 +1110,18 @@ class _PictureCardState extends State<_PictureCard>
                   Widget img = Image.asset(
                     widget.item.path,
                     fit: BoxFit.contain,
-                    color: widget.item.colorHue != null 
-                        ? HSVColor.fromAHSV(1.0, widget.item.colorHue! % 360, 1.0, 1.0).toColor()
-                        : null,
-                    colorBlendMode: widget.item.colorHue != null ? BlendMode.modulate : null,
                     errorBuilder: (c, e, s) => const Icon(
                       Icons.image_not_supported_outlined,
                       color: Color(0xFFBBBBBB),
                       size: 40,
                     ),
                   );
+                  if (widget.item.colorHue != null) {
+                    img = ColorFiltered(
+                      colorFilter: ColorFilter.matrix(_getHueRotationMatrix(widget.item.colorHue!)),
+                      child: img,
+                    );
+                  }
                   if (widget.item.isFlipped) {
                     img = Transform.flip(flipX: true, child: img);
                   }
