@@ -6,17 +6,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../config/api_config.dart';
+
 /// Handles all student-related API calls.
 /// Separated from AuthService for clean architecture.
 class StudentService {
   static String get _baseUrl {
-    // Cloud Server (Render):
-    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
+    return ApiConfig.authBaseUrl;
   }
 
   static String get _telemetryBaseUrl {
-    // Local Testing for the new microservice (Port 8025)
-    return 'http://10.0.2.2:8025/api/v1/auth';
+    return ApiConfig.telemetryBaseUrl;
   }
 
   Future<String?> _getAccessToken() async {

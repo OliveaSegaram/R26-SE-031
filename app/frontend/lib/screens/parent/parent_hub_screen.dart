@@ -11,6 +11,7 @@ import 'therapist_management_screen.dart';
 import 'notifications_screen.dart';
 import 'parent_settings_screen.dart';
 import '../../services/localization_service.dart';
+import '../../config/api_config.dart';
 
 /// Parent Hub Screen — The heart of the parent experience.
 /// A beautifully designed central dashboard showing children overview,
@@ -204,9 +205,7 @@ class _ParentHubScreenState extends State<ParentHubScreen>
                 image: _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty
                     ? DecorationImage(
                         image: NetworkImage(
-                          _profilePictureUrl!.startsWith('http') 
-                              ? _profilePictureUrl! 
-                              : 'https://adaptedmind-auth-api.onrender.com$_profilePictureUrl'
+                          ApiConfig.getProfileImageUrl(_profilePictureUrl!),
                         ),
                         fit: BoxFit.cover,
                       )

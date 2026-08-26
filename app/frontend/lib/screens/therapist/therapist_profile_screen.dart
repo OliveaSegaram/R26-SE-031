@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../services/auth_service.dart';
 import '../welcome_screen.dart';
+import '../../config/api_config.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class TherapistProfileScreen extends StatefulWidget {
@@ -505,11 +506,8 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen>
                         _profilePictureUrl != null &&
                             _profilePictureUrl!.isNotEmpty
                         ? DecorationImage(
-                            // Build the full URL if it's relative
                             image: NetworkImage(
-                              _profilePictureUrl!.startsWith('http')
-                                  ? _profilePictureUrl!
-                                  : 'https://adaptedmind-auth-api.onrender.com$_profilePictureUrl',
+                              ApiConfig.getProfileImageUrl(_profilePictureUrl!),
                             ),
                             fit: BoxFit.cover,
                           )

@@ -16,9 +16,9 @@ MOCK_TELEMETRY_PAYLOAD = {
             "selected_stimulus": "ඩ",
             "stimulus_rendered_ts": 123456000,
             "touch_stream": [
-                {"t_offset_ms": 100, "x": 0.5, "y": 0.5, "action": "DOWN"},
-                {"t_offset_ms": 500, "x": 0.6, "y": 0.6, "action": "MOVE"},
-                {"t_offset_ms": 1000, "x": 0.8, "y": 0.8, "action": "UP"}
+                {"t": 100, "x": 0.5, "y": 0.5, "type": "DOWN"},
+                {"t": 500, "x": 0.6, "y": 0.6, "type": "MOVE"},
+                {"t": 1000, "x": 0.8, "y": 0.8, "type": "UP"}
             ]
         }
     ]
