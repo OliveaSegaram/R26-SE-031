@@ -970,10 +970,18 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         }
 
         final avatarUrl = AvatarUtils.getCorrectedAvatarPath(widget.studentData?['avatar_url'] as String?, 'assets/images/characters/mascots/solo_blue.png');
-        double scaleFactor = 1.05;
-        if (avatarUrl.contains('solo_blue')) {
-          scaleFactor = 0.85; // Reduce size to match visual scale of solo_green
+        
+        // Dynamically scale: 1.05 for the final node (which is larger), 0.85 for normal nodes
+        final bool isTargetLast = currentLevel == levels.length - 1;
+        final double targetScale = isTargetLast ? 1.05 : 0.85;
+        double scaleFactor = targetScale;
+        
+        if (_animatingFromLevel != -1) {
+          final bool isStartLast = _animatingFromLevel == levels.length - 1;
+          final double startScale = isStartLast ? 1.05 : 0.85;
+          scaleFactor = startScale + (targetScale - startScale) * _avatarMoveAnim.value;
         }
+        
         final double containerSize = 76;
         final double halfSize = containerSize / 2;
 
