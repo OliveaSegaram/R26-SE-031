@@ -150,8 +150,7 @@ class _VisualAct4PatternAdventureState
         
         // Bounce the carriage
         _bounceController.forward(from: 0).then((_) {
-          // Sparkle sound
-          SoundUtils.playFeedback('audio/correct.mp3');
+          // Sparkle sound removed as per user request to only have one sound
           
           Future.delayed(const Duration(milliseconds: 800), () {
             if (!mounted) return;
@@ -552,7 +551,7 @@ class _VisualAct4PatternAdventureState
           mainAxisSize: MainAxisSize.min,
           children: [
             Flexible(
-              child: Text('ඊළඟට එන්නේ මොකක්ද?', style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary), textAlign: TextAlign.center),
+              child: Text('රටාවට ගැළපෙන පින්තූරය තෝරන්න', style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary), textAlign: TextAlign.center),
             ),
             const SizedBox(width: 12),
             ScaleTransition(
