@@ -57,9 +57,9 @@ async def diagnose_patient(
     try:
         # Flatten the request into a single dictionary matching the feature columns
         flat_features = {}
-        flat_features.update(request.acoustic_features.dict())
-        flat_features.update(request.kinematic_features.dict())
-        flat_features.update(request.demographics.dict())
+        flat_features.update(request.c1_audio_vector.dict())
+        flat_features.update(request.c2_kinematic_vector.dict())
+        flat_features["student_age_months"] = request.student_age_months
         
         # Analyze
         analysis_result = engine.analyze_patient(flat_features)
@@ -67,7 +67,8 @@ async def diagnose_patient(
         # Construct response
         response = FusionResponse(
             student_id=request.student_id,
-            clinical_assessment=analysis_result["clinical_assessment"],
+            risk_score=analysis_result["clinical_assessment"]["final_predicted_risk"],
+            clinical_subtype=analysis_result["clinical_assessment"]["predicted_subtype"],
             shap_explanations=analysis_result["shap_explanations"]
         )
         
@@ -80,7 +81,7 @@ async def diagnose_patient(
         return response
         
     except Exception as e:
-        logger.error(f"Error during diagnosis: {str(e)}")
+        logger.exception("Error during diagnosis")
         raise HTTPException(status_code=500, detail="Internal ML processing error.")
 
 if __name__ == "__main__":
