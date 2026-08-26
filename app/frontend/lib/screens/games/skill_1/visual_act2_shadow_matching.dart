@@ -588,7 +588,8 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
               }
             }
             
-            if (maxCardSize > 120.0) maxCardSize = 120.0;
+            final double limit = (_currentRoundIndex <= 4) ? 160.0 : 120.0;
+            if (maxCardSize > limit) maxCardSize = limit;
 
             return Center(
               child: Wrap(
@@ -726,11 +727,13 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   // ── Object Tray ──
   Widget _buildObjectTray() {
     if (_roundComplete) {
-      return const SizedBox(height: 150); // Keep space but show nothing
+      return _currentRoundIndex == 0 
+          ? const Expanded(flex: 2, child: SizedBox())
+          : const SizedBox(height: 150); // Keep space but show nothing
     }
     
-    return Container(
-      height: 150, // Slightly taller for premium look
+    final content = Container(
+      height: _currentRoundIndex == 0 ? null : 150,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.5),
@@ -744,7 +747,28 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
           ),
         ],
       ),
-      child: SingleChildScrollView(
+      child: _currentRoundIndex == 0
+          ? LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                controller: _trayScrollController,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Container(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+                  alignment: Alignment.center,
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: _shuffledTrayObjects.map((object) {
+                      return _buildDraggableObject(object);
+                    }).toList(),
+                  ),
+                ),
+              ),
+            )
+          : SingleChildScrollView(
               controller: _trayScrollController,
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -757,6 +781,12 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
               ),
             ),
     );
+
+    if (_currentRoundIndex == 0) {
+      return Expanded(flex: 2, child: content);
+    } else {
+      return content;
+    }
   }
 
   Widget _buildDraggableObject(String object) {
@@ -767,7 +797,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOutBack,
       child: isMatched
-          ? const SizedBox(width: 0, height: 120) // Shrinks to 0 width and disappears smoothly
+          ? SizedBox(width: 0, height: _currentRoundIndex == 0 ? 140 : 120) // Shrinks to 0 width and disappears smoothly
           : Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: AnimatedBuilder(
@@ -805,9 +835,10 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   }
 
   Widget _buildObjectCard(String object) {
+    final double size = _currentRoundIndex == 0 ? 140 : 120;
     return Container(
-      width: 120,
-      height: 120,
+      width: size,
+      height: size,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -847,8 +878,8 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
         child: Transform.scale(
           scale: 1.1,
           child: Container(
-            width: 140,
-            height: 140,
+            width: _currentRoundIndex == 0 ? 160 : 140,
+            height: _currentRoundIndex == 0 ? 160 : 140,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -884,9 +915,10 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   }
 
   Widget _buildDragGhost() {
+    final double size = _currentRoundIndex == 0 ? 140 : 120;
     return Container(
-      width: 120,
-      height: 120,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(28),
