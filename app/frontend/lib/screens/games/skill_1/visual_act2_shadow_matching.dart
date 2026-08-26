@@ -81,8 +81,6 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   // ── Sinhala instructions ──
   static const List<String> _instructions = [
     'සෙවනැල්ලට ගැලපෙන පින්තූරය තෝරන්න!',
-    'සෙවනැල්ලට ගැලපෙන පින්තූරය අදින්න!',
-    'හරිම සෙවනැල්ල හොයමු!',
   ];
   late String _currentInstruction;
 
