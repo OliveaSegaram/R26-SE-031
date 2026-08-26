@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '../services/progress_service.dart';
 import '../services/student_service.dart';
+import '../config/api_config.dart';
 
 class CurriculumIndex {
   final List<SkillSummary> skills;
@@ -148,14 +149,8 @@ class SkillDetail {
 
     return SkillDetail(id: fallbackId, title: fallbackTitle, introText: '', audioUrl: '', activities: []);
   }
-  // Toggle this to 'true' before building the final APK for deployment
-  static const bool _isProduction = false;
-
   static String get _baseUrl {
-    if (_isProduction) {
-      return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
-    }
-    return 'http://10.0.2.2:8015/api/v1/auth';
+    return ApiConfig.authBaseUrl;
   }
 
   static Future<SkillDetail> load(String fileName) async {
