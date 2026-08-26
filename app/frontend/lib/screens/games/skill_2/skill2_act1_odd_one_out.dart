@@ -166,8 +166,8 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final promptText = currentRound['prompt']?.toString() ?? 'වෙනස් පින්තූරය සොයන්න.';
-    final titleText = widget.activityNode?.title ?? 'වෙනස් පින්තූරය සොයමු';
+    final promptText = currentRound['prompt']?.toString() ?? 'නිවැරදි පින්තූරය සොයන්න.';
+    final titleText = widget.activityNode?.title ?? 'නිවැරදි අකුර සොයමු';
     
     String? targetLetter;
     if (currentRound['items'] != null) {
@@ -451,7 +451,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
           item['value'],
           style: TextStyle(
             fontFamily: 'IskoolaPota',
-            fontSize: _shuffledItems.length > 4 ? 44 : 54,
+            fontSize: _shuffledItems.length > 4 ? 56 : 72,
             fontWeight: FontWeight.bold,
             color: textColor,
           ),
