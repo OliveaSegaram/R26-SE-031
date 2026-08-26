@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
 # Copy the unified requirements file
 COPY requirements-azure.txt .
 
+# Suppress pip root warning since we are in an isolated container
+ENV PIP_ROOT_USER_ACTION=ignore
+
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements-azure.txt
 
