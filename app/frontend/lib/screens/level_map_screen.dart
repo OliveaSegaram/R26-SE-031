@@ -1128,6 +1128,11 @@ class _LevelMapScreenState extends State<LevelMapScreen>
                 });
               }
             });
+          } else if (nextLevelIndex == levels.length) {
+            // First time completing the very last activity in this skill!
+            if (mounted) {
+              _showSkillCompleteCelebration();
+            }
           }
           _scrollToCurrentLevel();
         } else {
@@ -1142,6 +1147,174 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     } finally {
       _isNavigating = false;
     }
+  }
+
+  void _showSkillCompleteCelebration() {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      transitionDuration: const Duration(milliseconds: 600),
+      pageBuilder: (context, anim1, anim2) {
+        return _buildCelebrationOverlay();
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return FadeTransition(
+          opacity: anim1,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+              CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+            ),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCelebrationOverlay() {
+    return StatefulBuilder(
+      builder: (context, setStateOverlay) {
+        return Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.85,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.white, AppColors.cream],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(color: AppColors.warmAmber, width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.warmAmber.withValues(alpha: 0.4),
+                    blurRadius: 40,
+                    spreadRadius: 10,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Spinning glow + star
+                  SizedBox(
+                    height: 160,
+                    width: 160,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 2 * pi),
+                          duration: const Duration(seconds: 10),
+                          builder: (context, value, child) {
+                            return Transform.rotate(
+                              angle: value,
+                              child: child,
+                            );
+                          },
+                          child: Icon(
+                            Icons.brightness_7_rounded,
+                            size: 160,
+                            color: AppColors.warmAmber.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.5, end: 1.0),
+                          duration: const Duration(milliseconds: 800),
+                          curve: Curves.elasticOut,
+                          builder: (context, value, child) {
+                            return Transform.scale(
+                              scale: value,
+                              child: child,
+                            );
+                          },
+                          child: const Icon(
+                            Icons.star_rounded,
+                            size: 100,
+                            color: AppColors.warmAmber,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'සුබ පැතුම්!',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.heading(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.warmAmber,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'ඔබ මෙම අදියර සාර්ථකව නිම කළා!\nමීළඟ අදියර දැන් විවෘතයි.',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.body(
+                      fontSize: 18,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // close modal
+                        Navigator.pop(context, 'next_skill'); // pop LevelMapScreen back to Dashboard
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gentleGreen,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 6,
+                        shadowColor: AppColors.gentleGreen.withValues(alpha: 0.5),
+                      ),
+                      child: Text(
+                        'මීළඟ අදියරට යමු',
+                        style: AppTypography.button(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // just close the modal
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: AppColors.borderLight, width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        backgroundColor: AppColors.cardSurface,
+                      ),
+                      child: Text(
+                        'මෙම සිතියමේ රැඳෙන්න',
+                        style: AppTypography.button(
+                          fontSize: 16,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
