@@ -1,9 +1,12 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConfig {
-  /// Toggle this to false for production
-  static const bool isDevelopment = true;
+  /// Check if the environment is set to development
+  static bool get isDevelopment {
+    return dotenv.env['ENVIRONMENT'] != 'production';
+  }
 
   /// Get the base local host dynamically based on platform
   static String get _localHost {
