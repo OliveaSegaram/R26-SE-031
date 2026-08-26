@@ -55,6 +55,9 @@ flutter:
     - assets/images/activity_icons/body_parts/
     - assets/images/activity_icons/flowers/
     - assets/images/activity_icons/basket/
+    - assets/images/activity_icons/places/
+    - assets/images/activity_icons/plants/
+    - assets/images/activity_icons/people/
     - assets/images/skills/
     - assets/images/games/
     - assets/images/story/
