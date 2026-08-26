@@ -71,7 +71,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   static const List<String> _encourageMessages = [
     'හොඳට බලන්න! 👀',
     'ඔයාට පුළුවන්! 💪',
-    'නියමයි, දිගටම! ⭐',
+    'හොඳයි, දිගටම! ⭐',
     'මනාව! 🌟',
     'සුපිරියි! 🎉',
   ];
@@ -104,7 +104,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
 
   static const List<String> _instructions = [
     'හොඳින් මතක තබා ගන්න!', // Look carefully!
-    'රූප තිබෙන තැන් මතක තියාගන්න!', // Remember where the pictures are!
+    'පින්තූර තිබෙන තැන් මතක තියාගන්න!', // Remember where the pictures are!
   ];
   late String _currentInstruction;
 
@@ -282,7 +282,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       _currentPhase = MemoryPhase.recall;
     });
 
-    _playInstruction('මේ රූපය තිබුණේ කොහෙද?');
+    _playInstruction('මේ පින්තූරය තිබුණේ කොහෙද?');
   }
 
   @override
@@ -440,8 +440,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                   const SizedBox(height: 4),
                   _buildGameArea(),
                   const SizedBox(height: 12),
-                  _buildMascotArea(),
-                  const SizedBox(height: 8),
+
                 ],
               ),
             ),
@@ -495,7 +494,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
 
                     Flexible(
                       child: Text(
-                        widget.activityNode.skillTitle.isEmpty ? 'මතක අභියෝගය' : widget.activityNode.skillTitle,
+                        widget.activityNode.title.isEmpty ? 'මතක අභියෝගය' : widget.activityNode.title,
                         style: AppTypography.heading(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -575,7 +574,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   // ── Instruction Card ──
   Widget _buildInstructionCard() {
     final bool isRecall = _currentPhase == MemoryPhase.recall || _currentPhase == MemoryPhase.success;
-    final String text = isRecall ? 'මේ රූපය තිබුණේ කොහෙද?' : _currentInstruction;
+    final String text = isRecall ? 'මේ පින්තූරය තිබුණේ කොහෙද?' : _currentInstruction;
     
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 500),
@@ -690,25 +689,31 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     );
   }
 
-  // ── Main Game Area (Wrap Layout for Cards) ──
   Widget _buildGameArea() {
     return Expanded(
-      child: Center(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Wrap(
-              spacing: 16,
-              runSpacing: 24,
-              alignment: WrapAlignment.center,
-              children: List.generate(_currentRound.itemCount, (index) {
-                final asset = _currentRound.assets[index];
-                return _buildCardWidget(index, asset);
-              }),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 24,
+                    alignment: WrapAlignment.center,
+                    children: List.generate(_currentRound.itemCount, (index) {
+                      final asset = _currentRound.assets[index];
+                      return _buildCardWidget(index, asset);
+                    }),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -980,7 +985,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
               ),
               child: Text(
                 _activityComplete
-                    ? 'නියමයි! 🎉'
+                    ? 'හොඳයි! 🎉'
                     : _currentPhase == MemoryPhase.success
                         ? 'සුපිරියි! ✨'
                         : _currentEncouragement,
@@ -1014,7 +1019,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'නියමයි! ඔයා හරිම දක්ෂයි!',
+                  'හොඳයි! ඔයා හරිම දක්ෂයි!',
                   style: AppTypography.sinhala(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,

@@ -78,7 +78,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   // ── Sinhala instructions ──
   static const List<String> _instructions = [
     'සෙවනැල්ලට ගැලපෙන පින්තූරය තෝරන්න!',
-    'සෙවනැල්ලට ගැලපෙන රූපය අදින්න!',
+    'සෙවනැල්ලට ගැලපෙන පින්තූරය අදින්න!',
     'හරිම සෙවනැල්ල හොයමු!',
   ];
   late String _currentInstruction;
@@ -91,7 +91,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   static const List<String> _encourageMessages = [
     'හොඳට බලන්න! 👀',
     'ඔයාට පුළුවන්! 💪',
-    'නියමයි, දිගටම! ⭐',
+    'හොඳයි, දිගටම! ⭐',
     'මනාව! 🌟',
     'සුපිරියි! 🎉',
   ];
@@ -384,8 +384,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                   const SizedBox(height: 16),
                   _buildObjectTray(),
                   const SizedBox(height: 16),
-                  _buildMascotArea(),
-                  const SizedBox(height: 8),
+
                 ],
               ),
             ),
@@ -439,7 +438,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                   children: [
 
                     Text(
-                      widget.activityNode.skillTitle.isEmpty ? 'Shadow Matching' : widget.activityNode.skillTitle,
+                      widget.activityNode.title.isEmpty ? 'Shadow Matching' : widget.activityNode.title,
                       style: AppTypography.heading(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -950,7 +949,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
               ),
               child: Text(
                 _roundComplete
-                    ? 'නියමයි! 🎉'
+                    ? 'හොඳයි! 🎉'
                     : _currentEncouragement,
                 style: AppTypography.sinhala(
                   fontSize: 15,
@@ -1017,7 +1016,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
             ),
             const SizedBox(height: 16),
             Text(
-              'නියමයි! 🎉',
+              'හොඳයි! 🎉',
               style: AppTypography.sinhala(
                 fontSize: 32,
                 fontWeight: FontWeight.w700,

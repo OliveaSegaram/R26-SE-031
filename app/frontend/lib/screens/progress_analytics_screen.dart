@@ -44,7 +44,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading progress data: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ප්‍රගති දත්ත ලබා ගැනීමේ දෝෂයකි: $e')));
       }
     }
   }
@@ -81,7 +81,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final studentName = widget.studentData?['first_name'] ?? 'Learner';
+    final studentName = widget.studentData?['first_name'] ?? 'සිසුවා';
 
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -90,7 +90,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          '$studentName\'s Progress',
+          'සිසු ප්‍රගතිය',
           style: AppTypography.heading(fontSize: 20, color: Colors.white),
         ),
         leading: IconButton(
@@ -101,7 +101,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
       body: _isLoading
           ? const Center(child: AppLoadingIndicator())
           : _curriculum == null
-              ? const Center(child: Text("No data available"))
+              ? const Center(child: Text("දත්ත නොමැත"))
               : ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
@@ -117,7 +117,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                 : const Icon(Icons.picture_as_pdf_rounded, size: 20),
                             label: Text(
-                              _isDownloadingReport ? 'Generating Report...' : 'Download Clinical Report',
+                              _isDownloadingReport ? 'වාර්තාව සකසමින්...' : 'සායනික වාර්තාව බාගත කරන්න',
                               style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700),
                             ),
                             style: ElevatedButton.styleFrom(
@@ -141,7 +141,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.calmBlue, strokeWidth: 2))
                                 : const Icon(Icons.assessment_rounded, size: 20),
                             label: Text(
-                              _isDownloadingAssessment ? 'Generating Assessment...' : 'Download Assessment PDF',
+                              _isDownloadingAssessment ? 'ඇගයීම සකසමින්...' : 'ඇගයීම් PDF බාගත කරන්න',
                               style: AppTypography.body(fontSize: 15, fontWeight: FontWeight.w700),
                             ),
                             style: ElevatedButton.styleFrom(
@@ -193,7 +193,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '$completedCount / ${skill.totalActivities} Completed',
+                  '$completedCount / ${skill.totalActivities} ක් සම්පූර්ණයි',
                   style: AppTypography.caption(fontSize: 12, color: AppColors.textSecondary),
                 ),
                 Text(
@@ -220,7 +220,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
             ),
             child: detail == null
-                ? const Text("Details unavailable")
+                ? const Text("විස්තර නොමැත")
                 : Column(
                     children: detail.activities.map((activity) {
                       bool isCompleted = ProgressService().isActivityCompleted(skill.id, activity.id);
@@ -254,7 +254,7 @@ class _ProgressAnalyticsScreenState extends State<ProgressAnalyticsScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  'Score: $score%',
+                                  'ලකුණු: $score%',
                                   style: AppTypography.caption(
                                     fontSize: 12,
                                     color: AppColors.orangeDark,

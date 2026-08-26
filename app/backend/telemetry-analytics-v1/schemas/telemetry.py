@@ -7,6 +7,7 @@ class TouchPoint(BaseModel):
     x_ratio: float = Field(..., ge=0.0, le=1.0, description="Horizontal position as fraction of screen width")
     y_ratio: float = Field(..., ge=0.0, le=1.0, description="Vertical position as fraction of screen height")
     timestamp_ms: int = Field(..., ge=0, description="Milliseconds elapsed since round start")
+    type: Optional[str] = Field(default="down", description="Type of touch event: down, move, or up")
 
 class TouchStreamPoint(BaseModel):
     """Component 2: Standardized stream point with actions."""
@@ -79,3 +80,4 @@ class TelemetrySessionSubmit(BaseModel):
     student_id: str
     session_duration_seconds: int
     events: List[TelemetryEvent]
+    device_metrics: Optional[dict] = Field(default_factory=dict, description="Hardware metrics like OS and Model used for normalisation")

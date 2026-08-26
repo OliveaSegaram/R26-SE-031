@@ -94,7 +94,7 @@ class _VisualAct4PatternAdventureState
   static const List<String> _encourageMessages = [
     'හොඳට බලන්න! 👀',
     'ඔයාට පුළුවන්! 💪',
-    'නියමයි, දිගටම! ⭐',
+    'හොඳයි, දිගටම! ⭐',
     'මනාව! 🌟',
     'සුපිරියි! 🎉',
   ];
@@ -398,8 +398,7 @@ class _VisualAct4PatternAdventureState
 
                   const Spacer(flex: 1),
                   
-                  _buildMascotArea(),
-                  const SizedBox(height: 16),
+
                 ],
               ),
             ),
@@ -456,7 +455,7 @@ class _VisualAct4PatternAdventureState
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
 
-                    Text(widget.activityNode.skillTitle.isEmpty ? 'Pattern Adventure' : widget.activityNode.skillTitle,
+                    Text(widget.activityNode.title.isEmpty ? 'Pattern Adventure' : widget.activityNode.title,
                         style: AppTypography.heading(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
@@ -823,7 +822,7 @@ class _VisualAct4PatternAdventureState
               ),
               child: Text(
                 _roundComplete
-                    ? 'නියමයි! 🎉'
+                    ? 'හොඳයි! 🎉'
                     : _currentEncouragement,
                 style: AppTypography.sinhala(
                   fontSize: 16,
@@ -912,7 +911,7 @@ class _VisualAct4PatternAdventureState
             ),
             const SizedBox(height: 24),
             Text(
-              'නියමයි! ඔයා දිනුම්!',
+              'හොඳයි! ඔයා දිනුම්!',
               style: AppTypography.sinhala(
                 fontSize: 26,
                 fontWeight: FontWeight.w900,
