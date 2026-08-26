@@ -105,7 +105,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
 
   // ── Sinhala instructions ──
   static const List<String> _instructions = [
-    'පින්තූර කණ්ඩායම් වලට වෙන් කරමු',
+    'පින්තූර නිවැරදි කූඩයට දමන්න!',
   ];
   late String _currentInstruction;
 
@@ -591,60 +591,65 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     );
   }
 
-  Widget _buildVerticalProgressBar() {
+  Widget _buildHorizontalProgressBar() {
     final progress = _totalObjects == 0 ? 0.0 : _sortedCount / _totalObjects;
     return Container(
-      width: 12,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final safeMaxHeight = constraints.maxHeight.isFinite && constraints.maxHeight > 0 ? constraints.maxHeight : 100.0;
-          final barHeight = safeMaxHeight * 0.8; // Exactly 80% of available height
-          return SizedBox(
-            height: barHeight,
-            child: Stack(
-              alignment: Alignment.bottomCenter,
-              children: [
-                // Track
-                Container(
-                  width: 12,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      width: 1,
-                    ),
-                  ),
+      height: 12,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          // Track
+          Container(
+            width: double.infinity,
+            height: 12,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.06),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  width: 1,
                 ),
-                // Filled glowing bar
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 600),
-                  curve: Curves.easeOutCubic,
-                  width: 12,
-                  height: (progress * barHeight).clamp(0.0, barHeight),
-                  decoration: BoxDecoration(
+              ),
+            ),
+          ),
+          // Filled glowing bar
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeOutCubic,
+                height: 12,
+                width: (progress * constraints.maxWidth).clamp(0.0, constraints.maxWidth),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
                   gradient: const LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
                     colors: [Color(0xFF6DBE6D), Color(0xFF86D286)], // Beautiful soft green
                   ),
-                  borderRadius: BorderRadius.circular(6),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6DBE6D).withValues(alpha: 0.25),
+                      color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
                       blurRadius: 4,
-                      spreadRadius: 1,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
-        );
-      },
-    ),
-  );
+        ],
+      ),
+    );
   }
 
   // ── Shelf Area (Conveyor Belt of Draggables) ──
@@ -655,12 +660,11 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            _buildVerticalProgressBar(),
-            const SizedBox(width: 20),
             Expanded(
               child: _roundComplete 
                 ? const SizedBox() // Disappear entirely when round is complete
                 : Container(
+                    clipBehavior: Clip.hardEdge,
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(24),
@@ -669,21 +673,28 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                         width: 2.0,
                       ),
                     ),
-                    child: Center(
-                      child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
-                  child: Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    alignment: WrapAlignment.center,
-                    children: _visibleObjects.map((obj) => _buildDraggableObject(obj)).toList(),
+                    child: Column(
+                      children: [
+                        _buildHorizontalProgressBar(),
+                        Expanded(
+                          child: Center(
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+                                child: Wrap(
+                                  spacing: 16,
+                                  runSpacing: 16,
+                                  alignment: WrapAlignment.center,
+                                  children: _visibleObjects.map((obj) => _buildDraggableObject(obj)).toList(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-                ),
-              ),
             ),
           ],
         ),
@@ -835,11 +846,11 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   }
 
   // ── Category Zones (Drag Targets) ──
-  Widget _buildCategoryZones() {
-    final categories = _currentRound.categories.keys.toList();
-    
+  Widget _buildCategoryZones({List<String>? customCategories, int flex = 4}) {
+    final categories = customCategories ?? _currentRound.categories.keys.toList();
+    if (categories.isEmpty) return const SizedBox();
     return Expanded(
-      flex: 4,
+      flex: flex,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
@@ -928,49 +939,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                             ),
                           ),
                           
-                          const SizedBox(height: 4),
-                          
-                          // Pill Label below the basket
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: accentColor, // The vibrant category color
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: accentColor.withValues(alpha: 0.4),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    label,
-                                    style: AppTypography.sinhala(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  if (isComplete) ...[
-                                    const SizedBox(width: 4),
-                                    const Icon(Icons.check_circle, color: Colors.white, size: 16),
-                                  ]
-                                ],
-                              ),
-                            ),
-                          ),
+
                         ],
                       ),
 
@@ -1035,8 +1004,8 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     bool isWrong = _lastWrongCategory == categoryKey;
 
     return SizedBox(
-      width: 120,
-      height: 100,
+      width: 180,
+      height: 150,
       child: AnimatedScale(
         scale: isCorrect ? 1.1 : (isWrong ? 0.9 : 1.0),
         duration: const Duration(milliseconds: 300),
