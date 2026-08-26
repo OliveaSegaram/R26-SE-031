@@ -7,6 +7,8 @@ import 'dart:io';
 import 'http_overrides.dart';
 import 'services/localization_service.dart';
 
+import 'config/api_config.dart';
+
 final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
@@ -17,7 +19,7 @@ void main() async {
 
   // Ping the server early to wake up Render free tier in the background
   try {
-    HttpClient().getUrl(Uri.parse('https://adaptedmind-auth-api.onrender.com/api/v1/auth')).then((req) => req.close()).catchError((_) {});
+    HttpClient().getUrl(Uri.parse(ApiConfig.authBaseUrl)).then((req) => req.close()).catchError((_) {});
   } catch (_) {}
 
   // Initialize ProgressService (no longer bypassing student ID)

@@ -14,6 +14,7 @@ import '../../services/student_service.dart';
 import '../../services/progress_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../services/localization_service.dart';
+import '../../config/api_config.dart';
 
 /// Parent Account Screen — Frontend Redesign with World-Class UX
 class ParentSettingsScreen extends StatefulWidget {
@@ -298,11 +299,8 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                     ],
                     image: _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty
                         ? DecorationImage(
-                            // Build the full URL if it's relative
                             image: NetworkImage(
-                              _profilePictureUrl!.startsWith('http') 
-                                  ? _profilePictureUrl! 
-                                  : 'https://adaptedmind-auth-api.onrender.com$_profilePictureUrl'
+                              ApiConfig.getProfileImageUrl(_profilePictureUrl!),
                             ),
                             fit: BoxFit.cover,
                           )

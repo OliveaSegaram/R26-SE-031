@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 class VoiceAnalysisService {
   static final VoiceAnalysisService _instance = VoiceAnalysisService._internal();
@@ -68,16 +69,8 @@ class VoiceAnalysisService {
     return log.toString();
   }
 
-  // Toggle this to 'true' before building the final APK for deployment
-  static const bool _isProduction = false;
-
   static String get _baseUrl {
-    if (_isProduction) {
-      // Replace this with your actual deployed Render/AWS URL
-      return 'https://sipsara-speech-api.onrender.com/stt'; 
-    }
-    // Local development URL
-    return 'http://10.0.2.2:8020/stt';
+    return '${ApiConfig.speechBaseUrl}/stt';
   }
 
   Future<String?> _getAccessToken() async {
