@@ -92,7 +92,8 @@
               "බත්"
             ],
             "correctOption": "හඳ",
-            "correct_index": 0
+            "correct_index": 0,
+            "image_url": "assets/images/games/moon_shining.png"
           },
           {
             "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
@@ -105,7 +106,8 @@
               "මල්"
             ],
             "correctOption": "මල්",
-            "correct_index": 1
+            "correct_index": 1,
+            "image_url": "assets/images/games/flower_blooming.png"
           },
           {
             "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
@@ -120,7 +122,8 @@
               "පොතක්"
             ],
             "correctOption": "පාසල්",
-            "correct_index": 0
+            "correct_index": 0,
+            "image_url": "assets/images/games/girl_going_to_school.png"
           },
           {
             "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
@@ -136,7 +139,8 @@
               "ගල්"
             ],
             "correctOption": "කෑම",
-            "correct_index": 0
+            "correct_index": 0,
+            "image_url": "assets/images/games/mother_cooking.png"
           },
           {
             "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
@@ -149,11 +153,11 @@
               "ගෙදර",
               "චිත්‍රයක්",
               "කිරි",
-              "සීනි",
-              "වතුර"
+              "සීනි"
             ],
             "correctOption": "චිත්‍රයක්",
-            "correct_index": 1
+            "correct_index": 1,
+            "image_url": "assets/images/games/boy_drawing.png"
           }
         ]
       },

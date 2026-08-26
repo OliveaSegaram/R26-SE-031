@@ -177,26 +177,28 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
         child: Column(
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    _buildInstructionCard(instructionText),
-                    SizedBox(height: options.length >= 3 ? 16 : 48),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  _buildInstructionCard(instructionText),
+                  const SizedBox(height: 16),
 
-                    // ── Premium Sequence Card ──
-                    _buildSequenceCard(sequence, correctOption),
+                  // ── Premium Sequence Card (now contains Image) ──
+                  Expanded(
+                    flex: 6,
+                    child: _buildSequenceCard(sequence, correctOption, currentRound['image_url']?.toString()),
+                  ),
 
-                    SizedBox(height: options.length >= 3 ? 16 : 48),
+                  const SizedBox(height: 16),
 
-                    // ── Premium Answer Pool ──
-                    _buildAnswerPool(options, correctOption, rounds.length),
+                  // ── Premium Answer Pool ──
+                  Expanded(
+                    flex: 5,
+                    child: _buildAnswerPool(options, correctOption, rounds.length),
+                  ),
 
-                    const SizedBox(height: 32),
-                  ],
-                ),
+                  const SizedBox(height: 16),
+                ],
               ),
             ),
           ],
@@ -205,13 +207,13 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
     );
   }
 
-  /// Premium floating sequence card with animated blank slot
-  Widget _buildSequenceCard(List<String?> sequence, String correctOption) {
+  /// Premium floating sequence card with image and animated blank slot
+  Widget _buildSequenceCard(List<String?> sequence, String correctOption, String? imageUrl) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(32),
         border: Border.all(
           color: AppColors.warmAmber.withValues(alpha: 0.4),
           width: 3,
@@ -219,27 +221,61 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
         boxShadow: [
           BoxShadow(
             color: AppColors.warmAmber.withValues(alpha: 0.2),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           )
         ],
       ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: sequence.map((item) {
-            final isBlank = (item == null);
-            final currentText = isBlank ? (_isCorrect ? correctOption : '') : item;
-            final isWide = false;
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (imageUrl != null)
+            Flexible(
+              child: Container(
+                width: 210,
+                constraints: const BoxConstraints(maxHeight: 170),
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.warmAmber.withValues(alpha: 0.2),
+                      blurRadius: 16,
+                      spreadRadius: 4,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.asset(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    alignment: imageUrl.contains('moon_shining') ? Alignment.topCenter : Alignment.center,
+                  ),
+                ),
+              ),
+            ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: sequence.map((item) {
+                final isBlank = (item == null);
+                final currentText = isBlank ? (_isCorrect ? correctOption : '') : item;
+                final isWide = false;
 
-            if (isBlank) {
-              return Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: _buildBlankSlot(correctOption, isWide));
-            } else {
-              return Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: _buildFilledSlot(item, isWide));
-            }
-          }).toList(),
-        ),
+                if (isBlank) {
+                  return Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: _buildBlankSlot(correctOption, isWide));
+                } else {
+                  return Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: _buildFilledSlot(item, isWide));
+                }
+              }).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -366,7 +402,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -386,13 +422,18 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
           ),
         ],
       ),
-      child: Wrap(
-        spacing: 16,
-        runSpacing: 16,
-        alignment: WrapAlignment.center,
-        children: List.generate(options.length, (index) {
-          return _buildOptionTile(index, options[index], correctOption, totalRounds, options.length);
-        }),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 350),
+          child: Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            alignment: WrapAlignment.center,
+            children: List.generate(options.length, (index) {
+              return _buildOptionTile(index, options[index], correctOption, totalRounds, options.length);
+            }),
+          ),
+        ),
       ),
     );
   }
@@ -419,7 +460,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
       tileHeight = 75.0;
       fontSize = 36.0;
     } else if (totalOptions == 3) {
-      tileWidth = 155.0;
+      tileWidth = 140.0;
       tileHeight = 75.0;
       fontSize = 36.0;
     }
@@ -485,7 +526,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
           ),
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6.0),
+              padding: const EdgeInsets.symmetric(horizontal: 2.0),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
