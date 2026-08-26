@@ -4,6 +4,7 @@ import '../../services/auth_service.dart';
 import 'therapist_students_screen.dart';
 import 'therapist_messages_screen.dart';
 import 'therapist_profile_screen.dart';
+import '../../config/api_config.dart';
 import 'therapist_student_detail_screen.dart';
 
 class TherapistDashboardScreen extends StatefulWidget {
@@ -249,9 +250,7 @@ class _DashboardHome extends StatelessWidget {
                                     profilePicUrl.isNotEmpty
                                 ? DecorationImage(
                                     image: NetworkImage(
-                                      profilePicUrl.startsWith('http')
-                                          ? profilePicUrl
-                                          : 'https://adaptedmind-auth-api.onrender.com$profilePicUrl',
+                                      ApiConfig.getProfileImageUrl(profilePicUrl),
                                     ),
                                     fit: BoxFit.cover,
                                   )
