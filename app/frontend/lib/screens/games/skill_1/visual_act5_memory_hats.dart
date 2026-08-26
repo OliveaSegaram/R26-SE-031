@@ -285,7 +285,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       _currentPhase = MemoryPhase.recall;
     });
 
-    _playInstruction('මේ පින්තූරය තිබුණේ කොහෙද?');
+    _playInstruction('මේ පින්තූරය තිබූ තැන තෝරන්න');
   }
 
   @override
@@ -579,7 +579,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   // ── Instruction Card ──
   Widget _buildInstructionCard() {
     final bool isRecall = _currentPhase == MemoryPhase.recall || _currentPhase == MemoryPhase.success;
-    final String text = isRecall ? 'මේ පින්තූරය තිබුණේ කොහෙද?' : _currentInstruction;
+    final String text = isRecall ? 'මේ පින්තූරය තිබූ තැන තෝරන්න' : _currentInstruction;
     
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 500),
