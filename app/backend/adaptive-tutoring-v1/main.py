@@ -40,18 +40,18 @@ async def update_interaction(request: InteractionRequest):
         item_difficulties = []
         theta = 0.0
         
-    current_prob = knowledge_state.get(request.target_kc, bkt_engine.priors["default"][0])
+    current_prob = knowledge_state.get(request.knowledge_component_id, bkt_engine.priors["default"][0])
     
     # 1. Update BKT State
     new_prob = bkt_engine.update_knowledge_state(
         current_prob=current_prob,
-        target_kc=request.target_kc,
+        target_kc=request.knowledge_component_id,
         is_correct=request.is_correct
     )
-    knowledge_state[request.target_kc] = new_prob
+    knowledge_state[request.knowledge_component_id] = new_prob
     
     # Mock item difficulty based on target KC (normally this would be fetched from an item bank)
-    mock_item_b = 0.5 if request.target_kc == "KC_conjunct_consonants" else (0.2 if request.target_kc == "KC_vowel_diacritics" else 0.0)
+    mock_item_b = 0.5 if request.knowledge_component_id == "KC_conjunct_consonants" else (0.2 if request.knowledge_component_id == "KC_vowel_diacritics" else 0.0)
     item_difficulties.append(mock_item_b)
     
     # Simple theta update (mock adjustment for demonstration)
@@ -60,15 +60,17 @@ async def update_interaction(request: InteractionRequest):
     else:
         theta -= 0.1
     
-    # 2. Check Fatigue via IRT SE
-    terminate_session = irt_engine.should_terminate_session(theta, item_difficulties)
+    # 2. Check Fatigue via IRT SE or Time
+    terminate_session = irt_engine.should_terminate_session(theta, item_difficulties) or request.current_session_duration_sec > 900
     
     # 3. Determine ZPD Scaffolding
-    ui_scaffolding = policy_engine.determine_scaffolding(
-        target_kc=request.target_kc,
-        current_prob=new_prob,
-        dyslexia_risk_profile=request.dyslexia_risk_profile
-    )
+    scaffold_level = 0
+    if new_prob < 0.4:
+        scaffold_level = 2
+    elif new_prob < 0.8:
+        scaffold_level = 1
+        
+    next_kc_id = "KC_vowel_diacritics" if request.knowledge_component_id == "KC_mirror_consonants" else "KC_mirror_consonants"
     
     # Update DB
     await database.bkt_states_collection.update_one(
@@ -82,8 +84,9 @@ async def update_interaction(request: InteractionRequest):
     )
     
     next_action = NextAction(
-        terminate_session=terminate_session,
-        ui_scaffolding=ui_scaffolding
+        next_kc_id=next_kc_id,
+        scaffold_level=scaffold_level,
+        terminate_session=terminate_session
     )
     
     return TutoringResponse(

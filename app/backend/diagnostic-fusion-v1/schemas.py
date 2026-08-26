@@ -22,9 +22,9 @@ class Demographics(BaseModel):
 
 class FusionRequest(BaseModel):
     student_id: str = Field(..., description="Unique ID for the student")
-    acoustic_features: AcousticFeatures
-    kinematic_features: KinematicFeatures
-    demographics: Demographics
+    c1_audio_vector: AcousticFeatures
+    c2_kinematic_vector: KinematicFeatures
+    student_age_months: int = Field(..., description="Crucial baseline anchor")
 
 class ClinicalAssessment(BaseModel):
     base_prevalence_risk: float
@@ -44,5 +44,6 @@ class ShapExplanationsData(BaseModel):
 class FusionResponse(BaseModel):
     student_id: str
     component: str = "Component_3_XAI_Fusion"
-    clinical_assessment: ClinicalAssessment
+    risk_score: float
+    clinical_subtype: str
     shap_explanations: ShapExplanationsData

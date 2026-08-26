@@ -11,10 +11,10 @@ class TouchPoint(BaseModel):
 
 class TouchStreamPoint(BaseModel):
     """Component 2: Standardized stream point with actions."""
-    t_offset_ms: int = Field(..., ge=0)
+    t: int = Field(..., ge=0)
     x: float = Field(..., ge=0.0, le=1.0)
     y: float = Field(..., ge=0.0, le=1.0)
-    action: str = Field(..., description="DOWN, MOVE, or UP")
+    type: str = Field(..., description="DOWN, MOVE, or UP")
 
 
 class TelemetryEvent(BaseModel):
@@ -55,6 +55,10 @@ class TelemetryEvent(BaseModel):
     target_stimulus: Optional[str] = None
     selected_stimulus: Optional[str] = None
     stimulus_rendered_ts: Optional[int] = None
+    screen_width_px: Optional[int] = Field(default=None, description="Screen width in pixels for normalization")
+    screen_height_px: Optional[int] = Field(default=None, description="Screen height in pixels for normalization")
+    target_id: Optional[str] = Field(default=None, description="E.g., ba_letter")
+    distractor_matrix: Optional[dict] = Field(default_factory=dict, description="E.g., {'visual': 'da_letter', 'phonetic': 'bha_letter'}")
     touch_stream: List[TouchStreamPoint] = Field(
         default_factory=list,
         description="Component 2: Action-based touch stream for deterministic kinematic extraction."
