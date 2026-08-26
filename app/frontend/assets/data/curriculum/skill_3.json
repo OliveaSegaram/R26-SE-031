@@ -137,7 +137,7 @@
       },
       {
         "id": "act_3",
-        "title": "ශබ්දයට වචනය තෝරමු",
+        "title": "වචන අසා හඳුනා ගනිමු",
         "description": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
         "telemetry_tags": [
           "listening_comprehension",

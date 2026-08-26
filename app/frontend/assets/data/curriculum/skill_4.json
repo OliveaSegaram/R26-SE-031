@@ -73,7 +73,7 @@
       },
       {
         "id": "act_2",
-        "title": "අඩු වචනය සොයමු",
+        "title": "වචන යොදා වාක්‍ය හදමු",
         "description": "වාක්‍යයේ හිස්තැනට සුදුසු වචනය තෝරන්න",
         "telemetry_tags": [
           "sentence_structure",
@@ -159,7 +159,7 @@
       },
       {
         "id": "act_3",
-        "title": "වචන යොදා වාක්‍ය හදමු",
+        "title": "වාක්‍ය අසා හඳුනා ගනිමු",
         "description": "වචන නිවැරදිව ගලපා වාක්‍යය සාදමු",
         "telemetry_tags": [
           "sentence_structure",

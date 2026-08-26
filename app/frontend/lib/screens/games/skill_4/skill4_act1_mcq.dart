@@ -242,12 +242,12 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
                 ),
               ),
             ),
-            SizedBox(height: options.length > 3 ? 16 : 32),
+            const SizedBox(height: 16),
             if (imageUrl != null)
               Container(
-                margin: EdgeInsets.only(bottom: options.length > 3 ? 16 : 32),
-                width: options.length > 3 ? 180 : 240,
-                height: options.length > 3 ? 180 : 240,
+                margin: const EdgeInsets.only(bottom: 16),
+                width: 200,
+                height: 200,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
