@@ -16,6 +16,10 @@ async def startup_db_client():
 async def shutdown_db_client():
     await close_mongo_connection()
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "adaptive-tutoring-v1"}
+
 @app.post("/update_interaction", response_model=TutoringResponse)
 async def update_interaction(request: InteractionRequest):
     # Retrieve student's current knowledge state from DB
