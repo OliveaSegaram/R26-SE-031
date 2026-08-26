@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Activity 2: එක සමාන අකුරු (Matching Similar Letters)
 class Skill2Act2IdenticalMatch extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill2Act2IdenticalMatch({super.key, this.activityNode, this.isRemedial = false});
+  const Skill2Act2IdenticalMatch({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill2Act2IdenticalMatch> createState() => _Skill2Act2IdenticalMatchState();
@@ -93,7 +96,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
       setState(() {
         _isBottomLetterCorrect = true;
       });
-      await _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
       
       // Brief delay to show green color before hiding
       Future.delayed(const Duration(milliseconds: 400), () {
@@ -116,7 +119,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
       setState(() {
         _isBottomLetterCorrect = false;
       });
-      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       
       // Briefly show error state, but KEEP the top selection locked!
       Future.delayed(const Duration(milliseconds: 600), () {
@@ -424,6 +427,8 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
     final promptText = widget.activityNode?.description ?? "එක සමාන අකුරු යුගල තෝරන්න.";
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: widget.activityNode?.title ?? "එක සමාන අකුරු",
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

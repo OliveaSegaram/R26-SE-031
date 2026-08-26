@@ -7,8 +7,8 @@
     "activities": [
       {
         "id": "act_1",
-        "title": "වෙනස් අකුර සොයමු",
-        "description": "වෙනස් පින්තූරය හෝ අකුර සොයා ඒ මත ඔබන්න.",
+        "title": "නිවැරදි අකුර සොයමු",
+        "description": "නිවැරදි පින්තූරය හෝ අකුර සොයා ඒ මත ඔබන්න.",
         "telemetry_tags": [
           "visual_discrimination",
           "odd_one_out"

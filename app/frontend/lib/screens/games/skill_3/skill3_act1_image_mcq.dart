@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
@@ -6,13 +7,15 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Skill 3 Activity 1 (Image MCQ)
 /// Premium redesign: Displays a central Image and the child must select the matching word.
 class Skill3Act1ImageMcq extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill3Act1ImageMcq({super.key, this.activityNode, this.isRemedial = false});
+  const Skill3Act1ImageMcq({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill3Act1ImageMcq> createState() => _Skill3Act1ImageMcqState();
@@ -114,7 +117,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
       setState(() {
         _isCorrect = true;
       });
-      await _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
 
       // Happy image bounce on success
       _imageBounceController.reset();
@@ -151,7 +154,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
         }
       });
     } else {
-      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       Future.delayed(const Duration(milliseconds: 600), () {
         if (!mounted) return;
         setState(() {
@@ -193,6 +196,8 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     }
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

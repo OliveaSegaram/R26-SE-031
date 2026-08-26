@@ -257,10 +257,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
   /// Called after all rounds are completed to show the completion screen.
   void completeActivity(BuildContext context) {
-    int finalScore = 0;
-    if (_roundsCompletedTotal > 0) {
-      finalScore = (_totalScore / _roundsCompletedTotal).round().clamp(0, 100);
-    }
+    int finalScore = 100; // Always award 100% for completing the activity
 
     Navigator.push(
       context,

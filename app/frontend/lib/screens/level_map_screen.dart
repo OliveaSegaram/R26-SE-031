@@ -970,10 +970,18 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         }
 
         final avatarUrl = AvatarUtils.getCorrectedAvatarPath(widget.studentData?['avatar_url'] as String?, 'assets/images/characters/mascots/solo_blue.png');
-        double scaleFactor = 1.05;
-        if (avatarUrl.contains('solo_blue')) {
-          scaleFactor = 0.85; // Reduce size to match visual scale of solo_green
+        
+        // Dynamically scale: 1.05 for the final node (which is larger), 0.85 for normal nodes
+        final bool isTargetLast = currentLevel == levels.length - 1;
+        final double targetScale = isTargetLast ? 1.05 : 0.85;
+        double scaleFactor = targetScale;
+        
+        if (_animatingFromLevel != -1) {
+          final bool isStartLast = _animatingFromLevel == levels.length - 1;
+          final double startScale = isStartLast ? 1.05 : 0.85;
+          scaleFactor = startScale + (targetScale - startScale) * _avatarMoveAnim.value;
         }
+        
         final double containerSize = 76;
         final double halfSize = containerSize / 2;
 
@@ -1044,7 +1052,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
       final fails = ProgressService().getFailureCount(widget.skillMap.id, level.id);
       final bool isRemedial = fails >= 2;
 
-      Widget nextScreen = GameFactory.buildGame(level, isRemedial: isRemedial);
+      Widget nextScreen = GameFactory.buildGame(level, isRemedial: isRemedial, studentData: widget.studentData);
       
       // Start a new telemetry session for this activity
       TelemetryService().startSession();
@@ -1087,40 +1095,50 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         // Mark it completed instantly in cache so dashboard updates immediately if user exits early.
         await ProgressService().markActivityCompleted(widget.skillMap.id, level.id);
 
-        // Show progress filling up to 100% first
-        setState(() {
-          _animatingProgressForLevel = index;
-        });
-        
-        // Wait for the TweenAnimationBuilder to complete its 1.2s animation
-        await Future.delayed(const Duration(milliseconds: 1200));
-        
-        if (mounted) {
+        if (!isCompleted) {
+          // Show progress filling up to 100% first
           setState(() {
-            _animatingProgressForLevel = -1;
+            _animatingProgressForLevel = index;
           });
-        }
-        
-        // Wait a tiny bit for the user to admire the green "pop"
-        await Future.delayed(const Duration(milliseconds: 500));
+          
+          // Wait for the TweenAnimationBuilder to complete its 1.2s animation
+          await Future.delayed(const Duration(milliseconds: 1200));
+          
+          if (mounted) {
+            setState(() {
+              _animatingProgressForLevel = -1;
+            });
+          }
+          
+          // Wait a tiny bit for the user to admire the green "pop"
+          await Future.delayed(const Duration(milliseconds: 500));
 
-        final nextLevelIndex = index + 1;
-        if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
-          setState(() {
-            _animatingFromLevel = currentLevel;
-            currentLevel = nextLevelIndex;
-          });
+          final nextLevelIndex = index + 1;
+          if (nextLevelIndex > currentLevel && nextLevelIndex < levels.length) {
+            setState(() {
+              _animatingFromLevel = currentLevel;
+              currentLevel = nextLevelIndex;
+            });
 
-          // Trigger smooth avatar glide animation to the newly unlocked activity
-          _unlockController.forward(from: 0.0).then((_) {
+            // Trigger smooth avatar glide animation to the newly unlocked activity
+            _unlockController.forward(from: 0.0).then((_) {
+              if (mounted) {
+                setState(() {
+                  _animatingFromLevel = -1;
+                });
+              }
+            });
+          } else if (nextLevelIndex == levels.length) {
+            // First time completing the very last activity in this skill!
             if (mounted) {
-              setState(() {
-                _animatingFromLevel = -1;
-              });
+              _showSkillCompleteCelebration();
             }
-          });
+          }
+          _scrollToCurrentLevel();
+        } else {
+          setState(() {});
+          _refreshCurrentLevel();
         }
-        _scrollToCurrentLevel();
       } else {
         // Rebuild UI to show partial progress
         setState(() {});
@@ -1129,6 +1147,174 @@ class _LevelMapScreenState extends State<LevelMapScreen>
     } finally {
       _isNavigating = false;
     }
+  }
+
+  void _showSkillCompleteCelebration() {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      transitionDuration: const Duration(milliseconds: 600),
+      pageBuilder: (context, anim1, anim2) {
+        return _buildCelebrationOverlay();
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return FadeTransition(
+          opacity: anim1,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+              CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+            ),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCelebrationOverlay() {
+    return StatefulBuilder(
+      builder: (context, setStateOverlay) {
+        return Material(
+          color: Colors.transparent,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.85,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.white, AppColors.cream],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(color: AppColors.warmAmber, width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.warmAmber.withValues(alpha: 0.4),
+                    blurRadius: 40,
+                    spreadRadius: 10,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Spinning glow + star
+                  SizedBox(
+                    height: 160,
+                    width: 160,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 2 * pi),
+                          duration: const Duration(seconds: 10),
+                          builder: (context, value, child) {
+                            return Transform.rotate(
+                              angle: value,
+                              child: child,
+                            );
+                          },
+                          child: Icon(
+                            Icons.brightness_7_rounded,
+                            size: 160,
+                            color: AppColors.warmAmber.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.5, end: 1.0),
+                          duration: const Duration(milliseconds: 800),
+                          curve: Curves.elasticOut,
+                          builder: (context, value, child) {
+                            return Transform.scale(
+                              scale: value,
+                              child: child,
+                            );
+                          },
+                          child: const Icon(
+                            Icons.star_rounded,
+                            size: 100,
+                            color: AppColors.warmAmber,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'සුබ පැතුම්!',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.heading(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.warmAmber,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'ඔබ මෙම අදියර සාර්ථකව නිම කළා!\nමීළඟ අදියර දැන් විවෘතයි.',
+                    textAlign: TextAlign.center,
+                    style: AppTypography.body(
+                      fontSize: 18,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // close modal
+                        Navigator.pop(context, 'next_skill'); // pop LevelMapScreen back to Dashboard
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gentleGreen,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 6,
+                        shadowColor: AppColors.gentleGreen.withValues(alpha: 0.5),
+                      ),
+                      child: Text(
+                        'මීළඟ අදියරට යමු',
+                        style: AppTypography.button(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // just close the modal
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: AppColors.borderLight, width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        backgroundColor: AppColors.cardSurface,
+                      ),
+                      child: Text(
+                        'මෙම සිතියමේ රැඳෙන්න',
+                        style: AppTypography.button(
+                          fontSize: 16,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

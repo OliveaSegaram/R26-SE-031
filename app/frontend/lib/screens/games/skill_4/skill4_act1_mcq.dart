@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
@@ -6,13 +7,15 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Activity 9: වචනයට සවන් දී පින්තූරය සොයමු (Listen to Word & Find Image)
 /// Template: audio_image_match_game
 class Skill4Act1Mcq extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill4Act1Mcq({super.key, this.activityNode, this.isRemedial = false});
+  const Skill4Act1Mcq({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill4Act1Mcq> createState() => _Skill4Act1McqState();
@@ -72,7 +75,7 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
       setState(() {
         _isCorrect = true;
       });
-      await _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
 
       Future.delayed(const Duration(milliseconds: 1400), () {
         if (!mounted) return;
@@ -103,7 +106,7 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
         }
       });
     } else {
-      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted && !_isCorrect) {
           setState(() {
@@ -174,6 +177,8 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
     }
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,
@@ -237,12 +242,12 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
                 ),
               ),
             ),
-            SizedBox(height: options.length > 3 ? 16 : 32),
+            const SizedBox(height: 16),
             if (imageUrl != null)
               Container(
-                margin: EdgeInsets.only(bottom: options.length > 3 ? 16 : 32),
-                width: options.length > 3 ? 180 : 240,
-                height: options.length > 3 ? 180 : 240,
+                margin: const EdgeInsets.only(bottom: 16),
+                width: 200,
+                height: 200,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),

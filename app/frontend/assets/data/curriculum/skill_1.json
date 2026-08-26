@@ -7,8 +7,8 @@
     "activities": [
       {
         "id": "act_1",
-        "title": "සඟවුණු පින්තූර සොයමු",
-        "description": "සඟවා ඇති පින්තූර සොයන්න.",
+        "title": "සැඟවුණු පින්තූර සොයමු",
+        "description": "සැඟවා ඇති පින්තූර සොයන්න.",
         "file_path": "",
         "telemetry_tags": [
           "visual",
@@ -64,8 +64,8 @@
       },
       {
         "id": "act_2",
-        "title": "වෙනස් පින්තූරය සොයමු",
-        "description": "වෙනස් පින්තූරය තෝරන්න.",
+        "title": "සෙවණැල්ලට පින්තූරය ගළපමු",
+        "description": "සෙවණැල්ලට ගැලපෙන පින්තූරය තෝරන්න.",
         "file_path": "skill_visual/activity_4.json",
         "telemetry_tags": [
           "visual",

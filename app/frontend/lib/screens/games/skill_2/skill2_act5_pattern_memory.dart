@@ -1,18 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 /// Activity 3: රටාව මතක තබා ගනිමු (Remember the Pattern)
 /// Template: pattern_memory_game
 class Skill2Act5PatternMemory extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill2Act5PatternMemory({super.key, this.activityNode, this.isRemedial = false});
+  const Skill2Act5PatternMemory({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill2Act5PatternMemory> createState() => _Skill2Act5PatternMemoryState();
@@ -108,7 +111,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
       setState(() {
         _wrongTappedOption = item;
       });
-      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
           setState(() {
@@ -140,7 +143,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
       setState(() {
         _isCorrect = true;
       });
-      await _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
 
       Future.delayed(const Duration(milliseconds: 1400), () {
         if (!mounted) return;
@@ -238,6 +241,8 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory> with 
 
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,

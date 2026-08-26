@@ -1,21 +1,22 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
 import '../../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
 class Skill2Act1OddOneOut extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
 
-  const Skill2Act1OddOneOut({
-    super.key,
+  const Skill2Act1OddOneOut({super.key,
     this.activityNode,
-    this.isRemedial = false,
-  });
+    this.isRemedial = false, this.studentData});
 
   @override
   State<Skill2Act1OddOneOut> createState() => _Skill2Act1OddOneOutState();
@@ -102,7 +103,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
       setState(() {
         _foundIndices.add(index);
       });
-      await _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
       
       if (_foundIndices.length == _targetCount) {
         setState(() {
@@ -143,7 +144,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
       setState(() {
         _wrongIndices.add(index);
       });
-      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       
       context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(0);
       
@@ -165,8 +166,8 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final promptText = currentRound['prompt']?.toString() ?? 'වෙනස් පින්තූරය සොයන්න.';
-    final titleText = widget.activityNode?.title ?? 'වෙනස් පින්තූරය සොයමු';
+    final promptText = currentRound['prompt']?.toString() ?? 'නිවැරදි පින්තූරය සොයන්න.';
+    final titleText = widget.activityNode?.title ?? 'නිවැරදි අකුර සොයමු';
     
     String? targetLetter;
     if (currentRound['items'] != null) {
@@ -185,6 +186,8 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
     }
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,
@@ -448,7 +451,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
           item['value'],
           style: TextStyle(
             fontFamily: 'IskoolaPota',
-            fontSize: _shuffledItems.length > 4 ? 44 : 54,
+            fontSize: _shuffledItems.length > 4 ? 56 : 72,
             fontWeight: FontWeight.bold,
             color: textColor,
           ),
