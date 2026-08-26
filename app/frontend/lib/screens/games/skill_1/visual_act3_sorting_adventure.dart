@@ -105,9 +105,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
 
   // ── Sinhala instructions ──
   static const List<String> _instructions = [
-    'පින්තූර නිවැරදි තැනට අදින්න!',
-    'කණ්ඩායම් වලට වෙන් කරමු!',
-    'නිවැරදි කොටුවට දමන්න!',
+    'පින්තූර කණ්ඩායම් වලට වෙන් කරමු',
   ];
   late String _currentInstruction;
 
@@ -1022,10 +1020,10 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         secondaryColor = const Color(0xFFD9A000);
         decorationPattern = '⭐';
         break;
-      case 'nature':
-        categoryIcon = Icons.eco_rounded;
-        secondaryColor = const Color(0xFF9E639E);
-        decorationPattern = '🌿';
+      case 'flowers':
+        categoryIcon = Icons.local_florist_rounded;
+        secondaryColor = const Color(0xFFD81B60);
+        decorationPattern = '🌸';
         break;
       default:
         categoryIcon = Icons.category_rounded;
@@ -1039,175 +1037,23 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     return SizedBox(
       width: 120,
       height: 100,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        clipBehavior: Clip.none,
-        children: [
-          // Back inside of bucket
-          Positioned(
-            top: 8,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: 100,
-              height: 35,
-              decoration: BoxDecoration(
-                color: isCorrect 
-                    ? const Color(0xFF5AB65A) // Darker green for inside
-                    : (isWrong ? const Color(0xFFD6695A) : secondaryColor), // Darker red for inside
-                borderRadius: BorderRadius.circular(50),
-              ),
+      child: AnimatedScale(
+        scale: isCorrect ? 1.1 : (isWrong ? 0.9 : 1.0),
+        duration: const Duration(milliseconds: 300),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: isCorrect ? Colors.green : (isWrong ? Colors.red : Colors.transparent),
+              width: (isCorrect || isWrong) ? 3 : 0,
             ),
+            borderRadius: BorderRadius.circular(20),
           ),
-          // Deep shadow hole
-          Positioned(
-            top: 14,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: 86,
-              height: 22,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(40),
-              ),
-            ),
+          child: Image.asset(
+            'assets/images/activity_icons/basket/basket_$categoryKey.png',
+            fit: BoxFit.contain,
           ),
-          // Main Body
-          Positioned(
-            bottom: 5, // Lifted slightly to make room for emblem overflow
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: 110,
-              height: 75,
-              decoration: BoxDecoration(
-                gradient: isCorrect 
-                    ? const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF6DBE6D), Color(0xFF5AB65A)],
-                      )
-                    : (isWrong 
-                        ? const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFFE87C6D), Color(0xFFD6695A)],
-                          )
-                        : LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [accentColor, secondaryColor],
-                          )),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-                boxShadow: [
-                  if (isCorrect)
-                    BoxShadow(
-                      color: const Color(0xFF6DBE6D).withValues(alpha: 0.6),
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                    )
-                  else if (isWrong)
-                    BoxShadow(
-                      color: const Color(0xFFE87C6D).withValues(alpha: 0.6),
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                    )
-                  else
-                    BoxShadow(
-                      color: secondaryColor.withValues(alpha: 0.5),
-                      offset: const Offset(0, 6),
-                      blurRadius: 10,
-                    ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  // Subtle Pattern
-                  Positioned(
-                    left: 15,
-                    top: 15,
-                    child: Transform.rotate(
-                      angle: -0.2,
-                      child: Text(decorationPattern, style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.5))),
-                    ),
-                  ),
-                  Positioned(
-                    right: 15,
-                    bottom: 25,
-                    child: Transform.rotate(
-                      angle: 0.2,
-                      child: Text(decorationPattern, style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.5))),
-                    ),
-                  ),
-                  // Shine highlight on left edge
-                  Positioned(
-                    left: 12,
-                    top: 8,
-                    bottom: 12,
-                    child: Container(
-                      width: 8,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Front Rim
-          Positioned(
-            top: 8,
-            child: Container(
-              width: 110,
-              height: 35,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.4),
-                    Colors.white.withValues(alpha: 0.0),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(55),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  width: 3,
-                ),
-              ),
-            ),
-          ),
-          // Front Emblem (Category Indicator)
-          Positioned(
-            bottom: -5,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(color: accentColor, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Icon(
-                  categoryIcon,
-                  color: secondaryColor,
-                  size: 24,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
