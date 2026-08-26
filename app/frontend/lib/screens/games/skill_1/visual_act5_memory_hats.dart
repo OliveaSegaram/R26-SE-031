@@ -102,7 +102,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
     'animals/rabbit.png', 'animals/turtle.png',
     'fruits_food/apple.png', 'fruits_food/banana.png', 'fruits_food/grapes.png',
     'fruits_food/ice_cream.png', 'fruits_food/mango.png', 'fruits_food/orange.png', 'fruits_food/watermelon.png',
-    'nature/flower.png', 'nature/leaf.png', 'nature/sun.png',
+    'flowers/nil_manel.png', 'flowers/nelum.png', 'flowers/flower_05.png',
   ];
 
   static const List<String> _instructions = [
