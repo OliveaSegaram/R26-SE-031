@@ -35,21 +35,22 @@ class ApiConfig {
     return 'https://adaptedmind-auth-api.onrender.com/api/v1/specialists';
   }
 
-  /// Speech Monitoring API (Port 8020)
+  /// Speech Monitoring API (Port 8020 locally, /speech on Azure)
   static String get speechBaseUrl {
     if (isDevelopment) {
       return 'http://$_localHost:8020';
     }
-    return 'https://sipsara-speech-api.onrender.com';
+    // Deployed to Azure ML Gateway
+    return 'https://sipsara-ml-backend-app.azurewebsites.net/speech';
   }
 
-  /// Telemetry Analytics API (Port 8025)
+  /// Telemetry Analytics API (Port 8025 locally, /telemetry on Azure)
   static String get telemetryBaseUrl {
     if (isDevelopment) {
       return 'http://$_localHost:8025/api/v1/auth';
     }
-    // Fallback or production URL (assuming it would be deployed similarly)
-    return 'https://sipsara-telemetry-api.onrender.com/api/v1/auth';
+    // Deployed to Azure ML Gateway
+    return 'https://sipsara-ml-backend-app.azurewebsites.net/telemetry/api/v1/auth';
   }
 
   // --- Helper Methods ---

@@ -30,10 +30,13 @@ def start_services():
             continue
             
         print(f"[START] {svc['name']} on port {svc['port']}...")
+        env = os.environ.copy()
+        env["PORT"] = str(svc["port"])
+        
         p = subprocess.Popen(
             [sys.executable, str(main_py)],
             cwd=str(svc_path),
-            env=os.environ.copy()
+            env=env
         )
         processes.append(p)
 
