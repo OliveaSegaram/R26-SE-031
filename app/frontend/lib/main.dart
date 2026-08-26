@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/progress_service.dart';
@@ -13,6 +14,9 @@ final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>()
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
   
   // Set global HTTP overrides to fix long hangs (like 4 min IPv6 timeouts)
   HttpOverrides.global = MyHttpOverrides();
