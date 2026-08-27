@@ -261,15 +261,10 @@ class StudentService {
   /// Returns null on success, or an error message string on failure.
   Future<String?> submitTelemetry(Map<String, dynamic> payload) async {
     try {
-      final token = await _getAccessToken();
-      if (token == null) return 'Not authenticated.';
-
+      final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$_telemetryBaseUrl/telemetry'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('${ApiConfig.c1BaseUrl}/session'),
+        headers: headers,
         body: jsonEncode(payload),
       );
 
