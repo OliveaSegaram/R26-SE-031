@@ -460,6 +460,8 @@ class LocalizationService extends ChangeNotifier {
       'current_password': 'වත්මන් මුරපදය',
       'new_password': 'නව මුරපදය',
       'delete_forever': 'සදහටම මකා දමන්න',
+      'nav_students': 'සිසුන්',
+      'nav_profile': 'ගිණුම',
     },
     'en': {
       'welcome_title': 'Welcome!',
@@ -851,6 +853,8 @@ class LocalizationService extends ChangeNotifier {
       'current_password': 'Current Password',
       'new_password': 'New Password',
       'delete_forever': 'Delete Forever',
+      'nav_students': 'Students',
+      'nav_profile': 'Profile',
     }
   };
 }
