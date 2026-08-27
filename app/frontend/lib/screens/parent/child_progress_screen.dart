@@ -6,6 +6,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_theme.dart';
 import '../../services/student_service.dart';
+import '../../services/c1_parent_service.dart';
+import '../../models/c1/c1_parent_summary.dart';
+import '../../models/c1/c1_trend_point.dart';
+import '../../widgets/c1/c1_metric_card.dart';
+import '../../widgets/c1/c1_trend_chart.dart';
+import '../../widgets/c1/c1_observation_card.dart';
 import 'skill_detail_progress_screen.dart';
 import '../therapist/therapist_student_detail_screen.dart';
 import '../../services/localization_service.dart';
@@ -33,6 +39,8 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
   int _dayStreak = 0;
   int _totalStars = 0;
   List<dynamic> _c1History = [];
+  ParentC1Summary? _c1Summary;
+  List<C1TrendPoint> _c1Trend = [];
 
   final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -59,11 +67,13 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
     }
     
     final sessions = await StudentService().getTelemetry(studentId.toString());
-    final c1Data = await StudentService().getC1History(studentId.toString(), limit: 5);
+    final c1Summary = await C1ParentService().getSummary(studentId.toString());
+    final c1Trend = await C1ParentService().getTrend(studentId.toString());
     
     _processTelemetryData(sessions);
     setState(() {
-      _c1History = c1Data;
+      _c1Summary = c1Summary;
+      _c1Trend = c1Trend;
       _isLoading = false;
     });
   }
@@ -230,7 +240,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                 const SizedBox(height: 24),
                 _buildWeeklyChart(),
                 const SizedBox(height: 24),
-                if (_c1History.isNotEmpty) ...[
+                if (_c1Summary != null) ...[
                   _buildC1ParentSummary(),
                   const SizedBox(height: 24),
                 ],
@@ -678,26 +688,8 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
 
   // ─── C1 Behavioral Summary ───
   Widget _buildC1ParentSummary() {
-    if (_c1History.isEmpty) return const SizedBox.shrink();
+    if (_c1Summary == null) return const SizedBox.shrink();
     
-    final latest = _c1History.first;
-    final fatigue = latest['fatigue'] ?? {};
-    final interaction = latest['interaction_state'] ?? {};
-    
-    final fatigueState = fatigue['state'] ?? 'UNKNOWN';
-    final attentionState = interaction['state'] ?? 'UNKNOWN';
-    
-    // Reverse so the chart goes from oldest to newest (left to right)
-    final chartData = _c1History.reversed.toList();
-    
-    // Plot accuracy or a cognitive load score
-    final List<FlSpot> spots = [];
-    for (int i = 0; i < chartData.length; i++) {
-      final features = chartData[i]['features'] ?? {};
-      final accuracy = (features['overall_accuracy'] ?? 0.0) * 100;
-      spots.add(FlSpot(i.toDouble(), accuracy));
-    }
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -715,71 +707,40 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
           // KPIs
           Row(
             children: [
-              _buildMiniStat(
-                FontAwesomeIcons.batteryHalf,
-                fatigueState,
-                LocalizationService.instance.t('fatigue_level') ?? 'Fatigue',
-                fatigueState.toString().toUpperCase() == 'HIGH' ? AppColors.softCoral : AppColors.gentleGreen,
+              Expanded(
+                child: C1MetricCard(
+                  title: 'Accuracy',
+                  value: '${_c1Summary!.accuracy}%',
+                  subtitle: 'Overall Progress: ${_c1Summary!.overallProgress}%',
+                ),
               ),
               const SizedBox(width: 12),
-              _buildMiniStat(
-                FontAwesomeIcons.brain,
-                attentionState.toString().split('_').first, // ENTHUSIASTIC -> ENTHUSIASTIC
-                LocalizationService.instance.t('attention_state') ?? 'Attention',
-                AppColors.calmBlue,
+              Expanded(
+                child: C1MetricCard(
+                  title: 'Attention',
+                  value: _c1Summary!.attention,
+                  subtitle: 'Response: ${_c1Summary!.responseSpeed}',
+                  color: AppColors.calmBlue,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          // Mini Chart
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.cardSurface,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.borderLight, width: 1.5),
-              boxShadow: [
-                BoxShadow(color: AppColors.shadow, blurRadius: 8, offset: const Offset(0, 4)),
-              ],
+          if (_c1Trend.isNotEmpty) ...[
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: C1TrendChart(
+                points: _c1Trend,
+                metric: 'accuracy',
+                label: 'Accuracy Trend',
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  LocalizationService.instance.t('accuracy_trend') ?? 'Accuracy Trend (Last 5 Sessions)',
-                  style: AppTypography.body(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  height: 120,
-                  child: LineChart(
-                    LineChartData(
-                      gridData: const FlGridData(show: false),
-                      titlesData: const FlTitlesData(show: false),
-                      borderData: FlBorderData(show: false),
-                      minX: 0,
-                      maxX: 4,
-                      minY: 0,
-                      maxY: 100,
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: spots,
-                          isCurved: true,
-                          color: AppColors.calmBlue,
-                          barWidth: 4,
-                          isStrokeCapRound: true,
-                          dotData: const FlDotData(show: true),
-                          belowBarData: BarAreaData(
-                            show: true,
-                            color: AppColors.calmBlue.withValues(alpha: 0.2),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            const SizedBox(height: 16),
+          ],
+          C1ObservationCard(
+            observations: _c1Summary!.learningObservations,
+            recommendedPractice: _c1Summary!.recommendedPractice,
           ),
         ],
       ),
