@@ -22,8 +22,10 @@ class TelemetryEvent(BaseModel):
     Enriched round-level telemetry event capturing rich cognitive and motor metrics
     for ML-based dyslexia / dyspraxia profile generation.
     """
+    event_id: str = Field(..., description="Unique identifier for this specific event")
+    item_id: str = Field(default="unknown", description="Specific curriculum item ID, e.g., S2A1R01")
     activity_name: str
-    round_number: int
+    round_number: int = Field(..., ge=1)
     is_correct: bool
     score: int = Field(default=0, ge=0, le=100)
 
@@ -82,6 +84,10 @@ class TelemetryEvent(BaseModel):
 class TelemetrySessionSubmit(BaseModel):
     """Full session payload submitted after activity completion."""
     student_id: str
-    session_duration_seconds: int
+    session_id: str = Field(..., description="Unique identifier for the session instance")
+    skill_id: str = Field(default="unknown", description="Skill ID being practiced")
+    activity_id: str = Field(default="unknown", description="Activity ID being practiced")
+    session_number: int = Field(default=1, ge=1)
+    session_duration_seconds: int = Field(..., ge=0)
     events: List[TelemetryEvent]
     device_metrics: Optional[dict] = Field(default_factory=dict, description="Hardware metrics like OS and Model used for normalisation")
