@@ -15,13 +15,28 @@ class LocalizationService extends ChangeNotifier {
   String get currentLocale => _currentLocale;
   bool get hasSetLanguage => _hasSetLanguage;
 
-  static const String _localeKey = 'sipsara_language_code';
+  static const String _localeKeyParent = 'sipsara_language_code';
+  static const String _localeKeyTherapist = 'sipsara_language_code_therapist';
   static const String _hasSetLanguageKey = 'sipsara_has_set_language';
+  
+  String _currentRole = 'parent';
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    _currentLocale = prefs.getString(_localeKey) ?? 'si';
+    _currentRole = prefs.getString('cached_user_role') ?? 'parent';
+    await loadForRole(_currentRole);
+  }
+
+  Future<void> loadForRole(String role) async {
+    _currentRole = role;
+    final prefs = await SharedPreferences.getInstance();
+    
+    String key = role == 'therapist' ? _localeKeyTherapist : _localeKeyParent;
+    String defaultLocale = role == 'therapist' ? 'en' : 'si';
+    
+    _currentLocale = prefs.getString(key) ?? defaultLocale;
     _hasSetLanguage = prefs.getBool(_hasSetLanguageKey) ?? false;
+    notifyListeners();
   }
 
   Future<void> setLocale(String localeCode) async {
@@ -32,7 +47,9 @@ class LocalizationService extends ChangeNotifier {
     _hasSetLanguage = true;
     
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_localeKey, _currentLocale);
+    String key = _currentRole == 'therapist' ? _localeKeyTherapist : _localeKeyParent;
+    
+    await prefs.setString(key, _currentLocale);
     await prefs.setBool(_hasSetLanguageKey, true);
     
     notifyListeners();
@@ -420,6 +437,29 @@ class LocalizationService extends ChangeNotifier {
       'consent_agree_text': 'සායන කේතය {clinicCode} සමඟ සම්බන්ධිත විශේෂඥයා සමඟ මගේ දරුවාගේ ඉගෙනුම් දත්ත බෙදා ගැනීමට මම කැමැත්තෙමි.',
       'connecting': 'සම්බන්ධ කරමින්...',
       'agree_connect': 'එකඟ වී සම්බන්ධ වන්න',
+      
+      // Therapist Profile Additions
+      'therapist_account': 'චිකිත්සක ගිණුම',
+      'clinic_connection': 'සායන සම්බන්ධතාවය',
+      'scan_qr_code_therapist': 'මෙම QR කේතය දෙමාපියන්ට ස්කෑන් කිරීමට ලබා දෙන්න',
+      'or_enter_code': 'හෝ කේතය ඇතුලත් කරන්න: ',
+      'share_invite_code': 'කේතය බෙදාගන්න',
+      'not_set': 'සකසා නැත',
+      'contact_support': 'සහාය අමතන්න',
+      'in_app_notifications': 'යෙදුම තුළ නිවේදන',
+      'in_app_notifications_desc': 'යෙදුම තුළ වැදගත් දැනුම්දීම් ලබා ගන්න.',
+      'update_clinic_name': 'සායනයේ නම යාවත්කාලීන කරන්න',
+      'update_clinic_name_desc': 'ඔබගේ ගිණුමෙහි දිස්වීමට අවශ්‍ය සායනයේ නම ඇතුළත් කරන්න.',
+      'clinic_name_updated': 'සායනයේ නම සාර්ථකව යාවත්කාලීන කරන ලදී!',
+      'update_specialization': 'විශේෂඥතාව යාවත්කාලීන කරන්න',
+      'update_specialization_desc': 'ඔබගේ ගිණුමෙහි දිස්වීමට අවශ්‍ය විශේෂඥතාව ඇතුළත් කරන්න.',
+      'specialization_updated': 'විශේෂඥතාව සාර්ථකව යාවත්කාලීන කරන ලදී!',
+      'share_invite_text': 'ආයුබෝවන්! සිප්සර හරහා ඔබ සමඟ සම්බන්ධ වීමට ලැබීම සතුටක්.\n\nකරුණාකර අපගේ ගිණුම් සම්බන්ධ කිරීම සඳහා මෙම ආරක්‍ෂිත සම්බන්ධතා කේතය [{clinicCode}] භාවිතා කරන්න. ඔබ යෙදුම ස්ථාපනය කර ඇත්නම්, දෙමාපියන්ගේ පිටුව හරහා කේතය ඇතුළත් කළ හැක.',
+      'share_invite_subject': 'සිප්සර සම්බන්ධතා කේතය',
+      'update_password_desc': 'පහතින් ඔබගේ නව මුරපදය ඇතුළත් කරන්න.',
+      'current_password': 'වත්මන් මුරපදය',
+      'new_password': 'නව මුරපදය',
+      'delete_forever': 'සදහටම මකා දමන්න',
     },
     'en': {
       'welcome_title': 'Welcome!',
@@ -788,6 +828,29 @@ class LocalizationService extends ChangeNotifier {
       'consent_agree_text': 'i consent to sharing my child\'s learning data with the specialist associated with clinic code {clinicCode}.',
       'connecting': 'connecting...',
       'agree_connect': 'agree & connect',
+      
+      // Therapist Profile Additions
+      'therapist_account': 'therapist account',
+      'clinic_connection': 'clinic connection',
+      'scan_qr_code_therapist': 'Have parents scan this QR code',
+      'or_enter_code': 'or enter code: ',
+      'share_invite_code': 'share invite code',
+      'not_set': 'not set',
+      'contact_support': 'contact support',
+      'in_app_notifications': 'in-app notifications',
+      'in_app_notifications_desc': 'receive important alerts within the app.',
+      'update_clinic_name': 'Update Clinic Name',
+      'update_clinic_name_desc': 'Enter the clinic name to display on your profile.',
+      'clinic_name_updated': 'Clinic name updated successfully!',
+      'update_specialization': 'Update Specialization',
+      'update_specialization_desc': 'Enter your specialization to display on your profile.',
+      'specialization_updated': 'Specialization updated successfully!',
+      'share_invite_text': 'Hello! I am excited to work with you on Sipsara.\n\nPlease use my secure connection code [{clinicCode}] to link our accounts. If you have the app installed, you can enter the code in the Parent Hub.',
+      'share_invite_subject': 'Sipsara Connection Code',
+      'update_password_desc': 'Enter your new password below.',
+      'current_password': 'Current Password',
+      'new_password': 'New Password',
+      'delete_forever': 'Delete Forever',
     }
   };
 }
