@@ -56,6 +56,15 @@ class ApiConfig {
     return 'https://sipsara-ml-backend-app.azurewebsites.net/telemetry/api/v1/auth';
   }
 
+  /// C1 Behavioral Analytics API (Port 8025 locally, /telemetry/api/v1/c1 on Azure)
+  static String get c1BaseUrl {
+    if (isDevelopment) {
+      return 'http://$_localHost:8025/api/v1/c1';
+    }
+    // Deployed to Azure ML Gateway
+    return 'https://sipsara-ml-backend-app.azurewebsites.net/telemetry/api/v1/c1';
+  }
+
   // --- Helper Methods ---
 
   /// Resolves the absolute URL for a profile picture
