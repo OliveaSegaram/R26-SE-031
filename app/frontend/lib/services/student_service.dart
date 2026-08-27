@@ -420,4 +420,27 @@ class StudentService {
       return 'Failed to connect to the server.';
     }
   }
+
+  /// Fetch C1 Behavioral Learner-State history for a student
+  Future<List<dynamic>> getC1History(String studentId, {int limit = 5}) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return [];
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.c1BaseUrl}/student/$studentId/history?limit=$limit'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
 }

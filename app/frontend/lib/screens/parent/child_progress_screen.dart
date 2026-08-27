@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/app_loading_indicator.dart';
 import '../../utils/avatar_utils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_theme.dart';
 import '../../services/student_service.dart';
 import 'skill_detail_progress_screen.dart';
@@ -31,6 +32,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
   int _overallAccuracy = 0;
   int _dayStreak = 0;
   int _totalStars = 0;
+  List<dynamic> _c1History = [];
 
   final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -57,9 +59,11 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
     }
     
     final sessions = await StudentService().getTelemetry(studentId.toString());
+    final c1Data = await StudentService().getC1History(studentId.toString(), limit: 5);
     
     _processTelemetryData(sessions);
     setState(() {
+      _c1History = c1Data;
       _isLoading = false;
     });
   }
@@ -226,6 +230,10 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                 const SizedBox(height: 24),
                 _buildWeeklyChart(),
                 const SizedBox(height: 24),
+                if (_c1History.isNotEmpty) ...[
+                  _buildC1ParentSummary(),
+                  const SizedBox(height: 24),
+                ],
                 _buildSkillProgressSection(),
                 const SizedBox(height: 32),
                 Center(
@@ -664,6 +672,116 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                 size: 12, color: AppColors.textHint),
           ],
         ),
+      ),
+    );
+  }
+
+  // ─── C1 Behavioral Summary ───
+  Widget _buildC1ParentSummary() {
+    if (_c1History.isEmpty) return const SizedBox.shrink();
+    
+    final latest = _c1History.first;
+    final fatigue = latest['fatigue'] ?? {};
+    final interaction = latest['interaction_state'] ?? {};
+    
+    final fatigueState = fatigue['state'] ?? 'UNKNOWN';
+    final attentionState = interaction['state'] ?? 'UNKNOWN';
+    
+    // Reverse so the chart goes from oldest to newest (left to right)
+    final chartData = _c1History.reversed.toList();
+    
+    // Plot accuracy or a cognitive load score
+    final List<FlSpot> spots = [];
+    for (int i = 0; i < chartData.length; i++) {
+      final features = chartData[i]['features'] ?? {};
+      final accuracy = (features['overall_accuracy'] ?? 0.0) * 100;
+      spots.add(FlSpot(i.toDouble(), accuracy));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            LocalizationService.instance.t('behavioral_observations') ?? 'Behavioral Observations',
+            style: AppTypography.heading(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // KPIs
+          Row(
+            children: [
+              _buildMiniStat(
+                FontAwesomeIcons.batteryHalf,
+                fatigueState,
+                LocalizationService.instance.t('fatigue_level') ?? 'Fatigue',
+                fatigueState.toString().toUpperCase() == 'HIGH' ? AppColors.softCoral : AppColors.gentleGreen,
+              ),
+              const SizedBox(width: 12),
+              _buildMiniStat(
+                FontAwesomeIcons.brain,
+                attentionState.toString().split('_').first, // ENTHUSIASTIC -> ENTHUSIASTIC
+                LocalizationService.instance.t('attention_state') ?? 'Attention',
+                AppColors.calmBlue,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Mini Chart
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.cardSurface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.borderLight, width: 1.5),
+              boxShadow: [
+                BoxShadow(color: AppColors.shadow, blurRadius: 8, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  LocalizationService.instance.t('accuracy_trend') ?? 'Accuracy Trend (Last 5 Sessions)',
+                  style: AppTypography.body(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 120,
+                  child: LineChart(
+                    LineChartData(
+                      gridData: const FlGridData(show: false),
+                      titlesData: const FlTitlesData(show: false),
+                      borderData: FlBorderData(show: false),
+                      minX: 0,
+                      maxX: 4,
+                      minY: 0,
+                      maxY: 100,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: spots,
+                          isCurved: true,
+                          color: AppColors.calmBlue,
+                          barWidth: 4,
+                          isStrokeCapRound: true,
+                          dotData: const FlDotData(show: true),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: AppColors.calmBlue.withValues(alpha: 0.2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

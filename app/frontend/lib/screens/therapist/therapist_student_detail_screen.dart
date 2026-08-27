@@ -19,6 +19,8 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late Future<Map<String, dynamic>> _analyticsFuture;
+  late Future<List<dynamic>> _c1Future;
+  late Future<List<Object>> _combinedFuture;
 
   // Mock weekly scores (8 weeks) for the chart as we don't have historical arrays yet
   final List<double> _weeklyScores = [42, 48, 45, 55, 52, 60, 63, 68];
@@ -74,6 +76,8 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _analyticsFuture = StudentService().getCognitiveAnalytics(_studentId);
+    _c1Future = StudentService().getC1History(_studentId, limit: 1);
+    _combinedFuture = Future.wait([_analyticsFuture, _c1Future]);
   }
 
   @override
@@ -267,16 +271,22 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
-        child: FutureBuilder<Map<String, dynamic>>(
-          future: _analyticsFuture,
+        child: FutureBuilder<List<Object>>(
+          future: _combinedFuture,
           builder: (context, snapshot) {
             
             String risk = student['risk']?.toString() ?? 'pending';
             Map<String, dynamic> analytics = {};
-            if (snapshot.hasData && snapshot.data!.isNotEmpty && snapshot.data!['status'] != 'insufficient_data') {
-              analytics = snapshot.data!;
-              if (analytics['risk_assessment'] != null && analytics['risk_assessment'] is Map) {
-                risk = analytics['risk_assessment']['overall_risk']?.toString() ?? risk;
+            List<dynamic> c1History = [];
+            
+            if (snapshot.hasData) {
+              analytics = snapshot.data![0] as Map<String, dynamic>;
+              c1History = snapshot.data![1] as List<dynamic>;
+              
+              if (analytics.isNotEmpty && analytics['status'] != 'insufficient_data') {
+                if (analytics['risk_assessment'] != null && analytics['risk_assessment'] is Map) {
+                  risk = analytics['risk_assessment']['overall_risk']?.toString() ?? risk;
+                }
               }
             }
 
@@ -462,7 +472,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                       : TabBarView(
                           controller: _tabController,
                           children: [
-                            _buildProgressTab(analytics),
+                            _buildProgressTab(analytics, c1History),
                             _buildSessionsTab(),
                             _buildPlanTab(analytics),
                           ],
@@ -479,7 +489,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   }
 
   // ─── Progress Tab ───
-  Widget _buildProgressTab(Map<String, dynamic> analytics) {
+  Widget _buildProgressTab(Map<String, dynamic> analytics, List<dynamic> c1History) {
     Map<String, dynamic> indices = analytics['cognitive_indices'] ?? {};
     
     // Fallback if no analytics exist yet
@@ -506,16 +516,14 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
               icon: _isDownloadingReport
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Icon(Icons.picture_as_pdf_rounded, size: 20),
-              label: Flexible(
-                child: Text(
-                  _isDownloadingReport
-                      ? LocalizationService.instance.t('generating_report')
-                      : LocalizationService.instance.t('download_clinical_report'),
-                  style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              label: Text(
+                _isDownloadingReport
+                    ? LocalizationService.instance.t('generating_report')
+                    : LocalizationService.instance.t('download_clinical_report'),
+                style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.calmBlue,
@@ -536,16 +544,14 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
               icon: _isDownloadingAssessment
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.calmBlue, strokeWidth: 2))
                   : const Icon(Icons.assessment_rounded, size: 20),
-              label: Flexible(
-                child: Text(
-                  _isDownloadingAssessment
-                      ? LocalizationService.instance.t('generating_assessment')
-                      : LocalizationService.instance.t('download_assessment_pdf'),
-                  style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              label: Text(
+                _isDownloadingAssessment
+                    ? LocalizationService.instance.t('generating_assessment')
+                    : LocalizationService.instance.t('download_assessment_pdf'),
+                style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -565,14 +571,12 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             child: ElevatedButton.icon(
               onPressed: _showHeatmapsModal,
               icon: const Icon(Icons.touch_app_rounded, size: 20),
-              label: Flexible(
-                child: Text(
-                  LocalizationService.instance.t('view_interaction_heatmaps'),
-                  style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              label: Text(
+                LocalizationService.instance.t('view_interaction_heatmaps'),
+                style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -727,8 +731,109 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           }),
 
           const SizedBox(height: 24),
+          _buildC1ClinicalDetails(c1History),
         ],
       ),
+    );
+  }
+
+  // ─── C1 Clinical Details ───
+  Widget _buildC1ClinicalDetails(List<dynamic> c1History) {
+    if (c1History.isEmpty) return const SizedBox.shrink();
+    final latest = c1History.first;
+    final features = latest['features'] ?? {};
+    final indices = latest['indices'] ?? {};
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(LocalizationService.instance.t('c1_behavioral_state') ?? 'Behavioral Learner-State (C1)',
+          style: AppTypography.body(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 12),
+        // Indices Bars
+        ...indices.entries.map((entry) {
+          double value = (entry.value is num) ? (entry.value as num).toDouble() : 0.0;
+          double barValue = value > 1.0 ? 1.0 : (value < 0 ? 0.0 : value);
+          String name = entry.key.replaceAll('_', ' ').toLowerCase();
+          
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.cardSurface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(_translateCognitiveName(name),
+                        style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      ),
+                      Text('${(value * 100).round()}%',
+                        style: AppTypography.caption(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.calmBlue),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: barValue,
+                      minHeight: 8,
+                      backgroundColor: AppColors.borderLight,
+                      valueColor: const AlwaysStoppedAnimation(AppColors.calmBlue),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 16),
+        // Feature Table
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.cardSurface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Raw Telemetry Features',
+                style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              ),
+              const Divider(height: 24),
+              ...features.entries.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(entry.key,
+                          style: AppTypography.caption(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ),
+                      Text(entry.value is double ? (entry.value as double).toStringAsFixed(2) : entry.value.toString(),
+                        style: AppTypography.body(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
