@@ -8,6 +8,7 @@ import '../../services/auth_service.dart';
 import '../welcome_screen.dart';
 import '../../config/api_config.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../services/localization_service.dart';
 
 class TherapistProfileScreen extends StatefulWidget {
   const TherapistProfileScreen({super.key});
@@ -100,14 +101,14 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Profile Photo', style: AppTypography.heading(fontSize: 18)),
+              Text(LocalizationService.instance.t('profile_photo'), style: AppTypography.heading(fontSize: 18)),
               const SizedBox(height: 24),
               ListTile(
                 leading: const Icon(
                   Icons.photo_library,
                   color: AppColors.calmBlue,
                 ),
-                title: const Text('Change Photo'),
+                title: Text(LocalizationService.instance.t('change_photo')),
                 onTap: () {
                   Navigator.pop(context);
                   _openPicker();
@@ -115,10 +116,7 @@ class _TherapistProfileScreenState extends State<TherapistProfileScreen>
               ),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text(
-                  'Remove Photo',
-                  style: TextStyle(color: Colors.red),
-                ),
+                title: Text(LocalizationService.instance.t('remove_photo'), style: const TextStyle(color: Colors.red)),
                 onTap: () {
                   Navigator.pop(context);
                   _removePhoto();

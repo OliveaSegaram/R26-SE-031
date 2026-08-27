@@ -395,6 +395,9 @@ class LocalizationService extends ChangeNotifier {
       'dash_nav_shop': 'සාප්පුව',
       'dash_nav_progress': 'ප්‍රගතිය',
       'dash_nav_parents': 'දෙමාපියන්',
+      'change_photo': 'ඡායාරූපය වෙනස් කරන්න',
+      'remove_photo': 'ඡායාරූපය ඉවත් කරන්න',
+      'profile_photo': 'ගිණුමෙහි ඡායාරූපය',
     },
     'en': {
       'welcome_title': 'Welcome!',
@@ -738,6 +741,9 @@ class LocalizationService extends ChangeNotifier {
       'dash_nav_shop': 'shop',
       'dash_nav_progress': 'progress',
       'dash_nav_parents': 'parents',
+      'change_photo': 'Change Photo',
+      'remove_photo': 'Remove Photo',
+      'profile_photo': 'Profile Photo',
     }
   };
 }
