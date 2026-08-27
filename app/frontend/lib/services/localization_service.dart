@@ -462,6 +462,8 @@ class LocalizationService extends ChangeNotifier {
       'delete_forever': 'සදහටම මකා දමන්න',
       'nav_students': 'සිසුන්',
       'nav_profile': 'ගිණුම',
+      'moko_greeting': 'ආයුබෝවන්! මම මොකෝ!\nඔබව හමුවීම ගැන මට ගොඩක් සතුටුයි!',
+      'continue_btn': 'ඉදිරියට යන්න',
     },
     'en': {
       'welcome_title': 'Welcome!',
@@ -855,6 +857,8 @@ class LocalizationService extends ChangeNotifier {
       'delete_forever': 'Delete Forever',
       'nav_students': 'Students',
       'nav_profile': 'Profile',
+      'moko_greeting': "Hi there! I'm Moko!\nI'm so excited to meet you!",
+      'continue_btn': 'continue',
     }
   };
 }

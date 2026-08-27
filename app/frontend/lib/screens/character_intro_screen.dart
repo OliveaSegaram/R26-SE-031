@@ -4,6 +4,7 @@ import '../widgets/monster_character.dart';
 import '../widgets/speech_bubble.dart';
 import '../widgets/gradient_button.dart';
 import 'select_student_screen.dart';
+import '../services/localization_service.dart';
 
 /// Screen 3: Character Introduction
 /// Dyslexia-accessible: crème bg, mint green speech bubble, calm blue accents.
@@ -113,9 +114,9 @@ class _CharacterIntroScreenState extends State<CharacterIntroScreen>
                   position: _contentSlide,
                   child: FadeTransition(
                     opacity: _contentFade,
-                    child: const SpeechBubble(
-                      text: "Hi there! I'm Moko!\nI'm so excited to meet you!",
-                      delay: Duration(milliseconds: 600),
+                    child: SpeechBubble(
+                      text: LocalizationService.instance.t('moko_greeting'),
+                      delay: const Duration(milliseconds: 600),
                     ),
                   ),
                 ),
@@ -143,7 +144,7 @@ class _CharacterIntroScreenState extends State<CharacterIntroScreen>
                     child: FadeTransition(
                       opacity: _contentFade,
                       child: GradientButton(
-                        text: 'continue',
+                        text: LocalizationService.instance.t('continue_btn'),
                         onPressed: () {
                           Navigator.of(context).push(
                             PageRouteBuilder(
