@@ -63,13 +63,19 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
   void _checkAnswer(int index, List<int> correctIndices, int totalRounds) async {
     if (_isCorrect) return;
 
+    final bool wasSelected = _selectedIndices.contains(index);
     setState(() {
-      if (_selectedIndices.contains(index)) {
+      if (wasSelected) {
         _selectedIndices.remove(index);
       } else {
         _selectedIndices.add(index);
       }
     });
+
+    // Play tap feedback on every selection (not just when all are picked)
+    if (!wasSelected) {
+      SoundUtils.playFeedback('audio/correct.mp3');
+    }
 
     if (_selectedIndices.length == correctIndices.length) {
       bool isRight = _selectedIndices.containsAll(correctIndices);
@@ -221,21 +227,33 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                   if (displayWord != null && displayWord.isNotEmpty) {
                     return Column(
                       children: [
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+                          padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 28),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(22),
                             border: Border.all(
-                              color: AppColors.warmAmber.withValues(alpha: 0.4),
-                              width: 2,
+                              color: AppColors.warmAmber.withValues(alpha: 0.5),
+                              width: 2.5,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.warmAmber.withValues(alpha: 0.15),
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
+                              ),
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Text(
                             displayWord,
                             style: AppTypography.sinhala(
-                              fontSize: 60,
+                              fontSize: 64,
                               fontWeight: FontWeight.bold,
                               color: AppColors.textPrimary,
                               height: 1.0,
@@ -243,7 +261,7 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                       ],
                     );
                   }
@@ -251,7 +269,7 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                 },
               ),
               if (correctIndices.length > 1) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   decoration: BoxDecoration(
@@ -263,17 +281,40 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
                     style: AppTypography.sinhala(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFFE65100)),
                   ),
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 16),
               ] else ...[
-                const SizedBox(height: 48),
+                const SizedBox(height: 20),
               ],
 
-              // Image Option Cards Grid
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
+              // Answer Pool Container (consistent with other Skill 2 activities)
+              Flexible(
+                fit: FlexFit.loose,
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.85),
+                        Colors.white.withValues(alpha: 0.5),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    borderRadius: BorderRadius.circular(40),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 20,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
                   child: Center(
                     child: Wrap(
+                      key: ValueKey('round_$_currentRoundIndex'),
                       spacing: spacing,
                       runSpacing: spacing,
                       alignment: WrapAlignment.center,
