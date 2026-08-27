@@ -3,7 +3,10 @@ from typing import List
 
 from dependencies import get_current_user
 from schemas.telemetry import TelemetrySessionSubmit
-from schemas.c1 import C1Result
+from schemas.c1 import (
+    C1Result, ParentC1Summary, TherapistC1State, 
+    C1TrendPoint, C1SessionSummary
+)
 from services.c1.processor import process_session
 from services.ml.inference import predict_c1_pattern
 from repositories import telemetry_repository, c1_repository
@@ -56,6 +59,41 @@ async def get_c1_history(
     current_user: dict = Depends(get_current_user)
 ):
     """Retrieve the recent C1 learner states for a student."""
-    # Add ownership/therapist checks here in production
     states = await c1_repository.get_recent_states(student_id, limit=limit)
     return states
+
+@router.get("/students/{student_id}/summary", response_model=ParentC1Summary)
+async def get_student_summary(student_id: str, current_user: dict = Depends(get_current_user)):
+    """Parent dashboard endpoint."""
+    summary = await c1_repository.get_parent_summary(student_id)
+    if not summary:
+        raise HTTPException(status_code=404, detail="No analytics found for this student")
+    return summary
+
+@router.get("/students/{student_id}/state", response_model=TherapistC1State)
+async def get_student_state(student_id: str, current_user: dict = Depends(get_current_user)):
+    """Therapist dashboard endpoint (latest full state)."""
+    states = await c1_repository.get_recent_states(student_id, limit=1)
+    if not states:
+        raise HTTPException(status_code=404, detail="No analytics found for this student")
+    state = states[0]
+    state['updated_at'] = state.get('_id').generation_time if state.get('_id') else None
+    return state
+
+@router.get("/students/{student_id}/trend", response_model=List[C1TrendPoint])
+async def get_student_trend(student_id: str, current_user: dict = Depends(get_current_user)):
+    """Trend charts endpoint."""
+    return await c1_repository.get_c1_trend(student_id)
+
+@router.get("/students/{student_id}/sessions", response_model=List[C1SessionSummary])
+async def get_student_sessions(student_id: str, current_user: dict = Depends(get_current_user)):
+    """Session history list endpoint."""
+    return await c1_repository.get_c1_sessions(student_id)
+
+@router.get("/sessions/{session_id}", response_model=C1Result)
+async def get_session_detail(session_id: str, current_user: dict = Depends(get_current_user)):
+    """Specific session detailed view endpoint."""
+    session = await c1_repository.get_c1_state_by_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session

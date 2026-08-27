@@ -55,3 +55,37 @@ class C1Result(BaseModel):
     interaction_state: InteractionState
     quality: QualityMetrics
     model: ModelMetadata
+
+from datetime import datetime
+
+class ParentC1Summary(BaseModel):
+    student_id: str
+    overall_progress: int
+    accuracy: int
+    response_speed: str
+    attention: str
+    fatigue: str
+    learning_observations: list[str] = Field(default_factory=list)
+    recommended_practice: list[str] = Field(default_factory=list)
+    updated_at: datetime
+
+class TherapistC1State(C1Result):
+    updated_at: Optional[datetime] = None
+
+class C1TrendPoint(BaseModel):
+    session_id: str
+    session_index: int
+    accuracy: float
+    median_latency_ms: float
+    fatigue_score: float
+    hesitation_rate: float
+    timestamp: datetime
+
+class C1SessionSummary(BaseModel):
+    session_id: str
+    session_index: int
+    accuracy: float
+    median_latency_ms: float
+    hesitation_rate: float
+    fatigue_score: float
+    timestamp: datetime
