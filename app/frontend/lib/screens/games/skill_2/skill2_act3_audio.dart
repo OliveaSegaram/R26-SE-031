@@ -159,7 +159,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
       itemSize = 180.0;
       spacing = 32.0;
       fontSize = 84.0;
-    } else if (total <= 4) {
+    } else if (total <= 5) {
       itemSize = 150.0;
       spacing = 24.0;
       fontSize = 72.0;
@@ -202,20 +202,47 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
               const SizedBox(height: 64),
 
               // Image Option Cards Grid
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Center(
-                    child: Wrap(
-                      spacing: spacing,
-                      runSpacing: spacing,
-                      alignment: WrapAlignment.center,
+              Flexible(
+                fit: FlexFit.loose,
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.85),
+                        Colors.white.withValues(alpha: 0.5),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    borderRadius: BorderRadius.circular(40),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 20,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Center(
+                      child: Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        alignment: WrapAlignment.center,
                       children: List.generate(options.length, (index) {
                       final isSelected = (_selectedIndex == index);
                       final isRight = isSelected && (index == correctIndex);
                       final isWrong = isSelected && (index != correctIndex);
 
-                      return GestureDetector(
+                      return _FloatingLetterCard(
+                        key: ValueKey('${_currentRoundIndex}_$index'),
+                        index: index,
+                        child: GestureDetector(
                         onTap: () => _checkAnswer(index, correctIndex, rounds.length),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
@@ -262,12 +289,14 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
                             child: Text(options[index], style: TextStyle(fontSize: hasLongText ? 24.0 : fontSize), textAlign: TextAlign.center),
                           ),
                         ),
+                      ),
                       );
                     }),
                   ),
                 ),
               ),
             ),
+          ),
             ],
           ),
         ),
@@ -316,5 +345,52 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
       ),
     );
 
+  }
+}
+
+class _FloatingLetterCard extends StatefulWidget {
+  final Widget child;
+  final int index;
+  const _FloatingLetterCard({super.key, required this.child, required this.index});
+
+  @override
+  State<_FloatingLetterCard> createState() => _FloatingLetterCardState();
+}
+
+class _FloatingLetterCardState extends State<_FloatingLetterCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1500 + (widget.index * 150)),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: -8.0, end: 8.0).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutSine,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _animation.value),
+          child: child,
+        );
+      },
+      child: widget.child,
+    );
   }
 }
