@@ -5,6 +5,12 @@ import '../../services/localization_service.dart';
 import '../../services/student_service.dart';
 import '../../services/telemetry_service.dart';
 import '../../widgets/telemetry_heatmap.dart';
+import '../../services/c1_therapist_service.dart';
+import '../../models/c1/c1_therapist_state.dart';
+import '../../models/c1/c1_session_summary.dart';
+import '../../widgets/c1/c1_index_bar_chart.dart';
+import '../../widgets/c1/c1_pattern_card.dart';
+import '../../widgets/c1/c1_session_table.dart';
 
 class TherapistStudentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -19,8 +25,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late Future<Map<String, dynamic>> _analyticsFuture;
-  late Future<List<dynamic>> _c1Future;
-  late Future<List<Object>> _combinedFuture;
+  late Future<TherapistC1State?> _c1StateFuture;
+  late Future<List<C1SessionSummary>> _c1SessionsFuture;
+  late Future<List<Object?>> _combinedFuture;
 
   // Mock weekly scores (8 weeks) for the chart as we don't have historical arrays yet
   final List<double> _weeklyScores = [42, 48, 45, 55, 52, 60, 63, 68];
@@ -76,8 +83,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _analyticsFuture = StudentService().getCognitiveAnalytics(_studentId);
-    _c1Future = StudentService().getC1History(_studentId, limit: 1);
-    _combinedFuture = Future.wait([_analyticsFuture, _c1Future]);
+    _c1StateFuture = C1TherapistService().getState(_studentId);
+    _c1SessionsFuture = C1TherapistService().getSessions(_studentId);
+    _combinedFuture = Future.wait([_analyticsFuture, _c1StateFuture, _c1SessionsFuture]);
   }
 
   @override
@@ -271,17 +279,19 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         return Scaffold(
       backgroundColor: AppColors.cream,
       body: SafeArea(
-        child: FutureBuilder<List<Object>>(
+        child: FutureBuilder<List<Object?>>(
           future: _combinedFuture,
           builder: (context, snapshot) {
             
             String risk = student['risk']?.toString() ?? 'pending';
             Map<String, dynamic> analytics = {};
-            List<dynamic> c1History = [];
+            TherapistC1State? c1State;
+            List<C1SessionSummary> c1Sessions = [];
             
             if (snapshot.hasData) {
               analytics = snapshot.data![0] as Map<String, dynamic>;
-              c1History = snapshot.data![1] as List<dynamic>;
+              c1State = snapshot.data![1] as TherapistC1State?;
+              c1Sessions = snapshot.data![2] as List<C1SessionSummary>;
               
               if (analytics.isNotEmpty && analytics['status'] != 'insufficient_data') {
                 if (analytics['risk_assessment'] != null && analytics['risk_assessment'] is Map) {
@@ -472,8 +482,8 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                       : TabBarView(
                           controller: _tabController,
                           children: [
-                            _buildProgressTab(analytics, c1History),
-                            _buildSessionsTab(),
+                            _buildProgressTab(analytics, c1State),
+                            _buildSessionsTab(c1Sessions),
                             _buildPlanTab(analytics),
                           ],
                         ),
@@ -489,7 +499,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   }
 
   // ─── Progress Tab ───
-  Widget _buildProgressTab(Map<String, dynamic> analytics, List<dynamic> c1History) {
+  Widget _buildProgressTab(Map<String, dynamic> analytics, TherapistC1State? c1State) {
     Map<String, dynamic> indices = analytics['cognitive_indices'] ?? {};
     
     // Fallback if no analytics exist yet
@@ -731,18 +741,15 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           }),
 
           const SizedBox(height: 24),
-          _buildC1ClinicalDetails(c1History),
+          _buildC1ClinicalDetails(c1State),
         ],
       ),
     );
   }
 
   // ─── C1 Clinical Details ───
-  Widget _buildC1ClinicalDetails(List<dynamic> c1History) {
-    if (c1History.isEmpty) return const SizedBox.shrink();
-    final latest = c1History.first;
-    final features = latest['features'] ?? {};
-    final indices = latest['indices'] ?? {};
+  Widget _buildC1ClinicalDetails(TherapistC1State? c1State) {
+    if (c1State == null) return const SizedBox.shrink();
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -751,195 +758,49 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           style: AppTypography.body(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 12),
-        // Indices Bars
-        ...indices.entries.map((entry) {
-          double value = (entry.value is num) ? (entry.value as num).toDouble() : 0.0;
-          double barValue = value > 1.0 ? 1.0 : (value < 0 ? 0.0 : value);
-          String name = entry.key.replaceAll('_', ' ').toLowerCase();
-          
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.3)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(_translateCognitiveName(name),
-                        style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                      ),
-                      Text('${(value * 100).round()}%',
-                        style: AppTypography.caption(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.calmBlue),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: barValue,
-                      minHeight: 8,
-                      backgroundColor: AppColors.borderLight,
-                      valueColor: const AlwaysStoppedAnimation(AppColors.calmBlue),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
-        const SizedBox(height: 16),
-        // Feature Table
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.cardSurface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.borderLight),
+        if (c1State.indices.isNotEmpty) ...[
+          C1IndexBarChart(
+            visualProcessing: c1State.visualProcessingIndex,
+            phonological: c1State.phonologicalTaskIndex,
+            motor: c1State.motorInteractionIndex,
+            attention: c1State.attentionStabilityIndex,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Raw Telemetry Features',
-                style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-              ),
-              const Divider(height: 24),
-              ...features.entries.map((entry) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(entry.key,
-                          style: AppTypography.caption(fontSize: 12, color: AppColors.textSecondary),
-                        ),
-                      ),
-                      Text(entry.value is double ? (entry.value as double).toStringAsFixed(2) : entry.value.toString(),
-                        style: AppTypography.body(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
+          const SizedBox(height: 16),
+        ],
+        if (c1State.pattern != 'UNKNOWN') ...[
+          Text('Detected Patterns',
+            style: AppTypography.body(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
-        ),
-        const SizedBox(height: 24),
+          const SizedBox(height: 12),
+          C1PatternCard(
+            pattern: c1State.pattern,
+            probability: c1State.patternProbability,
+            confidence: c1State.model['confidence'] ?? 'Medium',
+          ),
+          const SizedBox(height: 16),
+        ],
       ],
     );
   }
 
   // ─── Sessions Tab ───
-  Widget _buildSessionsTab() {
-    return ListView.builder(
+  Widget _buildSessionsTab(List<C1SessionSummary> sessions) {
+    if (sessions.isEmpty) {
+      return Center(
+        child: Text(LocalizationService.instance.t('no_sessions_yet') ?? 'No sessions yet',
+          style: AppTypography.caption(color: AppColors.textHint, fontSize: 14),
+        ),
+      );
+    }
+    
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: _sessions.length,
-      itemBuilder: (context, index) {
-        final session = _sessions[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.cardSurface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borderLight),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.calmBlueDark.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.slateBg,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.event_note_rounded, color: AppColors.calmBlue, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          session['type'],
-                          style: AppTypography.body(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          '${session['date']} · ${session['duration']}',
-                          style: AppTypography.caption(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: _getScoreColor(session['score']).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '${session['score']}%',
-                      style: AppTypography.caption(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _getScoreColor(session['score']),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.cream,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.notes_rounded, size: 14, color: AppColors.textHint),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        session['notes'],
-                        style: AppTypography.caption(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+      child: C1SessionTable(
+        sessions: sessions,
+        onSessionTapped: (sessionId) {
+          // TODO: Navigate to session detail
+        },
+      ),
     );
   }
 
