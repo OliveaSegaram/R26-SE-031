@@ -29,6 +29,9 @@ from routers.students import router as students_router
 from routers.specialists import router as specialists_router
 from routers.activities import router as activities_router
 from routers.therapist import router as therapist_router
+from routers.parent_dashboard import router as parent_dashboard_router
+from routers.therapist_dashboard import router as therapist_dashboard_router
+from routers.learning import router as learning_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -63,6 +66,9 @@ app.include_router(students_router)
 app.include_router(specialists_router)
 app.include_router(activities_router)
 app.include_router(therapist_router)
+app.include_router(parent_dashboard_router)
+app.include_router(therapist_dashboard_router)
+app.include_router(learning_router)
 
 # Mount static folder (Moved to speech-monitoring-v1)
 

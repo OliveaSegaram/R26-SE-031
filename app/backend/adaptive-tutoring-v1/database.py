@@ -1,20 +1,26 @@
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
+import certifi
+
 # MongoDB connection settings
-MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
-DB_NAME = "sipsara_db"
+MONGO_URL = os.environ.get("MONGODB_URL")
+DB_NAME = os.environ.get("MONGODB_DB_NAME", "r26_se_031")
 
 client = None
 db = None
-bkt_states_collection = None
+knowledge_states_collection = None
+adaptive_decisions_collection = None
 
 async def connect_to_mongo():
-    global client, db, bkt_states_collection
-    client = AsyncIOMotorClient(MONGO_URL)
+    global client, db, knowledge_states_collection, adaptive_decisions_collection
+    if not MONGO_URL:
+        raise ValueError("MONGODB_URL environment variable is not set!")
+    client = AsyncIOMotorClient(MONGO_URL, tlsCAFile=certifi.where())
     db = client[DB_NAME]
-    bkt_states_collection = db["bkt_states"]
-    print("Connected to MongoDB (adaptive-tutoring-v1)")
+    knowledge_states_collection = db["knowledge_states"]
+    adaptive_decisions_collection = db["adaptive_decisions"]
+    print("Connected to MongoDB Cloud (adaptive-tutoring-v1)")
 
 async def close_mongo_connection():
     global client

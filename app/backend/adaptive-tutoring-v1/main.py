@@ -22,8 +22,7 @@ def health_check():
 
 @app.post("/update_interaction", response_model=TutoringResponse)
 async def update_interaction(request: InteractionRequest):
-    # Retrieve student's current knowledge state from DB
-    student_doc = await database.bkt_states_collection.find_one({"student_id": request.student_id})
+    student_doc = await database.knowledge_states_collection.find_one({"student_id": request.student_id})
     
     if student_doc and "knowledge_state" in student_doc:
         knowledge_state = student_doc["knowledge_state"]
@@ -73,7 +72,7 @@ async def update_interaction(request: InteractionRequest):
     next_kc_id = "KC_vowel_diacritics" if request.knowledge_component_id == "KC_mirror_consonants" else "KC_mirror_consonants"
     
     # Update DB
-    await database.bkt_states_collection.update_one(
+    await database.knowledge_states_collection.update_one(
         {"student_id": request.student_id},
         {"$set": {
             "knowledge_state": knowledge_state,
