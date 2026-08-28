@@ -3,6 +3,7 @@ import sys
 import time
 import os
 import fcntl
+import socket
 
 from pathlib import Path
 from fastapi import FastAPI, Request
@@ -22,6 +23,11 @@ SERVICES = [
 
 processes = []
 
+
+def kill_process_on_port(port):
+    print(f"[KILL] Attempting to kill any orphaned process on port {port}...")
+    os.system(f"fuser -k {port}/tcp > /dev/null 2>&1")
+
 def start_services():
     for svc in SERVICES:
         svc_path = BASE / svc["path"]
@@ -34,6 +40,8 @@ def start_services():
         print(f"[START] {svc['name']} on port {svc['port']}...")
         env = os.environ.copy()
         env["PORT"] = str(svc["port"])
+        
+        kill_process_on_port(svc["port"])
         
         p = subprocess.Popen(
             [sys.executable, str(main_py)],
