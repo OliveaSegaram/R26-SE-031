@@ -65,6 +65,14 @@ class ApiConfig {
     return 'https://sipsara-ml-backend-app.azurewebsites.net/telemetry/api/v1/c1';
   }
 
+  /// Unified Learning API Gateway (Port 8015 locally, /learning on Azure)
+  static String get learningBaseUrl {
+    if (isDevelopment) {
+      return 'http://$_localHost:8015/api/v1/learning';
+    }
+    return 'https://sipsara-ml-backend-app.azurewebsites.net/learning/api/v1/learning';
+  }
+
   // --- Helper Methods ---
 
   /// Resolves the absolute URL for a profile picture

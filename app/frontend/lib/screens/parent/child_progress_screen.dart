@@ -1,22 +1,9 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
-import '../../widgets/app_loading_indicator.dart';
-import '../../utils/avatar_utils.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_theme.dart';
-import '../../services/student_service.dart';
-import '../../services/c1_parent_service.dart';
-import '../../models/c1/c1_parent_summary.dart';
-import '../../models/c1/c1_trend_point.dart';
-import '../../widgets/c1/c1_metric_card.dart';
-import '../../widgets/c1/c1_trend_chart.dart';
-import '../../widgets/c1/c1_observation_card.dart';
-import 'skill_detail_progress_screen.dart';
-import '../therapist/therapist_student_detail_screen.dart';
-import '../../services/localization_service.dart';
-/// Child Progress Screen — Visual dashboard showing a specific child's
-/// learning journey: weekly activity chart, overall stats, skill progress.
+import '../../services/parent_dashboard_service.dart';
+import '../../utils/avatar_utils.dart';
+import '../../widgets/app_loading_indicator.dart';
+
 class ChildProgressScreen extends StatefulWidget {
   final Map<String, dynamic> studentData;
 
@@ -26,865 +13,316 @@ class ChildProgressScreen extends StatefulWidget {
   State<ChildProgressScreen> createState() => _ChildProgressScreenState();
 }
 
-class _ChildProgressScreenState extends State<ChildProgressScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
-
+class _ChildProgressScreenState extends State<ChildProgressScreen> {
+  final ParentDashboardService _dashboardService = ParentDashboardService();
   bool _isLoading = true;
-  List<double> _weeklyMinutes = [0, 0, 0, 0, 0, 0, 0];
-  List<Map<String, dynamic>> _skills = [];
-  int _totalActivities = 0;
-  int _overallAccuracy = 0;
-  int _dayStreak = 0;
-  int _totalStars = 0;
-  List<dynamic> _c1History = [];
-  ParentC1Summary? _c1Summary;
-  List<C1TrendPoint> _c1Trend = [];
-
-  final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  
+  Map<String, dynamic>? _overview;
+  Map<String, dynamic>? _skills;
+  Map<String, dynamic>? _learningPattern;
+  Map<String, dynamic>? _activityHistory;
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOut,
-    );
-    _fadeController.forward();
-    _loadTelemetryData();
+    _loadAllData();
   }
-  
-  Future<void> _loadTelemetryData() async {
-    final studentId = widget.studentData['id'] ?? widget.studentData['_id'];
+
+  Future<void> _loadAllData() async {
+    final studentId = widget.studentData['id']?.toString() ?? widget.studentData['_id']?.toString();
     if (studentId == null) {
       setState(() => _isLoading = false);
       return;
     }
-    
-    final sessions = await StudentService().getTelemetry(studentId.toString());
-    final c1Summary = await C1ParentService().getSummary(studentId.toString());
-    final c1Trend = await C1ParentService().getTrend(studentId.toString());
-    
-    _processTelemetryData(sessions);
+
+    final responses = await Future.wait([
+      _dashboardService.getOverview(studentId),
+      _dashboardService.getSkills(studentId),
+      _dashboardService.getLearningPattern(studentId),
+      _dashboardService.getActivityHistory(studentId),
+    ]);
+
     setState(() {
-      _c1Summary = c1Summary;
-      _c1Trend = c1Trend;
+      _overview = responses[0];
+      _skills = responses[1];
+      _learningPattern = responses[2];
+      _activityHistory = responses[3];
       _isLoading = false;
     });
-  }
-
-  void _processTelemetryData(List<dynamic> sessions) {
-    // 1. Calculate Weekly Minutes (Monday - Sunday)
-    final now = DateTime.now();
-    final List<double> weeklyMins = List.filled(7, 0.0);
-    
-    final Map<String, List<dynamic>> activityEvents = {};
-    int totalActs = 0;
-    int totalScoreSum = 0;
-    int earnedStars = 0;
-    Set<String> activeDates = {};
-
-    for (final session in sessions) {
-      final submittedAtStr = session['submitted_at'] as String?;
-      if (submittedAtStr != null) {
-        final submittedAt = DateTime.tryParse(submittedAtStr);
-        if (submittedAt != null) {
-          final diff = now.difference(submittedAt).inDays;
-          if (diff < 7) {
-            final dayIndex = submittedAt.weekday - 1; 
-            final durationSecs = session['session_duration_seconds'] as int? ?? 0;
-            weeklyMins[dayIndex] += (durationSecs / 60.0);
-          }
-          // Store date string for streak calculation (YYYY-MM-DD)
-          activeDates.add("${submittedAt.year}-${submittedAt.month.toString().padLeft(2, '0')}-${submittedAt.day.toString().padLeft(2, '0')}");
-        }
-      }
-
-      final events = session['events'] as List<dynamic>? ?? [];
-      for (final ev in events) {
-        final activityName = ev['activity_name'] as String? ?? 'Unknown';
-        final score = ev['score'] as int? ?? 0;
-        
-        if (!activityEvents.containsKey(activityName)) {
-          activityEvents[activityName] = [];
-        }
-        activityEvents[activityName]!.add(ev);
-        
-        totalActs++;
-        totalScoreSum += score;
-        if (score >= 80) earnedStars += 3;
-        else if (score >= 50) earnedStars += 2;
-        else earnedStars += 1;
-      }
-    }
-
-    // Calculate Streak
-    int currentStreak = 0;
-    DateTime checkDate = now;
-    // Check if they played today or yesterday to start the streak
-    String todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-    String yesterdayStr = "${now.subtract(const Duration(days: 1)).year}-${now.subtract(const Duration(days: 1)).month.toString().padLeft(2, '0')}-${now.subtract(const Duration(days: 1)).day.toString().padLeft(2, '0')}";
-    
-    if (activeDates.contains(todayStr) || activeDates.contains(yesterdayStr)) {
-      if (activeDates.contains(todayStr)) {
-        checkDate = now;
-      } else {
-        checkDate = now.subtract(const Duration(days: 1));
-      }
-      
-      while (true) {
-        String dStr = "${checkDate.year}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}";
-        if (activeDates.contains(dStr)) {
-          currentStreak++;
-          checkDate = checkDate.subtract(const Duration(days: 1));
-        } else {
-          break;
-        }
-      }
-    }
-
-    _weeklyMinutes = weeklyMins;
-    _totalActivities = totalActs;
-    _overallAccuracy = totalActs > 0 ? (totalScoreSum / totalActs).round() : 0;
-    _dayStreak = currentStreak;
-    _totalStars = earnedStars;
-
-    _skills = activityEvents.entries.map((entry) {
-      final name = entry.key;
-      final evts = entry.value;
-      final scores = evts.map((e) => e['score'] as int? ?? 0).toList();
-      final avgScore = scores.isNotEmpty ? scores.reduce((a, b) => a + b) / scores.length : 0.0;
-      
-      // Determine an icon and color based on name (mocking styling for dynamic names)
-      dynamic icon = FontAwesomeIcons.gamepad;
-      Color color = AppColors.calmBlue;
-      if (name.contains('visual') || name.contains('picture')) {
-        icon = FontAwesomeIcons.eye;
-        color = AppColors.softCoral;
-      } else if (name.contains('sound') || name.contains('audio')) {
-        icon = FontAwesomeIcons.volumeHigh;
-        color = AppColors.gentleGreen;
-      } else if (name.contains('word') || name.contains('letter')) {
-        icon = FontAwesomeIcons.font;
-        color = AppColors.warmAmber;
-      }
-
-      return {
-        'name': name.replaceAll('_', ' ').toUpperCase(),
-        'icon': icon,
-        'color': color,
-        'progress': (avgScore / 100.0).clamp(0.0, 1.0),
-        'accuracy': avgScore.round(),
-        'levels': evts.length,
-        'lastPlayed': 'recent',
-        'events': evts,
-      };
-    }).toList();
-
-    // Fallback if no telemetry yet
-    if (_skills.isEmpty) {
-      _skills = [
-         {
-          'name': 'no_activities_played',
-          'icon': FontAwesomeIcons.ghost,
-          'color': AppColors.borderLight,
-          'progress': 0.0,
-          'accuracy': 0,
-          'levels': 0,
-          'lastPlayed': 'never',
-        }
-      ];
-    }
-  }
-
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final name = widget.studentData['first_name'] ?? 'student';
-    String rawGrade = widget.studentData['grade'] ?? 'n/a';
-    if (rawGrade.toLowerCase().contains('grade 1')) {
-      rawGrade = LocalizationService.instance.t('grade_1');
-    }
-    final grade = rawGrade;
-    final avatar =
-        AvatarUtils.getCorrectedAvatarPath(widget.studentData['avatar_url'] as String?, 'assets/images/characters/human/human_student_1.png');
+    final grade = widget.studentData['grade'] ?? 'Grade 1';
+    final avatar = AvatarUtils.getCorrectedAvatarPath(
+        widget.studentData['avatar_url'] as String?, 
+        'assets/images/characters/human/human_student_1.png');
 
-    return ListenableBuilder(
-      listenable: LocalizationService.instance,
-      builder: (context, _) {
-        return Scaffold(
+    return DefaultTabController(
+      length: 5,
+      child: Scaffold(
+        backgroundColor: AppColors.cream,
+        appBar: AppBar(
           backgroundColor: AppColors.cream,
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SafeArea(
-          child: _isLoading 
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundImage: AssetImage(avatar),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '$name - $grade',
+                style: AppTypography.heading(fontSize: 18, color: AppColors.textPrimary),
+              ),
+            ],
+          ),
+          bottom: const TabBar(
+            isScrollable: true,
+            labelColor: AppColors.calmBlue,
+            unselectedLabelColor: AppColors.textHint,
+            indicatorColor: AppColors.calmBlue,
+            tabs: [
+              Tab(text: "Overview"),
+              Tab(text: "Skills"),
+              Tab(text: "Learning Pattern"),
+              Tab(text: "Recent Activity"),
+              Tab(text: "Reports"),
+            ],
+          ),
+        ),
+        body: _isLoading
             ? const Center(child: AppLoadingIndicator())
-            : SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(name, grade, avatar),
-                const SizedBox(height: 24),
-                _buildOverallStats(),
-                const SizedBox(height: 24),
-                _buildWeeklyChart(),
-                const SizedBox(height: 24),
-                if (_c1Summary != null) ...[
-                  _buildC1ParentSummary(),
-                  const SizedBox(height: 24),
+            : TabBarView(
+                children: [
+                  _buildOverviewTab(),
+                  _buildSkillsTab(),
+                  _buildLearningPatternTab(),
+                  _buildActivityTab(),
+                  _buildReportsTab(),
                 ],
-                _buildSkillProgressSection(),
-                const SizedBox(height: 32),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TherapistStudentDetailScreen(student: widget.studentData),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.analytics_rounded, color: Colors.white),
-                      label: Text(
-                        LocalizationService.instance.t('view_advanced_reports'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.calmBlue,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        elevation: 4,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 48),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  });
-  }
-
-  // ─── Header ───
-  Widget _buildHeader(String name, String grade, String avatar) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.calmBlue.withValues(alpha: 0.08),
-            AppColors.cream,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: Row(
-        children: [
-          // Back button
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.borderLight),
               ),
-              child: const Icon(Icons.arrow_back_rounded,
-                  color: AppColors.textPrimary, size: 22),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Child avatar
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.calmBlue, width: 2),
-            ),
-            child: ClipOval(
-              child: Image.asset(avatar, fit: BoxFit.cover),
-            ),
-          ),
-          const SizedBox(width: 14),
-          // Name and grade
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  LocalizationService.instance.t('progress_report'),
-                  style: AppTypography.heading(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  grade,
-                  style: AppTypography.caption(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
 
-  // ─── Overall Stats ───
-  Widget _buildOverallStats() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          _buildMiniStat(FontAwesomeIcons.gamepad, '$_totalActivities', LocalizationService.instance.t('activities'),
-              AppColors.calmBlue),
-          const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.bullseye, '$_overallAccuracy%', LocalizationService.instance.t('accuracy'),
-              AppColors.gentleGreen),
-          const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.fire, '$_dayStreak', LocalizationService.instance.t('day_streak'),
-              AppColors.warmAmber),
-          const SizedBox(width: 10),
-          _buildMiniStat(FontAwesomeIcons.star, '$_totalStars', LocalizationService.instance.t('stars_earned'),
-              AppColors.softCoral),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniStat(
-      dynamic icon, String value, String label, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        decoration: BoxDecoration(
-          color: AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.15)),
-        ),
-        child: Column(
-          children: [
-            FaIcon(icon, size: 16, color: color),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: AppTypography.heading(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            Text(
-              label,
-              style: AppTypography.caption(
-                fontSize: 11,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── Weekly Activity Chart ───
-  Widget _buildWeeklyChart() {
-    final maxMinutes =
-        _weeklyMinutes.reduce((a, b) => a > b ? a : b).clamp(1, 999);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.borderLight, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  LocalizationService.instance.t('weekly_activity'),
-                  style: AppTypography.heading(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.gentleGreen.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${_weeklyMinutes.reduce((a, b) => a + b).round()} ${LocalizationService.instance.t('minutes')}',
-                    style: AppTypography.caption(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.gentleGreen,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 160,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: List.generate(7, (index) {
-                  final height =
-                      (_weeklyMinutes[index] / maxMinutes) * 110;
-                  final isToday = index == DateTime.now().weekday - 1;
-
-                  return Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            '${_weeklyMinutes[index].round()}m',
-                            style: AppTypography.caption(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: isToday
-                                  ? AppColors.calmBlue
-                                  : AppColors.textHint,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 600),
-                            height: max(height, 4),
-                            decoration: BoxDecoration(
-                              gradient: isToday
-                                  ? AppColors.blueButtonGradient
-                                  : LinearGradient(
-                                      colors: [
-                                        AppColors.borderLight,
-                                        AppColors.calmBlue
-                                            .withValues(alpha: 0.3),
-                                      ],
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                    ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _dayLabels[index],
-                            style: AppTypography.caption(
-                              fontSize: 12,
-                              fontWeight: isToday
-                                  ? FontWeight.w800
-                                  : FontWeight.w500,
-                              color: isToday
-                                  ? AppColors.calmBlue
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── Skill Progress Section ───
-  Widget _buildSkillProgressSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+  Widget _buildOverviewTab() {
+    if (_overview == null) return const Center(child: Text("No Data"));
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            LocalizationService.instance.t('recent_skills'),
-            style: AppTypography.heading(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppColors.calmBlue,
-            ),
-          ),
+          Text("Quick Summary", style: AppTypography.heading(fontSize: 20)),
           const SizedBox(height: 16),
-          ..._skills.map((skill) => _buildSkillRow(skill)),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.5,
+            children: [
+              _buildStatCard("Accuracy", "${_overview!['accuracy']}%", Icons.track_changes_rounded, AppColors.gentleGreen),
+              _buildStatCard("Practice Time", "${_overview!['practice_time_minutes']} min", Icons.schedule_rounded, AppColors.calmBlue),
+              _buildStatCard("Sessions", "${_overview!['sessions_completed']}", Icons.videogame_asset_rounded, AppColors.softCoral),
+              _buildStatCard("Current Skill", _overview!['current_skill'], Icons.star_rounded, AppColors.warmAmber),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text("Behavioral Notes", style: AppTypography.heading(fontSize: 20)),
+          const SizedBox(height: 16),
+          ListTile(
+            leading: const Icon(Icons.battery_full_rounded, color: AppColors.calmBlue),
+            title: const Text("Fatigue Status"),
+            subtitle: Text(_overview!['fatigue_status']),
+            tileColor: AppColors.cardSurface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.bolt_rounded, color: AppColors.warmAmber),
+            title: const Text("Response Speed"),
+            subtitle: Text(_overview!['response_speed_status']),
+            tileColor: AppColors.cardSurface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSkillRow(Map<String, dynamic> skill) {
-    final color = skill['color'] as Color;
-    final progress = skill['progress'] as double;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SkillDetailProgressScreen(
-              skillName: skill['name'] as String,
-              skillColor: color,
-              skillIcon: skill['icon'] as dynamic,
-              studentData: widget.studentData,
-              events: skill['events'] ?? [],
+  Widget _buildSkillsTab() {
+    if (_skills == null || _skills!['skills'] == null) return const Center(child: Text("No Data"));
+    final List<dynamic> skills = _skills!['skills'];
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: skills.length,
+      itemBuilder: (context, index) {
+        final skill = skills[index];
+        return Card(
+          color: AppColors.cardSurface,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(skill['skill_name'], style: AppTypography.heading(fontSize: 16)),
+                    Text("${skill['mastery_percentage']}%", style: AppTypography.caption(fontWeight: FontWeight.bold, color: AppColors.calmBlue)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  value: skill['mastery_percentage'] / 100.0,
+                  backgroundColor: AppColors.borderLight,
+                  color: AppColors.calmBlue,
+                  minHeight: 8,
+                ),
+                const SizedBox(height: 8),
+                Text("Status: ${skill['status']}", style: AppTypography.caption(color: AppColors.textSecondary)),
+              ],
             ),
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.cardSurface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.borderLight),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Skill icon
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Center(
-                child: FaIcon(skill['icon'] as dynamic,
-                    size: 20, color: color),
-              ),
-            ),
-            const SizedBox(width: 14),
-            // Skill info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        skill['name'] == 'no_activities_played'
-                            ? LocalizationService.instance.t('no_activities_played')
-                            : LocalizationService.instance.t((skill['name'] as String).toLowerCase().replaceAll(' ', '_')),
-                        style: AppTypography.body(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        '${skill['accuracy']}%',
-                        style: AppTypography.caption(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: color,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: AppColors.borderLight,
-                      color: color,
-                      minHeight: 6,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${LocalizationService.instance.t('levels')}: ${skill['levels']}',
-                        style: AppTypography.caption(
-                          fontSize: 11,
-                          color: AppColors.textHint,
-                        ),
-                      ),
-                      Text(
-                        '${LocalizationService.instance.t('last_active_prefix')}${LocalizationService.instance.t(skill['lastPlayed'] as String)}',
-                        style: AppTypography.caption(
-                          fontSize: 11,
-                          color: AppColors.textHint,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Arrow
-            FaIcon(FontAwesomeIcons.chevronRight,
-                size: 12, color: AppColors.textHint),
-          ],
-        ),
-      ),
     );
   }
 
-  // ─── C1 Behavioral Summary (Parent Dashboard) ───
-  Widget _buildC1ParentSummary() {
-    if (_c1Summary == null) return const SizedBox.shrink();
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+  Widget _buildLearningPatternTab() {
+    if (_learningPattern == null) return const Center(child: Text("No Data"));
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Today\'s Learning Summary',
-            style: AppTypography.heading(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.calmBlue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Observed Pattern", style: AppTypography.caption(color: AppColors.calmBlue)),
+                const SizedBox(height: 8),
+                Text(_learningPattern!['primary_learning_pattern'], style: AppTypography.heading(fontSize: 22, color: AppColors.calmBlue)),
+                const SizedBox(height: 4),
+                Text("Confidence: ${_learningPattern!['confidence_level']}", style: AppTypography.caption()),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          // 4 Cards Grid
-          GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.4,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _buildParentSummaryCard('Accuracy', '${_c1Summary!.accuracy}%', '🎯', Colors.green),
-              _buildParentSummaryCard('Response Time', _c1Summary!.responseSpeed, '⚡', Colors.blue),
-              _buildParentSummaryCard('Attention', _c1Summary!.attention, '👁️', Colors.orange),
-              _buildParentSummaryCard('Fatigue', 'Low', '🔋', Colors.purple), // Mock fatigue if not in summary
-            ],
-          ),
-          
           const SizedBox(height: 24),
-          
-          // Learning Trend Chart
-          if (_c1Trend.isNotEmpty) ...[
-            Text(
-              'Learning Trend (Last 7 Sessions)',
-              style: AppTypography.heading(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+          Text("Supporting Observations", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          ...(_learningPattern!['supporting_observations'] as List<dynamic>).map((obs) => Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle, color: AppColors.gentleGreen, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text(obs.toString(), style: AppTypography.body())),
+              ],
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.borderLight),
-                boxShadow: [
-                  BoxShadow(color: AppColors.shadow, blurRadius: 8, offset: const Offset(0, 4)),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 7,
-                    child: SizedBox(
-                      height: 180,
-                      child: C1TrendChart(
-                        points: _c1Trend,
-                        metric: 'accuracy',
-                        label: 'Accuracy',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildTrendAvgText('Avg Accuracy', '${_c1Summary!.accuracy}%', Colors.green),
-                        const SizedBox(height: 12),
-                        _buildTrendAvgText('Avg Response', _c1Summary!.responseSpeed, Colors.blue),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-          
-          // What We Observed Today
-          Text(
-            'What We Observed Today',
-            style: AppTypography.heading(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          )),
+          const SizedBox(height: 24),
+          Text("Recommended Practice", style: AppTypography.heading(fontSize: 18)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.borderLight),
+              color: AppColors.cardSurface,
+              border: Border.all(color: AppColors.warmAmber),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: _c1Summary!.learningObservations.map((obs) => Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text(obs, style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4))),
-                  ],
-                ),
-              )).toList(),
+            child: Row(
+              children: [
+                const Icon(Icons.lightbulb_rounded, color: AppColors.warmAmber),
+                const SizedBox(width: 12),
+                Expanded(child: Text(_learningPattern!['recommended_practice'], style: AppTypography.body())),
+              ],
             ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Recommended Practice
-          Text(
-            'Recommended Practice',
-            style: AppTypography.heading(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Column(
-            children: _c1Summary!.recommendedPractice.map((rec) => Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.calmBlue.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.lightbulb_outline, color: AppColors.calmBlue, size: 24),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(child: Text(rec, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
-                ],
-              ),
-            )).toList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildParentSummaryCard(String title, String value, String emoji, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4)),
+  Widget _buildActivityTab() {
+    if (_activityHistory == null || _activityHistory!['history'] == null) return const Center(child: Text("No Data"));
+    final List<dynamic> history = _activityHistory!['history'];
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: history.length,
+      itemBuilder: (context, index) {
+        final item = history[index];
+        return Card(
+          color: AppColors.cardSurface,
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ListTile(
+            leading: const Icon(Icons.videogame_asset_rounded, color: AppColors.calmBlue),
+            title: Text(item['activity_name']),
+            subtitle: Text("${item['session_date']} • ${item['duration_minutes']} min"),
+            trailing: Text("${item['accuracy']}%", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.gentleGreen)),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildReportsTab() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.picture_as_pdf_rounded, size: 64, color: AppColors.softCoral),
+          const SizedBox(height: 24),
+          Text("Download Official Report", style: AppTypography.heading(fontSize: 20)),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              // Implementation to download report from /api/v1/parent/students/{id}/report
+            },
+            icon: const Icon(Icons.download),
+            label: const Text("Download PDF"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.calmBlue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 20)),
-              const SizedBox(width: 8),
-              Expanded(child: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54))),
-            ],
-          ),
-          const Spacer(),
-          Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: color)),
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(value, style: AppTypography.heading(fontSize: 18, color: AppColors.textPrimary)),
+          Text(label, style: AppTypography.caption(fontSize: 11, color: AppColors.textSecondary), textAlign: TextAlign.center),
         ],
       ),
-    );
-  }
-
-  Widget _buildTrendAvgText(String label, String value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.bold)),
-        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
-      ],
     );
   }
 }

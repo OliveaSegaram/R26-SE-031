@@ -8,6 +8,7 @@ import '../models/curriculum_models.dart';
 import '../screens/activity_complete_screen.dart';
 import '../screens/games/game_factory.dart';
 import '../services/tts_service.dart';
+import '../services/student_service.dart';
 
 /// A wrapper widget that tracks all touch events, latency, and coordinates
 /// before they reach the underlying game template.
@@ -22,12 +23,14 @@ class TelemetryWrapper extends StatefulWidget {
   final ActivityNode activityNode;
   final Widget child;
   final Function(int score) onRoundComplete;
+  final Map<String, dynamic>? studentData;
 
   const TelemetryWrapper({
     super.key,
     required this.activityNode,
     required this.child,
     required this.onRoundComplete,
+    this.studentData,
   });
 
   @override
@@ -219,6 +222,35 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
     TelemetryService().broadcastRoundComplete(finalRoundScore, totalRoundLatency);
     TelemetryService().logInteraction(event);
+
+    // --- NEW: Real-time Orchestrator Submission (C1-C4) ---
+    final studentId = widget.studentData?['id'] ?? widget.studentData?['_id'] ?? 'STU001';
+    final sessionId = TelemetryService().sessionStartTime?.toIso8601String() ?? DateTime.now().toIso8601String();
+
+    final payload = {
+      "student_id": studentId,
+      "session_id": sessionId,
+      "activity_id": widget.activityNode.id,
+      "item_id": "${widget.activityNode.id}_round$_currentRound",
+      "response": {
+        "selected_character": "item", 
+        "is_correct": finalRoundScore > 0
+      },
+      "telemetry": {
+        "first_touch_latency_ms": event.firstTouchLatencyMs >= 0 ? event.firstTouchLatencyMs : 0,
+        "total_round_latency_ms": event.totalRoundLatencyMs,
+        "hesitation_count": event.hesitationCount,
+        "misclick_count": event.misclickCount,
+        "touch_stream": event.touchPath.map((p) => p.toJson()).toList()
+      }
+    };
+    
+    // Fire and forget
+    StudentService().submitInteraction(payload).then((result) {
+      if (result != null) {
+        debugPrint('TELEMETRY: Received C1-C4 result: $result');
+      }
+    });
 
     debugPrint(
       'TELEMETRY: Round $_currentRound | '

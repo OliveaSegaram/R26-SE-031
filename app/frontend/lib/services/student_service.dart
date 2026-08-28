@@ -290,6 +290,28 @@ class StudentService {
     }
   }
 
+  /// Submit real-time interaction to the unified C1-C4 pipeline.
+  Future<Map<String, dynamic>?> submitInteraction(Map<String, dynamic> payload) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('${ApiConfig.learningBaseUrl}/interaction'),
+        headers: headers,
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        debugPrint('Failed to submit interaction: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error submitting interaction: $e');
+      return null;
+    }
+  }
+
   /// Fetch raw telemetry session history for a student.
   Future<List<dynamic>> getTelemetry(String studentId) async {
     try {
