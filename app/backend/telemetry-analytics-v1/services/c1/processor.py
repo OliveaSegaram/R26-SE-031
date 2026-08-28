@@ -21,7 +21,12 @@ def extract_features(events: List[dict]) -> dict:
         "latency_drift": feats.calculate_latency_drift(events),
         "error_drift": feats.calculate_error_drift(events),
         "hesitation_drift": feats.calculate_hesitation_drift(events),
-        "accuracy_slope": feats.calculate_accuracy_slope(events)
+        "accuracy_slope": feats.calculate_accuracy_slope(events),
+        "total_questions": feats.calculate_total_questions(events),
+        "correct_answers": feats.calculate_correct_count(events),
+        "hesitation_count": feats.calculate_total_count(events, "hesitation_count"),
+        "misclick_count": feats.calculate_total_count(events, "misclick_count"),
+        "replay_count": feats.calculate_total_count(events, "audio_replay_count")
     }
 
 def process_session(session_id: str, student_id: str, events: List[dict]) -> dict:

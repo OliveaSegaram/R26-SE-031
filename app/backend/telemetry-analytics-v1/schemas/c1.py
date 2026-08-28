@@ -15,6 +15,11 @@ class BehavioralFeatures(BaseModel):
     error_drift: Optional[float] = None
     hesitation_drift: Optional[float] = None
     accuracy_slope: Optional[float] = None
+    total_questions: Optional[int] = 0
+    correct_answers: Optional[int] = 0
+    hesitation_count: Optional[int] = 0
+    misclick_count: Optional[int] = 0
+    replay_count: Optional[int] = 0
 
 class LearnerIndices(BaseModel):
     visual_processing_index: Optional[float] = None

@@ -8,6 +8,16 @@ def calculate_accuracy(events: List[dict]) -> Optional[float]:
     correct = sum(1 for e in valid if e["is_correct"])
     return correct / len(valid)
 
+def calculate_correct_count(events: List[dict]) -> int:
+    valid = [e for e in events if "is_correct" in e]
+    return sum(1 for e in valid if e["is_correct"])
+
+def calculate_total_questions(events: List[dict]) -> int:
+    return len([e for e in events if "is_correct" in e])
+
+def calculate_total_count(events: List[dict], field: str) -> int:
+    return sum(e.get(field, 0) for e in events if e.get(field) is not None)
+
 def calculate_mean_latency(events: List[dict]) -> Optional[float]:
     lats = [e.get("total_round_latency_ms") for e in events if e.get("total_round_latency_ms") is not None]
     return statistics.mean(lats) if lats else None
