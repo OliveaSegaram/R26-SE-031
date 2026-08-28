@@ -95,18 +95,11 @@ Speaker 1: {text}"""
                 temperature=0.5,
                 response_modalities=["audio"],
                 speech_config=types.SpeechConfig(
-                    multi_speaker_voice_config=types.MultiSpeakerVoiceConfig(
-                        speaker_voice_configs=[
-                            types.SpeakerVoiceConfig(
-                                speaker="Speaker 1",
-                                voice_config=types.VoiceConfig(
-                                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                                        voice_name="Zephyr"
-                                    )
-                                ),
-                            ),
-                        ]
-                    ),
+                    voice_config=types.VoiceConfig(
+                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                            voice_name="Zephyr"
+                        )
+                    )
                 ),
             )
 
