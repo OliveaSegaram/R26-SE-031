@@ -26,11 +26,11 @@ class FusionRequest(BaseModel):
     c2_kinematic_vector: KinematicFeatures
     student_age_months: int = Field(..., description="Crucial baseline anchor")
 
-class ClinicalAssessment(BaseModel):
-    base_prevalence_risk: float
-    final_predicted_risk: float
-    predicted_subtype: str
-    subtype_class_id: int
+class LearnerProfileOutput(BaseModel):
+    class_probabilities: dict
+    primary_pattern: str
+    confidence: float
+    modalities_used: list
 
 class ShapExplanation(BaseModel):
     feature_name: str
@@ -44,6 +44,6 @@ class ShapExplanationsData(BaseModel):
 class FusionResponse(BaseModel):
     student_id: str
     component: str = "Component_3_XAI_Fusion"
-    risk_score: float
-    clinical_subtype: str
+    learner_profile: LearnerProfileOutput
     shap_explanations: ShapExplanationsData
+    model_version: str = "C3-v1.0"

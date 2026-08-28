@@ -59,10 +59,10 @@ class ParentDashboardService {
     }
   }
 
-  Future<Map<String, dynamic>> getActivityHistory(String studentId) async {
+  Future<Map<String, dynamic>> getActivityHistory(String studentId, [String filter = "limit=10"]) async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/$studentId/activity-history'),
+        Uri.parse('$_baseUrl/$studentId/activity-history?$filter'),
         headers: await _getHeaders(),
       );
       if (response.statusCode == 200) {

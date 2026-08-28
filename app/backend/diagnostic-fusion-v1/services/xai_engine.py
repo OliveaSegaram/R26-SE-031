@@ -128,11 +128,11 @@ class XAIEngine:
             })
 
         return {
-            "clinical_assessment": {
-                "base_prevalence_risk": base_prevalence_risk,
-                "final_predicted_risk": round(final_predicted_risk, 3),
-                "predicted_subtype": SUBTYPE_MAP[predicted_class],
-                "subtype_class_id": predicted_class
+            "learner_profile": {
+                "class_probabilities": {SUBTYPE_MAP[i]: round(float(p), 3) for i, p in enumerate(probas)},
+                "primary_pattern": SUBTYPE_MAP[predicted_class],
+                "confidence": round(float(np.max(probas)), 3),
+                "modalities_used": ["C1_Acoustic", "C2_Kinematic"]
             },
             "shap_explanations": {
                 "top_contributing_features": explanations

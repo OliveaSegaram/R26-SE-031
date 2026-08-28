@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, Response
-from typing import List, Dict, Any
-from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
+from typing import List, Dict, Any, Optional
+from datetime import datetime, timedelta
 from schemas.dashboards import (
     ParentOverviewDTO,
     ParentSkillsDTO,
@@ -95,8 +95,8 @@ async def get_parent_learning_pattern(student_id: str = Path(...)):
     recommended = "Practice similar-letter recognition."
 
     if c3:
-        pattern = c3.get("clinical_assessment", {}).get("predicted_subtype", pattern)
-        conf_val = 1.0 - c3.get("clinical_assessment", {}).get("final_predicted_risk", 0.5)
+        pattern = c3.get("learner_profile", {}).get("primary_pattern", pattern)
+        conf_val = c3.get("learner_profile", {}).get("confidence", 0.5)
         if conf_val > 0.8: confidence = "High"
         elif conf_val < 0.4: confidence = "Low"
 
@@ -111,31 +111,52 @@ async def get_parent_learning_pattern(student_id: str = Path(...)):
     )
 
 @router.get("/{student_id}/activity-history", response_model=ParentActivityHistoryDTO)
-async def get_parent_activity_history(student_id: str = Path(...)):
+async def get_parent_activity_history(
+    student_id: str = Path(...),
+    limit: Optional[int] = Query(None, description="Number of interactions to return"),
+    days: Optional[int] = Query(None, description="Number of days to look back")
+):
     db = get_db()
     
-    history_cursor = db["telemetry_events"].find({"student_id": student_id}).sort("_id", -1).limit(5)
-    events = await history_cursor.to_list(length=5)
+    query = {"student_id": student_id}
+    reporting_period = "Last 10 Interactions"
+    
+    if days is not None:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        query["timestamp"] = {"$gte": cutoff.isoformat()}
+        reporting_period = f"Last {days} Days"
+        if limit is None:
+            limit = 100 # safe bound
+    elif limit is not None:
+        reporting_period = f"Last {limit} Interactions"
+    else:
+        limit = 10
+        
+    history_cursor = db["telemetry_events"].find(query).sort("_id", 1)
+    if limit is not None:
+        history_cursor = history_cursor.limit(limit)
+        
+    events = await history_cursor.to_list(length=limit or 100)
     
     history_data = []
-    for evt in events:
-        history_data.append(ActivityHistoryItem(
-            session_date=datetime.utcnow().strftime("%Y-%m-%d"),
-            activity_name=evt.get("activity_name", "Letter Recognition"),
-            skill_name="Letters",
-            accuracy=100 if evt.get("is_correct") else 0,
-            duration_minutes=int(evt.get("total_round_latency_ms", 120000) / 60000)
-        ))
-        
-    if not history_data:
+    if not events:
         history_data = [
             ActivityHistoryItem(session_date="2026-08-28", activity_name="Letter Recognition", skill_name="Letters", accuracy=80, duration_minutes=8)
         ]
+    else:
+        for evt in events:
+            history_data.append(ActivityHistoryItem(
+                session_date=datetime.utcnow().strftime("%Y-%m-%d"), # Mock date for simplicity unless stored
+                activity_name=evt.get("activity_id", "Letter Recognition"),
+                skill_name="Letters",
+                accuracy=100 if evt.get("is_correct") else 0,
+                duration_minutes=max(1, evt.get("total_round_latency_ms", 60000) // 60000)
+            ))
         
     return ParentActivityHistoryDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
-        reporting_period="Last 7 Days",
+        reporting_period=reporting_period,
         history=history_data
     )
 
