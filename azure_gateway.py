@@ -57,21 +57,25 @@ async def proxy_request(request: Request, service_port: int, path: str):
     # Read the body
     body = await request.body()
     
-    # Forward the request
-    req = client.build_request(
-        method=request.method,
-        url=url,
-        headers=request.headers.raw,
-        content=body
-    )
-    
-    response = await client.send(req, stream=True)
-    
-    return StreamingResponse(
-        response.aiter_raw(),
-        status_code=response.status_code,
-        headers=response.headers
-    )
+    try:
+        # Forward the request
+        req = client.build_request(
+            method=request.method,
+            url=url,
+            headers=request.headers.raw,
+            content=body
+        )
+        
+        response = await client.send(req, stream=True)
+        
+        return StreamingResponse(
+            response.aiter_raw(),
+            status_code=response.status_code,
+            headers=response.headers
+        )
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
 
 @app.api_route("/speech/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def proxy_speech(request: Request, path: str):
