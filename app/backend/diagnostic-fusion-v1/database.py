@@ -26,5 +26,5 @@ async def close_mongo_connection():
         logger.info("MongoDB connection closed.")
 
 def get_db():
-    db_name = os.getenv("MONGODB_DB_NAME", "sipsara_db")
+    db_name = os.getenv("MONGODB_DB_NAME", "r26_se_031")
     return db_instance.client[db_name]
