@@ -13,6 +13,7 @@ import 'select_student_screen.dart';
 import 'parent/parent_hub_screen.dart';
 import 'character_shop_screen.dart';
 import 'progress_analytics_screen.dart';
+import '../services/tts_service.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
 import 'loading_skill_screen.dart';
@@ -630,7 +631,10 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                           if (url.isNotEmpty) {
                             try {
                               await _audioPlayer.stop();
-                              if (url.startsWith('http://') || url.startsWith('https://')) {
+                              if (url.contains('githubusercontent')) {
+                                // GitHub repo is private, file doesn't exist, fallback to TTS
+                                await TtsService().speak(widget.skill.title);
+                              } else if (url.startsWith('http://') || url.startsWith('https://')) {
                                 await _audioPlayer.play(UrlSource(url));
                               } else {
                                 final cleanPath = url.replaceFirst('assets/', '');
