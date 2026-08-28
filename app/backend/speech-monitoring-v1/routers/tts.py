@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response
 from pydantic import BaseModel
 from services.tts_service import TTSService
 from database import get_fs
@@ -25,7 +25,7 @@ async def generate_speech(request: TTSRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/audio/{text_hash}.wav")
+@router.api_route("/audio/{text_hash}.wav", methods=["GET", "HEAD"])
 async def get_audio(text_hash: str):
     """
     Streams the TTS audio file directly from MongoDB GridFS.
@@ -41,12 +41,12 @@ async def get_audio(text_hash: str):
     file_id = docs[0]["_id"]
     grid_out = await fs.open_download_stream(file_id)
     
-    async def stream_audio():
-        while True:
-            chunk = await grid_out.readchunk()
-            if not chunk:
-                break
-            yield chunk
+    audio_data = b""
+    while True:
+        chunk = await grid_out.readchunk()
+        if not chunk:
+            break
+        audio_data += chunk
 
     content_type = docs[0].get("metadata", {}).get("contentType", "audio/wav")
-    return StreamingResponse(stream_audio(), media_type=content_type)
+    return Response(content=audio_data, media_type=content_type)
