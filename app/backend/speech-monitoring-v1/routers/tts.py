@@ -48,4 +48,5 @@ async def get_audio(text_hash: str):
                 break
             yield chunk
 
-    return StreamingResponse(stream_audio(), media_type="audio/mpeg")
+    content_type = docs[0].get("metadata", {}).get("contentType", "audio/wav")
+    return StreamingResponse(stream_audio(), media_type=content_type)
