@@ -59,8 +59,9 @@ async def update_interaction(request: InteractionRequest):
     else:
         theta -= 0.1
     
-    # 2. Check Fatigue via IRT SE or Time
-    terminate_session = irt_engine.should_terminate_session(theta, item_difficulties) or request.current_session_duration_sec > 900
+    # 2. Check Fatigue via Fatigue Score or Time
+    # IRT SE is no longer used for fatigue
+    terminate_session = request.fatigue_score >= 0.75 or request.current_session_duration_sec > 900
     
     # 3. Determine ZPD Scaffolding
     scaffold_level = 0

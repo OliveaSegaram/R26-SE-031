@@ -95,8 +95,8 @@ async def get_parent_learning_pattern(student_id: str = Path(...)):
     recommended = "Practice similar-letter recognition."
 
     if c3:
-        pattern = c3.get("model", {}).get("pattern", pattern)
-        conf_val = c3.get("model", {}).get("confidence", 0.5)
+        pattern = c3.get("clinical_assessment", {}).get("predicted_subtype", pattern)
+        conf_val = 1.0 - c3.get("clinical_assessment", {}).get("final_predicted_risk", 0.5)
         if conf_val > 0.8: confidence = "High"
         elif conf_val < 0.4: confidence = "Low"
 
