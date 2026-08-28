@@ -42,13 +42,13 @@ async def get_therapist_overview(student_id: str = Path(...)):
         reporting_period="Last 7 Days",
         model_version="C3-v1",
         feature_version="F-v1",
-        confidence=c3.get("model", {}).get("confidence", 0.85) if c3 else 0.85,
+        confidence=1.0 - c3.get("clinical_assessment", {}).get("final_predicted_risk", 0.5) if c3 else 0.85,
         accuracy=int(behavior.get("accuracy", 75)),
         median_latency_ms=int(behavior.get("median_latency_ms", 2100)),
         hesitation_rate=behavior.get("hesitation_rate", 0.18),
         misclick_rate=behavior.get("misclick_rate", 0.08),
         fatigue_score=c1.get("fatigue", {}).get("score", 0.32) if c1 else 0.32,
-        primary_learning_pattern=c3.get("model", {}).get("pattern", "Visual-Orthographic") if c3 else "Visual-Orthographic",
+        primary_learning_pattern=c3.get("clinical_assessment", {}).get("predicted_subtype", "Visual-Orthographic Learning Pattern") if c3 else "Visual-Orthographic Learning Pattern",
         overall_mastery=0.68,
         current_kc="Letter Identity",
         current_difficulty=0.7
@@ -110,27 +110,39 @@ async def get_therapist_profile(student_id: str = Path(...)):
     db = get_db()
     c3 = await db["learner_profiles"].find_one({"student_id": student_id}, sort=[("_id", -1)])
     
+    # Map raw SHAP explanations to DTO
+    shap_vals = []
+    top_feats = []
+    if c3 and "shap_explanations" in c3:
+        exps = c3["shap_explanations"].get("top_contributing_features", [])
+        for exp in exps:
+            contrib = float(exp.get("shap_impact", "0.0").replace("+", ""))
+            shap_vals.append(ShapExplanation(feature=exp["feature_name"], contribution=contrib))
+            top_feats.append(exp["feature_name"])
+    
+    if not shap_vals:
+        shap_vals = [
+            ShapExplanation(feature="OCI", contribution=0.31),
+            ShapExplanation(feature="Response Latency", contribution=0.14)
+        ]
+        top_feats = ["OCI", "Response Latency"]
+
     return TherapistProfileDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
         reporting_period="Last 7 Days",
         model_version="C3-v1",
         feature_version="F-v1",
-        confidence=c3.get("model", {}).get("confidence", 0.71) if c3 else 0.71,
-        selected_pattern=c3.get("model", {}).get("pattern", "Visual-Orthographic") if c3 else "Visual-Orthographic",
+        confidence=1.0 - c3.get("clinical_assessment", {}).get("final_predicted_risk", 0.5) if c3 else 0.71,
+        selected_pattern=c3.get("clinical_assessment", {}).get("predicted_subtype", "Visual-Orthographic Learning Pattern") if c3 else "Visual-Orthographic Learning Pattern",
         probabilities={
             "Typical": 0.08,
             "Visual-Orthographic": 0.71,
             "Phonological": 0.12,
             "Combined": 0.09
         },
-        shap_values=[
-            ShapExplanation(feature="OCI", contribution=0.31),
-            ShapExplanation(feature="Response Latency", contribution=0.14),
-            ShapExplanation(feature="Path Efficiency", contribution=0.11),
-            ShapExplanation(feature="Hesitation", contribution=0.07),
-        ],
-        top_shap_features=["OCI", "Response Latency", "Path Efficiency"]
+        shap_values=shap_vals,
+        top_shap_features=top_feats
     )
 
 @router.get("/{student_id}/knowledge", response_model=TherapistKnowledgeDTO)

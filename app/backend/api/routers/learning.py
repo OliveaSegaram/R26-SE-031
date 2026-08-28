@@ -47,7 +47,7 @@ async def process_interaction(payload: InteractionPayload):
         "misclick_count": payload.telemetry.misclick_count,
         "target_stimulus": None, # Should be fetched from item bank
         "selected_stimulus": payload.response.selected_character,
-        "touch_stream": payload.telemetry.touch_stream
+        "touch_path": payload.telemetry.touch_stream
     }
     
     session_submit = {
@@ -60,10 +60,13 @@ async def process_interaction(payload: InteractionPayload):
     }
 
     c1_c3_result = {}
+    c2_result = {}
+    c3_result = {}
+    c4_result = {}
+    
     async with httpx.AsyncClient() as client:
+        # 1 & 2. Call Telemetry Analytics (C1 and C2)
         try:
-            # Send to telemetry-analytics-v1 (C1-C3 pipeline)
-            # This microservice natively saves telemetry_events, behavioral_features (C1), learner_profiles (C3)
             c1_resp = await client.post(
                 "http://localhost:8025/api/v1/c1/session", 
                 json=session_submit,
@@ -71,25 +74,55 @@ async def process_interaction(payload: InteractionPayload):
             )
             if c1_resp.status_code == 201:
                 c1_c3_result = c1_resp.json()
+                
+            # TODO: Add specific C2 call when the endpoint is exposed, mocking for now as requested
+            c2_result = {
+                "oci": 0.67,
+                "path_efficiency": 0.63,
+                "normalized_jerk": 3.82
+            }
         except Exception as e:
-            print(f"C1 pipeline error: {e}")
+            print(f"C1/C2 pipeline error: {e}")
 
-    # 2. Prepare Adaptive Tutoring Request (C4)
-    # The BKT/IRT engine expects knowledge_component_id. We map item_id to KC.
-    kc_id = "KC_LETTER_IDENTITY"  # simplified mapping for demo
-    
-    adaptive_submit = {
-        "student_id": payload.student_id,
-        "knowledge_component_id": kc_id,
-        "is_correct": payload.response.is_correct,
-        "current_session_duration_sec": payload.telemetry.total_round_latency_ms // 1000
-    }
+        # 3 & 4. Call Diagnostic Fusion (C3)
+        if c1_c3_result:
+            try:
+                c3_payload = {
+                    "student_id": payload.student_id,
+                    "student_age_months": 72,
+                    "c1_audio_vector": {
+                        "acoustic_latency_ms": 500,
+                        "peak_count_delta": 0,
+                        "intra_word_silence_ratio": 0.1
+                    },
+                    "c2_kinematic_vector": {
+                        "time_to_first_touch_ms": c1_c3_result.get("behavior", {}).get("mean_first_touch_latency_ms", 1000),
+                        "orthographic_confusion_index": c2_result["oci"],
+                        "path_efficiency_ratio": c2_result["path_efficiency"],
+                        "dimensionless_jerk": c2_result["normalized_jerk"],
+                        "mean_dwell_time_ms": 200
+                    }
+                }
+                c3_resp = await client.post(
+                    "http://localhost:8016/diagnose",
+                    json=c3_payload,
+                    timeout=10.0
+                )
+                if c3_resp.status_code == 200:
+                    c3_result = c3_resp.json()
+            except Exception as e:
+                print(f"C3 pipeline error: {e}")
 
-    c4_result = {}
-    async with httpx.AsyncClient() as client:
+        # 5. Call Adaptive Tutoring (C4)
+        kc_id = "KC_LETTER_IDENTITY"
         try:
-            # Send to adaptive-tutoring-v1 (C4 pipeline)
-            # This microservice natively saves knowledge_states and adaptive_decisions
+            adaptive_submit = {
+                "student_id": payload.student_id,
+                "knowledge_component_id": kc_id,
+                "is_correct": payload.response.is_correct,
+                "current_session_duration_sec": payload.telemetry.total_round_latency_ms // 1000,
+                "fatigue_score": c1_c3_result.get("fatigue", {}).get("score", 0.0)
+            }
             c4_resp = await client.post(
                 "http://localhost:8017/update_interaction",
                 json=adaptive_submit,
@@ -100,15 +133,9 @@ async def process_interaction(payload: InteractionPayload):
         except Exception as e:
             print(f"C4 pipeline error: {e}")
 
-    # 3. Format unified response
-    
-    # Safely extract values
+    # Format unified response
     behavior = c1_c3_result.get("behavior", {})
     fatigue = c1_c3_result.get("fatigue", {})
-    model_metadata = c1_c3_result.get("model", {})
-    
-    # Mocking C2 OCI extraction since it requires kinematic processor
-    # In a full system, C2 would be extracted by diagnostic-fusion-v1
     
     response = {
         "result": {
@@ -120,14 +147,14 @@ async def process_interaction(payload: InteractionPayload):
             "fatigue_score": fatigue.get("score", 0.0)
         },
         "c2": {
-            "oci": 0.67,  # Placeholder until kinematic pipeline is attached
-            "path_efficiency": 0.63,
-            "normalized_jerk": 3.82
+            "oci": c2_result.get("oci", 0.0),
+            "path_efficiency": c2_result.get("path_efficiency", 1.0),
+            "normalized_jerk": c2_result.get("normalized_jerk", 0.0)
         },
         "c3": {
-            "profile": model_metadata.get("pattern", "VISUAL_ORTHOGRAPHIC"),
-            "probability": model_metadata.get("confidence", 0.71),
-            "confidence": model_metadata.get("confidence", 0.71)
+            "profile": c3_result.get("clinical_subtype", "Unknown"),
+            "probability": c3_result.get("risk_score", 0.0),
+            "confidence": 0.85
         },
         "c4": {
             "mastery": c4_result.get("updated_knowledge_state", {}).get(kc_id, 0.5),
