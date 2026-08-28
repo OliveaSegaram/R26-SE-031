@@ -463,7 +463,11 @@ class LocalizationService extends ChangeNotifier {
       'nav_students': 'සිසුන්',
       'nav_profile': 'ගිණුම',
       'moko_greeting': 'ආයුබෝවන්! මම මොකෝ!\nඔබව හමුවීම ගැන මට ගොඩක් සතුටුයි!',
+      'intro_page1_title': 'ආයුබෝවන්! මම මොකෝ!\nමම තමයි ඔබේ දරුවාගේ අලුත් ඉගෙනුම් මිතුරා!',
+      'intro_page2_title': 'විනෝදජනක ක්‍රීඩා මගින් සිංහල ඉගෙනීමට සිප්සර ඔබට උදව් කරනවා!',
+      'intro_page3_title': 'ඔබට ඔවුන්ගේ ප්‍රගතිය නිරීක්ෂණය කර පහසුවෙන් විශේෂඥයින් සම්බන්ධ කරගන්න පුළුවන්!',
       'continue_btn': 'ඉදිරියට යන්න',
+      'get_started_btn': 'ආරම්භ කරන්න',
     },
     'en': {
       'welcome_title': 'Welcome!',
@@ -858,7 +862,11 @@ class LocalizationService extends ChangeNotifier {
       'nav_students': 'Students',
       'nav_profile': 'Profile',
       'moko_greeting': "Hi there! I'm Moko!\nI'm so excited to meet you!",
+      'intro_page1_title': "Hi! I'm Moko!\nI'll be your child's new learning buddy!",
+      'intro_page2_title': 'Sipsara makes learning Sinhala fun with adaptive games!',
+      'intro_page3_title': 'You can easily track their progress and connect with therapists!',
       'continue_btn': 'continue',
+      'get_started_btn': 'get started',
     }
   };
 }
