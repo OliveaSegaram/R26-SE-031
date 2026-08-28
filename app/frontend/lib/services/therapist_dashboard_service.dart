@@ -22,17 +22,17 @@ class TherapistDashboardService {
     } catch (_) { return _getMockOverview(studentId); }
   }
 
-  Future<Map<String, dynamic>> getBehavior(String studentId) async {
+  Future<Map<String, dynamic>> getBehavior(String studentId, [String filter = "limit=10"]) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/$studentId/behavior'), headers: await _getHeaders());
+      final response = await http.get(Uri.parse('$_baseUrl/$studentId/behavior?$filter'), headers: await _getHeaders());
       if (response.statusCode == 200) return jsonDecode(response.body);
       return _getMockBehavior(studentId);
     } catch (_) { return _getMockBehavior(studentId); }
   }
 
-  Future<Map<String, dynamic>> getKinematics(String studentId) async {
+  Future<Map<String, dynamic>> getKinematics(String studentId, [String filter = "limit=10"]) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/$studentId/kinematics'), headers: await _getHeaders());
+      final response = await http.get(Uri.parse('$_baseUrl/$studentId/kinematics?$filter'), headers: await _getHeaders());
       if (response.statusCode == 200) return jsonDecode(response.body);
       return _getMockKinematics(studentId);
     } catch (_) { return _getMockKinematics(studentId); }
@@ -46,9 +46,9 @@ class TherapistDashboardService {
     } catch (_) { return _getMockProfile(studentId); }
   }
 
-  Future<Map<String, dynamic>> getKnowledge(String studentId) async {
+  Future<Map<String, dynamic>> getKnowledge(String studentId, [String filter = "limit=10"]) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/$studentId/knowledge'), headers: await _getHeaders());
+      final response = await http.get(Uri.parse('$_baseUrl/$studentId/knowledge?$filter'), headers: await _getHeaders());
       if (response.statusCode == 200) return jsonDecode(response.body);
       return _getMockKnowledge(studentId);
     } catch (_) { return _getMockKnowledge(studentId); }

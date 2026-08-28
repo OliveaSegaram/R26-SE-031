@@ -3,6 +3,7 @@ import '../../theme/app_theme.dart';
 import '../../services/parent_dashboard_service.dart';
 import '../../utils/avatar_utils.dart';
 import '../../widgets/app_loading_indicator.dart';
+import '../../widgets/trend_chart.dart';
 
 class ChildProgressScreen extends StatefulWidget {
   final Map<String, dynamic> studentData;
@@ -21,6 +22,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
   Map<String, dynamic>? _skills;
   Map<String, dynamic>? _learningPattern;
   Map<String, dynamic>? _activityHistory;
+  String _currentFilter = "limit=10";
 
   @override
   void initState() {
@@ -39,7 +41,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
       _dashboardService.getOverview(studentId),
       _dashboardService.getSkills(studentId),
       _dashboardService.getLearningPattern(studentId),
-      _dashboardService.getActivityHistory(studentId),
+      _dashboardService.getActivityHistory(studentId, _currentFilter),
     ]);
 
     setState(() {
@@ -70,6 +72,33 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
             onPressed: () => Navigator.pop(context),
           ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: DropdownButton<String>(
+                value: _currentFilter,
+                underline: const SizedBox(),
+                icon: const Icon(Icons.filter_list, color: AppColors.calmBlue),
+                style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+                onChanged: (String? newValue) {
+                  if (newValue != null && newValue != _currentFilter) {
+                    setState(() {
+                      _currentFilter = newValue;
+                      _isLoading = true;
+                    });
+                    _loadAllData();
+                  }
+                },
+                items: const [
+                  DropdownMenuItem(value: "limit=5", child: Text("Last 5 Interactions")),
+                  DropdownMenuItem(value: "limit=10", child: Text("Last 10 Interactions")),
+                  DropdownMenuItem(value: "limit=20", child: Text("Last 20 Interactions")),
+                  DropdownMenuItem(value: "days=7", child: Text("Last 7 Days")),
+                  DropdownMenuItem(value: "days=30", child: Text("Last 30 Days")),
+                ],
+              ),
+            ),
+          ],
           title: Row(
             children: [
               CircleAvatar(
@@ -261,12 +290,20 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
   Widget _buildActivityTab() {
     if (_activityHistory == null || _activityHistory!['history'] == null) return const Center(child: Text("No Data"));
     final List<dynamic> history = _activityHistory!['history'];
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.all(20),
-      itemCount: history.length,
-      itemBuilder: (context, index) {
-        final item = history[index];
-        return Card(
+      children: [
+        TrendChart(
+          title: "Practice Accuracy Trend (%)",
+          dataPoints: history.map((e) => (e['accuracy'] as num).toDouble()).toList().reversed.toList(),
+          lineColor: AppColors.gentleGreen,
+          minY: 0,
+          maxY: 100,
+        ),
+        const SizedBox(height: 16),
+        Text("Recent Sessions", style: AppTypography.heading(fontSize: 18)),
+        const SizedBox(height: 12),
+        ...history.map((item) => Card(
           color: AppColors.cardSurface,
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
@@ -275,8 +312,8 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             subtitle: Text("${item['session_date']} • ${item['duration_minutes']} min"),
             trailing: Text("${item['accuracy']}%", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.gentleGreen)),
           ),
-        );
-      },
+        )).toList(),
+      ],
     );
   }
 
