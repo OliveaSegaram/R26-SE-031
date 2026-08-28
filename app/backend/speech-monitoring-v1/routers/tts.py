@@ -21,11 +21,11 @@ async def generate_speech(request: TTSRequest):
         
     try:
         text_hash = await TTSService.text_to_speech(text)
-        return {"file_path": f"/tts/audio/{text_hash}"}
+        return {"file_path": f"/tts/audio/{text_hash}.wav"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/audio/{text_hash}")
+@router.get("/audio/{text_hash}.wav")
 async def get_audio(text_hash: str):
     """
     Streams the TTS audio file directly from MongoDB GridFS.

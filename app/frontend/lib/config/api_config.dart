@@ -70,7 +70,7 @@ class ApiConfig {
     if (isDevelopment) {
       return 'http://$_localHost:8015/api/v1/learning';
     }
-    return 'https://sipsara-ml-backend-app.azurewebsites.net/learning/api/v1/learning';
+    return 'https://adaptedmind-auth-api.onrender.com/api/v1/learning';
   }
 
   // --- Helper Methods ---
