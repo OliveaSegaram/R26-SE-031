@@ -36,7 +36,10 @@ def start_services():
         p = subprocess.Popen(
             [sys.executable, str(main_py)],
             cwd=str(svc_path),
-            env=env
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
         )
         processes.append(p)
 
@@ -86,9 +89,19 @@ async def proxy_diagnostic(request: Request, path: str):
 async def proxy_tutoring(request: Request, path: str):
     return await proxy_request(request, 8017, path)
 
+
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "message": "Azure ML Gateway is running"}
+    status = {}
+    for i, p in enumerate(processes):
+        p.poll()
+        if p.returncode is not None:
+            stdout, _ = p.communicate()
+            status[f"process_{i}"] = f"CRASHED! Exit code: {p.returncode}. Logs: {stdout}"
+        else:
+            status[f"process_{i}"] = "RUNNING"
+    return {"status": "ok", "message": "Azure ML Gateway is running", "details": status}
+
 
 if __name__ == "__main__":
     try:
