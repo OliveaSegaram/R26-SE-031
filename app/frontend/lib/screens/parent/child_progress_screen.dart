@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../../services/parent_dashboard_service.dart';
 import '../../utils/avatar_utils.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../widgets/app_loading_indicator.dart';
 
 class ChildProgressScreen extends StatefulWidget {
@@ -130,17 +129,17 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             mainAxisSpacing: 12,
             childAspectRatio: 1.5,
             children: [
-              _buildStatCard("Accuracy", "${_overview!['accuracy']}%", FontAwesomeIcons.bullseye, AppColors.gentleGreen),
-              _buildStatCard("Practice Time", "${_overview!['practice_time_minutes']} min", FontAwesomeIcons.clock, AppColors.calmBlue),
-              _buildStatCard("Sessions", "${_overview!['sessions_completed']}", FontAwesomeIcons.gamepad, AppColors.softCoral),
-              _buildStatCard("Current Skill", _overview!['current_skill'], FontAwesomeIcons.star, AppColors.warmAmber),
+              _buildStatCard("Accuracy", "${_overview!['accuracy']}%", Icons.track_changes_rounded, AppColors.gentleGreen),
+              _buildStatCard("Practice Time", "${_overview!['practice_time_minutes']} min", Icons.schedule_rounded, AppColors.calmBlue),
+              _buildStatCard("Sessions", "${_overview!['sessions_completed']}", Icons.videogame_asset_rounded, AppColors.softCoral),
+              _buildStatCard("Current Skill", _overview!['current_skill'], Icons.star_rounded, AppColors.warmAmber),
             ],
           ),
           const SizedBox(height: 24),
           Text("Behavioral Notes", style: AppTypography.heading(fontSize: 20)),
           const SizedBox(height: 16),
           ListTile(
-            leading: const FaIcon(FontAwesomeIcons.batteryFull, color: AppColors.calmBlue),
+            leading: const Icon(Icons.battery_full_rounded, color: AppColors.calmBlue),
             title: const Text("Fatigue Status"),
             subtitle: Text(_overview!['fatigue_status']),
             tileColor: AppColors.cardSurface,
@@ -148,7 +147,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
           ),
           const SizedBox(height: 8),
           ListTile(
-            leading: const FaIcon(FontAwesomeIcons.bolt, color: AppColors.warmAmber),
+            leading: const Icon(Icons.bolt_rounded, color: AppColors.warmAmber),
             title: const Text("Response Speed"),
             subtitle: Text(_overview!['response_speed_status']),
             tileColor: AppColors.cardSurface,
@@ -248,7 +247,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             ),
             child: Row(
               children: [
-                const FaIcon(FontAwesomeIcons.lightbulb, color: AppColors.warmAmber),
+                const Icon(Icons.lightbulb_rounded, color: AppColors.warmAmber),
                 const SizedBox(width: 12),
                 Expanded(child: Text(_learningPattern!['recommended_practice'], style: AppTypography.body())),
               ],
@@ -271,7 +270,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
           color: AppColors.cardSurface,
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
-            leading: const FaIcon(FontAwesomeIcons.gamepad, color: AppColors.calmBlue),
+            leading: const Icon(Icons.videogame_asset_rounded, color: AppColors.calmBlue),
             title: Text(item['activity_name']),
             subtitle: Text("${item['session_date']} • ${item['duration_minutes']} min"),
             trailing: Text("${item['accuracy']}%", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.gentleGreen)),
@@ -286,7 +285,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const FaIcon(FontAwesomeIcons.filePdf, size: 64, color: AppColors.softCoral),
+          const Icon(Icons.picture_as_pdf_rounded, size: 64, color: AppColors.softCoral),
           const SizedBox(height: 24),
           Text("Download Official Report", style: AppTypography.heading(fontSize: 20)),
           const SizedBox(height: 16),
@@ -307,7 +306,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, dynamic icon, Color color) {
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -318,7 +317,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FaIcon(icon, color: color, size: 24),
+          Icon(icon, color: color, size: 24),
           const SizedBox(height: 8),
           Text(value, style: AppTypography.heading(fontSize: 18, color: AppColors.textPrimary)),
           Text(label, style: AppTypography.caption(fontSize: 11, color: AppColors.textSecondary), textAlign: TextAlign.center),

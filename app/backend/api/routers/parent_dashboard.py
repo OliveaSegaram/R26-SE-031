@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Response
 from typing import List, Dict, Any
 from datetime import datetime
 from schemas.dashboards import (
@@ -13,6 +13,7 @@ import sys
 from pathlib import Path as PathLib
 sys.path.insert(0, str(PathLib(__file__).parent.parent.parent.parent))
 from shared.database import get_db
+from utils.pdf_generator import generate_parent_report
 
 router = APIRouter(
     prefix="/api/v1/parent/students",
@@ -140,4 +141,19 @@ async def get_parent_activity_history(student_id: str = Path(...)):
 
 @router.get("/{student_id}/report")
 async def download_parent_report(student_id: str = Path(...)):
-    return {"message": "PDF Generation endpoint placeholder"}
+    # Re-use existing getters to fetch the latest data
+    overview = await get_parent_overview(student_id)
+    skills = await get_parent_skills(student_id)
+    pattern = await get_parent_learning_pattern(student_id)
+    
+    pdf_bytes = generate_parent_report(
+        student_id=student_id,
+        overview=overview.dict(),
+        skills=skills.dict(),
+        pattern=pattern.dict()
+    )
+    
+    headers = {
+        'Content-Disposition': f'attachment; filename="sipsara_report_{student_id}.pdf"'
+    }
+    return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)

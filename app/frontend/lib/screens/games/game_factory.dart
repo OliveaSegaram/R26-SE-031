@@ -135,6 +135,7 @@ class GameFactory {
     }
 
     return TelemetryWrapper(
+      studentData: studentData,
       activityNode: node,
       onRoundComplete: (score) {
         // Handled dynamically via TelemetryWrapperState
