@@ -76,7 +76,7 @@ async def diagnose_patient(
         db = get_db()
         diagnosis_doc = response.dict()
         diagnosis_doc["created_at"] = datetime.utcnow()
-        await db.diagnoses.insert_one(diagnosis_doc)
+        await db.learner_profiles.insert_one(diagnosis_doc)
         
         return response
         

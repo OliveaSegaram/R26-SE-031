@@ -4,12 +4,12 @@ import shap
 import pandas as pd
 import numpy as np
 
-# Map model predictions to clinical subtypes
+# Map model predictions to learning patterns
 SUBTYPE_MAP = {
-    0: "Normal Development",
-    1: "Phonological Deficit",
-    2: "Visual-Orthographic Deficit",
-    3: "Double Deficit"
+    0: "Typical Learning Pattern",
+    1: "Phonological Learning Pattern",
+    2: "Visual-Orthographic Learning Pattern",
+    3: "Combined Learning Pattern"
 }
 
 class XAIEngine:
@@ -28,42 +28,42 @@ class XAIEngine:
         
     def _translate_shap_to_human(self, feature_name: str, feature_value: float, shap_val: float) -> str:
         """
-        Translates specific features into human-readable clinical insights.
+        Translates specific features into human-readable learning pattern insights.
         """
-        impact_dir = "increased" if shap_val > 0 else "decreased"
+        impact_dir = "positively" if shap_val > 0 else "negatively"
         
         if feature_name == "orthographic_confusion_index":
             if feature_value > 0.4:
-                return f"Child consistently selected visually similar Sinhala mirror letters (e.g. බ/ඩ), highly indicative of visual confusion."
-            return f"Normal visual letter discrimination."
+                return f"Frequent selection of visually similar Sinhala mirror letters contributed {impact_dir} to the visual-orthographic pattern prediction."
+            return f"Visual letter discrimination contributed {impact_dir} to the pattern prediction."
             
         elif feature_name == "acoustic_latency_ms":
             if feature_value > 1000:
-                return f"Severe delay ({int(feature_value)}ms) in vocal onset detected. Indicates high phonological retrieval difficulty."
-            return f"Vocal onset latency was within normal bounds."
+                return f"Vocal onset latency ({int(feature_value)}ms) contributed {impact_dir} to the phonological pattern prediction."
+            return f"Vocal onset latency was within typical bounds."
             
         elif feature_name == "peak_count_delta":
             if feature_value >= 2:
-                return f"Detected {int(feature_value)} more vocal peaks than expected syllables. Implies stuttering or slow, broken sounding out of words."
-            return f"Smooth syllable blending."
+                return f"Vocal peak counts contributed {impact_dir} to the phonological pattern prediction."
+            return f"Syllable blending contributed to the pattern prediction."
             
         elif feature_name == "dimensionless_jerk":
             if feature_value > 100:
-                return f"Touch trajectory showed severe mid-movement hesitation and lack of confidence."
-            return f"Smooth and confident touch movement."
+                return f"Touch trajectory kinematics contributed {impact_dir} to the visual-orthographic pattern prediction."
+            return f"Touch movement kinematics were typical."
             
         elif feature_name == "time_to_first_touch_ms":
             if feature_value > 1200:
-                return f"Significant delay ({int(feature_value)}ms) before initiating touch interaction."
-            return "Quick cognitive processing before touch."
+                return f"Response latency ({int(feature_value)}ms) contributed {impact_dir} to the predicted learning pattern."
+            return "Initial response latency was typical."
 
         elif feature_name == "intra_word_silence_ratio":
             if feature_value > 0.2:
-                return f"High amount of silence ({feature_value*100:.1f}%) within the spoken word block."
-            return "Normal continuous vocalization."
+                return f"Intra-word silence ratio ({feature_value*100:.1f}%) contributed {impact_dir} to the phonological pattern prediction."
+            return "Continuous vocalization was typical."
             
         # Fallback
-        return f"This feature {impact_dir} the predicted risk."
+        return f"This feature contributed {impact_dir} to the predicted learning pattern."
 
     def analyze_patient(self, request_data: dict) -> dict:
         """
