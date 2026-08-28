@@ -257,6 +257,14 @@ class StudentService {
     }
   }
 
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await _getAccessToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
   /// Submit telemetry session data to the backend.
   /// Returns null on success, or an error message string on failure.
   Future<String?> submitTelemetry(Map<String, dynamic> payload) async {
