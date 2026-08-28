@@ -67,8 +67,7 @@ async def diagnose_patient(
         # Construct response
         response = FusionResponse(
             student_id=request.student_id,
-            risk_score=analysis_result["clinical_assessment"]["final_predicted_risk"],
-            clinical_subtype=analysis_result["clinical_assessment"]["predicted_subtype"],
+            learner_profile=analysis_result["learner_profile"],
             shap_explanations=analysis_result["shap_explanations"]
         )
         
