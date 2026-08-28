@@ -82,7 +82,7 @@ A friendly, bright classroom setting, learning a new language together.
 Clear pronunciation, very encouraging tone, patient pacing, speaking naturally and fluently in Sinhala to a young child.
 
 ## Transcript:
-{text}"""
+Speaker 1: {text}"""
 
             contents = [
                 types.Content(
