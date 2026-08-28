@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
+import 'package:path_provider/path_provider.dart';
 import '../config/api_config.dart';
 
 class TtsService {
@@ -32,7 +34,16 @@ class TtsService {
         final filePath = data['file_path'];
         if (filePath != null) {
           final audioUrl = '$_baseUrl$filePath';
-          await _audioPlayer.play(UrlSource(audioUrl));
+          // Fix for iOS AVPlayer: Download the audio to a temp file and play locally
+          final audioRes = await http.get(Uri.parse(audioUrl));
+          if (audioRes.statusCode == 200) {
+            final dir = await getTemporaryDirectory();
+            final file = File('${dir.path}/temp_tts.wav');
+            await file.writeAsBytes(audioRes.bodyBytes);
+            await _audioPlayer.play(DeviceFileSource(file.path));
+          } else {
+            print('TTS Audio download failed: ${audioRes.statusCode}');
+          }
         }
       } else {
         print('TTS Generation failed: ${response.body}');
