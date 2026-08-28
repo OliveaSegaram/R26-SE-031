@@ -113,9 +113,12 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                 backgroundImage: AssetImage(avatar),
               ),
               const SizedBox(width: 12),
-              Text(
-                'Clinical DB: $name',
-                style: AppTypography.heading(fontSize: 18, color: AppColors.textPrimary),
+              Expanded(
+                child: Text(
+                  'Clinical DB: $name',
+                  style: AppTypography.heading(fontSize: 18, color: AppColors.textPrimary),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

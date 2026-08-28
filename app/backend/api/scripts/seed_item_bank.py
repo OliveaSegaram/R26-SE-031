@@ -3,11 +3,11 @@ import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 
 # Setup connection
-MONGO_URL = os.getenv("MONGODB_URL", "mongodb+srv://kavindugunasena_db_user:vsqocmP1Fcu8wgYm@cluster0.ypxuqen.mongodb.net/")
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb+srv://kavindugunasena_db_user:vsqocmP1Fcu8wgYm@cluster0.ypxuqen.mongodb.net/")
 DB_NAME = os.getenv("MONGODB_DB_NAME", "r26_se_031")
 
 async def seed_items():
-    client = AsyncIOMotorClient(MONGO_URL)
+    client = AsyncIOMotorClient(MONGODB_URL)
     db = client[DB_NAME]
     item_bank = db["item_bank"]
 

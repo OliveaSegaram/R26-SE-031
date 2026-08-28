@@ -106,9 +106,12 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
                 backgroundImage: AssetImage(avatar),
               ),
               const SizedBox(width: 12),
-              Text(
-                '$name - $grade',
-                style: AppTypography.heading(fontSize: 18, color: AppColors.textPrimary),
+              Expanded(
+                child: Text(
+                  '$name - $grade',
+                  style: AppTypography.heading(fontSize: 18, color: AppColors.textPrimary),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

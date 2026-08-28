@@ -39,9 +39,21 @@ async def get_parent_overview(student_id: str = Path(...)):
     sessions_cursor = db["telemetry_events"].find({"student_id": student_id})
     sessions = await sessions_cursor.to_list(length=100)
     sessions_completed = len(sessions)
-    practice_time_minutes = (sessions_completed * 2) # simplified mock calculation for now
     
-    current_skill = sessions[0].get("activity_name", "Letter Recognition") if sessions else "Letter Recognition"
+    practice_time_ms = sum(s.get("total_round_latency_ms", 0) for s in sessions)
+    practice_time_minutes = int(practice_time_ms / 60000) if sessions else 0
+    
+    current_skill = sessions[-1].get("activity_id", "Letter Recognition") if sessions else "Letter Recognition"
+
+    median_latency = c1.get("behavior", {}).get("median_latency_ms", 0) if c1 else 0
+    if median_latency == 0:
+        response_speed_status = "N/A"
+    elif median_latency < 2000:
+        response_speed_status = "Fast"
+    elif median_latency < 4000:
+        response_speed_status = "Normal"
+    else:
+        response_speed_status = "Developing"
 
     return ParentOverviewDTO(
         updated_at=get_current_time_str(),
@@ -52,7 +64,7 @@ async def get_parent_overview(student_id: str = Path(...)):
         sessions_completed=sessions_completed,
         current_skill=current_skill,
         fatigue_status=fatigue_status,
-        response_speed_status="Developing"
+        response_speed_status=response_speed_status
     )
 
 @router.get("/{student_id}/skills", response_model=ParentSkillsDTO)
@@ -63,16 +75,22 @@ async def get_parent_skills(student_id: str = Path(...)):
     state = await db["knowledge_states"].find_one({"student_id": student_id}, sort=[("_id", -1)])
     kcs = state.get("knowledge_state", {}) if state else {}
     
-    def get_mastery(kc_key, default_val):
+    def get_mastery(kc_key, default_val=0):
         return int(kcs.get(kc_key, default_val) * 100) if kcs else default_val
 
+    def get_status(mastery):
+        if mastery >= 80: return "Mastered"
+        if mastery >= 60: return "Progressing"
+        if mastery > 0: return "Developing"
+        return "Locked"
+
     skills_data = [
-        SkillProgress(skill_id="S1", skill_name="Picture Recognition", mastery_percentage=get_mastery("KC_PICTURE_RECOGNITION", 85), status="Mastered"),
-        SkillProgress(skill_id="S2", skill_name="Letter Recognition", mastery_percentage=get_mastery("KC_LETTER_IDENTITY", 72), status="Developing"),
-        SkillProgress(skill_id="S3", skill_name="Simple Words", mastery_percentage=get_mastery("KC_WORD_FORMATION", 48), status="Progressing"),
-        SkillProgress(skill_id="S4", skill_name="Sentence Construction", mastery_percentage=get_mastery("KC_SENTENCE", 31), status="Developing"),
-        SkillProgress(skill_id="S5", skill_name="Comprehension", mastery_percentage=get_mastery("KC_COMPREHENSION", 22), status="Developing"),
-        SkillProgress(skill_id="S6", skill_name="Reading Book", mastery_percentage=get_mastery("KC_READING", 0), status="Locked"),
+        SkillProgress(skill_id="S1", skill_name="Picture Recognition", mastery_percentage=get_mastery("KC_PICTURE_RECOGNITION"), status=get_status(get_mastery("KC_PICTURE_RECOGNITION"))),
+        SkillProgress(skill_id="S2", skill_name="Letter Recognition", mastery_percentage=get_mastery("KC_LETTER_IDENTITY"), status=get_status(get_mastery("KC_LETTER_IDENTITY"))),
+        SkillProgress(skill_id="S3", skill_name="Simple Words", mastery_percentage=get_mastery("KC_WORD_FORMATION"), status=get_status(get_mastery("KC_WORD_FORMATION"))),
+        SkillProgress(skill_id="S4", skill_name="Sentence Construction", mastery_percentage=get_mastery("KC_SENTENCE"), status=get_status(get_mastery("KC_SENTENCE"))),
+        SkillProgress(skill_id="S5", skill_name="Comprehension", mastery_percentage=get_mastery("KC_COMPREHENSION"), status=get_status(get_mastery("KC_COMPREHENSION"))),
+        SkillProgress(skill_id="S6", skill_name="Reading Book", mastery_percentage=get_mastery("KC_READING"), status=get_status(get_mastery("KC_READING"))),
     ]
     return ParentSkillsDTO(
         updated_at=get_current_time_str(),
@@ -145,8 +163,12 @@ async def get_parent_activity_history(
         ]
     else:
         for evt in events:
+            timestamp = evt.get("timestamp", datetime.utcnow().isoformat())
+            # Parse only date part, fallback to today
+            session_date = timestamp[:10] if isinstance(timestamp, str) else datetime.utcnow().strftime("%Y-%m-%d")
+            
             history_data.append(ActivityHistoryItem(
-                session_date=datetime.utcnow().strftime("%Y-%m-%d"), # Mock date for simplicity unless stored
+                session_date=session_date,
                 activity_name=evt.get("activity_id", "Letter Recognition"),
                 skill_name="Letters",
                 accuracy=100 if evt.get("is_correct") else 0,
