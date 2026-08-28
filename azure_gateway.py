@@ -87,19 +87,19 @@ async def proxy_request(request: Request, service_port: int, path: str):
         import traceback
         return {"error": str(e), "traceback": traceback.format_exc()}
 
-@app.api_route("/speech/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/speech/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
 async def proxy_speech(request: Request, path: str):
     return await proxy_request(request, 8011, path)
 
-@app.api_route("/telemetry/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/telemetry/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
 async def proxy_telemetry(request: Request, path: str):
     return await proxy_request(request, 8014, path)
 
-@app.api_route("/diagnostic/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/diagnostic/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
 async def proxy_diagnostic(request: Request, path: str):
     return await proxy_request(request, 8016, path)
 
-@app.api_route("/tutoring/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/tutoring/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
 async def proxy_tutoring(request: Request, path: str):
     return await proxy_request(request, 8017, path)
 
