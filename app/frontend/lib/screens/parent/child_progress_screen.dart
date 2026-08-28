@@ -3,8 +3,15 @@ import 'package:flutter/material.dart';
 import '../../widgets/app_loading_indicator.dart';
 import '../../utils/avatar_utils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_theme.dart';
 import '../../services/student_service.dart';
+import '../../services/c1_parent_service.dart';
+import '../../models/c1/c1_parent_summary.dart';
+import '../../models/c1/c1_trend_point.dart';
+import '../../widgets/c1/c1_metric_card.dart';
+import '../../widgets/c1/c1_trend_chart.dart';
+import '../../widgets/c1/c1_observation_card.dart';
 import 'skill_detail_progress_screen.dart';
 import '../therapist/therapist_student_detail_screen.dart';
 import '../../services/localization_service.dart';
@@ -31,6 +38,9 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
   int _overallAccuracy = 0;
   int _dayStreak = 0;
   int _totalStars = 0;
+  List<dynamic> _c1History = [];
+  ParentC1Summary? _c1Summary;
+  List<C1TrendPoint> _c1Trend = [];
 
   final List<String> _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -57,9 +67,13 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
     }
     
     final sessions = await StudentService().getTelemetry(studentId.toString());
+    final c1Summary = await C1ParentService().getSummary(studentId.toString());
+    final c1Trend = await C1ParentService().getTrend(studentId.toString());
     
     _processTelemetryData(sessions);
     setState(() {
+      _c1Summary = c1Summary;
+      _c1Trend = c1Trend;
       _isLoading = false;
     });
   }
@@ -226,6 +240,10 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
                 const SizedBox(height: 24),
                 _buildWeeklyChart(),
                 const SizedBox(height: 24),
+                if (_c1Summary != null) ...[
+                  _buildC1ParentSummary(),
+                  const SizedBox(height: 24),
+                ],
                 _buildSkillProgressSection(),
                 const SizedBox(height: 32),
                 Center(
@@ -665,6 +683,208 @@ class _ChildProgressScreenState extends State<ChildProgressScreen>
           ],
         ),
       ),
+    );
+  }
+
+  // ─── C1 Behavioral Summary (Parent Dashboard) ───
+  Widget _buildC1ParentSummary() {
+    if (_c1Summary == null) return const SizedBox.shrink();
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Today\'s Learning Summary',
+            style: AppTypography.heading(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 4 Cards Grid
+          GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.4,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              _buildParentSummaryCard('Accuracy', '${_c1Summary!.accuracy}%', '🎯', Colors.green),
+              _buildParentSummaryCard('Response Time', _c1Summary!.responseSpeed, '⚡', Colors.blue),
+              _buildParentSummaryCard('Attention', _c1Summary!.attention, '👁️', Colors.orange),
+              _buildParentSummaryCard('Fatigue', 'Low', '🔋', Colors.purple), // Mock fatigue if not in summary
+            ],
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Learning Trend Chart
+          if (_c1Trend.isNotEmpty) ...[
+            Text(
+              'Learning Trend (Last 7 Sessions)',
+              style: AppTypography.heading(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.borderLight),
+                boxShadow: [
+                  BoxShadow(color: AppColors.shadow, blurRadius: 8, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 7,
+                    child: SizedBox(
+                      height: 180,
+                      child: C1TrendChart(
+                        points: _c1Trend,
+                        metric: 'accuracy',
+                        label: 'Accuracy',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildTrendAvgText('Avg Accuracy', '${_c1Summary!.accuracy}%', Colors.green),
+                        const SizedBox(height: 12),
+                        _buildTrendAvgText('Avg Response', _c1Summary!.responseSpeed, Colors.blue),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+          
+          // What We Observed Today
+          Text(
+            'What We Observed Today',
+            style: AppTypography.heading(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _c1Summary!.learningObservations.map((obs) => Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(obs, style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4))),
+                  ],
+                ),
+              )).toList(),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Recommended Practice
+          Text(
+            'Recommended Practice',
+            style: AppTypography.heading(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Column(
+            children: _c1Summary!.recommendedPractice.map((rec) => Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.calmBlue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.lightbulb_outline, color: AppColors.calmBlue, size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(child: Text(rec, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary))),
+                ],
+              ),
+            )).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParentSummaryCard(String title, String value, String emoji, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(color: color.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+              Expanded(child: Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black54))),
+            ],
+          ),
+          const Spacer(),
+          Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: color)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrendAvgText(String label, String value, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.bold)),
+        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
+      ],
     );
   }
 }

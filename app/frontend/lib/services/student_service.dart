@@ -257,19 +257,22 @@ class StudentService {
     }
   }
 
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await _getAccessToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
   /// Submit telemetry session data to the backend.
   /// Returns null on success, or an error message string on failure.
   Future<String?> submitTelemetry(Map<String, dynamic> payload) async {
     try {
-      final token = await _getAccessToken();
-      if (token == null) return 'Not authenticated.';
-
+      final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$_telemetryBaseUrl/telemetry'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('${ApiConfig.c1BaseUrl}/session'),
+        headers: headers,
         body: jsonEncode(payload),
       );
 
@@ -418,6 +421,29 @@ class StudentService {
       }
     } catch (e) {
       return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Fetch C1 Behavioral Learner-State history for a student
+  Future<List<dynamic>> getC1History(String studentId, {int limit = 5}) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return [];
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.c1BaseUrl}/student/$studentId/history?limit=$limit'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 }
