@@ -11,23 +11,12 @@ def _load_config():
 CONFIG = _load_config()
 
 def calculate_fatigue_score(latency_drift: float, error_drift: float, hesitation_drift: float) -> float:
-    # A simple ensemble scoring based on available drifts
-    score = 0.0
-    valid = 0
-    if latency_drift is not None:
-        score += max(0.0, latency_drift)
-        valid += 1
-    if error_drift is not None:
-        score += max(0.0, error_drift)
-        valid += 1
-    if hesitation_drift is not None:
-        score += max(0.0, hesitation_drift)
-        valid += 1
+    ld = max(0.0, latency_drift) if latency_drift is not None else 0.0
+    ed = max(0.0, error_drift) if error_drift is not None else 0.0
+    hd = max(0.0, hesitation_drift) if hesitation_drift is not None else 0.0
     
-    if valid == 0:
-        return 0.0
-        
-    return min(1.0, score / valid)
+    score = (0.5 * ld) + (0.3 * ed) + (0.2 * hd)
+    return min(1.0, score)
 
 def get_fatigue_state(score: float) -> str:
     cfg = CONFIG.get("fatigue", {"low_max": 0.30, "moderate_max": 0.60, "high_max": 0.80})

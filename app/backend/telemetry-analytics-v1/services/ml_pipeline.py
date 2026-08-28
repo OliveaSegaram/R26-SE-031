@@ -128,17 +128,22 @@ def extract_features(events: list[dict[str, Any]]) -> dict[str, float]:
         phonological_latency = 1500.0  # neutral baseline
 
     # ---- Fatigue Drift (last-3 vs first-3 latency delta) -------------------
-    if n >= 6:
-        early_latency = statistics.mean(
-            e.get("total_round_latency_ms", 0) for e in events[:3]
-        )
-        late_latency = statistics.mean(
-            e.get("total_round_latency_ms", 0) for e in events[-3:]
-        )
-        # Relative fatigue: percentage slowdown
-        fatigue_drift = ((late_latency / early_latency) - 1.0) if early_latency > 0 else 0.0
+    if n >= 4:
+        early_latency = statistics.mean(e.get("total_round_latency_ms", 1) for e in events[:2])
+        late_latency = statistics.mean(e.get("total_round_latency_ms", 1) for e in events[-2:])
+        latency_drift = ((late_latency / early_latency) - 1.0) if early_latency > 0 else 0.0
+
+        early_errors = statistics.mean(1.0 if not e.get("is_correct") else 0.0 for e in events[:2])
+        late_errors = statistics.mean(1.0 if not e.get("is_correct") else 0.0 for e in events[-2:])
+        error_drift = late_errors - early_errors
+
+        early_hes = statistics.mean(e.get("hesitation_count", 0) for e in events[:2])
+        late_hes = statistics.mean(e.get("hesitation_count", 0) for e in events[-2:])
+        hesitation_drift = late_hes - early_hes
     else:
-        fatigue_drift = 0.0
+        latency_drift = 0.0
+        error_drift = 0.0
+        hesitation_drift = 0.0
 
     return {
         "visual_processing_speed": round(visual_processing_speed, 2),
@@ -146,9 +151,10 @@ def extract_features(events: list[dict[str, Any]]) -> dict[str, float]:
         "hesitation_ratio": round(hesitation_ratio, 3),
         "accuracy_slope": round(accuracy_slope, 3),
         "phonological_latency": round(phonological_latency, 2),
-        "fatigue_drift": round(fatigue_drift, 2),
+        "latency_drift": round(latency_drift, 3),
+        "error_drift": round(error_drift, 3),
+        "hesitation_drift": round(hesitation_drift, 3),
     }
-
 
 # ---------------------------------------------------------------------------
 # Cognitive Index Computation (0-100 scores for each domain)
@@ -172,10 +178,10 @@ def compute_cognitive_indices(features: dict[str, float]) -> dict[str, float]:
     sustained_attention_score = _clamp(100.0 * math.exp(-features["hesitation_ratio"] / 2.0))
 
     return {
-        "visual_processing_score": round(visual_processing_score, 1),
-        "phonological_awareness_score": round(phonological_awareness_score, 1),
-        "motor_precision_score": round(motor_precision_score, 1),
-        "sustained_attention_score": round(sustained_attention_score, 1),
+        "visual_processing_index": round(visual_processing_score, 1),
+        "phonological_task_index": round(phonological_awareness_score, 1),
+        "motor_interaction_index": round(motor_precision_score, 1),
+        "attention_stability_index": round(sustained_attention_score, 1),
     }
 
 
@@ -384,7 +390,7 @@ def generate_cognitive_profile(
     # Normalize features using device metrics
     advanced_features = normalize_features_for_device(advanced_features, latest_device_metrics)
     
-    # Combine into 19-dimensional feature vector (STT features stubbed for now)
+    # Combine into feature vector
     features = {
         **base_features,
         **advanced_features,
@@ -392,6 +398,13 @@ def generate_cognitive_profile(
         "voice_hesitation_ms": 0.0,
         "assessment_risk_score": round(assessment_risk_score, 4),
     }
+    
+    # Calculate deterministic fatigue score
+    fatigue_score = (
+        (0.5 * base_features.get("latency_drift", 0.0)) +
+        (0.3 * base_features.get("error_drift", 0.0)) +
+        (0.2 * base_features.get("hesitation_drift", 0.0))
+    )
 
     # Cognitive indices currently only use the base features
     indices = compute_cognitive_indices(base_features)
@@ -401,6 +414,7 @@ def generate_cognitive_profile(
     return {
         "feature_vector": features,
         "cognitive_indices": indices,
+        "fatigue_score": round(fatigue_score, 3),
         "risk_assessment": risk,
         "recommended_interventions": interventions,
         "data_points": len(all_events),
