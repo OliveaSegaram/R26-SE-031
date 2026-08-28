@@ -5,7 +5,7 @@ from database import get_fs
 from google import genai
 from google.genai import types
 
-def parse_audio_mime_type(mime_type: str) -> dict[str, int | None]:
+def parse_audio_mime_type(mime_type: str) -> dict:
     bits_per_sample = 16
     rate = 24000
 
