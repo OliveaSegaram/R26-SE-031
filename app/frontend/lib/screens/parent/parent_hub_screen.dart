@@ -752,18 +752,24 @@ class _ParentHubScreenState extends State<ParentHubScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        const FaIcon(FontAwesomeIcons.clock,
-                            size: 12, color: AppColors.textHint),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${LocalizationService.instance.t("last_active_prefix")}$lastActive',
-                          style: AppTypography.caption(
-                              fontSize: 11, color: AppColors.textHint),
-                        ),
-                      ],
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const FaIcon(FontAwesomeIcons.clock,
+                              size: 12, color: AppColors.textHint),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${LocalizationService.instance.t("last_active_prefix")}$lastActive',
+                              style: AppTypography.caption(
+                                  fontSize: 11, color: AppColors.textHint),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       LocalizationService.instance.t('view_progress_btn'),
                       style: AppTypography.caption(

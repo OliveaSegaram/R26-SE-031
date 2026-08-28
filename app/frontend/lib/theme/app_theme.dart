@@ -133,7 +133,7 @@ class AppTypography {
     double? height,
   }) {
     return GoogleFonts.notoSansSinhala(
-      fontSize: fontSize,
+      fontSize: fontSize * 0.80, // Scale down to match previous Nunito Sans visual size
       fontWeight: fontWeight,
       color: color,
       height: height ?? 1.4,
@@ -149,7 +149,7 @@ class AppTypography {
     double? height,
   }) {
     return GoogleFonts.notoSansSinhala(
-      fontSize: fontSize,
+      fontSize: fontSize * 0.80,
       fontWeight: fontWeight,
       color: color,
       height: height ?? 1.7,
@@ -165,7 +165,7 @@ class AppTypography {
     Color color = Colors.white,
   }) {
     return GoogleFonts.notoSansSinhala(
-      fontSize: fontSize,
+      fontSize: fontSize * 0.80,
       fontWeight: fontWeight,
       color: color,
       height: 1.3,
@@ -180,7 +180,7 @@ class AppTypography {
     Color color = AppColors.textSecondary,
   }) {
     return GoogleFonts.notoSansSinhala(
-      fontSize: fontSize,
+      fontSize: fontSize * 0.80,
       fontWeight: fontWeight,
       color: color,
       height: 1.6,
