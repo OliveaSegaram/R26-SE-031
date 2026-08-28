@@ -104,7 +104,12 @@ def health_check():
             status[f"process_{i}"] = f"CRASHED! Exit code: {p.returncode}. Logs: {stdout}"
         else:
             status[f"process_{i}"] = "RUNNING"
-    return {"status": "ok", "message": "Azure ML Gateway is running", "details": status}
+    
+    env_vars = {
+        "MONGODB_URL": "SET" if os.getenv("MONGODB_URL") else "MISSING",
+        "GEMINI_API_KEY": "SET" if os.getenv("GEMINI_API_KEY") else "MISSING"
+    }
+    return {"status": "ok", "message": "Azure ML Gateway is running", "details": status, "env": env_vars}
 
 
 if __name__ == "__main__":
