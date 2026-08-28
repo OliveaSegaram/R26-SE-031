@@ -2,6 +2,8 @@ import subprocess
 import sys
 import time
 import os
+import fcntl
+
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
@@ -57,21 +59,25 @@ async def proxy_request(request: Request, service_port: int, path: str):
     # Read the body
     body = await request.body()
     
-    # Forward the request
-    req = client.build_request(
-        method=request.method,
-        url=url,
-        headers=request.headers.raw,
-        content=body
-    )
-    
-    response = await client.send(req, stream=True)
-    
-    return StreamingResponse(
-        response.aiter_raw(),
-        status_code=response.status_code,
-        headers=response.headers
-    )
+    try:
+        # Forward the request
+        req = client.build_request(
+            method=request.method,
+            url=url,
+            headers=request.headers.raw,
+            content=body
+        )
+        
+        response = await client.send(req, stream=True)
+        
+        return StreamingResponse(
+            response.aiter_raw(),
+            status_code=response.status_code,
+            headers=response.headers
+        )
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
 
 @app.api_route("/speech/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def proxy_speech(request: Request, path: str):
@@ -90,17 +96,34 @@ async def proxy_tutoring(request: Request, path: str):
     return await proxy_request(request, 8017, path)
 
 
+
+def get_non_blocking_output(p):
+    if not p.stdout:
+        return ""
+    fd = p.stdout.fileno()
+    fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+    try:
+        return p.stdout.read()
+    except:
+        return ""
+
 @app.get("/health")
 def health_check():
     status = {}
     for i, p in enumerate(processes):
         p.poll()
+        logs = get_non_blocking_output(p)
         if p.returncode is not None:
-            stdout, _ = p.communicate()
-            status[f"process_{i}"] = f"CRASHED! Exit code: {p.returncode}. Logs: {stdout}"
+            status[f"process_{i}"] = f"CRASHED! Exit code: {p.returncode}. Logs: {logs}"
         else:
-            status[f"process_{i}"] = "RUNNING"
-    return {"status": "ok", "message": "Azure ML Gateway is running", "details": status}
+            status[f"process_{i}"] = f"RUNNING. Logs: {logs}"
+    
+    env_vars = {
+        "MONGODB_URL": "SET" if os.getenv("MONGODB_URL") else "MISSING",
+        "GEMINI_API_KEY": "SET" if os.getenv("GEMINI_API_KEY") else "MISSING"
+    }
+    return {"status": "ok", "message": "Azure ML Gateway is running", "details": status, "env": env_vars}
 
 
 if __name__ == "__main__":
