@@ -6,6 +6,7 @@ class InteractionRequest(BaseModel):
     knowledge_component_id: str
     is_correct: bool
     current_session_duration_sec: int
+    fatigue_score: float = 0.0
 
 class NextAction(BaseModel):
     next_kc_id: str
