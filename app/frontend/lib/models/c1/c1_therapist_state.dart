@@ -42,6 +42,12 @@ class TherapistC1State {
   double get replayRate => (behavior['replay_rate'] ?? 0.0) * 100;
   double get completionRate => (behavior['completion_rate'] ?? 0.0) * 100;
 
+  int get totalQuestions => behavior['total_questions'] ?? 0;
+  int get correctAnswers => behavior['correct_answers'] ?? 0;
+  int get hesitationCount => behavior['hesitation_count'] ?? 0;
+  int get misclickCount => behavior['misclick_count'] ?? 0;
+  int get replayCount => behavior['replay_count'] ?? 0;
+
   double get visualProcessingIndex => indices['visual_processing_index'] ?? 0.0;
   double get phonologicalTaskIndex => indices['phonological_task_index'] ?? 0.0;
   double get motorInteractionIndex => indices['motor_interaction_index'] ?? 0.0;
