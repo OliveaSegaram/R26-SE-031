@@ -817,7 +817,6 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                   data: object,
                   maxSimultaneousDrags: 1,
                   onDragStarted: () {
-                    SoundUtils.playFeedback('audio/pop.mp3');
                     setState(() { _isDragging = true; });
                   },
                   onDragEnd: (_) {

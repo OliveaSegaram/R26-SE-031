@@ -106,8 +106,8 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   ];
 
   static const List<String> _instructions = [
-    'හොඳින් මතක තබා ගන්න!', // Look carefully!
-    'පින්තූර තිබෙන තැන් මතක තියාගන්න!', // Remember where the pictures are!
+    'මෙම පින්තූර හොඳින් මතක තබා ගන්න', // Remember these pictures well
+    'මෙම පින්තූර හොඳින් මතක තබා ගන්න', 
   ];
   late String _currentInstruction;
 
@@ -206,7 +206,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
       int count = config[i]['count']!;
       int time = config[i]['time']!;
 
-      List<String> pool = List.from(_poolAssets)..shuffle(rng);
+      List<String> pool = List.from(_poolAssets);
       List<String> roundAssets = pool.take(count).toList();
       String target = roundAssets[rng.nextInt(count)];
 

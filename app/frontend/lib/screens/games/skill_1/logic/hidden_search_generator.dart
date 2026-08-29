@@ -64,7 +64,7 @@ class HiddenSearchGenerator {
   };
 
   static HiddenSearchGameData generateGame() {
-    final List<String> allPaths = _assetDictionary.keys.toList()..shuffle(_random);
+    final List<String> allPaths = _assetDictionary.keys.toList();
     final List<String> targetPaths = allPaths.take(5).toList();
     
     // Only these objects are simple enough to be used as targets in the colored-distractor tasks (rounds 4 and 5)
@@ -96,7 +96,7 @@ class HiddenSearchGenerator {
         
         // If couldn't swap internally, grab from unused paths
         if (!swapped) {
-          final unusedSafePaths = safeLastTaskPaths.where((p) => !targetPaths.contains(p)).toList()..shuffle(_random);
+          final unusedSafePaths = safeLastTaskPaths.where((p) => !targetPaths.contains(p)).toList();
           if (unusedSafePaths.isNotEmpty) {
             targetPaths[i] = unusedSafePaths.first;
           }
