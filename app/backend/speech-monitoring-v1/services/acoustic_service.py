@@ -163,7 +163,7 @@ class AcousticAnalysisService:
                 transcription = ""
 
             return {
-                "transcription": transcription, # Optional
+                "transcription": transcription, # Optional — Whisper (adult model, accuracy limited on children)
                 "Acoustic_Latency_ms": latency_ms,
                 "Voice_Onset_ms": t_voice_onset,
                 "Detected_Peaks": detected_peaks,
@@ -171,7 +171,15 @@ class AcousticAnalysisService:
                 "Peak_Count_Delta": peak_delta,
                 "Intra_Word_Silence_Ratio": round(silence_ratio, 4),
                 "Local_Jitter": round(jitter, 6),
-                "Local_Shimmer": round(shimmer, 6)
+                "Local_Shimmer": round(shimmer, 6),
+                # Diagnostic quality flag: helps therapist interpret results
+                # "poor_prosody_extraction" = Praat failed on noisy audio (jitter/shimmer default to 0.0)
+                # "mostly_silence" = Child likely did not speak clearly
+                "recording_quality": (
+                    "mostly_silence" if silence_ratio > 0.90
+                    else "poor_prosody_extraction" if (jitter == 0.0 and shimmer == 0.0 and t_voice_onset > 0)
+                    else "good"
+                ),
             }
             
         finally:
