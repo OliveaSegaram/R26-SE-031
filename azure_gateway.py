@@ -82,9 +82,21 @@ def start_services():
         )
         processes.append(p)
 
-# Start background services before the gateway starts
-start_services()
-time.sleep(5) # Give them time to spin up
+# Ensure only ONE gateway worker starts the background services (avoids race condition port collisions)
+LOCK_FILE = "/tmp/azure_gateway_services.lock"
+
+if not os.path.exists(LOCK_FILE):
+    try:
+        # Atomic file creation
+        fd = os.open(LOCK_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.close(fd)
+        print("[INIT] First worker starting background services...")
+        start_services()
+        time.sleep(3) # Give them time to spin up
+    except FileExistsError:
+        print("[INIT] Services already started by another worker.")
+else:
+    print("[INIT] Services already started by another worker.")
 
 # Create Gateway App
 app = FastAPI(title="Azure ML Gateway")
