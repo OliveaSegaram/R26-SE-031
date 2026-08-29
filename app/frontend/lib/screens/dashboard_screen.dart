@@ -628,13 +628,10 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                       GestureDetector(
                         onTap: () async {
                           final url = widget.skill.audioUrl;
-                          if (url.isNotEmpty) {
+                          if (url.isNotEmpty && !url.contains('githubusercontent')) {
                             try {
                               await _audioPlayer.stop();
-                              if (url.contains('githubusercontent')) {
-                                // GitHub repo is private, file doesn't exist, fallback to TTS
-                                await TtsService().speak(widget.skill.title);
-                              } else if (url.startsWith('http://') || url.startsWith('https://')) {
+                              if (url.startsWith('http://') || url.startsWith('https://')) {
                                 await _audioPlayer.play(UrlSource(url));
                               } else {
                                 final cleanPath = url.replaceFirst('assets/', '');
@@ -642,7 +639,11 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                               }
                             } catch (e) {
                               debugPrint('Error playing custom skill audio: $e');
+                              await TtsService().speak(widget.skill.title);
                             }
+                          } else {
+                            // Fallback to TTS if URL is empty or points to broken github url
+                            await TtsService().speak(widget.skill.title);
                           }
                         },
                         child: Container(
