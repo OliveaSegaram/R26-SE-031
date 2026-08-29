@@ -31,8 +31,10 @@ async def update_interaction(request: InteractionRequest):
         theta = student_doc.get("theta_estimate", 0.0)
     else:
         knowledge_state = {
-            "KC_LETTER_IDENTITY": bkt_engine.priors.get("KC_LETTER_IDENTITY", bkt_engine.priors["default"])[0],
-            "KC_VISUAL_DISCRIMINATION": bkt_engine.priors.get("KC_VISUAL_DISCRIMINATION", bkt_engine.priors["default"])[0]
+            # Initialise only the requested KC — avoids KeyError on hardcoded KC names
+            request.knowledge_component_id: bkt_engine.priors.get(
+                request.knowledge_component_id, bkt_engine.priors["default"]
+            )[0]
         }
         theta = 0.0
         
