@@ -15,10 +15,10 @@ import asyncio
 # Setup paths and services
 BASE = Path(__file__).parent
 SERVICES = [
-    {"name": "speech",     "path": "app/backend/speech-monitoring-v1",   "port": 8011},
-    {"name": "telemetry",  "path": "app/backend/telemetry-analytics-v1", "port": 8014},
-    {"name": "diagnostic", "path": "app/backend/diagnostic-fusion-v1",   "port": 8016},
-    {"name": "tutoring",   "path": "app/backend/adaptive-tutoring-v1",   "port": 8017},
+    {"name": "speech",     "path": "app/backend/speech-monitoring-v1",   "port": 9011},
+    {"name": "telemetry",  "path": "app/backend/telemetry-analytics-v1", "port": 9014},
+    {"name": "diagnostic", "path": "app/backend/diagnostic-fusion-v1",   "port": 9016},
+    {"name": "tutoring",   "path": "app/backend/adaptive-tutoring-v1",   "port": 9017},
 ]
 
 processes = []
@@ -55,7 +55,31 @@ def wait_for_port_free(port: int, timeout: int = 30) -> bool:
     print(f"[ERROR] Port {port} still in use after {timeout}s — skipping service")
     return False
 
+PID_FILE = "/tmp/azure_gateway_services.pids"
+
+def cleanup_orphaned_services():
+    if os.path.exists(PID_FILE):
+        print("[INIT] Cleaning up orphaned microservices from previous run...")
+        try:
+            with open(PID_FILE, "r") as f:
+                pids = f.read().splitlines()
+            for pid_str in pids:
+                if not pid_str.strip(): continue
+                try:
+                    pid = int(pid_str)
+                    os.kill(pid, 9) # SIGKILL
+                    print(f"  -> Killed orphaned process PID {pid}")
+                except ProcessLookupError:
+                    pass # Process already dead
+                except Exception as e:
+                    print(f"  -> Failed to kill PID {pid}: {e}")
+            os.remove(PID_FILE)
+        except Exception as e:
+            print(f"[ERROR] Failed to clean up PIDs: {e}")
+
 def start_services():
+    cleanup_orphaned_services()
+    
     for svc in SERVICES:
         svc_path = BASE / svc["path"]
         main_py = svc_path / "main.py"
@@ -81,6 +105,14 @@ def start_services():
             text=True
         )
         processes.append(p)
+        
+    # Save new PIDs to file for future cleanup
+    try:
+        with open(PID_FILE, "w") as f:
+            for p in processes:
+                f.write(f"{p.pid}\n")
+    except Exception as e:
+        print(f"[ERROR] Failed to save PID file: {e}")
 
 # Ensure only ONE gateway worker starts the background services (avoids race condition port collisions)
 LOCK_FILE = "/tmp/azure_gateway_services.lock"
@@ -130,19 +162,19 @@ async def proxy_request(request: Request, service_port: int, path: str):
 
 @app.api_route("/speech/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
 async def proxy_speech(request: Request, path: str):
-    return await proxy_request(request, 8011, path)
+    return await proxy_request(request, 9011, path)
 
 @app.api_route("/telemetry/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
 async def proxy_telemetry(request: Request, path: str):
-    return await proxy_request(request, 8014, path)
+    return await proxy_request(request, 9014, path)
 
 @app.api_route("/diagnostic/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
 async def proxy_diagnostic(request: Request, path: str):
-    return await proxy_request(request, 8016, path)
+    return await proxy_request(request, 9016, path)
 
 @app.api_route("/tutoring/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
 async def proxy_tutoring(request: Request, path: str):
-    return await proxy_request(request, 8017, path)
+    return await proxy_request(request, 9017, path)
 
 
 
