@@ -164,7 +164,7 @@ async def process_interaction(payload: InteractionPayload, background_tasks: Bac
                 "learner_profile": learner_profile_dict
             }
             c4_resp = await client.post(
-                "http://localhost:8017/update_interaction",
+                "http://localhost:9017/update_interaction",
                 json=adaptive_submit,
                 timeout=5.0
             )
