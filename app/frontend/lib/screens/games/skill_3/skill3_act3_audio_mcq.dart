@@ -15,7 +15,12 @@ class Skill3Act3AudioMcq extends StatefulWidget {
   final ActivityNode? activityNode;
   final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill3Act3AudioMcq({super.key, this.activityNode, this.isRemedial = false, this.studentData});
+  const Skill3Act3AudioMcq({
+    super.key,
+    this.activityNode,
+    this.isRemedial = false,
+    this.studentData,
+  });
 
   @override
   State<Skill3Act3AudioMcq> createState() => _Skill3Act3AudioMcqState();
@@ -41,7 +46,10 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
     final skillId = widget.activityNode?.skillId ?? '';
     final activityId = widget.activityNode?.id ?? '';
     if (skillId.isNotEmpty && activityId.isNotEmpty) {
-      _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
+      _currentRoundIndex = ProgressService().getActivityState(
+        skillId,
+        activityId,
+      );
     }
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
@@ -63,7 +71,10 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
       duration: const Duration(milliseconds: 400),
     );
     _speakerBounceAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _speakerBounceController, curve: Curves.elasticOut),
+      CurvedAnimation(
+        parent: _speakerBounceController,
+        curve: Curves.elasticOut,
+      ),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -84,8 +95,21 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
     if (rounds.isEmpty) return;
 
     final currentRound = rounds[_currentRoundIndex];
-    final audioText = currentRound['audio_text']?.toString() ?? currentRound['prompt']?.toString() ?? 'වෘත්තය';
-    TtsService().speak(audioText);
+    final audioText =
+        currentRound['audio_text']?.toString() ??
+        currentRound['prompt']?.toString() ??
+        'වෘත්තය';
+    String spokenInstruction = audioText
+        .replaceAll('මා', 'ම')
+        .replaceAllMapped(
+          RegExp(r"'?(.)'? අකුර"),
+          (match) => '${match.group(1)}, අකුර',
+        )
+        .replaceAllMapped(
+          RegExp(r"'?(.)'? පින්තූරය"),
+          (match) => '${match.group(1)}, පින්තූරය',
+        );
+    TtsService().speak(spokenInstruction);
 
     // Bounce the speaker icon
     _speakerBounceController.forward().then((_) {
@@ -103,7 +127,9 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
 
     final bool isRight = (index == correctIndex);
     int score = isRight ? 100 : 0;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
+    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+      score,
+    );
 
     if (isRight) {
       setState(() {
@@ -116,27 +142,31 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
         if (_currentRoundIndex < totalRounds - 1) {
           setState(() {
             _currentRoundIndex++;
-              final sId = widget.activityNode?.skillId ?? '';
-              final aId = widget.activityNode?.id ?? '';
-              if (sId.isNotEmpty && aId.isNotEmpty) {
-                int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
-                ProgressService().saveActivityScore(sId, aId, progress);
-                ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
-              }
+            final sId = widget.activityNode?.skillId ?? '';
+            final aId = widget.activityNode?.id ?? '';
+            if (sId.isNotEmpty && aId.isNotEmpty) {
+              int progress =
+                  ((_currentRoundIndex /
+                              (widget.activityNode?.rounds.length ?? 1)) *
+                          100)
+                      .toInt();
+              ProgressService().saveActivityScore(sId, aId, progress);
+              ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+            }
             _selectedIndex = null;
             _isCorrect = false;
           });
           _playAudioPrompt();
         } else {
           setState(() {
-          _activityComplete = true;
-          final sId = widget.activityNode?.skillId ?? '';
-          final aId = widget.activityNode?.id ?? '';
-          if (sId.isNotEmpty && aId.isNotEmpty) {
-            ProgressService().saveActivityScore(sId, aId, 100);
-            ProgressService().clearActivityState(sId, aId);
-          }
-        });
+            _activityComplete = true;
+            final sId = widget.activityNode?.skillId ?? '';
+            final aId = widget.activityNode?.id ?? '';
+            if (sId.isNotEmpty && aId.isNotEmpty) {
+              ProgressService().saveActivityScore(sId, aId, 100);
+              ProgressService().clearActivityState(sId, aId);
+            }
+          });
         }
       });
     } else {
@@ -165,8 +195,11 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'ශබ්දයට සවන් දී වචනය තෝරන්න';
-    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
+    final titleText =
+        widget.activityNode?.title ?? 'ශබ්දයට සවන් දී වචනය තෝරන්න';
+    var options =
+        (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ??
+        ['🔵', '🟥', '🔺', '⭐'];
     var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
 
     if (widget.isRemedial && options.length > 2) {
@@ -187,7 +220,8 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
       isRoundComplete: _isCorrect,
       isActivityComplete: _activityComplete,
       onNext: () {
-        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        final wrapper = context
+            .findAncestorStateOfType<TelemetryWrapperState>();
         if (wrapper != null) {
           wrapper.completeActivity(context);
         } else {
@@ -219,7 +253,9 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
   Widget _buildSpeakerCard() {
     return GestureDetector(
       onTap: () {
-        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        context
+            .findAncestorStateOfType<TelemetryWrapperState>()
+            ?.logAudioReplay();
         _playAudioPrompt();
       },
       child: Container(
@@ -248,18 +284,18 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
             ScaleTransition(
               scale: _speakerBounceAnimation,
               child: Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.warmAmber,
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.warmAmber,
+                ),
+                child: const Icon(
+                  Icons.volume_up_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
-              child: const Icon(
-                Icons.volume_up_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
             ),
           ],
         ),
@@ -268,7 +304,11 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
   }
 
   /// Premium answer pool container with frosted glass effect
-  Widget _buildAnswerPool(List<String> options, int correctIndex, int totalRounds) {
+  Widget _buildAnswerPool(
+    List<String> options,
+    int correctIndex,
+    int totalRounds,
+  ) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -283,7 +323,10 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
           end: Alignment.bottomCenter,
         ),
         borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 3),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.9),
+          width: 3,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -298,20 +341,31 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
         runSpacing: 16,
         alignment: WrapAlignment.center,
         children: List.generate(options.length, (index) {
-          return _buildOptionTile(index, options[index], correctIndex, totalRounds, options.length);
+          return _buildOptionTile(
+            index,
+            options[index],
+            correctIndex,
+            totalRounds,
+            options.length,
+          );
         }),
       ),
     );
   }
 
-  Widget _buildOptionTile(int index, String optionText, int correctIndex, int totalRounds, int totalOptions) {
+  Widget _buildOptionTile(
+    int index,
+    String optionText,
+    int correctIndex,
+    int totalRounds,
+    int totalOptions,
+  ) {
     final isSelected = (_selectedIndex == index);
     final isRight = isSelected && (index == correctIndex);
     final isWrong = isSelected && (index != correctIndex);
     final isHidden = _isCorrect && (index != correctIndex);
 
     // Detect if the word is complex (has pillam or is multi-character)
-    
 
     // Dynamic sizing based on total options to fill space nicely
     double tileWidth;
@@ -354,9 +408,8 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
           color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
           blurRadius: 16,
           spreadRadius: 2,
-        )
+        ),
       ];
-      
     } else if (isWrong) {
       tileColor = const Color(0xFFE87C6D).withValues(alpha: 0.15);
       borderColor = const Color(0xFFE87C6D);
@@ -366,9 +419,8 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
           color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
           blurRadius: 16,
           spreadRadius: 2,
-        )
+        ),
       ];
-      
     }
 
     return GestureDetector(
@@ -385,10 +437,7 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
           decoration: BoxDecoration(
             color: tileColor,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: borderColor,
-              width: borderWidth,
-            ),
+            border: Border.all(color: borderColor, width: borderWidth),
             boxShadow: shadows,
           ),
           child: Center(

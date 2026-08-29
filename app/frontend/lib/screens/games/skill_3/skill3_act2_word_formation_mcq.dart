@@ -15,10 +15,16 @@ class Skill3Act2WordFormation extends StatefulWidget {
   final ActivityNode? activityNode;
   final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill3Act2WordFormation({super.key, this.activityNode, this.isRemedial = false, this.studentData});
+  const Skill3Act2WordFormation({
+    super.key,
+    this.activityNode,
+    this.isRemedial = false,
+    this.studentData,
+  });
 
   @override
-  State<Skill3Act2WordFormation> createState() => _Skill3Act2WordFormationState();
+  State<Skill3Act2WordFormation> createState() =>
+      _Skill3Act2WordFormationState();
 }
 
 class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
@@ -41,7 +47,10 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     final skillId = widget.activityNode?.skillId ?? '';
     final activityId = widget.activityNode?.id ?? '';
     if (skillId.isNotEmpty && activityId.isNotEmpty) {
-      _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
+      _currentRoundIndex = ProgressService().getActivityState(
+        skillId,
+        activityId,
+      );
     }
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
@@ -63,7 +72,10 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
       duration: const Duration(milliseconds: 400),
     );
     _speakerBounceAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _speakerBounceController, curve: Curves.elasticOut),
+      CurvedAnimation(
+        parent: _speakerBounceController,
+        curve: Curves.elasticOut,
+      ),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -85,8 +97,18 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
 
     final currentRound = rounds[_currentRoundIndex];
     // TTS should read the full prompt from JSON (e.g. "'ම' + 'ල' එකතු වූ විට...")
-    final audioText = currentRound['audio_text']?.toString() ?? currentRound['prompt']?.toString() ?? 'වෘත්තය';
-    TtsService().speak(audioText);
+    final audioText = 'අකුරු එකතු කර සාදන වචනය තෝරන්න';
+    String spokenInstruction = audioText
+        .replaceAll('මා', 'ම')
+        .replaceAllMapped(
+          RegExp(r"'?(.)'? අකුර"),
+          (match) => '${match.group(1)}, අකුර',
+        )
+        .replaceAllMapped(
+          RegExp(r"'?(.)'? පින්තූරය"),
+          (match) => '${match.group(1)}, පින්තූරය',
+        );
+    TtsService().speak(spokenInstruction);
 
     // Bounce the speaker icon
     _speakerBounceController.forward().then((_) {
@@ -104,7 +126,9 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
 
     final bool isRight = (index == correctIndex);
     int score = isRight ? 100 : 0;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
+    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+      score,
+    );
 
     if (isRight) {
       setState(() {
@@ -117,27 +141,31 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
         if (_currentRoundIndex < totalRounds - 1) {
           setState(() {
             _currentRoundIndex++;
-              final sId = widget.activityNode?.skillId ?? '';
-              final aId = widget.activityNode?.id ?? '';
-              if (sId.isNotEmpty && aId.isNotEmpty) {
-                int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
-                ProgressService().saveActivityScore(sId, aId, progress);
-                ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
-              }
+            final sId = widget.activityNode?.skillId ?? '';
+            final aId = widget.activityNode?.id ?? '';
+            if (sId.isNotEmpty && aId.isNotEmpty) {
+              int progress =
+                  ((_currentRoundIndex /
+                              (widget.activityNode?.rounds.length ?? 1)) *
+                          100)
+                      .toInt();
+              ProgressService().saveActivityScore(sId, aId, progress);
+              ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+            }
             _selectedIndex = null;
             _isCorrect = false;
           });
           _playAudioPrompt();
         } else {
           setState(() {
-          _activityComplete = true;
-          final sId = widget.activityNode?.skillId ?? '';
-          final aId = widget.activityNode?.id ?? '';
-          if (sId.isNotEmpty && aId.isNotEmpty) {
-            ProgressService().saveActivityScore(sId, aId, 100);
-            ProgressService().clearActivityState(sId, aId);
-          }
-        });
+            _activityComplete = true;
+            final sId = widget.activityNode?.skillId ?? '';
+            final aId = widget.activityNode?.id ?? '';
+            if (sId.isNotEmpty && aId.isNotEmpty) {
+              ProgressService().saveActivityScore(sId, aId, 100);
+              ProgressService().clearActivityState(sId, aId);
+            }
+          });
         }
       });
     } else {
@@ -156,7 +184,10 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
   List<String> _extractEquationParts(String promptText) {
     final regex = RegExp(r"'([^']+)'");
     final matches = regex.allMatches(promptText);
-    return matches.map((m) => m.group(1) ?? '').where((s) => s.isNotEmpty).toList();
+    return matches
+        .map((m) => m.group(1) ?? '')
+        .where((s) => s.isNotEmpty)
+        .toList();
   }
 
   @override
@@ -176,8 +207,10 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     final currentRound = rounds[_currentRoundIndex];
     final titleText = widget.activityNode?.title ?? 'වචනය සකසන්න';
     final promptText = currentRound['prompt']?.toString() ?? '';
-    
-    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
+
+    var options =
+        (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ??
+        ['🔵', '🟥', '🔺', '⭐'];
     var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
 
     if (widget.isRemedial && options.length > 2) {
@@ -200,7 +233,8 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
       isRoundComplete: _isCorrect,
       isActivityComplete: _activityComplete,
       onNext: () {
-        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        final wrapper = context
+            .findAncestorStateOfType<TelemetryWrapperState>();
         if (wrapper != null) {
           wrapper.completeActivity(context);
         } else {
@@ -237,7 +271,9 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
   Widget _buildSpeakerCard() {
     return GestureDetector(
       onTap: () {
-        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        context
+            .findAncestorStateOfType<TelemetryWrapperState>()
+            ?.logAudioReplay();
         _playAudioPrompt();
       },
       child: Container(
@@ -253,7 +289,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
           children: [
             Flexible(
               child: Text(
-                'අකුරු එකතු කර හැදෙන වචනය තෝරන්න',
+                'අකුරු එකතු කර සාදන වචනය තෝරන්න',
                 style: AppTypography.sinhala(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -266,18 +302,18 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
             ScaleTransition(
               scale: _speakerBounceAnimation,
               child: Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.warmAmber,
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.warmAmber,
+                ),
+                child: const Icon(
+                  Icons.volume_up_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
-              child: const Icon(
-                Icons.volume_up_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
             ),
           ],
         ),
@@ -293,60 +329,64 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-        for (int i = 0; i < parts.length; i++) ...[
-          // Letter Box mimicking Act 1 Image Square
-          Container(
-            width: parts[i].length > 1 ? 120.0 : 100.0,
-            height: 100.0,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: AppColors.warmAmber.withValues(alpha: 0.4),
-                width: 3,
+          for (int i = 0; i < parts.length; i++) ...[
+            // Letter Box mimicking Act 1 Image Square
+            Container(
+              width: parts[i].length > 1 ? 120.0 : 100.0,
+              height: 100.0,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: AppColors.warmAmber.withValues(alpha: 0.4),
+                  width: 3,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.warmAmber.withValues(alpha: 0.2),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.warmAmber.withValues(alpha: 0.2),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                )
-              ],
-            ),
-            child: Center(
-              child: Text(
-                parts[i],
-                style: AppTypography.sinhala(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                  height: 1.3,
+              child: Center(
+                child: Text(
+                  parts[i],
+                  style: AppTypography.sinhala(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    height: 1.3,
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Plus Sign
-          if (i < parts.length - 1)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                '+',
-                style: TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.warmAmber,
+            // Plus Sign
+            if (i < parts.length - 1)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  '+',
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.warmAmber,
+                  ),
                 ),
               ),
-            ),
+          ],
         ],
-      ],
-    ),
+      ),
     );
   }
 
   /// Premium answer pool container with frosted glass effect
-  Widget _buildAnswerPool(List<String> options, int correctIndex, int totalRounds) {
+  Widget _buildAnswerPool(
+    List<String> options,
+    int correctIndex,
+    int totalRounds,
+  ) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -361,7 +401,10 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
           end: Alignment.bottomCenter,
         ),
         borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 3),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.9),
+          width: 3,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -375,13 +418,25 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
         runSpacing: 16,
         alignment: WrapAlignment.center,
         children: List.generate(options.length, (index) {
-          return _buildOptionTile(index, options[index], correctIndex, totalRounds, options.length);
+          return _buildOptionTile(
+            index,
+            options[index],
+            correctIndex,
+            totalRounds,
+            options.length,
+          );
         }),
       ),
     );
   }
 
-  Widget _buildOptionTile(int index, String optionText, int correctIndex, int totalRounds, int totalOptions) {
+  Widget _buildOptionTile(
+    int index,
+    String optionText,
+    int correctIndex,
+    int totalRounds,
+    int totalOptions,
+  ) {
     final isSelected = (_selectedIndex == index);
     final isRight = isSelected && (index == correctIndex);
     final isWrong = isSelected && (index != correctIndex);
@@ -412,9 +467,9 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
           color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
           blurRadius: 16,
           spreadRadius: 2,
-        )
+        ),
       ];
-       // Matching the darker green for text
+      // Matching the darker green for text
     } else if (isWrong) {
       tileColor = const Color(0xFFE87C6D).withValues(alpha: 0.15);
       borderColor = const Color(0xFFE87C6D);
@@ -424,9 +479,8 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
           color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
           blurRadius: 16,
           spreadRadius: 2,
-        )
+        ),
       ];
-      
     }
 
     return GestureDetector(
@@ -443,10 +497,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
           decoration: BoxDecoration(
             color: tileColor,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: borderColor,
-              width: borderWidth,
-            ),
+            border: Border.all(color: borderColor, width: borderWidth),
             boxShadow: shadows,
           ),
           child: Center(

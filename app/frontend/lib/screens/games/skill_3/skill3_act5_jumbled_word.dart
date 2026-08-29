@@ -20,13 +20,19 @@ class Skill3Act5JumbledWord extends StatefulWidget {
   final ActivityNode? activityNode;
   final bool isRemedial;
   final Map<String, dynamic>? studentData;
-  const Skill3Act5JumbledWord({super.key, this.activityNode, this.isRemedial = false, this.studentData});
+  const Skill3Act5JumbledWord({
+    super.key,
+    this.activityNode,
+    this.isRemedial = false,
+    this.studentData,
+  });
 
   @override
   State<Skill3Act5JumbledWord> createState() => _Skill3Act5JumbledWordState();
 }
 
-class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with SingleTickerProviderStateMixin {
+class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
+    with SingleTickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isCorrect = false;
   bool _activityComplete = false;
@@ -46,18 +52,46 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
     final skillId = widget.activityNode?.skillId ?? '';
     final activityId = widget.activityNode?.id ?? '';
     if (skillId.isNotEmpty && activityId.isNotEmpty) {
-      _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
+      _currentRoundIndex = ProgressService().getActivityState(
+        skillId,
+        activityId,
+      );
     }
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
       _currentRoundIndex = 0;
     }
-    _shakeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
-    _shakeAnimation = Tween<double>(begin: 0, end: 24)
-        .chain(CurveTween(curve: Curves.elasticIn))
-        .animate(_shakeController);
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _shakeAnimation = Tween<double>(
+      begin: 0,
+      end: 24,
+    ).chain(CurveTween(curve: Curves.elasticIn)).animate(_shakeController);
 
     _initRound();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playCurrentInstruction();
+    });
+  }
+
+  void _playCurrentInstruction() {
+    final rounds = widget.activityNode?.rounds ?? [];
+    if (rounds.isEmpty) return;
+    final currentRound = rounds[_currentRoundIndex];
+    final instructionText = currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වචනය සාදන්න';
+    String spokenInstruction = instructionText
+        .replaceAll('මා', 'ම')
+        .replaceAllMapped(
+          RegExp(r"'?(.)'? අකුර"),
+          (match) => '${match.group(1)}, අකුර',
+        )
+        .replaceAllMapped(
+          RegExp(r"'?(.)'? පින්තූරය"),
+          (match) => '${match.group(1)}, පින්තූරය',
+        );
+    TtsService().speak(spokenInstruction);
   }
 
   @override
@@ -72,8 +106,12 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
     if (rounds.isEmpty) return;
 
     final currentRound = rounds[_currentRoundIndex];
-    final scrambledList = (currentRound['scrambled_letters'] as List?)?.map((e) => e.toString()).toList() ?? [];
-    
+    final scrambledList =
+        (currentRound['scrambled_letters'] as List?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+
     setState(() {
       _poolLetters = List.from(scrambledList);
       _filledSlots = List.filled(scrambledList.length, null);
@@ -95,10 +133,9 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
         _poolLetters[poolIndex] = null;
         _showError = false;
       });
-      
-      // Speak the letter
-      TtsService().speak(letter);
-      
+
+      // Do not speak the letter to prevent overlapping with success audio
+
       // Check if all slots are filled
       if (!_filledSlots.contains(null)) {
         _validateAnswer();
@@ -125,7 +162,7 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
     final rounds = widget.activityNode?.rounds ?? [];
     final currentRound = rounds[_currentRoundIndex];
     final correctWord = currentRound['correct_word']?.toString() ?? "";
-    
+
     final formedWord = _filledSlots.map((e) => e!.letter).join("");
 
     if (formedWord == correctWord) {
@@ -133,42 +170,51 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
       setState(() {
         _isCorrect = true;
       });
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(100);
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+        100,
+      );
       SoundUtils.playFeedback('audio/correct.mp3');
 
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (!mounted) return;
         if (_currentRoundIndex < rounds.length - 1) {
           _currentRoundIndex++;
-              final sId = widget.activityNode?.skillId ?? '';
-              final aId = widget.activityNode?.id ?? '';
-              if (sId.isNotEmpty && aId.isNotEmpty) {
-                int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
-                ProgressService().saveActivityScore(sId, aId, progress);
-                ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
-              }
-          _initRound();
-        } else {
-          setState(() {
-          _activityComplete = true;
           final sId = widget.activityNode?.skillId ?? '';
           final aId = widget.activityNode?.id ?? '';
           if (sId.isNotEmpty && aId.isNotEmpty) {
-            ProgressService().saveActivityScore(sId, aId, 100);
-            ProgressService().clearActivityState(sId, aId);
+            int progress =
+                ((_currentRoundIndex /
+                            (widget.activityNode?.rounds.length ?? 1)) *
+                        100)
+                    .toInt();
+            ProgressService().saveActivityScore(sId, aId, progress);
+            ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
           }
-        });
+          _initRound();
+          _playCurrentInstruction();
+        } else {
+          setState(() {
+            _activityComplete = true;
+            final sId = widget.activityNode?.skillId ?? '';
+            final aId = widget.activityNode?.id ?? '';
+            if (sId.isNotEmpty && aId.isNotEmpty) {
+              ProgressService().saveActivityScore(sId, aId, 100);
+              ProgressService().clearActivityState(sId, aId);
+            }
+          });
         }
       });
     } else {
       // Incorrect
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(0);
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+        0,
+      );
       SoundUtils.playFeedback('audio/wrong.mp3');
-      
+
       setState(() {
         _showError = true;
       });
-      
+
       _shakeController.forward().then((_) {
         _shakeController.reverse();
       });
@@ -179,7 +225,8 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
         setState(() {
           for (int i = 0; i < _filledSlots.length; i++) {
             if (_filledSlots[i] != null) {
-              _poolLetters[_filledSlots[i]!.poolIndex] = _filledSlots[i]!.letter;
+              _poolLetters[_filledSlots[i]!.poolIndex] =
+                  _filledSlots[i]!.letter;
               _filledSlots[i] = null;
             }
           }
@@ -199,14 +246,15 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
         body: const Center(child: Text('No rounds available.')),
       );
     }
-    
+
     if (rounds.length > 5) {
       rounds = rounds.sublist(0, 5);
     }
 
     final currentRound = rounds[_currentRoundIndex];
     final titleText = widget.activityNode?.title ?? 'අකුරු පිළිවෙලට සකසමු';
-    final promptText = currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වචනය සාදන්න';
+    final promptText =
+        currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වචනය සාදන්න';
     final emoji = currentRound['emoji']?.toString();
     final imageUrl = currentRound['image_url']?.toString();
 
@@ -219,7 +267,8 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
       isRoundComplete: _isCorrect,
       isActivityComplete: _activityComplete,
       onNext: () {
-        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        final wrapper = context
+            .findAncestorStateOfType<TelemetryWrapperState>();
         if (wrapper != null) {
           wrapper.completeActivity(context);
         } else {
@@ -239,7 +288,10 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
 
                   // Flashcard Container with Image & Answer Slots
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 24,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(32),
@@ -250,7 +302,10 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                           offset: const Offset(0, 8),
                         ),
                       ],
-                      border: Border.all(color: AppColors.borderLight, width: 2),
+                      border: Border.all(
+                        color: AppColors.borderLight,
+                        width: 2,
+                      ),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -265,20 +320,28 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.warmAmber.withValues(alpha: 0.2),
+                                color: AppColors.warmAmber.withValues(
+                                  alpha: 0.2,
+                                ),
                                 blurRadius: 16,
                                 spreadRadius: 4,
                                 offset: const Offset(0, 4),
-                              )
+                              ),
                             ],
                           ),
                           child: Center(
                             child: imageUrl != null
                                 ? Padding(
                                     padding: const EdgeInsets.all(16.0),
-                                    child: Image.asset(imageUrl, fit: BoxFit.contain),
+                                    child: Image.asset(
+                                      imageUrl,
+                                      fit: BoxFit.contain,
+                                    ),
                                   )
-                                : Text(emoji ?? '🧩', style: const TextStyle(fontSize: 60)),
+                                : Text(
+                                    emoji ?? '🧩',
+                                    style: const TextStyle(fontSize: 60),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -287,7 +350,10 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                           animation: _shakeAnimation,
                           builder: (context, child) {
                             return Transform.translate(
-                              offset: Offset(sin(_shakeAnimation.value * pi) * 10, 0),
+                              offset: Offset(
+                                sin(_shakeAnimation.value * pi) * 10,
+                                0,
+                              ),
                               child: child,
                             );
                           },
@@ -295,7 +361,9 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                             spacing: 16,
                             runSpacing: 16,
                             alignment: WrapAlignment.center,
-                            children: List.generate(_filledSlots.length, (index) {
+                            children: List.generate(_filledSlots.length, (
+                              index,
+                            ) {
                               final slot = _filledSlots[index];
                               final isFilled = slot != null;
                               return GestureDetector(
@@ -304,31 +372,39 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                                   duration: const Duration(milliseconds: 300),
                                   width: 76,
                                   height: 76,
-                                    decoration: BoxDecoration(
-                                      color: _isCorrect 
-                                        ? AppColors.gentleGreen.withValues(alpha: 0.2)
+                                  decoration: BoxDecoration(
+                                    color: _isCorrect
+                                        ? AppColors.gentleGreen.withValues(
+                                            alpha: 0.2,
+                                          )
                                         : _showError
-                                          ? AppColors.softCoral.withValues(alpha: 0.2)
-                                          : Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: _isCorrect
+                                        ? AppColors.softCoral.withValues(
+                                            alpha: 0.2,
+                                          )
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: _isCorrect
                                           ? AppColors.gentleGreen
                                           : _showError
-                                            ? AppColors.softCoral
-                                            : isFilled ? AppColors.calmBlue : const Color(0xFF64B5F6),
-                                        width: 3,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.06),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4),
-                                        )
-                                      ],
+                                          ? AppColors.softCoral
+                                          : isFilled
+                                          ? AppColors.calmBlue
+                                          : const Color(0xFF64B5F6),
+                                      width: 3,
                                     ),
-                                    child: Center(
-                                      child: isFilled 
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.06,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: isFilled
                                         ? Text(
                                             slot.letter,
                                             style: AppTypography.sinhala(
@@ -342,12 +418,12 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                                             size: 32,
                                             color: Color(0xFF90CAF9),
                                           ),
-                                    ),
                                   ),
-                                );
-                              }),
-                            ),
+                                ),
+                              );
+                            }),
                           ),
+                        ),
                       ],
                     ),
                   ),
@@ -359,7 +435,12 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                     children: [
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.only(top: 36, bottom: 20, left: 16, right: 16),
+                        padding: const EdgeInsets.only(
+                          top: 36,
+                          bottom: 20,
+                          left: 16,
+                          right: 16,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(40),
@@ -392,7 +473,9 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF4A90D9).withValues(alpha: 0.08),
+                                        color: const Color(
+                                          0xFF4A90D9,
+                                        ).withValues(alpha: 0.08),
                                         blurRadius: 8,
                                         offset: const Offset(0, 3),
                                       ),
@@ -400,7 +483,9 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                                   ),
                                   child: Center(
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4.0,
+                                      ),
                                       child: FittedBox(
                                         fit: BoxFit.scaleDown,
                                         child: Text(
@@ -422,7 +507,6 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
                           }),
                         ),
                       ),
-
                     ],
                   ),
                   const Spacer(flex: 1),
@@ -438,7 +522,9 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord> with Sing
   Widget _buildInstructionCard(String instruction) {
     return GestureDetector(
       onTap: () {
-        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        context
+            .findAncestorStateOfType<TelemetryWrapperState>()
+            ?.logAudioReplay();
         TtsService().speak(instruction);
       },
       child: Container(

@@ -15,7 +15,12 @@ class Skill3Act1ImageMcq extends StatefulWidget {
   final ActivityNode? activityNode;
   final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill3Act1ImageMcq({super.key, this.activityNode, this.isRemedial = false, this.studentData});
+  const Skill3Act1ImageMcq({
+    super.key,
+    this.activityNode,
+    this.isRemedial = false,
+    this.studentData,
+  });
 
   @override
   State<Skill3Act1ImageMcq> createState() => _Skill3Act1ImageMcqState();
@@ -42,7 +47,10 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     final skillId = widget.activityNode?.skillId ?? '';
     final activityId = widget.activityNode?.id ?? '';
     if (skillId.isNotEmpty && activityId.isNotEmpty) {
-      _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
+      _currentRoundIndex = ProgressService().getActivityState(
+        skillId,
+        activityId,
+      );
     }
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
@@ -64,7 +72,10 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
       duration: const Duration(milliseconds: 400),
     );
     _speakerBounceAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _speakerBounceController, curve: Curves.elasticOut),
+      CurvedAnimation(
+        parent: _speakerBounceController,
+        curve: Curves.elasticOut,
+      ),
     );
 
     // Image pop-in animation
@@ -93,8 +104,21 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     if (rounds.isEmpty) return;
 
     final currentRound = rounds[_currentRoundIndex];
-    final audioText = currentRound['audio_text']?.toString() ?? currentRound['prompt']?.toString() ?? 'වෘත්තය';
-    TtsService().speak(audioText);
+    final audioText =
+        currentRound['audio_text']?.toString() ??
+        currentRound['prompt']?.toString() ??
+        'වෘත්තය';
+    String spokenInstruction = audioText
+        .replaceAll('මා', 'ම')
+        .replaceAllMapped(
+          RegExp(r"'?(.)'? අකුර"),
+          (match) => '${match.group(1)}, අකුර',
+        )
+        .replaceAllMapped(
+          RegExp(r"'?(.)'? පින්තූරය"),
+          (match) => '${match.group(1)}, පින්තූරය',
+        );
+    TtsService().speak(spokenInstruction);
 
     _speakerBounceController.forward().then((_) {
       _speakerBounceController.reverse();
@@ -111,7 +135,9 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
 
     final bool isRight = (index == correctIndex);
     int score = isRight ? 100 : 0;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
+    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+      score,
+    );
 
     if (isRight) {
       setState(() {
@@ -128,13 +154,17 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
         if (_currentRoundIndex < totalRounds - 1) {
           setState(() {
             _currentRoundIndex++;
-              final sId = widget.activityNode?.skillId ?? '';
-              final aId = widget.activityNode?.id ?? '';
-              if (sId.isNotEmpty && aId.isNotEmpty) {
-                int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
-                ProgressService().saveActivityScore(sId, aId, progress);
-                ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
-              }
+            final sId = widget.activityNode?.skillId ?? '';
+            final aId = widget.activityNode?.id ?? '';
+            if (sId.isNotEmpty && aId.isNotEmpty) {
+              int progress =
+                  ((_currentRoundIndex /
+                              (widget.activityNode?.rounds.length ?? 1)) *
+                          100)
+                      .toInt();
+              ProgressService().saveActivityScore(sId, aId, progress);
+              ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+            }
             _selectedIndex = null;
             _isCorrect = false;
           });
@@ -143,14 +173,14 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
           _playAudioPrompt();
         } else {
           setState(() {
-          _activityComplete = true;
-          final sId = widget.activityNode?.skillId ?? '';
-          final aId = widget.activityNode?.id ?? '';
-          if (sId.isNotEmpty && aId.isNotEmpty) {
-            ProgressService().saveActivityScore(sId, aId, 100);
-            ProgressService().clearActivityState(sId, aId);
-          }
-        });
+            _activityComplete = true;
+            final sId = widget.activityNode?.skillId ?? '';
+            final aId = widget.activityNode?.id ?? '';
+            if (sId.isNotEmpty && aId.isNotEmpty) {
+              ProgressService().saveActivityScore(sId, aId, 100);
+              ProgressService().clearActivityState(sId, aId);
+            }
+          });
         }
       });
     } else {
@@ -179,11 +209,15 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'පින්තූරයට ගැලපෙන වචනය තෝරන්න';
-    final promptText = currentRound['prompt']?.toString() ?? 'පින්තූරයට ගැලපෙන වචනය තෝරන්න';
+    final titleText =
+        widget.activityNode?.title ?? 'පින්තූරයට ගැලපෙන වචනය තෝරන්න';
+    final promptText =
+        currentRound['prompt']?.toString() ?? 'පින්තූරයට ගැලපෙන වචනය තෝරන්න';
     final imageUrl = currentRound['image_url']?.toString() ?? '';
-    
-    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
+
+    var options =
+        (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ??
+        ['🔵', '🟥', '🔺', '⭐'];
     var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
 
     if (widget.isRemedial && options.length > 2) {
@@ -204,7 +238,8 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
       isRoundComplete: _isCorrect,
       isActivityComplete: _activityComplete,
       onNext: () {
-        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        final wrapper = context
+            .findAncestorStateOfType<TelemetryWrapperState>();
         if (wrapper != null) {
           wrapper.completeActivity(context);
         } else {
@@ -243,7 +278,9 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
   Widget _buildSpeakerCard(String promptText) {
     return GestureDetector(
       onTap: () {
-        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        context
+            .findAncestorStateOfType<TelemetryWrapperState>()
+            ?.logAudioReplay();
         _playAudioPrompt();
       },
       child: Container(
@@ -272,18 +309,18 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
             ScaleTransition(
               scale: _speakerBounceAnimation,
               child: Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.warmAmber,
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.warmAmber,
+                ),
+                child: const Icon(
+                  Icons.volume_up_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
-              child: const Icon(
-                Icons.volume_up_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
             ),
           ],
         ),
@@ -292,7 +329,11 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
   }
 
   /// Answer pool in its own styled container
-  Widget _buildAnswerPool(List<String> options, int correctIndex, int totalRounds) {
+  Widget _buildAnswerPool(
+    List<String> options,
+    int correctIndex,
+    int totalRounds,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -306,7 +347,10 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
           end: Alignment.bottomCenter,
         ),
         borderRadius: BorderRadius.circular(36),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 3),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.9),
+          width: 3,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -321,7 +365,13 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
         runSpacing: 12,
         alignment: WrapAlignment.center,
         children: List.generate(options.length, (index) {
-          return _buildOptionTile(index, options[index], correctIndex, totalRounds, options.length);
+          return _buildOptionTile(
+            index,
+            options[index],
+            correctIndex,
+            totalRounds,
+            options.length,
+          );
         }),
       ),
     );
@@ -331,7 +381,10 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
   Widget _buildImageSection(String imageUrl) {
     return ScaleTransition(
       scale: Tween<double>(begin: 0.5, end: 1.0).animate(
-        CurvedAnimation(parent: _imageBounceController, curve: Curves.elasticOut),
+        CurvedAnimation(
+          parent: _imageBounceController,
+          curve: Curves.elasticOut,
+        ),
       ),
       child: Container(
         width: 170,
@@ -377,7 +430,13 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
   }
 
   /// Individual interactive option tile with bouncy feedback
-  Widget _buildOptionTile(int index, String optionText, int correctIndex, int totalRounds, int totalOptions) {
+  Widget _buildOptionTile(
+    int index,
+    String optionText,
+    int correctIndex,
+    int totalRounds,
+    int totalOptions,
+  ) {
     final isSelected = (_selectedIndex == index);
     final isRight = isSelected && (index == correctIndex);
     final isWrong = isSelected && (index != correctIndex);
@@ -409,9 +468,8 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
           color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
           blurRadius: 16,
           spreadRadius: 2,
-        )
+        ),
       ];
-      
     } else if (isWrong) {
       tileColor = const Color(0xFFE87C6D).withValues(alpha: 0.15);
       borderColor = const Color(0xFFE87C6D);
@@ -421,9 +479,8 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
           color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
           blurRadius: 16,
           spreadRadius: 2,
-        )
+        ),
       ];
-      
     }
 
     return GestureDetector(
@@ -440,10 +497,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
           decoration: BoxDecoration(
             color: tileColor,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: borderColor,
-              width: borderWidth,
-            ),
+            border: Border.all(color: borderColor, width: borderWidth),
             boxShadow: shadows,
           ),
           child: Center(
