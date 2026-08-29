@@ -1,8 +1,8 @@
+import os
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from services.tts_service import TTSService
-from database import get_fs
 
 router = APIRouter(prefix="/tts", tags=["Text-to-Speech"])
 
@@ -10,17 +10,17 @@ class TTSRequest(BaseModel):
     text: str
 
 @router.post("/generate")
-async def generate_speech(request: TTSRequest):
+def generate_speech(request: TTSRequest):
     """
     Converts Sinhala text into speech using Google TTS.
-    Returns the GridFS streaming URL for the generated MP3.
+    Returns the streaming URL for the generated MP3.
     """
     text = request.text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="Text cannot be empty")
         
     try:
-        text_hash = await TTSService.text_to_speech(text)
+        text_hash = TTSService.text_to_speech(text)
         return {"file_path": f"/tts/audio/{text_hash}.wav"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -28,25 +28,10 @@ async def generate_speech(request: TTSRequest):
 @router.api_route("/audio/{text_hash}.wav", methods=["GET", "HEAD"])
 async def get_audio(text_hash: str):
     """
-    Streams the TTS audio file directly from MongoDB GridFS.
+    Streams the TTS audio file directly from local filesystem.
     """
-    fs = get_fs()
-    
-    # Find the file in GridFS
-    cursor = fs.find({"filename": text_hash})
-    docs = await cursor.to_list(length=1)
-    if not docs:
+    local_path = os.path.join(os.path.dirname(__file__), "..", "local_audio", f"{text_hash}.wav")
+    if not os.path.exists(local_path):
         raise HTTPException(status_code=404, detail="Audio not found")
-    
-    file_id = docs[0]["_id"]
-    grid_out = await fs.open_download_stream(file_id)
-    
-    audio_data = b""
-    while True:
-        chunk = await grid_out.readchunk()
-        if not chunk:
-            break
-        audio_data += chunk
-
-    content_type = docs[0].get("metadata", {}).get("contentType", "audio/wav")
-    return Response(content=audio_data, media_type=content_type)
+        
+    return FileResponse(local_path, media_type="audio/wav")

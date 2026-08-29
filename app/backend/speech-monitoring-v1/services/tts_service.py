@@ -1,6 +1,8 @@
 import hashlib
 import struct
 import os
+import base64
+import wave
 from database import get_fs
 from google import genai
 from google.genai import types
@@ -58,89 +60,68 @@ def convert_to_wav(audio_data: bytes, mime_type: str) -> bytes:
 
 class TTSService:
     @staticmethod
-    async def text_to_speech(text: str) -> str:
-        """Generate a new speech file for given text and upload to GridFS. Returns text_hash."""
+    def text_to_speech(text: str) -> str:
+        """Generate a new speech file for given text and save locally. Returns text_hash."""
         text_hash = hashlib.md5(text.encode()).hexdigest()
+        local_path = os.path.join(os.path.dirname(__file__), "..", "local_audio", f"{text_hash}.wav")
         
-        # Check if already exists in GridFS
-        existing = await TTSService.get_existing_speech(text_hash)
-        if existing:
+        if os.path.exists(local_path):
             return text_hash
             
         try:
-            client = genai.Client(
-                api_key=os.environ.get("GEMINI_API_KEY"),
-            )
-
-            model = "gemini-3.1-flash-tts-preview"
+            api_key = os.environ.get("GEMINI_API_KEY")
+            if not api_key:
+                raise RuntimeError("GEMINI_API_KEY environment variable not set")
             
-            # Format the text with the perfect Scene and Context settings
-            prompt_text = f"""## Scene:
-A friendly, bright classroom setting, learning a new language together.
-
-## Sample Context:
-Clear pronunciation, very encouraging tone, patient pacing, speaking naturally and fluently in Sinhala to a young child.
-
-## Transcript:
-Speaker 1: {text}"""
-
-            contents = [
-                types.Content(
-                    role="user",
-                    parts=[types.Part.from_text(text=prompt_text)],
-                ),
-            ]
+            prompt_text = f"## Scene:\nA friendly, bright classroom setting, learning a new language together.\n\n## Sample Context:\nClear pronunciation, very encouraging tone, patient pacing, speaking naturally and fluently in Sinhala to a young child.\n\n## Transcript:\nSpeaker 1: {text}"
             
-            generate_content_config = types.GenerateContentConfig(
-                temperature=0.5,
-                response_modalities=["audio"],
-                speech_config=types.SpeechConfig(
-                    voice_config=types.VoiceConfig(
-                        prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                            voice_name="Zephyr"
-                        )
-                    )
-                ),
-            )
-
-            response_stream = client.models.generate_content_stream(
-                model=model,
-                contents=contents,
-                config=generate_content_config,
-            )
-
-            audio_buffer = b""
-            mime_type = "audio/L16;rate=24000"
+            payload = {
+              "contents": [{"role": "user", "parts": [{"text": prompt_text}]}],
+              "generationConfig": {
+                "responseModalities": ["audio"],
+                "speechConfig": {"voice_config": {"prebuilt_voice_config": {"voice_name": "Zephyr"}}}
+              }
+            }
+            headers = {'Content-Type': 'application/json', 'x-goog-api-key': api_key}
             
-            for chunk in response_stream:
-                if chunk.parts is None:
-                    continue
-                if chunk.parts[0].inline_data and chunk.parts[0].inline_data.data:
-                    inline_data = chunk.parts[0].inline_data
-                    audio_buffer += inline_data.data
-                    mime_type = inline_data.mime_type
+            import requests
+            import time
             
-            if not audio_buffer:
-                raise Exception("No audio returned from Gemini API")
-
-            # Convert to WAV
-            wav_data = convert_to_wav(audio_buffer, mime_type)
+            # Use ONLY 3.1 (the original voice the user prefers)
+            url = "https://generativelanguage.googleapis.com/v1alpha/models/gemini-3.1-flash-tts-preview:generateContent"
+            print(f"Calling Gemini 3.1 REST API with text: {repr(prompt_text)}")
+            start_time = time.time()
+            response = requests.post(url, json=payload, headers=headers, timeout=15)
+            print(f"Gemini 3.1 API call complete in {time.time() - start_time} seconds with status: {response.status_code}")
+                
+            if response.status_code != 200:
+                raise RuntimeError(f"Gemini API returned error {response.status_code}: {response.text}")
+                
+            data = response.json()
+            if 'candidates' not in data or not data['candidates']:
+                raise RuntimeError(f"No candidates returned from Gemini API: {data}")
+                
+            inline_data = data['candidates'][0]['content']['parts'][0].get('inlineData', {})
+            if not inline_data or 'data' not in inline_data:
+                raise RuntimeError("No audio data returned in response parts")
+                
+            import base64
+            import wave
+            audio_bytes = base64.b64decode(inline_data['data'])
             
-            # Upload to GridFS
-            fs = get_fs()
-            await fs.upload_from_stream(
-                filename=text_hash,
-                source=wav_data,
-                metadata={"contentType": "audio/wav", "text": text}
-            )
+            with wave.open(local_path, "wb") as wav_file:
+                wav_file.setnchannels(1)
+                wav_file.setsampwidth(2)
+                wav_file.setframerate(24000)
+                wav_file.writeframes(audio_bytes)
+                
+            print(f"Successfully saved locally: {local_path}")
             return text_hash
+
         except Exception as e:
             raise RuntimeError(f"Text-to-speech generation failed: {e}")
 
     @staticmethod
     async def get_existing_speech(text_hash: str) -> bool:
-        """Check if a speech file for the given hash already exists in GridFS."""
-        fs = get_fs()
-        cursor = fs.find({"filename": text_hash})
-        docs = await cursor.to_list(length=1)
-        return len(docs) > 0
+        local_path = os.path.join(os.path.dirname(__file__), "..", "local_audio", f"{text_hash}.wav")
+        return os.path.exists(local_path)
