@@ -12,7 +12,7 @@ MOCK_FUSION_PAYLOAD = {
     "c2_kinematic_vector": {
         "time_to_first_touch_ms": 1200.0,
         "orthographic_confusion_index": 0.05,
-        "path_efficiency": 0.95,
+        "path_efficiency_ratio": 0.95,   # ← fixed: was "path_efficiency"
         "dimensionless_jerk": 45.0,
         "dwell_time_ms": 200.0
     },
@@ -29,6 +29,14 @@ def test_diagnose_patient(client):
     assert response.status_code == 200
     data = response.json()
     assert data["student_id"] == MOCK_FUSION_PAYLOAD["student_id"]
-    assert "risk_score" in data
-    assert "clinical_subtype" in data
+    # Check actual FusionResponse schema keys (not stale "risk_score" / "clinical_subtype")
+    assert "learner_profile" in data
     assert "shap_explanations" in data
+    assert data["learner_profile"]["primary_pattern"] in [
+        "Typical Learning Pattern",
+        "Phonological Learning Pattern",
+        "Visual-Orthographic Learning Pattern",
+        "Combined Learning Pattern",
+    ]
+    assert 0.0 <= data["learner_profile"]["confidence"] <= 1.0
+    assert len(data["shap_explanations"]["top_contributing_features"]) == 3

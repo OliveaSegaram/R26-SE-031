@@ -11,7 +11,7 @@ class AcousticFeatures(BaseModel):
 class KinematicFeatures(BaseModel):
     time_to_first_touch_ms: float = Field(..., description="Time to first interaction (ms)")
     orthographic_confusion_index: float = Field(..., description="Index measuring visual confusion (e.g. between similar letters)")
-    path_efficiency: float = Field(..., description="Efficiency of the touch trajectory")
+    path_efficiency_ratio: float = Field(..., description="Efficiency of the touch trajectory (0-1, higher=more direct)")  # matches comp2_kinematics.py output
     dimensionless_jerk: float = Field(..., description="Smoothness of movement, high implies hesitation")
     dwell_time_ms: float = Field(..., description="Time spent hovering or dwelling on targets (ms)")
 

@@ -59,7 +59,8 @@ async def diagnose_patient(
         flat_features = {}
         flat_features.update(request.c1_audio_vector.dict())
         flat_features.update(request.c2_kinematic_vector.dict())
-        flat_features["student_age_months"] = request.student_age_months
+        # Convert age from months to years to match training data scale (range 5-7 years)
+        flat_features["age"] = request.student_age_months // 12
         
         # Analyze
         analysis_result = engine.analyze_patient(flat_features)
