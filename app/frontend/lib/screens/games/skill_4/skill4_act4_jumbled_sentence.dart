@@ -58,6 +58,9 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
         .animate(_shakeController);
 
     _initRound();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playCurrentInstruction();
+    });
   }
 
   @override
@@ -83,6 +86,14 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
     });
   }
 
+  void _playCurrentInstruction() {
+    final rounds = widget.activityNode?.rounds ?? [];
+    if (rounds.isEmpty) return;
+    final currentRound = rounds[_currentRoundIndex];
+    final instructionText = currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වාක්‍යය සාදන්න';
+    TtsService().speak(instructionText);
+  }
+
   void _onPoolWordTapped(int poolIndex) async {
     if (_isChecking || _poolWords[poolIndex] == null) return;
 
@@ -96,8 +107,7 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
         _showError = false;
       });
       
-      // Speak the word
-      TtsService().speak(word);
+      // Do not speak the word to prevent overlapping with success audio
       
       // Check if all slots are filled
       if (!_filledSlots.contains(null)) {
@@ -150,6 +160,7 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
                 ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
               }
           _initRound();
+          _playCurrentInstruction();
         } else {
           setState(() {
           _activityComplete = true;
