@@ -28,21 +28,30 @@ def wait_for_port_free(port: int, timeout: int = 30) -> bool:
     """
     Waits up to `timeout` seconds for a port to become available.
     Tries both fuser and lsof to kill the occupying process.
-    Verifies freedom via actual socket bind test.
+    Verifies freedom via socket connect test (avoids claiming the port).
     Fixes: [Errno 98] address already in use on Azure container restarts.
     """
     deadline = time.time() + timeout
     while time.time() < deadline:
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                s.bind(("0.0.0.0", port))
-                return True  # Port is free — safe to start service
-        except OSError:
-            print(f"[WAIT] Port {port} still occupied — attempting to release...")
-            os.system(f"fuser -k {port}/tcp > /dev/null 2>&1")
-            os.system(f"lsof -ti:{port} | xargs kill -9 > /dev/null 2>&1")
-            time.sleep(2)
+        is_free = False
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(1.0)
+            try:
+                s.connect(("127.0.0.1", port))
+                is_free = False  # Connected successfully = port is IN USE
+            except ConnectionRefusedError:
+                is_free = True   # Connection refused = port is FREE
+            except Exception:
+                is_free = False
+                
+        if is_free:
+            return True
+            
+        print(f"[WAIT] Port {port} still occupied — attempting to release...")
+        os.system(f"fuser -k {port}/tcp > /dev/null 2>&1")
+        os.system(f"lsof -ti:{port} | xargs kill -9 > /dev/null 2>&1")
+        time.sleep(2)
+        
     print(f"[ERROR] Port {port} still in use after {timeout}s — skipping service")
     return False
 
