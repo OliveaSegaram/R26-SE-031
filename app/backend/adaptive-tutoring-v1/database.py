@@ -29,3 +29,10 @@ async def close_mongo_connection():
     if db_instance.client:
         db_instance.client.close()
         print("Closed MongoDB connection (adaptive-tutoring-v1)")
+
+def get_db():
+    """Returns the active Motor database instance. Call connect_to_mongo() first."""
+    if db is None:
+        raise RuntimeError("Database not initialized. Ensure connect_to_mongo() was called on startup.")
+    return db
+

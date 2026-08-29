@@ -32,26 +32,31 @@ from services.comp2_kinematics import extract_comp2_features
 # Cognitive Index Tags — maps activity template types to cognitive domains
 # ---------------------------------------------------------------------------
 VISUAL_SKILLS_TEMPLATES = {
-    "hidden_picture_game",
-    "spot_difference",
-    "shape_match",
-    "visual_tracking",
-    "pattern_completion",
+    # Current Sinhala curriculum activity names
+    "visual_act1_hidden_search", "visual_act2_shadow_matching",
+    "visual_act3_sorting_adventure", "visual_act4_pattern_adventure",
+    "visual_act5_memory_hats",
+    # Legacy / generic names
+    "hidden_picture_game", "spot_difference", "shape_match",
+    "visual_tracking", "pattern_completion",
 }
 
 PHONOLOGICAL_TEMPLATES = {
-    "syllable_tap",
-    "word_match",
-    "letter_sound",
-    "rhyme_sort",
-    "phoneme_blend",
+    # Current Sinhala curriculum activity names
+    "skill2_act1_odd_one_out", "skill2_act2_identical_match",
+    "skill2_act3_audio", "skill2_act4_mcq", "skill2_act5_pattern_memory",
+    "skill3_act3_audio_mcq", "skill3_act4_fill_blank",
+    "skill5_act1_mcq", "skill5_act2_mcq", "skill5_act3_mcq", "skill5_act4_mcq",
+    # Legacy names
+    "syllable_tap", "word_match", "letter_sound", "rhyme_sort", "phoneme_blend",
 }
 
 MOTOR_TEMPLATES = {
-    "trace_letter",
-    "drag_drop",
-    "connect_dots",
-    "shape_trace",
+    # Current Sinhala curriculum activity names
+    "skill3_act2_word_formation_mcq", "skill3_act5_jumbled_word",
+    "skill4_act4_jumbled_sentence", "skill4_act2_fill_blank",
+    # Legacy names
+    "trace_letter", "drag_drop", "connect_dots", "shape_trace",
 }
 
 
@@ -242,22 +247,22 @@ def classify_risk(
     enough labelled data accumulates.
     """
     visual_risk = _threshold_risk(
-        score=indices["visual_processing_score"],
+        score=indices["visual_processing_index"],
         high_threshold=40,
         moderate_threshold=65,
     )
     phonological_risk = _threshold_risk(
-        score=indices["phonological_awareness_score"],
+        score=indices["phonological_task_index"],
         high_threshold=40,
         moderate_threshold=65,
     )
     motor_risk = _threshold_risk(
-        score=indices["motor_precision_score"],
+        score=indices["motor_interaction_index"],
         high_threshold=50,
         moderate_threshold=72,
     )
     attention_risk = _threshold_risk(
-        score=indices["sustained_attention_score"],
+        score=indices["attention_stability_index"],
         high_threshold=45,
         moderate_threshold=68,
     )
@@ -318,9 +323,10 @@ def generate_interventions(
             "to reduce cognitive fatigue and improve sustained attention."
         )
 
-    if features["fatigue_drift"] > 1500:
+    if features.get("latency_drift", 0.0) > 0.30:
         interventions.append(
-            "The child shows significant fatigue during longer activity sessions. "
+            "The child shows significant fatigue during longer activity sessions — "
+            "response time increased by more than 30% towards session end. "
             "Enabling the Daily Limit feature is recommended."
         )
 
@@ -375,6 +381,8 @@ def generate_cognitive_profile(
 ) -> dict[str, Any]:
     """
     Full end-to-end ML analytics pipeline.
+    Requires at least 4 telemetry events to produce meaningful drift features.
+    Returns a status='insufficient_data' dict if not enough data.
     """
     all_events: list[dict[str, Any]] = []
     latest_device_metrics = {}
@@ -383,6 +391,14 @@ def generate_cognitive_profile(
         all_events.extend(session.get("events", []))
         if session.get("device_metrics"):
             latest_device_metrics = session.get("device_metrics")
+
+    # Cold-start guard: require minimum 4 rounds for meaningful drift features
+    if len(all_events) < 4:
+        return {
+            "status": "insufficient_data",
+            "message": f"Minimum 4 rounds required for profiling. Got {len(all_events)}.",
+            "data_points": len(all_events),
+        }
 
     base_features = extract_features(all_events)
     advanced_features = extract_advanced_features(all_events)
@@ -399,12 +415,13 @@ def generate_cognitive_profile(
         "assessment_risk_score": round(assessment_risk_score, 4),
     }
     
-    # Calculate deterministic fatigue score
+    # Calculate deterministic fatigue score (weighted composite, clamped to [0, 1])
     fatigue_score = (
         (0.5 * base_features.get("latency_drift", 0.0)) +
         (0.3 * base_features.get("error_drift", 0.0)) +
         (0.2 * base_features.get("hesitation_drift", 0.0))
     )
+    fatigue_score = max(0.0, min(1.0, fatigue_score))
 
     # Cognitive indices currently only use the base features
     indices = compute_cognitive_indices(base_features)
@@ -508,5 +525,7 @@ def _zero_features() -> dict[str, float]:
         "hesitation_ratio": 0.0,
         "accuracy_slope": 0.0,
         "phonological_latency": 1500.0,
-        "fatigue_drift": 0.0,
+        "latency_drift": 0.0,
+        "error_drift": 0.0,
+        "hesitation_drift": 0.0,
     }
