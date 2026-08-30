@@ -60,6 +60,7 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
     
     # Save C1
     c1_doc = {
+        "event_id": event_id,
         "student_id": payload.student_id,
         "session_id": payload.session_id,
         "timestamp": datetime.utcnow().isoformat(),
@@ -87,6 +88,7 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
     
     # Save C2
     c2_doc = {
+        "event_id": event_id,
         "student_id": payload.student_id,
         "session_id": payload.session_id,
         "timestamp": datetime.utcnow().isoformat(),
@@ -105,6 +107,7 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
     
     # Save C3
     c3_doc = {
+        "event_id": event_id,
         "student_id": payload.student_id,
         "session_id": payload.session_id,
         "timestamp": datetime.utcnow().isoformat(),
@@ -123,6 +126,7 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
     
     # Save C4 Decision
     c4_doc = {
+        "event_id": event_id,
         "student_id": payload.student_id,
         "session_id": payload.session_id,
         "timestamp": datetime.utcnow().isoformat(),
@@ -135,16 +139,44 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
     }
     await db.adaptive_decisions.insert_one(c4_doc)
     
-    # Save Speech Features
+    # Save Speech Features and Transcriptions separately as requested
     if payload.speech:
-        speech_doc = {
-            "event_id": event_id,
+        speech_trans_doc = {
+            "speech_event_id": event_id,
             "student_id": payload.student_id,
             "session_id": payload.session_id,
-            "timestamp": datetime.utcnow().isoformat(),
-            "speech_data": payload.speech
+            "activity_id": payload.activity_id,
+            "item_id": payload.item_id,
+            "expected_text": payload.speech.get("expected_text", ""),
+            "transcription": payload.speech.get("transcription", ""),
+            "wer": payload.speech.get("word_error_rate", 0.0),
+            "stt_confidence": 1.0 - (payload.speech.get("word_error_rate") or 0.0),
+            "model_version": "whisper-si-v1",
+            "timestamp": datetime.utcnow().isoformat()
         }
-        await db.speech_features.insert_one(speech_doc)
+        await db.speech_transcriptions.insert_one(speech_trans_doc)
+        
+        speech_feat_doc = {
+            "speech_event_id": event_id,
+            "student_id": payload.student_id,
+            "session_id": payload.session_id,
+            "activity_id": payload.activity_id,
+            "item_id": payload.item_id,
+            "acoustic_latency_ms": payload.speech.get("Acoustic_Latency_ms", 0),
+            "voice_onset_ms": payload.speech.get("Voice_Onset_ms", 0),
+            "detected_peaks": payload.speech.get("Detected_Peaks", 0),
+            "expected_syllables": payload.speech.get("Expected_Syllables", 0),
+            "peak_count_delta": payload.speech.get("Peak_Count_Delta", 0),
+            "intra_word_silence_ratio": payload.speech.get("Intra_Word_Silence_Ratio", 0.0),
+            "jitter": payload.speech.get("Local_Jitter", 0.0),
+            "shimmer": payload.speech.get("Local_Shimmer", 0.0),
+            "recording_quality": payload.speech.get("recording_quality", "good"),
+            "analysis_confidence": 0.88 if payload.speech.get("recording_quality", "good") == "good" else 0.5,
+            "feature_version": "speech-v1",
+            "speech_data": payload.speech, # Kept for backward compatibility in other endpoints
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        await db.speech_features.insert_one(speech_feat_doc)
 
 
 @router.post("/interaction")
