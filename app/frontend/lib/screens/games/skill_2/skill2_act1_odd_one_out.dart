@@ -64,7 +64,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
 
   void _playCurrentInstruction() {
     String spokenInstruction = 'කොටුවේ පෙන්වා ඇති අකුර සොයන්න.';
-    TtsService().speak(spokenInstruction);
+    TtsService().speak(spokenInstruction, folder: 'skill_2');
   }
 
   @override
@@ -268,7 +268,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
             .replaceAll('\'ම\' අකුර', 'ම, අකුර')
             .replaceAll('ම අකුර', 'ම, අකුර')
             .replaceAll('ම පින්තූරය', 'ම, පින්තූරය');
-        TtsService().speak('කොටුවේ පෙන්වා ඇති අකුර සොයන්න.');
+        TtsService().speak('කොටුවේ පෙන්වා ඇති අකුර සොයන්න.', folder: 'skill_2');
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),

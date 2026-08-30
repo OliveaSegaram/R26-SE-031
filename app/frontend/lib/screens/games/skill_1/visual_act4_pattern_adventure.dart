@@ -209,7 +209,7 @@ class _VisualAct4PatternAdventureState
   }
 
   void _playInstruction() {
-    TtsService().speak('රටාවට ගැළපෙන පින්තූරය තෝරන්න');
+    TtsService().speak('රටාවට ගැළපෙන පින්තූරය තෝරන්න', folder: 'skill_1');
     _speakerBounceController.forward().then((_) {
       _speakerBounceController.reverse();
     });

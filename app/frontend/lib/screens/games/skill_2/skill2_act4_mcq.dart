@@ -82,7 +82,7 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
           RegExp(r" '?(.)'? තෝරන්න"),
           (match) => ' ${match.group(1)}යන්න තෝරන්න',
         );
-    TtsService().speak(spokenInstruction);
+    TtsService().speak(spokenInstruction, folder: 'skill_2');
   }
 
   void _checkAnswer(

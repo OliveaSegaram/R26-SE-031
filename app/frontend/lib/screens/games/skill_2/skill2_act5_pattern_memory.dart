@@ -88,7 +88,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
-    TtsService().speak(spokenInstruction);
+    TtsService().speak(spokenInstruction, folder: 'skill_2');
   }
 
   void _startMemorizeTimer() {

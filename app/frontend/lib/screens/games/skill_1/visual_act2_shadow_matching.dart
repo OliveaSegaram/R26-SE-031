@@ -167,7 +167,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   }
 
   void _playInstruction() {
-    TtsService().speak(_currentInstruction);
+    TtsService().speak(_currentInstruction, folder: 'skill_1');
     _speakerBounceController.forward().then((_) {
       _speakerBounceController.reverse();
     });

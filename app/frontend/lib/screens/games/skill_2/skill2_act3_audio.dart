@@ -82,7 +82,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
           RegExp(r"'?(.)'? තෝරන්න"),
           (match) => '${match.group(1)}යන්න තෝරන්න',
         );
-    TtsService().speak(spokenInstruction);
+    TtsService().speak(spokenInstruction, folder: 'skill_2');
   }
 
   void _checkAnswer(int index, int correctIndex, int totalRounds) async {

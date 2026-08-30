@@ -183,7 +183,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats> with T
   }
 
   void _playInstruction(String text) {
-    TtsService().speak(text);
+    TtsService().speak(text, folder: 'skill_1');
     _speakerBounceController.forward().then((_) {
       _speakerBounceController.reverse();
     });

@@ -306,7 +306,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   void _playInstruction() {
     if (_gameData.rounds.isEmpty) return;
     final round = _gameData.rounds[_currentRoundIndex];
-    TtsService().speak(round.instructionText);
+    TtsService().speak(round.instructionText, folder: 'skill_1');
     _speakerBounceController.forward().then((_) {
       _speakerBounceController.reverse();
     });
