@@ -31,20 +31,19 @@ async def get_parent_overview(student_id: str = Path(...)):
     sessions = await db.telemetry_events.distinct("session_id", {"student_id": student_id})
     sessions_completed = len(sessions)
     
-    # 2. Practice Time (Sum of total_round_latency_ms)
     pipeline = [
         {"$match": {"student_id": student_id}},
-        {"$group": {"_id": None, "total_ms": {"$sum": "$total_round_latency_ms"}, "correct_count": {"$sum": {"$cond": ["$is_correct", 1, 0]}}, "total_count": {"$sum": 1}}}
+        {"$group": {"_id": None, "total_sec": {"$sum": "$session_duration_seconds"}}}
     ]
     cursor = db.telemetry_events.aggregate(pipeline)
     result = await cursor.to_list(length=1)
-    
-    if result and result[0]["total_count"] > 0:
-        practice_time_minutes = int(result[0]["total_ms"] / 60000)
-        accuracy = int((result[0]["correct_count"] / result[0]["total_count"]) * 100)
-    else:
-        practice_time_minutes = 0
-        accuracy = 0
+    practice_time_minutes = int(result[0]["total_sec"] / 60) if result and result[0].get("total_sec") else 0
+
+    latest_summary = await db.session_summaries.find_one({"student_id": student_id}, sort=[("completed_at", -1)])
+    accuracy = 0
+    if latest_summary and latest_summary.get("overall"):
+        acc_float = latest_summary["overall"].get("accuracy", 0.0)
+        accuracy = int(acc_float * 100)
         
     # Query latest adaptive decision for overall mastery to map to progress
     latest_c4 = await db.adaptive_decisions.find_one({"student_id": student_id}, sort=[("_id", -1)])
@@ -89,25 +88,14 @@ async def get_parent_fluency(student_id: str = Path(...)):
 async def get_parent_progress(student_id: str = Path(...)):
     db = get_db()
     
-    # Calculate accuracy per session
-    pipeline = [
-        {"$match": {"student_id": student_id}},
-        {"$group": {
-            "_id": "$session_id",
-            "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}},
-            "total": {"$sum": 1},
-            "timestamp": {"$min": "$timestamp"}
-        }},
-        {"$sort": {"timestamp": 1}},
-        {"$limit": 10}
-    ]
-    cursor = db.telemetry_events.aggregate(pipeline)
+    cursor = db.session_summaries.find({"student_id": student_id}).sort("completed_at", 1).limit(10)
     results = await cursor.to_list(length=10)
     
     trend = []
     for idx, r in enumerate(results):
-        acc = int((r["correct"] / r["total"]) * 100) if r["total"] > 0 else 0
-        trend.append({"session": f"S{idx+1}", "accuracy": acc})
+        overall = r.get("overall", {})
+        acc_float = overall.get("accuracy", 0.0)
+        trend.append({"session": f"S{idx+1}", "accuracy": int(acc_float * 100)})
         
     if not trend:
         # Fallback if no data
@@ -147,38 +135,35 @@ async def get_parent_learning_pattern(student_id: str = Path(...)):
 @router.get("/{student_id}/activity-history", response_model=ParentActivityHistoryDTO)
 async def get_parent_activity_history(student_id: str = Path(...)):
     db = get_db()
-    pipeline = [
-        {"$match": {"student_id": student_id}},
-        {"$group": {
-            "_id": {"session": "$session_id", "activity": "$activity_id"},
-            "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}},
-            "total": {"$sum": 1},
-            "duration": {"$sum": "$total_round_latency_ms"},
-            "timestamp": {"$max": "$timestamp"}
-        }},
-        {"$sort": {"timestamp": -1}},
-        {"$limit": 5}
-    ]
-    cursor = db.telemetry_events.aggregate(pipeline)
+    cursor = db.session_summaries.find({"student_id": student_id}).sort("completed_at", -1).limit(5)
     results = await cursor.to_list(length=5)
     
     history = []
     for r in results:
-        ts = r["timestamp"]
+        ts = r.get("completed_at", get_current_time_str())
         try:
             date_str = datetime.fromisoformat(ts).strftime("%b %d")
         except:
             date_str = ts[:10]
             
-        acc = int((r["correct"] / r["total"]) * 100) if r["total"] > 0 else 0
-        dur_mins = max(1, int(r["duration"] / 60000))
-        
-        history.append(ActivityHistoryItem(
-            session_date=date_str,
-            activity_name=r["_id"]["activity"],
-            accuracy=acc,
-            duration_minutes=dur_mins
-        ))
+        activity_breakdown = r.get("activity_breakdown", {})
+        for act_id, metrics in activity_breakdown.items():
+            acc_float = metrics.get("accuracy", 0.0)
+            trials = metrics.get("trials", 1)
+            med_lat = metrics.get("median_response_latency_ms") or 5000
+            dur_mins = max(1, int((trials * med_lat) / 60000))
+            
+            history.append(ActivityHistoryItem(
+                session_date=date_str,
+                activity_name=act_id,
+                accuracy=int(acc_float * 100),
+                duration_minutes=dur_mins
+            ))
+            
+            if len(history) >= 5:
+                break
+        if len(history) >= 5:
+            break
 
     return ParentActivityHistoryDTO(
         updated_at=get_current_time_str(),

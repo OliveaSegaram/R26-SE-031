@@ -4,7 +4,8 @@ from datetime import datetime
 from schemas.dashboards import (
     TherapistOverviewDTO,
     TherapistC1BehavioralDTO,
-    BehavioralIndices,
+    KCPerformance,
+    ErrorDistribution,
     BehavioralTrends,
     TherapistC2SpeechDTO,
     SpeechLatest,
@@ -32,18 +33,34 @@ def get_current_time_str() -> str:
 async def get_therapist_overview(student_id: str = Path(...)):
     db = get_db()
     
-    pipeline = [
-        {"$match": {"student_id": student_id}},
-        {"$group": {"_id": None, "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}}, "total": {"$sum": 1}}}
-    ]
-    cursor = db.telemetry_events.aggregate(pipeline)
-    result = await cursor.to_list(length=1)
+    sessions_list = await db.session_summaries.distinct("session_id", {"student_id": student_id})
+    completed_sessions = len(sessions_list)
+
+    latest_summary = await db.session_summaries.find_one({"student_id": student_id}, sort=[("completed_at", -1)])
     
     accuracy = 0.0
+    fatigue_status = "N/A"
+    last_active = get_current_time_str()
+    feature_version = "c1-v2"
     attempted = 0
-    if result and result[0]["total"] > 0:
-        accuracy = float(result[0]["correct"]) / result[0]["total"]
-        attempted = result[0]["total"]
+    
+    if latest_summary:
+        overall = latest_summary.get("overall", {})
+        accuracy = overall.get("accuracy", 0.0)
+        attempted = latest_summary.get("total_trials", 0)
+        
+        fatigue_val = latest_summary.get("behavioral_fatigue_proxy")
+        if fatigue_val is None:
+            fatigue_status = "N/A"
+        elif fatigue_val < 0.35:
+            fatigue_status = "Low"
+        elif fatigue_val <= 0.65:
+            fatigue_status = "Moderate"
+        else:
+            fatigue_status = "Elevated"
+            
+        last_active = latest_summary.get("completed_at", last_active)
+        feature_version = latest_summary.get("feature_version", "c1-v2")
         
     latest_ks = await db.knowledge_states.find_one({"student_id": student_id}, sort=[("updated_at", -1)])
     mastery = 0.0
@@ -62,25 +79,13 @@ async def get_therapist_overview(student_id: str = Path(...)):
     if latest_lp and "learner_profile" in latest_lp:
         pattern = latest_lp["learner_profile"].get("primary_pattern", "Unknown")
         pattern_conf = latest_lp["learner_profile"].get("confidence", 0.0)
-        
-    sessions_list = await db.behavioral_features.distinct("session_id", {"student_id": student_id})
-    completed_sessions = len(sessions_list)
-    
-    latest_bf = await db.behavioral_features.find_one({"student_id": student_id}, sort=[("_id", -1)])
-    fatigue_status = "Low"
-    last_active = get_current_time_str()
-    if latest_bf:
-        if "fatigue" in latest_bf:
-            fatigue_status = latest_bf["fatigue"].get("state", "Low")
-        if "timestamp" in latest_bf:
-            last_active = latest_bf["timestamp"]
             
     return TherapistOverviewDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
         reporting_period="Current",
         model_version="V1",
-        feature_version="V1",
+        feature_version=feature_version,
         accuracy=accuracy,
         attempted_items=attempted,
         completed_sessions=completed_sessions,
@@ -95,54 +100,60 @@ async def get_therapist_overview(student_id: str = Path(...)):
 @router.get("/{student_id}/c1-behavioral", response_model=TherapistC1BehavioralDTO)
 async def get_therapist_c1_behavioral(student_id: str = Path(...)):
     db = get_db()
-    
-    latest_bf = await db.behavioral_features.find_one({"student_id": student_id}, sort=[("_id", -1)])
-    behavior = latest_bf.get("behavior", {}) if latest_bf else {}
-    indices_data = latest_bf.get("indices", {}) if latest_bf else {}
-    fatigue_data = latest_bf.get("fatigue", {}) if latest_bf else {}
-    
-    accuracy = behavior.get("accuracy", 0.0)
-    
-    cursor = db.behavioral_features.find({"student_id": student_id}).sort("_id", 1).limit(10)
+    # Presentation mapping only: features are derived once by C1 ingestion.
+    cursor = db.session_summaries.find({"student_id": student_id}).sort("completed_at", -1).limit(10)
     history = await cursor.to_list(length=10)
-    
-    acc_trend = []
-    lat_trend = []
-    fat_trend = []
-    for idx, state in enumerate(history):
-        b = state.get("behavior", {})
-        f = state.get("fatigue", {})
-        acc_trend.append({"session": f"S{idx+1}", "value": b.get("accuracy", 0.0)})
-        lat_trend.append({"session": f"S{idx+1}", "value": b.get("median_latency_ms", 0.0)})
-        fat_trend.append({"session": f"S{idx+1}", "value": f.get("score", 0.0)})
-        
+    latest = history[0] if history else {}
+    kcs = latest.get("knowledge_components") or {}
+    overall = latest.get("overall") or {}
+    errors = latest.get("error_profile") or {}
+    fatigue = latest.get("behavioral_fatigue_proxy")
+    kc_ids = (
+        "KC_AKSHARA_IDENTITY", "KC_PHONEME_GRAPHEME",
+        "KC_WORD_RECOGNITION", "KC_SPELLING_SEQUENCE",
+        "KC_SENTENCE_LANGUAGE", "KC_READING_COMPREHENSION",
+        "KC_VISUAL_SUPPORT",
+    )
+    error_keys = {
+        "visual_confusion": "visual_confusion_rate",
+        "phonological_confusion": "phonological_confusion_rate",
+        "sequence_error": "sequence_error_rate",
+        "unknown_error": "unknown_error_rate",
+    }
+    # Without incorrect observations the error composition is undefined.
+    has_errors = overall.get("error_rate") is not None and overall["error_rate"] > 0
+
+    def trend(field, *, fatigue_field=False):
+        result = []
+        for state in reversed(history):
+            value = state.get("behavioral_fatigue_proxy") if fatigue_field else (
+                (state.get("overall") or {}).get(field)
+                if state.get("knowledge_components") else None
+            )
+            result.append({"session": state["session_id"], "value": value})
+        return result
+
     return TherapistC1BehavioralDTO(
-        updated_at=get_current_time_str(),
+        updated_at=latest.get("completed_at", get_current_time_str()),
         student_id=student_id,
-        reporting_period="Current",
-        model_version="C1-v1",
-        feature_version="F-v1",
-        accuracy=accuracy,
-        median_latency_ms=behavior.get("median_latency_ms", 0.0),
-        latency_variability=behavior.get("latency_std_ms", 0.0),
-        latency_drift=behavior.get("latency_drift", 0.0),
-        error_rate=1.0 - accuracy,
-        error_drift=behavior.get("error_drift", 0.0),
-        hesitation_rate=behavior.get("hesitation_rate", 0.0),
-        misclick_rate=behavior.get("misclick_rate", 0.0),
-        audio_replay_rate=behavior.get("replay_rate", 0.0),
-        fatigue_score=fatigue_data.get("score", 0.0),
-        indices=BehavioralIndices(
-            visual_processing=indices_data.get("visual_processing_index", 0.0),
-            phonological_tasks=indices_data.get("phonological_task_index", 0.0),
-            motor_interaction=indices_data.get("motor_interaction_index", 0.0),
-            attention_stability=indices_data.get("attention_stability_index", 0.0)
-        ),
+        session_id=latest.get("session_id"),
+        reporting_period="Latest session",
+        model_version="descriptive",
+        feature_version=latest.get("feature_version", "c1-v2"),
+        first_attempt_accuracy=overall.get("accuracy"),
+        median_response_latency_ms=overall.get("median_response_latency_ms"),
+        retry_rate=overall.get("retry_rate"),
+        mean_attempts_per_round=overall.get("mean_attempts_per_round"),
+        median_time_to_correct_ms=overall.get("median_time_to_correct_ms"),
+        correction_rate=overall.get("correction_rate"),
+        behavioral_fatigue_proxy=fatigue,
+        kc_performance=KCPerformance(**{kc: (kcs.get(kc) or {}).get("accuracy") for kc in kc_ids}),
+        error_distribution=ErrorDistribution(**{name: errors.get(key) if has_errors else None for name, key in error_keys.items()}),
         trends=BehavioralTrends(
-            accuracy=acc_trend,
-            latency=lat_trend,
-            fatigue=fat_trend
-        )
+            accuracy=trend("accuracy"),
+            latency=trend("median_response_latency_ms"),
+            fatigue=trend("", fatigue_field=True),
+        ),
     )
 
 @router.get("/{student_id}/c2-speech", response_model=TherapistC2SpeechDTO)

@@ -56,11 +56,20 @@ class TherapistOverviewDTO(MLResponseBase):
     fatigue_status: str
     last_active: str
 
-class BehavioralIndices(BaseModel):
-    visual_processing: float
-    phonological_tasks: float
-    motor_interaction: float
-    attention_stability: float
+class KCPerformance(BaseModel):
+    KC_AKSHARA_IDENTITY: Optional[float] = None
+    KC_PHONEME_GRAPHEME: Optional[float] = None
+    KC_WORD_RECOGNITION: Optional[float] = None
+    KC_SPELLING_SEQUENCE: Optional[float] = None
+    KC_SENTENCE_LANGUAGE: Optional[float] = None
+    KC_READING_COMPREHENSION: Optional[float] = None
+    KC_VISUAL_SUPPORT: Optional[float] = None
+
+class ErrorDistribution(BaseModel):
+    visual_confusion: Optional[float] = None
+    phonological_confusion: Optional[float] = None
+    sequence_error: Optional[float] = None
+    unknown_error: Optional[float] = None
 
 class BehavioralTrends(BaseModel):
     accuracy: List[Dict[str, Any]]
@@ -68,17 +77,17 @@ class BehavioralTrends(BaseModel):
     fatigue: List[Dict[str, Any]]
 
 class TherapistC1BehavioralDTO(MLResponseBase):
-    accuracy: float
-    median_latency_ms: float
-    latency_variability: float
-    latency_drift: float
-    error_rate: float
-    error_drift: float
-    hesitation_rate: float
-    misclick_rate: float
-    audio_replay_rate: float
-    fatigue_score: float
-    indices: BehavioralIndices
+    session_id: Optional[str] = None
+    data_source: str = "session_summaries"
+    first_attempt_accuracy: Optional[float] = None
+    median_response_latency_ms: Optional[float] = None
+    retry_rate: Optional[float] = None
+    mean_attempts_per_round: Optional[float] = None
+    median_time_to_correct_ms: Optional[float] = None
+    correction_rate: Optional[float] = None
+    behavioral_fatigue_proxy: Optional[float] = None
+    kc_performance: KCPerformance
+    error_distribution: ErrorDistribution
     trends: BehavioralTrends
 
 class SpeechLatest(BaseModel):
