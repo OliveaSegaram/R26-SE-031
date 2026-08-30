@@ -6,7 +6,13 @@ from services.bkt_engine import bkt_engine
 from services.irt_engine import irt_engine
 from services.policy_engine import policy_engine
 
-app = FastAPI(title="Adaptive Tutoring Service", version="1.0")
+import os
+
+app = FastAPI(
+    title="Adaptive Tutoring Service",
+    version="1.0",
+    root_path=os.getenv("ROOT_PATH", "")
+)
 
 @app.on_event("startup")
 async def startup_db_client():

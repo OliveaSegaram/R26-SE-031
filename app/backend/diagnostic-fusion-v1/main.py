@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
 from datetime import datetime
+import os
 
 from schemas import FusionRequest, FusionResponse
 from services.xai_engine import get_xai_engine, XAIEngine
@@ -30,7 +31,8 @@ app = FastAPI(
     title="C3 — Diagnostic Fusion & XAI Engine",
     description="Multi-Modal Late Fusion XGBoost API with SHAP Explainability",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    root_path=os.getenv("ROOT_PATH", ""),
 )
 
 # CORS config

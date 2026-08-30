@@ -21,6 +21,7 @@ app = FastAPI(
     description="Microservice for STT, TTS, and Acoustic Hesitation Analysis",
     version="1.0.0",
     lifespan=lifespan,
+    root_path=os.getenv("ROOT_PATH", ""),
 )
 
 # Allow CORS for local dev and production
