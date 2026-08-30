@@ -63,6 +63,18 @@ async def get_therapist_overview(student_id: str = Path(...)):
         pattern = latest_lp["learner_profile"].get("primary_pattern", "Unknown")
         pattern_conf = latest_lp["learner_profile"].get("confidence", 0.0)
         
+    sessions_list = await db.behavioral_features.distinct("session_id", {"student_id": student_id})
+    completed_sessions = len(sessions_list)
+    
+    latest_bf = await db.behavioral_features.find_one({"student_id": student_id}, sort=[("_id", -1)])
+    fatigue_status = "Low"
+    last_active = get_current_time_str()
+    if latest_bf:
+        if "fatigue" in latest_bf:
+            fatigue_status = latest_bf["fatigue"].get("state", "Low")
+        if "timestamp" in latest_bf:
+            last_active = latest_bf["timestamp"]
+            
     return TherapistOverviewDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
@@ -71,29 +83,38 @@ async def get_therapist_overview(student_id: str = Path(...)):
         feature_version="V1",
         accuracy=accuracy,
         attempted_items=attempted,
-        completed_sessions=8,
+        completed_sessions=completed_sessions,
         reading_fluency_status=status,
         overall_mastery=mastery,
         current_pattern=pattern,
         pattern_confidence=pattern_conf,
-        fatigue_status="Low",
-        last_active=get_current_time_str()
+        fatigue_status=fatigue_status,
+        last_active=last_active
     )
 
 @router.get("/{student_id}/c1-behavioral", response_model=TherapistC1BehavioralDTO)
 async def get_therapist_c1_behavioral(student_id: str = Path(...)):
     db = get_db()
     
-    pipeline = [
-        {"$match": {"student_id": student_id}},
-        {"$group": {"_id": None, "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}}, "total": {"$sum": 1}}}
-    ]
-    cursor = db.telemetry_events.aggregate(pipeline)
-    result = await cursor.to_list(length=1)
+    latest_bf = await db.behavioral_features.find_one({"student_id": student_id}, sort=[("_id", -1)])
+    behavior = latest_bf.get("behavior", {}) if latest_bf else {}
+    indices_data = latest_bf.get("indices", {}) if latest_bf else {}
+    fatigue_data = latest_bf.get("fatigue", {}) if latest_bf else {}
     
-    accuracy = 0.0
-    if result and result[0]["total"] > 0:
-        accuracy = float(result[0]["correct"]) / result[0]["total"]
+    accuracy = behavior.get("accuracy", 0.0)
+    
+    cursor = db.behavioral_features.find({"student_id": student_id}).sort("_id", 1).limit(10)
+    history = await cursor.to_list(length=10)
+    
+    acc_trend = []
+    lat_trend = []
+    fat_trend = []
+    for idx, state in enumerate(history):
+        b = state.get("behavior", {})
+        f = state.get("fatigue", {})
+        acc_trend.append({"session": f"S{idx+1}", "value": b.get("accuracy", 0.0)})
+        lat_trend.append({"session": f"S{idx+1}", "value": b.get("median_latency_ms", 0.0)})
+        fat_trend.append({"session": f"S{idx+1}", "value": f.get("score", 0.0)})
         
     return TherapistC1BehavioralDTO(
         updated_at=get_current_time_str(),
@@ -102,25 +123,25 @@ async def get_therapist_c1_behavioral(student_id: str = Path(...)):
         model_version="C1-v1",
         feature_version="F-v1",
         accuracy=accuracy,
-        median_latency_ms=1200.0,
-        latency_variability=200.0,
-        latency_drift=-50.0,
+        median_latency_ms=behavior.get("median_latency_ms", 0.0),
+        latency_variability=behavior.get("latency_std_ms", 0.0),
+        latency_drift=behavior.get("latency_drift", 0.0),
         error_rate=1.0 - accuracy,
-        error_drift=0.05,
-        hesitation_rate=0.1,
-        misclick_rate=0.02,
-        audio_replay_rate=0.05,
-        fatigue_score=0.2,
+        error_drift=behavior.get("error_drift", 0.0),
+        hesitation_rate=behavior.get("hesitation_rate", 0.0),
+        misclick_rate=behavior.get("misclick_rate", 0.0),
+        audio_replay_rate=behavior.get("replay_rate", 0.0),
+        fatigue_score=fatigue_data.get("score", 0.0),
         indices=BehavioralIndices(
-            visual_processing=0.8,
-            phonological_tasks=0.7,
-            motor_interaction=0.9,
-            attention_stability=0.85
+            visual_processing=indices_data.get("visual_processing_index", 0.0),
+            phonological_tasks=indices_data.get("phonological_task_index", 0.0),
+            motor_interaction=indices_data.get("motor_interaction_index", 0.0),
+            attention_stability=indices_data.get("attention_stability_index", 0.0)
         ),
         trends=BehavioralTrends(
-            accuracy=[],
-            latency=[],
-            fatigue=[]
+            accuracy=acc_trend,
+            latency=lat_trend,
+            fatigue=fat_trend
         )
     )
 
@@ -202,9 +223,15 @@ async def get_therapist_c3_profile(student_id: str = Path(...)):
     
     shap_list = []
     for feature in top_features:
+        try:
+            val_str = str(feature.get("shap_impact", "0.0")).replace("+", "")
+            impact = abs(float(val_str))
+        except ValueError:
+            impact = 0.0
+            
         shap_list.append(ShapExplanation(
             feature=feature.get("feature_name", ""),
-            contribution=feature.get("value", 0.0)
+            contribution=impact
         ))
         
     return TherapistC3ProfileDTO(
