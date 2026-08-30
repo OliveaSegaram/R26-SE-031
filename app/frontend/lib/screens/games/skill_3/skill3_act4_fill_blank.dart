@@ -591,7 +591,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
   Widget _buildInstructionCard(String instruction) {
     return GestureDetector(
       onTap: () {
-        // TTS placeholder
+        _playCurrentInstruction();
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
