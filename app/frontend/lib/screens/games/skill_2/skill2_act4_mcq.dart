@@ -101,10 +101,6 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
       }
     });
 
-    // Play tap feedback on every selection (not just when all are picked)
-    if (!wasSelected) {
-      SoundUtils.playFeedback('audio/correct.mp3');
-    }
 
     if (_selectedIndices.length == correctIndices.length) {
       bool isRight = _selectedIndices.containsAll(correctIndices);
@@ -165,6 +161,13 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
             });
           }
         });
+      }
+    } else if (!wasSelected) {
+      // Intermediate tap feedback
+      if (correctIndices.contains(index)) {
+        SoundUtils.playFeedback('audio/correct.mp3');
+      } else {
+        SoundUtils.playFeedback('audio/wrong.mp3');
       }
     }
   }
