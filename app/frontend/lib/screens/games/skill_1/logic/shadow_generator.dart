@@ -62,7 +62,7 @@ class ShadowGenerator {
 
   static ShadowRound _buildRound({required int count, required int difficulty}) {
     // Shuffle the available distinct assets to ensure fresh gameplay
-    final available = List<String>.from(_distinctAssets)..shuffle(_rng);
+    final available = List<String>.from(_distinctAssets);
     
     // Take exactly [count] items
     final selected = available.take(count).toList();

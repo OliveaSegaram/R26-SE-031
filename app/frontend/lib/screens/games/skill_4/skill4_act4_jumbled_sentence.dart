@@ -27,6 +27,7 @@ class Skill4Act4JumbledSentence extends StatefulWidget {
 }
 
 class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> with SingleTickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isCorrect = false;
   bool _activityComplete = false;
@@ -58,6 +59,9 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
         .animate(_shakeController);
 
     _initRound();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playCurrentInstruction(autoPlay: true);
+    });
   }
 
   @override
@@ -83,6 +87,19 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
     });
   }
 
+  void _playCurrentInstruction({bool autoPlay = false}) {
+    final rounds = widget.activityNode?.rounds ?? [];
+    if (rounds.isEmpty) return;
+    final currentRound = rounds[_currentRoundIndex];
+    final instructionText = currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වාක්‍යය සාදන්න';
+    
+    if (autoPlay && _lastSpokenInstruction == instructionText) {
+      return;
+    }
+    _lastSpokenInstruction = instructionText;
+    TtsService().speak(instructionText, folder: 'skill_4');
+  }
+
   void _onPoolWordTapped(int poolIndex) async {
     if (_isChecking || _poolWords[poolIndex] == null) return;
 
@@ -96,8 +113,7 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
         _showError = false;
       });
       
-      // Speak the word
-      TtsService().speak(word);
+      // Do not speak the word to prevent overlapping with success audio
       
       // Check if all slots are filled
       if (!_filledSlots.contains(null)) {
@@ -150,6 +166,7 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
                 ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
               }
           _initRound();
+          _playCurrentInstruction(autoPlay: true);
         } else {
           setState(() {
           _activityComplete = true;
@@ -470,7 +487,7 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
     return GestureDetector(
       onTap: () {
         context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
-        TtsService().speak(instruction);
+        TtsService().speak(instruction, folder: 'skill_4');
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),

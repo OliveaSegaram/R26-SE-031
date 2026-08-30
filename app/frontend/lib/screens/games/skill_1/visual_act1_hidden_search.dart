@@ -32,6 +32,7 @@ class VisualAct1HiddenSearch extends StatefulWidget {
 
 class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
     with TickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   // ── Game state ──
   int _currentRoundIndex = 0;
   late HiddenSearchGameData _gameData;
@@ -149,7 +150,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
 
     // Auto-play instruction on first load
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playInstruction();
+      _playInstruction(autoPlay: true);
     });
   }
 
@@ -266,7 +267,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
           ((_currentRoundIndex / _gameData.rounds.length) * 100).toInt(),
         );
         _roundTransitionController.forward();
-        _playInstruction();
+        _playInstruction(autoPlay: true);
       });
     } else {
       // Activity complete!
@@ -303,10 +304,15 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   }
 
   /// Play the instruction aloud via TTS and trigger speaker bounce
-  void _playInstruction() {
+  void _playInstruction({bool autoPlay = false}) {
     if (_gameData.rounds.isEmpty) return;
     final round = _gameData.rounds[_currentRoundIndex];
-    TtsService().speak(round.instructionText);
+    
+    if (autoPlay && _lastSpokenInstruction == round.instructionText) {
+      return;
+    }
+    _lastSpokenInstruction = round.instructionText;
+    TtsService().speak(round.instructionText, folder: 'skill_1');
     _speakerBounceController.forward().then((_) {
       _speakerBounceController.reverse();
     });

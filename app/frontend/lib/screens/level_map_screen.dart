@@ -132,9 +132,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
 
   Future<void> _playActivityAudio(ActivityNode level) async {
     final url = level.audioUrl;
-    final text = level.introText.isNotEmpty
-        ? level.introText
-        : '${level.title}. ${level.description}';
+    final text = level.title;
 
     if (url.isNotEmpty && (url.startsWith('http://') || url.startsWith('https://'))) {
       try {
@@ -464,16 +462,37 @@ class _LevelMapScreenState extends State<LevelMapScreen>
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                level.title,
-                textAlign: TextAlign.center,
-                style: AppTypography.sinhala(
-                  fontSize: 22, 
-                  fontWeight: FontWeight.w700, 
-                  color: AppColors.textPrimary,
-                  height: 1.4,
-                  letterSpacing: 0.2,
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(width: 52), // Balances the right side icon to keep text centered
+                  Expanded(
+                    child: Text(
+                      level.title,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.sinhala(
+                        fontSize: 22, 
+                        fontWeight: FontWeight.w700, 
+                        color: AppColors.textPrimary,
+                        height: 1.4,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _playActivityAudio(level),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.warmAmber.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.warmAmber.withValues(alpha: 0.5), width: 1.5),
+                      ),
+                      child: const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 24),
+                    ),
+                  ),
+                ],
               ),
             ),
             
@@ -505,32 +524,7 @@ class _LevelMapScreenState extends State<LevelMapScreen>
               ),
             ],
             
-            const SizedBox(height: 24),
-
-            // Speaker Audio Instruction Button
-            GestureDetector(
-              onTap: () => _playActivityAudio(level),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.warmAmber.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.warmAmber, width: 1.5),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.volume_up_rounded, color: AppColors.warmAmber, size: 22),
-                    const SizedBox(width: 6),
-                    Text(
-                      'උපදෙස් වලට සවන් දෙන්න',
-                      style: AppTypography.sinhala(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.warmAmber),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
               height: 52,
