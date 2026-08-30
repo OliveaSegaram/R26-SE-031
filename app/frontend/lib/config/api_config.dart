@@ -17,7 +17,8 @@ class ApiConfig {
     if (Platform.isAndroid) {
       return '10.0.2.2';
     }
-    return '127.0.0.1';
+    // Return Mac's local IP for physical iOS devices
+    return '192.168.1.2';
   }
 
   // --- Base URLs for specific backend microservices ---

@@ -23,6 +23,7 @@ class Skill4Act3Mcq extends StatefulWidget {
 
 class _Skill4Act3McqState extends State<Skill4Act3Mcq>
     with TickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
   bool _isCorrect = false;
@@ -67,7 +68,7 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playAudioPrompt();
+      _playAudioPrompt(autoPlay: true);
     });
   }
 
@@ -79,13 +80,18 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
     super.dispose();
   }
 
-  void _playAudioPrompt() {
+  void _playAudioPrompt({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
     final currentRound = rounds[_currentRoundIndex];
     final audioText = currentRound['audio_text']?.toString() ?? currentRound['prompt']?.toString() ?? 'වෘත්තය';
-    TtsService().speak(audioText);
+    
+    if (autoPlay && _lastSpokenInstruction == audioText) {
+      return;
+    }
+    _lastSpokenInstruction = audioText;
+    TtsService().speak(audioText, folder: 'skill_4');
 
     // Bounce the speaker icon
     _speakerBounceController.forward().then((_) {
@@ -126,7 +132,7 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
             _selectedIndex = null;
             _isCorrect = false;
           });
-          _playAudioPrompt();
+          _playAudioPrompt(autoPlay: true);
         } else {
           setState(() {
           _activityComplete = true;

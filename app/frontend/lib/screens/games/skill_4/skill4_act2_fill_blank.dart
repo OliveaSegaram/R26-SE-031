@@ -22,6 +22,7 @@ class Skill4Act2FillBlank extends StatefulWidget {
 }
 
 class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   late AnimationController _bounceController;
@@ -54,6 +55,35 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
     _bounceAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
       CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playCurrentInstruction(autoPlay: true);
+    });
+  }
+
+  void _playCurrentInstruction({bool autoPlay = false}) {
+    final rounds = widget.activityNode?.rounds ?? [];
+    if (rounds.isEmpty) return;
+    
+    final instruction = widget.activityNode?.description ?? 'පින්තූර පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි පින්තූරය තෝරන්න.';
+    
+    String spokenInstruction = instruction
+        .replaceAll('මා', 'ම')
+        .replaceAllMapped(
+          RegExp(r"'?(.)'? අකුර"),
+          (match) => '${match.group(1)}, අකුර',
+        )
+        .replaceAllMapped(
+          RegExp(r"'?(.)'? පින්තූරය"),
+          (match) => '${match.group(1)}, පින්තූරය',
+        );
+
+    
+    if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = spokenInstruction;
+    TtsService().speak(spokenInstruction, folder: 'skill_4');
   }
 
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -103,6 +133,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
             _selectedIndex = null;
             _isCorrect = false;
           });
+          _playCurrentInstruction(autoPlay: true);
         } else {
           setState(() {
           _activityComplete = true;
@@ -551,7 +582,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
   Widget _buildInstructionCard(String instruction) {
     return GestureDetector(
       onTap: () {
-        // TTS placeholder
+        _playCurrentInstruction();
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),

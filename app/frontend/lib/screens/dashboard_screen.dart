@@ -13,6 +13,7 @@ import 'select_student_screen.dart';
 import 'parent/parent_hub_screen.dart';
 import 'character_shop_screen.dart';
 import 'progress_analytics_screen.dart';
+import '../services/tts_service.dart';
 import '../models/curriculum_models.dart';
 import '../services/progress_service.dart';
 import 'loading_skill_screen.dart';
@@ -627,7 +628,7 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                       GestureDetector(
                         onTap: () async {
                           final url = widget.skill.audioUrl;
-                          if (url.isNotEmpty) {
+                          if (url.isNotEmpty && !url.contains('githubusercontent')) {
                             try {
                               await _audioPlayer.stop();
                               if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -638,7 +639,11 @@ class _AnimatedSkillCardState extends State<_AnimatedSkillCard> {
                               }
                             } catch (e) {
                               debugPrint('Error playing custom skill audio: $e');
+                              await TtsService().speak(widget.skill.title);
                             }
+                          } else {
+                            // Fallback to TTS if URL is empty or points to broken github url
+                            await TtsService().speak(widget.skill.title);
                           }
                         },
                         child: Container(

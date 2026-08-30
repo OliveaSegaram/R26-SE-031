@@ -63,7 +63,7 @@ class SortingGenerator {
   static List<SortingRound> generateRounds() {
     // We have 5 categories with enough items. Pick combinations for each round.
     // Shuffle the category pool to keep things fresh each session.
-    final allCategoryKeys = _categoryAssets.keys.toList()..shuffle(_rng);
+    final allCategoryKeys = _categoryAssets.keys.toList();
 
     // Ensure we always have usable combinations by picking from shuffled pool:
     // Round 1: 2 categories, 4 objects (2 each)
@@ -103,8 +103,8 @@ class SortingGenerator {
     List<String> exclude = const [],
   }) {
     // Prefer categories not in exclude list
-    final preferred = pool.where((c) => !exclude.contains(c)).toList()..shuffle(_rng);
-    final fallback = pool.where((c) => exclude.contains(c)).toList()..shuffle(_rng);
+    final preferred = pool.where((c) => !exclude.contains(c)).toList();
+    final fallback = pool.where((c) => exclude.contains(c)).toList();
 
     final result = <String>[];
     for (final c in preferred) {
@@ -134,7 +134,7 @@ class SortingGenerator {
 
     for (int i = 0; i < categoryKeys.length; i++) {
       final key = categoryKeys[i];
-      final available = List<String>.from(_categoryAssets[key]!)..shuffle(_rng);
+      final available = List<String>.from(_categoryAssets[key]!);
 
       int count;
       if (objectsPerCategory is List<int>) {
