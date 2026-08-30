@@ -180,6 +180,15 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     final misclickRate = _c1Behavioral?['misclick_rate'] ?? 0.0;
     final indices = _c1Behavioral?['indices'] ?? {};
     
+    final trends = _c1Behavioral?['trends'] ?? {};
+    final accTrendRaw = trends['accuracy'] as List<dynamic>? ?? [];
+    final latTrendRaw = trends['latency'] as List<dynamic>? ?? [];
+    final fatTrendRaw = trends['fatigue'] as List<dynamic>? ?? [];
+    
+    final accTrend = accTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
+    final latTrend = latTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
+    final fatTrend = fatTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -218,6 +227,19 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           _buildHorizontalBar("Correct", accuracy, AppColors.gentleGreen),
           _buildHorizontalBar("Incorrect", errRate, AppColors.warmAmber),
           _buildHorizontalBar("Misclick", misclickRate, AppColors.softCoral),
+          
+          if (accTrend.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            TrendChart(title: "Accuracy Over Time", dataPoints: accTrend, lineColor: AppColors.gentleGreen, minY: 0),
+          ],
+          if (latTrend.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            TrendChart(title: "Median Latency (ms)", dataPoints: latTrend, lineColor: AppColors.calmBlue, minY: 0),
+          ],
+          if (fatTrend.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            TrendChart(title: "Fatigue Score", dataPoints: fatTrend, lineColor: AppColors.softCoral, minY: 0),
+          ],
         ],
       ),
     );
