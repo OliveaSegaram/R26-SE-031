@@ -34,6 +34,7 @@ class VisualAct2ShadowMatching extends StatefulWidget {
 
 class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
     with TickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   // ── Game state ──
   int _currentRoundIndex = 0;
   late List<ShadowRound> _rounds;
@@ -162,11 +163,16 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
     _roundTransitionController.forward();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playInstruction();
+      _playInstruction(autoPlay: true);
     });
   }
 
-  void _playInstruction() {
+  void _playInstruction({bool autoPlay = false}) {
+    
+    if (autoPlay && _lastSpokenInstruction == _currentInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = _currentInstruction;
     TtsService().speak(_currentInstruction, folder: 'skill_1');
     _speakerBounceController.forward().then((_) {
       _speakerBounceController.reverse();

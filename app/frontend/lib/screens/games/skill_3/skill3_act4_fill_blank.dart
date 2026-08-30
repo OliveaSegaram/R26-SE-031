@@ -29,6 +29,7 @@ class Skill3Act4FillBlank extends StatefulWidget {
 
 class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     with TickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedOptionIndex;
   bool _isCorrect = false;
@@ -76,11 +77,11 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playCurrentInstruction();
+      _playCurrentInstruction(autoPlay: true);
     });
   }
 
-  void _playCurrentInstruction() {
+  void _playCurrentInstruction({bool autoPlay = false}) {
     final instructionText =
         widget.activityNode?.description ??
         'පින්තූර පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි පින්තූරය තෝරන්න.';
@@ -94,6 +95,11 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
+    
+    if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = spokenInstruction;
     TtsService().speak(spokenInstruction, folder: 'skill_3');
   }
 
@@ -152,7 +158,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
           });
           _pulseController.repeat(reverse: true);
           _bounceController.reset();
-          _playCurrentInstruction();
+          _playCurrentInstruction(autoPlay: true);
         } else {
           setState(() {
             _activityComplete = true;

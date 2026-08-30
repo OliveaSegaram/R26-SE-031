@@ -27,6 +27,7 @@ class Skill4Act4JumbledSentence extends StatefulWidget {
 }
 
 class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> with SingleTickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isCorrect = false;
   bool _activityComplete = false;
@@ -59,7 +60,7 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
 
     _initRound();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playCurrentInstruction();
+      _playCurrentInstruction(autoPlay: true);
     });
   }
 
@@ -86,11 +87,16 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
     });
   }
 
-  void _playCurrentInstruction() {
+  void _playCurrentInstruction({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
     final currentRound = rounds[_currentRoundIndex];
     final instructionText = currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වාක්‍යය සාදන්න';
+    
+    if (autoPlay && _lastSpokenInstruction == instructionText) {
+      return;
+    }
+    _lastSpokenInstruction = instructionText;
     TtsService().speak(instructionText, folder: 'skill_4');
   }
 
@@ -160,7 +166,7 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
                 ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
               }
           _initRound();
-          _playCurrentInstruction();
+          _playCurrentInstruction(autoPlay: true);
         } else {
           setState(() {
           _activityComplete = true;

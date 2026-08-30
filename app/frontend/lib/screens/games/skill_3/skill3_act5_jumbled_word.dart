@@ -33,6 +33,7 @@ class Skill3Act5JumbledWord extends StatefulWidget {
 
 class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
     with SingleTickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isCorrect = false;
   bool _activityComplete = false;
@@ -72,11 +73,11 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
 
     _initRound();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playCurrentInstruction();
+      _playCurrentInstruction(autoPlay: true);
     });
   }
 
-  void _playCurrentInstruction() {
+  void _playCurrentInstruction({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
     final currentRound = rounds[_currentRoundIndex];
@@ -91,6 +92,11 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
+    
+    if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = spokenInstruction;
     TtsService().speak(spokenInstruction, folder: 'skill_3');
   }
 
@@ -191,7 +197,7 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
             ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
           }
           _initRound();
-          _playCurrentInstruction();
+          _playCurrentInstruction(autoPlay: true);
         } else {
           setState(() {
             _activityComplete = true;

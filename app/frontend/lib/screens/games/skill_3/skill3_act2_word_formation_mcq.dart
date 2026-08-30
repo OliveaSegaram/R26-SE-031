@@ -29,6 +29,7 @@ class Skill3Act2WordFormation extends StatefulWidget {
 
 class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     with TickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
   bool _isCorrect = false;
@@ -79,7 +80,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playAudioPrompt();
+      _playAudioPrompt(autoPlay: true);
     });
   }
 
@@ -91,7 +92,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     super.dispose();
   }
 
-  void _playAudioPrompt() {
+  void _playAudioPrompt({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
@@ -108,6 +109,11 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
+    
+    if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = spokenInstruction;
     TtsService().speak(spokenInstruction, folder: 'skill_3');
 
     // Bounce the speaker icon
@@ -155,7 +161,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
             _selectedIndex = null;
             _isCorrect = false;
           });
-          _playAudioPrompt();
+          _playAudioPrompt(autoPlay: true);
         } else {
           setState(() {
             _activityComplete = true;

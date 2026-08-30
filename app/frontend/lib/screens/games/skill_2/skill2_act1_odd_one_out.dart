@@ -27,6 +27,7 @@ class Skill2Act1OddOneOut extends StatefulWidget {
 }
 
 class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   int _currentRoundIndex = 0;
   bool _isRoundComplete = false;
@@ -58,12 +59,17 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
     }
     _setupRound();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playCurrentInstruction();
+      _playCurrentInstruction(autoPlay: true);
     });
   }
 
-  void _playCurrentInstruction() {
+  void _playCurrentInstruction({bool autoPlay = false}) {
     String spokenInstruction = 'කොටුවේ පෙන්වා ඇති අකුර සොයන්න.';
+    
+    if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = spokenInstruction;
     TtsService().speak(spokenInstruction, folder: 'skill_2');
   }
 
@@ -157,7 +163,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
                 );
               }
               _setupRound();
-              _playCurrentInstruction();
+              _playCurrentInstruction(autoPlay: true);
             });
           } else {
             setState(() {

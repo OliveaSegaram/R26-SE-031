@@ -36,6 +36,7 @@ class VisualAct4PatternAdventure extends StatefulWidget {
 
 class _VisualAct4PatternAdventureState
     extends State<VisualAct4PatternAdventure> with TickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   // ── Game state ──
   int _currentRoundIndex = 0;
   late List<PatternRound> _rounds;
@@ -204,11 +205,16 @@ class _VisualAct4PatternAdventureState
     _initRound();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playInstruction();
+      _playInstruction(autoPlay: true);
     });
   }
 
-  void _playInstruction() {
+  void _playInstruction({bool autoPlay = false}) {
+    
+    if (autoPlay && _lastSpokenInstruction == 'රටාවට ගැළපෙන පින්තූරය තෝරන්න') {
+      return;
+    }
+    _lastSpokenInstruction = 'රටාවට ගැළපෙන පින්තූරය තෝරන්න';
     TtsService().speak('රටාවට ගැළපෙන පින්තූරය තෝරන්න', folder: 'skill_1');
     _speakerBounceController.forward().then((_) {
       _speakerBounceController.reverse();

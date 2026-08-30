@@ -34,6 +34,7 @@ class VisualAct3SortingAdventure extends StatefulWidget {
 
 class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     with TickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   // ── Game state ──
   int _currentRoundIndex = 0;
   late List<SortingRound> _rounds;
@@ -177,11 +178,16 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     _roundTransitionController.forward();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playInstruction();
+      _playInstruction(autoPlay: true);
     });
   }
 
-  void _playInstruction() {
+  void _playInstruction({bool autoPlay = false}) {
+    
+    if (autoPlay && _lastSpokenInstruction == _currentInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = _currentInstruction;
     TtsService().speak(_currentInstruction, folder: 'skill_1');
     _speakerBounceController.forward().then((_) {
       _speakerBounceController.reverse();

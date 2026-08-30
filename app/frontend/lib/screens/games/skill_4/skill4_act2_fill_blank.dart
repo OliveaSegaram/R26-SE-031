@@ -22,6 +22,7 @@ class Skill4Act2FillBlank extends StatefulWidget {
 }
 
 class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   late AnimationController _bounceController;
@@ -56,11 +57,11 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playCurrentInstruction();
+      _playCurrentInstruction(autoPlay: true);
     });
   }
 
-  void _playCurrentInstruction() {
+  void _playCurrentInstruction({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
     
@@ -77,6 +78,11 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
           (match) => '${match.group(1)}, පින්තූරය',
         );
 
+    
+    if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = spokenInstruction;
     TtsService().speak(spokenInstruction, folder: 'skill_4');
   }
 
@@ -127,7 +133,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
             _selectedIndex = null;
             _isCorrect = false;
           });
-          _playCurrentInstruction();
+          _playCurrentInstruction(autoPlay: true);
         } else {
           setState(() {
           _activityComplete = true;

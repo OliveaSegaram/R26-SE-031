@@ -28,6 +28,7 @@ class Skill3Act1ImageMcq extends StatefulWidget {
 
 class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     with TickerProviderStateMixin {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
   bool _isCorrect = false;
@@ -86,7 +87,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     _imageBounceController.forward();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playAudioPrompt();
+      _playAudioPrompt(autoPlay: true);
     });
   }
 
@@ -99,7 +100,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     super.dispose();
   }
 
-  void _playAudioPrompt() {
+  void _playAudioPrompt({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
@@ -118,6 +119,11 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
+    
+    if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = spokenInstruction;
     TtsService().speak(spokenInstruction, folder: 'skill_3');
 
     _speakerBounceController.forward().then((_) {
@@ -170,7 +176,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
           });
           _imageBounceController.reset();
           _imageBounceController.forward();
-          _playAudioPrompt();
+          _playAudioPrompt(autoPlay: true);
         } else {
           setState(() {
             _activityComplete = true;

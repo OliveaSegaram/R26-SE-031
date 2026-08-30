@@ -30,6 +30,7 @@ class Skill2Act5PatternMemory extends StatefulWidget {
 
 class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
     with SingleTickerProviderStateMixin {
+  Set<String> _spokenInstructions = {};
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isMemorizing = true;
   int _countdown = 3;
@@ -76,7 +77,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
     return r.length > 5 ? r.sublist(0, 5) : r;
   }
 
-  void _playCurrentInstruction() {
+  void _playCurrentInstruction({bool autoPlay = false}) {
     final promptText = _isMemorizing ? 'රටාව මතක තබා ගන්න!' : 'රටාව නැවත සකසන්න';
     String spokenInstruction = promptText
         .replaceAll('මා', 'ම')
@@ -88,6 +89,11 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
+    
+    if (autoPlay && _spokenInstructions.contains(spokenInstruction)) {
+      return;
+    }
+    _spokenInstructions.add(spokenInstruction);
     TtsService().speak(spokenInstruction, folder: 'skill_2');
   }
 
@@ -105,7 +111,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
       _isCorrect = false;
     });
 
-    _playCurrentInstruction();
+    _playCurrentInstruction(autoPlay: true);
 
     _timerController.duration = Duration(seconds: showSeconds);
     _timerController.forward(from: 0.0);
@@ -121,6 +127,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
         setState(() {
           _isMemorizing = false;
         });
+        _playCurrentInstruction(autoPlay: true);
       }
     });
   }

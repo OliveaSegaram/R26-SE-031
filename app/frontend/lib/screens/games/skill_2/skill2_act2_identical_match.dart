@@ -27,6 +27,7 @@ class Skill2Act2IdenticalMatch extends StatefulWidget {
 }
 
 class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   List<String> _topLetters = [];
@@ -57,7 +58,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
     }
     _initRound();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playCurrentInstruction();
+      _playCurrentInstruction(autoPlay: true);
     });
   }
 
@@ -75,7 +76,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
     }
   }
 
-  void _playCurrentInstruction() {
+  void _playCurrentInstruction({bool autoPlay = false}) {
     final promptText =
         widget.activityNode?.description ?? "එක සමාන අකුරු යුගල තෝරන්න.";
     String spokenInstruction = promptText
@@ -88,6 +89,11 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
+    
+    if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = spokenInstruction;
     TtsService().speak(spokenInstruction, folder: 'skill_2');
   }
 
@@ -191,7 +197,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
           }
           _initRound();
-          _playCurrentInstruction();
+          _playCurrentInstruction(autoPlay: true);
         });
       } else {
         setState(() {

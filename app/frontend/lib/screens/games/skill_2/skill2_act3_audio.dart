@@ -27,6 +27,7 @@ class Skill2Act3Audio extends StatefulWidget {
 }
 
 class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
   bool _isCorrect = false;
@@ -49,7 +50,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
       _currentRoundIndex = 0;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playAudioPrompt();
+      _playAudioPrompt(autoPlay: true);
     });
   }
 
@@ -59,7 +60,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
     super.dispose();
   }
 
-  void _playAudioPrompt() {
+  void _playAudioPrompt({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
@@ -82,6 +83,11 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
           RegExp(r"'?(.)'? තෝරන්න"),
           (match) => '${match.group(1)}යන්න තෝරන්න',
         );
+    
+    if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
+      return;
+    }
+    _lastSpokenInstruction = spokenInstruction;
     TtsService().speak(spokenInstruction, folder: 'skill_2');
   }
 
@@ -123,7 +129,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
             _selectedIndex = null;
             _isCorrect = false;
           });
-          _playAudioPrompt();
+          _playAudioPrompt(autoPlay: true);
         } else {
           setState(() {
             _activityComplete = true;
