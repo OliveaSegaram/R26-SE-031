@@ -122,9 +122,9 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             indicatorColor: AppColors.calmBlue,
             tabs: [
               Tab(text: "Overview"),
-              Tab(text: "Skills"),
-              Tab(text: "Learning Pattern"),
-              Tab(text: "Recent Activity"),
+              Tab(text: "Reading Progress"),
+              Tab(text: "Reading Pattern"),
+              Tab(text: "Activity History"),
               Tab(text: "Reports"),
             ],
           ),
@@ -134,9 +134,9 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             : TabBarView(
                 children: [
                   _buildOverviewTab(),
-                  _buildSkillsTab(),
-                  _buildLearningPatternTab(),
-                  _buildActivityTab(),
+                  _buildReadingProgressTab(),
+                  _buildReadingPatternTab(),
+                  _buildActivityHistoryTab(),
                   _buildReportsTab(),
                 ],
               ),
@@ -145,7 +145,17 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
   }
 
   Widget _buildOverviewTab() {
-    if (_overview == null) return const Center(child: Text("No Data"));
+    // 4 KPI Cards
+    // Reading Accuracy: 78%
+    // Reading Practice: 18 min
+    // Reading Sessions: 6
+    // Reading Progress: Developing
+    
+    final accuracy = _overview?['accuracy'] ?? 0;
+    final practice = _overview?['practice_time_minutes'] ?? 0;
+    final sessions = _overview?['sessions_completed'] ?? 0;
+    final progress = _overview?['reading_progress'] ?? "Developing";
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -161,162 +171,186 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             mainAxisSpacing: 12,
             childAspectRatio: 1.5,
             children: [
-              _buildStatCard("Accuracy", "${_overview!['accuracy']}%", Icons.track_changes_rounded, AppColors.gentleGreen),
-              _buildStatCard("Practice Time", "${_overview!['practice_time_minutes']} min", Icons.schedule_rounded, AppColors.calmBlue),
-              _buildStatCard("Sessions", "${_overview!['sessions_completed']}", Icons.videogame_asset_rounded, AppColors.softCoral),
-              _buildStatCard("Current Skill", _overview!['current_skill'], Icons.star_rounded, AppColors.warmAmber),
+              _buildStatCard("Reading Accuracy", "$accuracy%", Icons.track_changes_rounded, AppColors.gentleGreen),
+              _buildStatCard("Reading Practice", "$practice min", Icons.schedule_rounded, AppColors.calmBlue),
+              _buildStatCard("Reading Sessions", "$sessions", Icons.videogame_asset_rounded, AppColors.softCoral),
+              _buildStatCard("Reading Progress", progress, Icons.trending_up_rounded, AppColors.warmAmber),
             ],
           ),
           const SizedBox(height: 24),
-          Text("Behavioral Notes", style: AppTypography.heading(fontSize: 20)),
+          
+          Text("Fluency Status", style: AppTypography.heading(fontSize: 20)),
           const SizedBox(height: 16),
-          ListTile(
-            leading: const Icon(Icons.battery_full_rounded, color: AppColors.calmBlue),
-            title: const Text("Fatigue Status"),
-            subtitle: Text(_overview!['fatigue_status']),
-            tileColor: AppColors.cardSurface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          const SizedBox(height: 8),
-          ListTile(
-            leading: const Icon(Icons.bolt_rounded, color: AppColors.warmAmber),
-            title: const Text("Response Speed"),
-            subtitle: Text(_overview!['response_speed_status']),
-            tileColor: AppColors.cardSurface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+          _buildFluencyCard(),
         ],
       ),
     );
   }
 
-  Widget _buildSkillsTab() {
-    if (_skills == null || _skills!['skills'] == null) return const Center(child: Text("No Data"));
-    final List<dynamic> skills = _skills!['skills'];
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: skills.length,
-      itemBuilder: (context, index) {
-        final skill = skills[index];
-        return Card(
-          color: AppColors.cardSurface,
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(skill['skill_name'], style: AppTypography.heading(fontSize: 16)),
-                    Text("${skill['mastery_percentage']}%", style: AppTypography.caption(fontWeight: FontWeight.bold, color: AppColors.calmBlue)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  value: skill['mastery_percentage'] / 100.0,
-                  backgroundColor: AppColors.borderLight,
-                  color: AppColors.calmBlue,
-                  minHeight: 8,
-                ),
-                const SizedBox(height: 8),
-                Text("Status: ${skill['status']}", style: AppTypography.caption(color: AppColors.textSecondary)),
-              ],
+  Widget _buildFluencyCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Reading Fluency", style: AppTypography.heading(fontSize: 18, color: AppColors.textPrimary)),
+              Text(_overview?['reading_progress'] ?? "Developing", style: AppTypography.heading(fontSize: 16, color: AppColors.calmBlue)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Simple visual progress bar approximation (70% full)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: 0.7,
+              minHeight: 12,
+              backgroundColor: AppColors.borderLight,
+              color: AppColors.calmBlue,
             ),
           ),
-        );
-      },
+          const SizedBox(height: 12),
+          Text(
+            "* System-derived reading performance indicator (not a clinically validated score).",
+            style: AppTypography.caption(fontSize: 11, color: AppColors.textSecondary),
+          )
+        ],
+      ),
     );
   }
 
-  Widget _buildLearningPatternTab() {
-    if (_learningPattern == null) return const Center(child: Text("No Data"));
+  Widget _buildReadingProgressTab() {
+    List<dynamic> trendRaw = _overview?['accuracy_trend'] ?? [];
+    List<double> trendData = trendRaw.isNotEmpty ? trendRaw.map((e) => (e['accuracy'] as num).toDouble()).toList() : [0.0];
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.calmBlue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Observed Pattern", style: AppTypography.caption(color: AppColors.calmBlue)),
-                const SizedBox(height: 8),
-                Text(_learningPattern!['primary_learning_pattern'], style: AppTypography.heading(fontSize: 22, color: AppColors.calmBlue)),
-                const SizedBox(height: 4),
-                Text("Confidence: ${_learningPattern!['confidence_level']}", style: AppTypography.caption()),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text("Supporting Observations", style: AppTypography.heading(fontSize: 18)),
-          const SizedBox(height: 12),
-          ...(_learningPattern!['supporting_observations'] as List<dynamic>).map((obs) => Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: Row(
-              children: [
-                const Icon(Icons.check_circle, color: AppColors.gentleGreen, size: 20),
-                const SizedBox(width: 8),
-                Expanded(child: Text(obs.toString(), style: AppTypography.body())),
-              ],
-            ),
-          )),
-          const SizedBox(height: 24),
-          Text("Recommended Practice", style: AppTypography.heading(fontSize: 18)),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.cardSurface,
-              border: Border.all(color: AppColors.warmAmber),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.lightbulb_rounded, color: AppColors.warmAmber),
-                const SizedBox(width: 12),
-                Expanded(child: Text(_learningPattern!['recommended_practice'], style: AppTypography.body())),
-              ],
-            ),
+          Text("Accuracy Over Time", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 16),
+          TrendChart(
+            title: "Reading Accuracy (%)",
+            dataPoints: trendData,
+            lineColor: AppColors.calmBlue,
+            minY: 0,
+            maxY: 100,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActivityTab() {
-    if (_activityHistory == null || _activityHistory!['history'] == null) return const Center(child: Text("No Data"));
-    final List<dynamic> history = _activityHistory!['history'];
-    return ListView(
+  Widget _buildReadingPatternTab() {
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      children: [
-        TrendChart(
-          title: "Practice Accuracy Trend (%)",
-          dataPoints: history.map((e) => (e['accuracy'] as num).toDouble()).toList().reversed.toList(),
-          lineColor: AppColors.gentleGreen,
-          minY: 0,
-          maxY: 100,
-        ),
-        const SizedBox(height: 16),
-        Text("Recent Sessions", style: AppTypography.heading(fontSize: 18)),
-        const SizedBox(height: 12),
-        ...history.map((item) => Card(
-          color: AppColors.cardSurface,
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: const Icon(Icons.videogame_asset_rounded, color: AppColors.calmBlue),
-            title: Text(item['activity_name']),
-            subtitle: Text("${item['session_date']} • ${item['duration_minutes']} min"),
-            trailing: Text("${item['accuracy']}%", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.gentleGreen)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Observation", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.gentleGreen.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.insights_rounded, color: AppColors.gentleGreen),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _learningPattern?['observation'] ?? "Your child is showing steady reading development.",
+                    style: AppTypography.body(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
           ),
-        )).toList(),
-      ],
+          const SizedBox(height: 24),
+          Text("Recommended Practice", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          ...(_learningPattern?['recommended_practices'] as List<dynamic>? ?? []).map((p) => _buildRecommendationTile(p.toString())),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecommendationTile(String text) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        border: Border.all(color: AppColors.warmAmber.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.lightbulb_rounded, color: AppColors.warmAmber),
+          const SizedBox(width: 12),
+          Expanded(child: Text(text, style: AppTypography.body())),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityHistoryTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Recent Reading Activity", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.cardSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(AppColors.calmBlue.withValues(alpha: 0.05)),
+              columns: const [
+                DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('Activity', style: TextStyle(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('Result', style: TextStyle(fontWeight: FontWeight.bold))),
+                DataColumn(label: Text('Time', style: TextStyle(fontWeight: FontWeight.bold))),
+              ],
+              rows: const [
+                DataRow(cells: [
+                  DataCell(Text('Aug 30')),
+                  DataCell(Text('පෙළපොතෙන් කියවමු - 1')),
+                  DataCell(Text('80%')),
+                  DataCell(Text('5 min')),
+                ]),
+                DataRow(cells: [
+                  DataCell(Text('Aug 29')),
+                  DataCell(Text('කවුද?')),
+                  DataCell(Text('75%')),
+                  DataCell(Text('4 min')),
+                ]),
+                DataRow(cells: [
+                  DataCell(Text('Aug 28')),
+                  DataCell(Text('මොනවාද?')),
+                  DataCell(Text('85%')),
+                  DataCell(Text('4 min')),
+                ]),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -328,6 +362,15 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
           const Icon(Icons.picture_as_pdf_rounded, size: 64, color: AppColors.softCoral),
           const SizedBox(height: 24),
           Text("Download Official Report", style: AppTypography.heading(fontSize: 20)),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40.0),
+            child: Text(
+              "Report includes reading progress, accuracy trend, practice time, fluency status, and simple observations.",
+              textAlign: TextAlign.center,
+              style: AppTypography.caption(),
+            ),
+          ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () {

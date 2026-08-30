@@ -38,7 +38,8 @@
             "correct_index": 0,
             "prompt": "මලට පාට කරන්න"
           }
-        ]
+        ],
+        "requires_speech_monitoring": true
       },
       {
         "id": "act_2",
@@ -77,7 +78,8 @@
             "correct_index": 0,
             "prompt": "බල්ලා දුවයි. කවුද දුවන්නේ?"
           }
-        ]
+        ],
+        "requires_speech_monitoring": true
       },
       {
         "id": "act_3",
@@ -107,7 +109,8 @@
             "correct_index": 0,
             "prompt": "තාත්තා පත්තරය කියවයි. මොනවාද කියවන්නේ?"
           }
-        ]
+        ],
+        "requires_speech_monitoring": true
       },
       {
         "id": "act_4",
@@ -137,7 +140,8 @@
             "correct_index": 0,
             "prompt": "මාළු වතුරේ පීනයි. කොහෙද පීනන්නේ?"
           }
-        ]
+        ],
+        "requires_speech_monitoring": true
       }
     ]
   }

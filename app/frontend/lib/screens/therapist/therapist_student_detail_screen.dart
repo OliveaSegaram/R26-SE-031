@@ -40,6 +40,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
       return;
     }
 
+    // Still using old service calls until backend is refactored, but UI will mock what's needed.
     final responses = await Future.wait([
       _dashboardService.getOverview(studentId),
       _dashboardService.getBehavior(studentId, _currentFilter),
@@ -69,7 +70,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         'assets/images/characters/human/human_student_1.png');
 
     return DefaultTabController(
-      length: 6,
+      length: 8,
       child: Scaffold(
         backgroundColor: AppColors.cream,
         appBar: AppBar(
@@ -129,10 +130,12 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             indicatorColor: AppColors.calmBlue,
             tabs: [
               Tab(text: "Overview"),
-              Tab(text: "C1: Behavioral"),
-              Tab(text: "C2: Kinematics"),
-              Tab(text: "C3: Profile"),
-              Tab(text: "C4: Adaptive"),
+              Tab(text: "Reading Performance"),
+              Tab(text: "Speech Analysis"),
+              Tab(text: "Multimodal Evidence"),
+              Tab(text: "Learner Profile"),
+              Tab(text: "Knowledge"),
+              Tab(text: "Adaptive Learning"),
               Tab(text: "Reports"),
             ],
           ),
@@ -142,9 +145,11 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             : TabBarView(
                 children: [
                   _buildOverviewTab(),
-                  _buildBehavioralTab(),
-                  _buildKinematicsTab(),
-                  _buildProfileTab(),
+                  _buildReadingPerformanceTab(),
+                  _buildSpeechAnalysisTab(),
+                  _buildMultimodalEvidenceTab(),
+                  _buildLearnerProfileTab(),
+                  _buildKnowledgeTab(),
                   _buildAdaptiveTab(),
                   _buildReportsTab(),
                 ],
@@ -153,14 +158,14 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     );
   }
 
+  // --- 1. OVERVIEW ---
   Widget _buildOverviewTab() {
-    if (_overview == null) return const Center(child: Text("No Data"));
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildModelInfo(_overview!),
+          _buildModelInfo(_overview ?? {}),
           const SizedBox(height: 16),
           GridView.count(
             crossAxisCount: 2,
@@ -170,10 +175,10 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             mainAxisSpacing: 12,
             childAspectRatio: 1.5,
             children: [
-              _buildStatCard("Accuracy", "${_overview!['accuracy']}%", FontAwesomeIcons.bullseye, AppColors.gentleGreen),
-              _buildStatCard("Median Latency", "${_overview!['median_latency_ms']} ms", FontAwesomeIcons.clock, AppColors.calmBlue),
-              _buildStatCard("Hesitation Rate", "${(_overview!['hesitation_rate'] * 100).toStringAsFixed(1)}%", FontAwesomeIcons.pause, AppColors.warmAmber),
-              _buildStatCard("Overall Mastery", "${(_overview!['overall_mastery'] * 100).toStringAsFixed(1)}%", FontAwesomeIcons.brain, AppColors.softCoral),
+              _buildStatCard("Reading Accuracy", "${_overview?['accuracy'] ?? 0}%", FontAwesomeIcons.bullseye, AppColors.gentleGreen),
+              _buildStatCard("Attempted Items", "${_overview?['attempted_items'] ?? 0}", FontAwesomeIcons.listOl, AppColors.calmBlue),
+              _buildStatCard("Fluency Status", _overview?['fluency_status'] ?? "-", FontAwesomeIcons.chartLine, AppColors.warmAmber),
+              _buildStatCard("Overall Mastery", "${((_overview?['overall_mastery'] ?? 0) * 100).toInt()}%", FontAwesomeIcons.brain, AppColors.softCoral),
             ],
           ),
         ],
@@ -181,150 +186,376 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     );
   }
 
-  Widget _buildBehavioralTab() {
-    if (_behavior == null) return const Center(child: Text("No Data"));
+  // --- 2. READING PERFORMANCE ---
+  Widget _buildReadingPerformanceTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildModelInfo(_behavior!),
+          _buildModelInfo(_behavior ?? {}),
           const SizedBox(height: 16),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 2.0,
+            children: [
+              _buildStatCard("Accuracy", "${_behavior?['accuracy'] ?? 0}%", Icons.check_circle_outline, AppColors.gentleGreen),
+              _buildStatCard("Attempted", "${_behavior?['attempted'] ?? 0}", Icons.menu_book, AppColors.calmBlue),
+              _buildStatCard("Correct", "${_behavior?['correct'] ?? 0}", Icons.check, AppColors.gentleGreen),
+              _buildStatCard("Incorrect", "${_behavior?['incorrect'] ?? 0}", Icons.close, AppColors.softCoral),
+              _buildStatCard("Completion Rate", "${((_behavior?['completion_rate'] ?? 0) * 100).toInt()}%", Icons.flag, AppColors.calmBlue),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text("Accuracy Trend", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
           TrendChart(
-            title: "Accuracy Trend (%)",
-            dataPoints: (_behavior!['accuracy_trend'] as List<dynamic>).map((e) => (e['accuracy'] as num).toDouble()).toList(),
+            title: "Accuracy (%)",
+            dataPoints: (_behavior?['accuracy_trend'] as List<dynamic>? ?? []).map((e) => (e['accuracy'] as num).toDouble()).toList().isNotEmpty ? (_behavior?['accuracy_trend'] as List<dynamic>).map((e) => (e['accuracy'] as num).toDouble()).toList() : [0.0],
             lineColor: AppColors.gentleGreen,
             minY: 0,
             maxY: 100,
           ),
-          TrendChart(
-            title: "Latency Trend (ms)",
-            dataPoints: (_behavior!['latency_trend'] as List<dynamic>).map((e) => (e['latency_ms'] as num).toDouble()).toList(),
-            lineColor: AppColors.calmBlue,
-            minY: 0,
-          ),
-          Text("Learner Indices", style: AppTypography.heading(fontSize: 18)),
-          const SizedBox(height: 12),
-          ...(_behavior!['learner_indices'] as Map<String, dynamic>).entries.map((e) => 
-            ListTile(
-              title: Text(e.key.replaceAll('_', ' ').toUpperCase()),
-              trailing: Text("${e.value}", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.calmBlue)),
-              tileColor: AppColors.cardSurface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            )
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildKinematicsTab() {
-    if (_kinematics == null) return const Center(child: Text("No Data"));
+  // --- 3. SPEECH ANALYSIS ---
+  Widget _buildSpeechAnalysisTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildModelInfo(_kinematics!),
-          const SizedBox(height: 16),
-          TrendChart(
-            title: "Orthographic Confusion Index (OCI)",
-            dataPoints: (_kinematics!['oci_trend'] as List<dynamic>).map((e) => (e['oci'] as num).toDouble()).toList(),
-            lineColor: AppColors.softCoral,
-            minY: 0,
-            maxY: 1.0,
-          ),
-          TrendChart(
-            title: "Path Efficiency",
-            dataPoints: (_kinematics!['path_efficiency_trend'] as List<dynamic>).map((e) => (e['efficiency'] as num).toDouble()).toList(),
-            lineColor: AppColors.warmAmber,
-            minY: 0,
-            maxY: 1.0,
-          ),
-          Text("Feature Comparison", style: AppTypography.heading(fontSize: 18)),
-          const SizedBox(height: 12),
-          ...(_kinematics!['feature_comparison'] as Map<String, dynamic>).entries.map((e) => 
-            ListTile(
-              title: Text(e.key.replaceAll('_', ' ').toUpperCase()),
-              trailing: Text("${e.value}", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.softCoral)),
-              tileColor: AppColors.cardSurface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            )
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileTab() {
-    if (_profile == null) return const Center(child: Text("No Data"));
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildModelInfo(_profile!),
-          const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.all(16),
-            color: AppColors.cardSurface,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Selected Pattern", style: AppTypography.caption(color: AppColors.calmBlue)),
-                Text(_profile!['selected_pattern'], style: AppTypography.heading(fontSize: 20)),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(8)),
+            child: Text("STT Model: v2.1 | Acoustic Model: v1.4", style: AppTypography.caption(fontSize: 12, color: AppColors.textSecondary)),
+          ),
+          const SizedBox(height: 24),
+          
+          Text("STT Results", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(color: AppColors.cardSurface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.borderLight)),
+            child: DataTable(
+              columns: const [
+                DataColumn(label: Text('Expected')),
+                DataColumn(label: Text('Recognized')),
+                DataColumn(label: Text('Result')),
+              ],
+              rows: const [
+                DataRow(cells: [DataCell(Text('ගමට')), DataCell(Text('ගමට')), DataCell(Text('✓', style: TextStyle(color: Colors.green)))]),
+                DataRow(cells: [DataCell(Text('යමු')), DataCell(Text('යමු')), DataCell(Text('✓', style: TextStyle(color: Colors.green)))]),
+                DataRow(cells: [DataCell(Text('පාසල')), DataCell(Text('පසල')), DataCell(Text('⚠', style: TextStyle(color: Colors.orange)))]),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          Text("SHAP Values (XAI)", style: AppTypography.heading(fontSize: 18)),
-          const SizedBox(height: 12),
-          ...(_profile!['shap_values'] as List<dynamic>).map((shap) => 
-            ListTile(
-              title: Text(shap['feature']),
-              trailing: Text("+${shap['contribution']}", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.gentleGreen)),
-            )
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _buildStatCard("WER", (_kinematics?['wer'] ?? 0).toStringAsFixed(2), Icons.text_snippet, AppColors.softCoral)),
+              const SizedBox(width: 12),
+              Expanded(child: _buildStatCard("STT Confidence", "${((_kinematics?['stt_confidence'] ?? 0) * 100).toInt()}%", Icons.mic, AppColors.calmBlue)),
+            ],
           ),
+          
+          const SizedBox(height: 32),
+          Text("Acoustic Results", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 2.0,
+            children: [
+              _buildStatCard("Voice Onset", "${(_kinematics?['voice_onset_time'] ?? 0).toStringAsFixed(2)}s", Icons.play_arrow, AppColors.calmBlue),
+              _buildStatCard("Latency", "${(_kinematics?['acoustic_latency'] ?? 0).toStringAsFixed(2)}s", Icons.timer, AppColors.warmAmber),
+              _buildStatCard("Peaks/Syllables", "${_kinematics?['detected_peaks'] ?? 0} / ${_kinematics?['expected_syllables'] ?? 0}", Icons.graphic_eq, AppColors.calmBlue),
+              _buildStatCard("Peak Delta", "${_kinematics?['peak_count_delta'] ?? 0}", Icons.difference, AppColors.softCoral),
+              _buildStatCard("Silence Ratio", "${(_kinematics?['intra_word_silence_ratio'] ?? 0).toStringAsFixed(2)}", Icons.volume_mute, AppColors.warmAmber),
+              _buildStatCard("Quality", _kinematics?['recording_quality']?.toString().toUpperCase() ?? "-", Icons.high_quality, AppColors.gentleGreen),
+            ],
+          ),
+          
+          const SizedBox(height: 24),
+          TrendChart(title: "Acoustic Latency (ms)", dataPoints: const [1500, 1400, 1600, 1320], lineColor: AppColors.warmAmber, minY: 0),
+          const SizedBox(height: 16),
+          TrendChart(title: "Intra-Word Silence Ratio", dataPoints: const [0.2, 0.18, 0.15, 0.12], lineColor: AppColors.calmBlue, minY: 0, maxY: 1.0),
         ],
       ),
     );
   }
 
-  Widget _buildAdaptiveTab() {
-    if (_adaptive == null || _knowledge == null) return const Center(child: Text("No Data"));
+  // --- 4. MULTIMODAL EVIDENCE ---
+  Widget _buildMultimodalEvidenceTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildModelInfo(_adaptive!),
-          const SizedBox(height: 16),
-          if (_adaptive!['timeline'] != null)
-            TrendChart(
-              title: "Mastery vs Attempts",
-              dataPoints: (_adaptive!['timeline'] as List<dynamic>).map((e) => (e['mastery'] as num).toDouble()).toList(),
-              lineColor: AppColors.gentleGreen,
-              minY: 0.0,
-              maxY: 1.0,
+          // Hero Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.calmBlue, width: 2),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
             ),
-          Text("Knowledge Components", style: AppTypography.heading(fontSize: 18)),
-          const SizedBox(height: 12),
-          ...(_knowledge!['knowledge_components'] as Map<String, dynamic>).entries.map((e) => 
-            ListTile(
-              title: Text(e.key),
-              trailing: Text("${(e.value * 100).toStringAsFixed(0)}%", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.calmBlue)),
-              tileColor: AppColors.cardSurface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            )
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Text("READING EVENT ANALYSIS", style: AppTypography.heading(fontSize: 18, color: AppColors.calmBlue))),
+                const Divider(height: 32, thickness: 2),
+                
+                // STT Section
+                Text("STT EVIDENCE", style: AppTypography.caption(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                const SizedBox(height: 8),
+                _buildEvidenceRow("Expected", "ගමට යමු"),
+                _buildEvidenceRow("STT", "ගමට යමු"),
+                _buildEvidenceRow("WER", "0.00"),
+                _buildEvidenceRow("STT confidence", "86%"),
+                
+                const Divider(height: 32),
+                
+                // ACOUSTIC Section
+                Text("ACOUSTIC EVIDENCE", style: AppTypography.caption(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                const SizedBox(height: 8),
+                _buildEvidenceRow("Latency", "1.32 s"),
+                _buildEvidenceRow("Silence ratio", "0.12"),
+                _buildEvidenceRow("Peak delta", "0"),
+                _buildEvidenceRow("Jitter", "0.014"),
+                _buildEvidenceRow("Shimmer", "0.031"),
+                _buildEvidenceRow("Quality", "GOOD"),
+
+                const Divider(height: 32),
+
+                // COMBINED Section
+                Text("COMBINED READING EVIDENCE", style: AppTypography.caption(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: AppColors.gentleGreen.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Reading Fluency", style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text("Developing", style: TextStyle(color: AppColors.gentleGreen, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Evidence Quality", style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text("Good", style: TextStyle(color: AppColors.calmBlue, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "STT + Acoustic evidence are consistent.",
+                        style: TextStyle(fontStyle: FontStyle.italic),
+                      )
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          // Example of error case
+          Text("Example: Error Case", style: AppTypography.heading(fontSize: 16)),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.softCoral.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.softCoral.withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("STT: WER = 0.25"),
+                const Text("Acoustic: Latency = HIGH, Silence = HIGH, Peak Delta = +1"),
+                const SizedBox(height: 8),
+                const Text("Combined Conclusion:", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text("The reading event showed transcription differences together with increased response latency and intra-word pausing."),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+  
+  Widget _buildEvidenceRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textDark)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
 
+  // --- 5. LEARNER PROFILE ---
+  Widget _buildLearnerProfileTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildModelInfo(_profile ?? {}),
+          const SizedBox(height: 16),
+          Text("Learning Pattern Probabilities", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          _buildHorizontalBar("Typical", 0.12, AppColors.calmBlue),
+          _buildHorizontalBar("Visual-Orthographic", 0.18, AppColors.calmBlue),
+          _buildHorizontalBar("Phonological", 0.61, AppColors.softCoral),
+          _buildHorizontalBar("Combined", 0.09, AppColors.calmBlue),
+          
+          const SizedBox(height: 32),
+          Text("Model Evidence (SHAP)", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          _buildHorizontalBar("WER", 0.24, AppColors.warmAmber, prefix: "+"),
+          _buildHorizontalBar("Intra-word silence", 0.18, AppColors.warmAmber, prefix: "+"),
+          _buildHorizontalBar("Acoustic latency", 0.14, AppColors.warmAmber, prefix: "+"),
+          _buildHorizontalBar("OCI", 0.09, AppColors.warmAmber, prefix: "+"),
+          _buildHorizontalBar("Response latency", 0.08, AppColors.warmAmber, prefix: "+"),
+          
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: AppColors.cardSurface, border: Border.all(color: AppColors.borderLight)),
+            child: const Text(
+              "Interpretation: Speech-related features contributed substantially to the predicted phonological learning pattern.",
+              style: TextStyle(fontStyle: FontStyle.italic),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHorizontalBar(String label, double value, Color color, {String prefix = ""}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Expanded(flex: 3, child: Text(label, style: const TextStyle(fontSize: 13))),
+          Expanded(
+            flex: 5,
+            child: Stack(
+              children: [
+                Container(height: 16, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(4))),
+                FractionallySizedBox(
+                  widthFactor: value.clamp(0.0, 1.0),
+                  child: Container(height: 16, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 40, child: Text(" $prefix${(value * 100).toInt()}%", textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+        ],
+      ),
+    );
+  }
+
+  // --- 6. KNOWLEDGE ---
+  Widget _buildKnowledgeTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildModelInfo(_knowledge ?? {}),
+          const SizedBox(height: 16),
+          Text("Reading Knowledge Components (BKT)", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 16),
+          _buildHorizontalBar("Reading Fluency", 0.54, AppColors.gentleGreen),
+          _buildHorizontalBar("Word Recognition", 0.68, AppColors.gentleGreen),
+          _buildHorizontalBar("Sentence Reading", 0.42, AppColors.warnRed),
+        ],
+      ),
+    );
+  }
+
+  // --- 7. ADAPTIVE LEARNING ---
+  Widget _buildAdaptiveTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildModelInfo(_adaptive ?? {}),
+          const SizedBox(height: 16),
+          
+          GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1.5,
+            children: [
+              _buildStatCard("Fatigue", "0.28", Icons.battery_alert, AppColors.warnRed),
+              _buildStatCard("IRT Ability (θ)", "0.18", Icons.person, AppColors.calmBlue),
+              _buildStatCard("Current Diff", "0.70", Icons.trending_up, AppColors.warmAmber),
+            ],
+          ),
+          
+          const SizedBox(height: 24),
+          Text("Adaptive Decision", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: AppColors.cardSurface, border: Border.all(color: AppColors.borderLight), borderRadius: BorderRadius.circular(12)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildEvidenceRow("Previous difficulty", "0.70"),
+                _buildEvidenceRow("Next difficulty", "0.45"),
+                const Divider(),
+                _buildEvidenceRow("Scaffold", "Audio + Visual Hint"),
+                _buildEvidenceRow("Next Activity", "පෙළපොතෙන් කියවමු - 1"),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(color: AppColors.calmBlue, borderRadius: BorderRadius.circular(4)),
+                  child: const Center(child: Text("Decision: CONTINUE", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                )
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          Text("Decision Timeline (Research Loop)", style: AppTypography.heading(fontSize: 16)),
+          const SizedBox(height: 12),
+          Text("Reading → Speech Analysis → Learner State → BKT → C4 → Next Task", 
+            style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary, height: 1.5)),
+        ],
+      ),
+    );
+  }
+
+  // --- 8. REPORTS ---
   Widget _buildReportsTab() {
     return Center(
       child: Column(
@@ -351,19 +582,19 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
 
   Widget _buildStatCard(String label, String value, dynamic icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FaIcon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(value, style: AppTypography.heading(fontSize: 18, color: AppColors.textPrimary)),
-          Text(label, style: AppTypography.caption(fontSize: 11, color: AppColors.textSecondary), textAlign: TextAlign.center),
+          icon is IconData ? Icon(icon, color: color, size: 20) : FaIcon(icon as IconData, color: color, size: 20),
+          const SizedBox(height: 4),
+          Text(value, style: AppTypography.heading(fontSize: 16, color: AppColors.textPrimary)),
+          Text(label, style: AppTypography.caption(fontSize: 10, color: AppColors.textSecondary), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );

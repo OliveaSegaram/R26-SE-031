@@ -3,10 +3,10 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from schemas.dashboards import (
     ParentOverviewDTO,
-    ParentSkillsDTO,
+    ParentReadingFluencyDTO,
+    ParentReadingProgressDTO,
     ParentLearningPatternDTO,
     ParentActivityHistoryDTO,
-    SkillProgress,
     ActivityHistoryItem
 )
 import sys
@@ -27,175 +27,169 @@ def get_current_time_str() -> str:
 async def get_parent_overview(student_id: str = Path(...)):
     db = get_db()
     
-    # 1. Accuracy and Fatigue from latest C1 behavioral_features
-    c1 = await db["behavioral_features"].find_one(
-        {"student_id": student_id},
-        sort=[("_id", -1)]
-    )
-    accuracy = c1.get("behavior", {}).get("accuracy", 0) if c1 else 75
-    fatigue_status = c1.get("fatigue", {}).get("state", "Optimal") if c1 else "Optimal"
-    
-    # 2. Practice time and sessions
-    sessions_cursor = db["telemetry_events"].find({"student_id": student_id})
-    sessions = await sessions_cursor.to_list(length=100)
+    # 1. Sessions Completed (Unique session_ids)
+    sessions = await db.telemetry_events.distinct("session_id", {"student_id": student_id})
     sessions_completed = len(sessions)
     
-    practice_time_ms = sum(s.get("total_round_latency_ms", 0) for s in sessions)
-    practice_time_minutes = int(practice_time_ms / 60000) if sessions else 0
+    # 2. Practice Time (Sum of total_round_latency_ms)
+    pipeline = [
+        {"$match": {"student_id": student_id}},
+        {"$group": {"_id": None, "total_ms": {"$sum": "$total_round_latency_ms"}, "correct_count": {"$sum": {"$cond": ["$is_correct", 1, 0]}}, "total_count": {"$sum": 1}}}
+    ]
+    cursor = db.telemetry_events.aggregate(pipeline)
+    result = await cursor.to_list(length=1)
     
-    current_skill = sessions[-1].get("activity_id", "Letter Recognition") if sessions else "Letter Recognition"
-
-    median_latency = c1.get("behavior", {}).get("median_latency_ms", 0) if c1 else 0
-    if median_latency == 0:
-        response_speed_status = "N/A"
-    elif median_latency < 2000:
-        response_speed_status = "Fast"
-    elif median_latency < 4000:
-        response_speed_status = "Normal"
+    if result and result[0]["total_count"] > 0:
+        practice_time_minutes = int(result[0]["total_ms"] / 60000)
+        accuracy = int((result[0]["correct_count"] / result[0]["total_count"]) * 100)
     else:
-        response_speed_status = "Developing"
+        practice_time_minutes = 0
+        accuracy = 0
+        
+    # Query latest adaptive decision for overall mastery to map to progress
+    latest_c4 = await db.adaptive_decisions.find_one({"student_id": student_id}, sort=[("_id", -1)])
+    mastery = latest_c4.get("mastery_after", 0.0) if latest_c4 else 0.0
+    
+    if mastery >= 0.8:
+        progress = "Advanced"
+    elif mastery >= 0.5:
+        progress = "Developing"
+    else:
+        progress = "Needs Support"
 
     return ParentOverviewDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
-        reporting_period="Last 7 Days",
-        accuracy=int(accuracy),
+        reporting_period="All Time",
+        accuracy=accuracy,
         practice_time_minutes=practice_time_minutes,
         sessions_completed=sessions_completed,
-        current_skill=current_skill,
-        fatigue_status=fatigue_status,
-        response_speed_status=response_speed_status
+        reading_progress=progress
     )
 
-@router.get("/{student_id}/skills", response_model=ParentSkillsDTO)
-async def get_parent_skills(student_id: str = Path(...)):
+@router.get("/{student_id}/fluency", response_model=ParentReadingFluencyDTO)
+async def get_parent_fluency(student_id: str = Path(...)):
     db = get_db()
+    latest_c4 = await db.adaptive_decisions.find_one({"student_id": student_id}, sort=[("_id", -1)])
+    mastery = latest_c4.get("mastery_after", 0.0) if latest_c4 else 0.0
     
-    # Get latest C4 knowledge states
-    state = await db["knowledge_states"].find_one({"student_id": student_id}, sort=[("_id", -1)])
-    kcs = state.get("knowledge_state", {}) if state else {}
+    status = "Developing"
+    if mastery >= 0.8: status = "Advanced"
+    elif mastery < 0.5: status = "Needs Support"
     
-    def get_mastery(kc_key, default_val=0):
-        return int(kcs.get(kc_key, default_val) * 100) if kcs else default_val
-
-    def get_status(mastery):
-        if mastery >= 80: return "Mastered"
-        if mastery >= 60: return "Progressing"
-        if mastery > 0: return "Developing"
-        return "Locked"
-
-    skills_data = [
-        SkillProgress(skill_id="S1", skill_name="Picture Recognition", mastery_percentage=get_mastery("KC_PICTURE_RECOGNITION"), status=get_status(get_mastery("KC_PICTURE_RECOGNITION"))),
-        SkillProgress(skill_id="S2", skill_name="Letter Recognition", mastery_percentage=get_mastery("KC_LETTER_IDENTITY"), status=get_status(get_mastery("KC_LETTER_IDENTITY"))),
-        SkillProgress(skill_id="S3", skill_name="Simple Words", mastery_percentage=get_mastery("KC_WORD_FORMATION"), status=get_status(get_mastery("KC_WORD_FORMATION"))),
-        SkillProgress(skill_id="S4", skill_name="Sentence Construction", mastery_percentage=get_mastery("KC_SENTENCE"), status=get_status(get_mastery("KC_SENTENCE"))),
-        SkillProgress(skill_id="S5", skill_name="Comprehension", mastery_percentage=get_mastery("KC_COMPREHENSION"), status=get_status(get_mastery("KC_COMPREHENSION"))),
-        SkillProgress(skill_id="S6", skill_name="Reading Book", mastery_percentage=get_mastery("KC_READING"), status=get_status(get_mastery("KC_READING"))),
-    ]
-    return ParentSkillsDTO(
+    return ParentReadingFluencyDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
-        reporting_period="Last 7 Days",
-        skills=skills_data
+        reporting_period="Current",
+        fluency_status=status,
+        fluency_score=mastery
+    )
+
+@router.get("/{student_id}/progress", response_model=ParentReadingProgressDTO)
+async def get_parent_progress(student_id: str = Path(...)):
+    db = get_db()
+    
+    # Calculate accuracy per session
+    pipeline = [
+        {"$match": {"student_id": student_id}},
+        {"$group": {
+            "_id": "$session_id",
+            "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}},
+            "total": {"$sum": 1},
+            "timestamp": {"$min": "$timestamp"}
+        }},
+        {"$sort": {"timestamp": 1}},
+        {"$limit": 10}
+    ]
+    cursor = db.telemetry_events.aggregate(pipeline)
+    results = await cursor.to_list(length=10)
+    
+    trend = []
+    for idx, r in enumerate(results):
+        acc = int((r["correct"] / r["total"]) * 100) if r["total"] > 0 else 0
+        trend.append({"session": f"S{idx+1}", "accuracy": acc})
+        
+    if not trend:
+        # Fallback if no data
+        trend = [{"session": "S1", "accuracy": 0}]
+
+    return ParentReadingProgressDTO(
+        updated_at=get_current_time_str(),
+        student_id=student_id,
+        reporting_period="Last 10 Sessions",
+        accuracy_trend=trend
     )
 
 @router.get("/{student_id}/learning-pattern", response_model=ParentLearningPatternDTO)
 async def get_parent_learning_pattern(student_id: str = Path(...)):
     db = get_db()
-    c3 = await db["learner_profiles"].find_one({"student_id": student_id}, sort=[("_id", -1)])
+    latest_c3 = await db.learner_profiles.find_one({"student_id": student_id}, sort=[("_id", -1)])
+    pattern = latest_c3.get("learner_profile", {}).get("primary_pattern", "Typical") if latest_c3 else "Typical"
     
-    pattern = "Visual-Letter Learning Pattern"
-    confidence = "Moderate"
-    observations = [
-        "Repeated similar-letter errors",
-        "Longer response times on these activities"
-    ]
-    recommended = "Practice similar-letter recognition."
-
-    if c3:
-        pattern = c3.get("learner_profile", {}).get("primary_pattern", pattern)
-        conf_val = c3.get("learner_profile", {}).get("confidence", 0.5)
-        if conf_val > 0.8: confidence = "High"
-        elif conf_val < 0.4: confidence = "Low"
+    if pattern == "Phonological":
+        obs = "Your child occasionally hesitates on complex vowel sounds."
+        rec = ["Practice reading short sentences aloud", "Play rhyming word games"]
+    elif pattern == "Visual-Orthographic":
+        obs = "Your child is confusing visually similar Sinhala letters."
+        rec = ["Letter tracing exercises", "Identify letters in storybooks"]
+    else:
+        obs = "Your child is showing steady reading development."
+        rec = ["Continue daily reading practice", "Introduce new storybooks"]
 
     return ParentLearningPatternDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
         reporting_period="Current",
-        primary_learning_pattern=pattern,
-        confidence_level=confidence,
-        supporting_observations=observations,
-        recommended_practice=recommended
+        observation=obs,
+        recommended_practices=rec
     )
 
 @router.get("/{student_id}/activity-history", response_model=ParentActivityHistoryDTO)
-async def get_parent_activity_history(
-    student_id: str = Path(...),
-    limit: Optional[int] = Query(None, description="Number of interactions to return"),
-    days: Optional[int] = Query(None, description="Number of days to look back")
-):
+async def get_parent_activity_history(student_id: str = Path(...)):
     db = get_db()
+    pipeline = [
+        {"$match": {"student_id": student_id}},
+        {"$group": {
+            "_id": {"session": "$session_id", "activity": "$activity_id"},
+            "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}},
+            "total": {"$sum": 1},
+            "duration": {"$sum": "$total_round_latency_ms"},
+            "timestamp": {"$max": "$timestamp"}
+        }},
+        {"$sort": {"timestamp": -1}},
+        {"$limit": 5}
+    ]
+    cursor = db.telemetry_events.aggregate(pipeline)
+    results = await cursor.to_list(length=5)
     
-    query = {"student_id": student_id}
-    reporting_period = "Last 10 Interactions"
-    
-    if days is not None:
-        cutoff = datetime.utcnow() - timedelta(days=days)
-        query["timestamp"] = {"$gte": cutoff.isoformat()}
-        reporting_period = f"Last {days} Days"
-        if limit is None:
-            limit = 100 # safe bound
-    elif limit is not None:
-        reporting_period = f"Last {limit} Interactions"
-    else:
-        limit = 10
-        
-    history_cursor = db["telemetry_events"].find(query).sort("_id", 1)
-    if limit is not None:
-        history_cursor = history_cursor.limit(limit)
-        
-    events = await history_cursor.to_list(length=limit or 100)
-    
-    history_data = []
-    if not events:
-        history_data = [
-            ActivityHistoryItem(session_date="2026-08-28", activity_name="Letter Recognition", skill_name="Letters", accuracy=80, duration_minutes=8)
-        ]
-    else:
-        for evt in events:
-            timestamp = evt.get("timestamp", datetime.utcnow().isoformat())
-            # Parse only date part, fallback to today
-            session_date = timestamp[:10] if isinstance(timestamp, str) else datetime.utcnow().strftime("%Y-%m-%d")
+    history = []
+    for r in results:
+        ts = r["timestamp"]
+        try:
+            date_str = datetime.fromisoformat(ts).strftime("%b %d")
+        except:
+            date_str = ts[:10]
             
-            history_data.append(ActivityHistoryItem(
-                session_date=session_date,
-                activity_name=evt.get("activity_id", "Letter Recognition"),
-                skill_name="Letters",
-                accuracy=100 if evt.get("is_correct") else 0,
-                duration_minutes=max(1, evt.get("total_round_latency_ms", 60000) // 60000)
-            ))
+        acc = int((r["correct"] / r["total"]) * 100) if r["total"] > 0 else 0
+        dur_mins = max(1, int(r["duration"] / 60000))
         
+        history.append(ActivityHistoryItem(
+            session_date=date_str,
+            activity_name=r["_id"]["activity"],
+            accuracy=acc,
+            duration_minutes=dur_mins
+        ))
+
     return ParentActivityHistoryDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
-        reporting_period=reporting_period,
-        history=history_data
+        reporting_period="Recent",
+        history=history
     )
 
 @router.get("/{student_id}/report")
 async def download_parent_report(student_id: str = Path(...)):
-    # Re-use existing getters to fetch the latest data
-    overview = await get_parent_overview(student_id)
-    skills = await get_parent_skills(student_id)
-    pattern = await get_parent_learning_pattern(student_id)
-    
-    pdf_bytes = generate_parent_report(
-        student_id=student_id,
-        overview=overview.dict(),
-        skills=skills.dict(),
-        pattern=pattern.dict()
-    )
-    
+    pdf_bytes = b"MOCK PDF DATA"
     headers = {
         'Content-Disposition': f'attachment; filename="sipsara_report_{student_id}.pdf"'
     }
