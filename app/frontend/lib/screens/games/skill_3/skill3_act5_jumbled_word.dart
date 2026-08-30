@@ -91,7 +91,7 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
-    TtsService().speak(spokenInstruction);
+    TtsService().speak(spokenInstruction, folder: 'skill_3');
   }
 
   @override
@@ -525,7 +525,7 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
         context
             .findAncestorStateOfType<TelemetryWrapperState>()
             ?.logAudioReplay();
-        TtsService().speak(instruction);
+        TtsService().speak(instruction, folder: 'skill_3');
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),

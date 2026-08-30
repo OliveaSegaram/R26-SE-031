@@ -108,7 +108,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
-    TtsService().speak(spokenInstruction);
+    TtsService().speak(spokenInstruction, folder: 'skill_3');
 
     // Bounce the speaker icon
     _speakerBounceController.forward().then((_) {

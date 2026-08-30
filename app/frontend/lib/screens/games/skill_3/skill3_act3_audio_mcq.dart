@@ -109,7 +109,7 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
-    TtsService().speak(spokenInstruction);
+    TtsService().speak(spokenInstruction, folder: 'skill_3');
 
     // Bounce the speaker icon
     _speakerBounceController.forward().then((_) {

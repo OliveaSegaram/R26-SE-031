@@ -94,7 +94,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
-    TtsService().speak(spokenInstruction);
+    TtsService().speak(spokenInstruction, folder: 'skill_3');
   }
 
   @override

@@ -85,7 +85,7 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
 
     final currentRound = rounds[_currentRoundIndex];
     final audioText = currentRound['audio_text']?.toString() ?? currentRound['prompt']?.toString() ?? 'වෘත්තය';
-    TtsService().speak(audioText);
+    TtsService().speak(audioText, folder: 'skill_4');
 
     // Bounce the speaker icon
     _speakerBounceController.forward().then((_) {

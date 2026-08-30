@@ -91,7 +91,7 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
     if (rounds.isEmpty) return;
     final currentRound = rounds[_currentRoundIndex];
     final instructionText = currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වාක්‍යය සාදන්න';
-    TtsService().speak(instructionText);
+    TtsService().speak(instructionText, folder: 'skill_4');
   }
 
   void _onPoolWordTapped(int poolIndex) async {
@@ -481,7 +481,7 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence> w
     return GestureDetector(
       onTap: () {
         context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
-        TtsService().speak(instruction);
+        TtsService().speak(instruction, folder: 'skill_4');
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),

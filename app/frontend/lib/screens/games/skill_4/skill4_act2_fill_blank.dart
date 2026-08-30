@@ -77,7 +77,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
           (match) => '${match.group(1)}, පින්තූරය',
         );
 
-    TtsService().speak(spokenInstruction);
+    TtsService().speak(spokenInstruction, folder: 'skill_4');
   }
 
   final AudioPlayer _audioPlayer = AudioPlayer();
