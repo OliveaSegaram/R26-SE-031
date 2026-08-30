@@ -81,10 +81,21 @@ class _DemoReadingAloudState extends State<DemoReadingAloud>
       // Finish the round based on WER
       if (wer < 0.5) {
         Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) TelemetryWrapper.of(context)?.completeRound(100);
+          if (mounted) {
+            TelemetryWrapper.of(context)?.completeRound(
+              100,
+              selectedAnswers: [_targetSentence],
+              errorType: 'none',
+            );
+          }
         });
       } else {
         // Did not read well enough, let them try again
+        TelemetryWrapper.of(context)?.logAttempt(
+          isCorrect: false,
+          selectedAnswers: [_targetSentence],
+          errorType: 'unknown_error', // STT errors should not create child behavioral errors for C1
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please try reading that again clearly!'),

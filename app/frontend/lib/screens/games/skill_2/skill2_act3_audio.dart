@@ -91,7 +91,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
     TtsService().speak(spokenInstruction, folder: 'skill_2');
   }
 
-  void _checkAnswer(int index, int correctIndex, int totalRounds) async {
+  void _checkAnswer(int index, int correctIndex, int totalRounds, String selectedAnswer) async {
     if (_isCorrect) return;
 
     setState(() {
@@ -99,12 +99,12 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
     });
 
     final bool isRight = (index == correctIndex);
-    int score = isRight ? 100 : 0;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
-      score,
-    );
 
     if (isRight) {
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+        100,
+        selectedAnswers: [selectedAnswer],
+      );
       setState(() {
         _isCorrect = true;
       });
@@ -143,6 +143,11 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
         }
       });
     } else {
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.logAttempt(
+        isCorrect: false,
+        selectedAnswers: [selectedAnswer],
+        errorType: 'unknown_error',
+      );
       SoundUtils.playFeedback('audio/wrong.mp3');
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted && !_isCorrect) {
@@ -296,6 +301,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
                               index,
                               correctIndex,
                               rounds.length,
+                              options[index],
                             ),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 250),

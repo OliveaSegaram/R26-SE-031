@@ -271,7 +271,7 @@ class StudentService {
     try {
       final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('${ApiConfig.c1BaseUrl}/session'),
+        Uri.parse('${ApiConfig.telemetryBaseUrl}/telemetry'),
         headers: headers,
         body: jsonEncode(payload),
       );

@@ -137,6 +137,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
         final rounds = widget.activityNode?.rounds ?? [];
         context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
           100,
+          selectedAnswers: [item['value']?.toString() ?? ''],
         );
 
         Future.delayed(const Duration(milliseconds: 1500), () {
@@ -184,8 +185,10 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
       });
       SoundUtils.playFeedback('audio/wrong.mp3');
 
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
-        0,
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.logAttempt(
+        isCorrect: false,
+        errorType: 'unknown_error',
+        selectedAnswers: [item['value']?.toString() ?? ''],
       );
 
       Future.delayed(const Duration(milliseconds: 500), () {

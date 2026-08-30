@@ -108,10 +108,14 @@ class _Skill5Act1McqState extends State<Skill5Act1Mcq>
     });
 
     final bool isRight = (index == correctIndex);
-    int score = isRight ? 100 : 0;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
+    final rounds = widget.activityNode?.rounds ?? [];
+    var options = (rounds[_currentRoundIndex]['options'] as List?)?.map((e) => e.toString()).toList() ?? [];
 
     if (isRight) {
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+        100,
+        selectedAnswers: options.isNotEmpty && index < options.length ? [options[index]] : [],
+      );
       setState(() {
         _isCorrect = true;
       });
@@ -146,6 +150,11 @@ class _Skill5Act1McqState extends State<Skill5Act1Mcq>
         }
       });
     } else {
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.logAttempt(
+        isCorrect: false,
+        selectedAnswers: options.isNotEmpty && index < options.length ? [options[index]] : [],
+        errorType: 'comprehension_error',
+      );
       SoundUtils.playFeedback('audio/wrong.mp3');
       Future.delayed(const Duration(milliseconds: 600), () {
         if (!mounted) return;
