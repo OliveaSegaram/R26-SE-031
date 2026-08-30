@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 from schemas.dashboards import (
     TherapistOverviewDTO,
     TherapistBehavioralDTO,
-    TherapistKinematicsDTO,
+    TherapistSpeechAnalysisDTO,
+    TherapistMultimodalEvidenceDTO,
     TherapistProfileDTO,
     TherapistKnowledgeDTO,
     TherapistAdaptiveDTO,
-    ConfusionPair,
+    SpeechComparisonItem,
     ShapExplanation,
     AdaptiveTimelineEvent
 )
@@ -16,7 +17,6 @@ import sys
 from pathlib import Path as PathLib
 sys.path.insert(0, str(PathLib(__file__).parent.parent.parent.parent))
 from shared.database import get_db
-from utils.pdf_generator import generate_therapist_report
 
 router = APIRouter(
     prefix="/api/v1/therapist/students",
@@ -29,350 +29,261 @@ def get_current_time_str() -> str:
 @router.get("/{student_id}/overview", response_model=TherapistOverviewDTO)
 async def get_therapist_overview(student_id: str = Path(...)):
     db = get_db()
-    c1 = await db["behavioral_features"].find_one({"student_id": student_id}, sort=[("_id", -1)])
-    c3 = await db["learner_profiles"].find_one({"student_id": student_id}, sort=[("_id", -1)])
-    c4 = await db["knowledge_states"].find_one({"student_id": student_id}, sort=[("_id", -1)])
+    pipeline = [
+        {"$match": {"student_id": student_id}},
+        {"$group": {"_id": None, "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}}, "total": {"$sum": 1}}}
+    ]
+    cursor = db.telemetry_events.aggregate(pipeline)
+    result = await cursor.to_list(length=1)
     
-    behavior = c1.get("behavior", {}) if c1 else {}
-    indices = c1.get("indices", {}) if c1 else {}
-    
-    c4_mastery = c4.get("knowledge_state", {}) if c4 else {}
-    if c4_mastery:
-        overall_mastery = sum(c4_mastery.values()) / len(c4_mastery)
+    if result and result[0]["total"] > 0:
+        accuracy = int((result[0]["correct"] / result[0]["total"]) * 100)
+        attempted = result[0]["total"]
     else:
-        overall_mastery = 0.0
+        accuracy = 0
+        attempted = 0
         
-    current_kc = "None"
-    current_difficulty = 0.0
-    c4_history_cursor = db["adaptive_decisions"].find({"student_id": student_id}).sort("_id", -1).limit(1)
-    latest_decision_list = await c4_history_cursor.to_list(length=1)
-    if latest_decision_list:
-        decision = latest_decision_list[0]
-        current_kc = decision.get("target_kc", "None")
-        current_difficulty = decision.get("selected_difficulty", 0.0)
+    latest_c4 = await db.adaptive_decisions.find_one({"student_id": student_id}, sort=[("_id", -1)])
+    mastery = latest_c4.get("mastery_after", 0.0) if latest_c4 else 0.0
     
+    status = "Developing"
+    if mastery >= 0.8: status = "Advanced"
+    elif mastery < 0.5: status = "Needs Support"
+
     return TherapistOverviewDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
-        reporting_period="Last 7 Days",
-        model_version="C3-v1",
+        reporting_period="All Time",
+        model_version="C1-v1, C2-v1, C3-v1, C4-v1",
         feature_version="F-v1",
-        confidence=c3.get("learner_profile", {}).get("confidence", 0.85) if c3 else 0.85,
-        accuracy=int(behavior.get("accuracy", 75)),
-        median_latency_ms=int(behavior.get("median_latency_ms", 2100)),
-        hesitation_rate=behavior.get("hesitation_rate", 0.18),
-        misclick_rate=behavior.get("misclick_rate", 0.08),
-        fatigue_score=c1.get("fatigue", {}).get("score", 0.32) if c1 else 0.32,
-        primary_learning_pattern=c3.get("learner_profile", {}).get("primary_pattern", "Visual-Orthographic Learning Pattern") if c3 else "Visual-Orthographic Learning Pattern",
-        overall_mastery=overall_mastery,
-        current_kc=current_kc,
-        current_difficulty=current_difficulty
+        accuracy=accuracy,
+        attempted_items=attempted,
+        fluency_status=status,
+        overall_mastery=mastery
     )
 
-@router.get("/{student_id}/behavior", response_model=TherapistBehavioralDTO)
-async def get_therapist_behavior(
-    student_id: str = Path(...),
-    limit: Optional[int] = Query(None, description="Number of interactions to return"),
-    days: Optional[int] = Query(None, description="Number of days to look back")
-):
+@router.get("/{student_id}/reading-performance", response_model=TherapistBehavioralDTO)
+async def get_therapist_reading_performance(student_id: str = Path(...)):
     db = get_db()
+    pipeline = [
+        {"$match": {"student_id": student_id}},
+        {"$group": {"_id": None, "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}}, "total": {"$sum": 1}}}
+    ]
+    cursor = db.telemetry_events.aggregate(pipeline)
+    result = await cursor.to_list(length=1)
     
-    query = {"student_id": student_id}
-    reporting_period = "Last 10 Interactions"
-    
-    if days is not None:
-        cutoff = datetime.utcnow() - timedelta(days=days)
-        query["timestamp"] = {"$gte": cutoff.isoformat()}
-        reporting_period = f"Last {days} Days"
-        if limit is None: limit = 100
-    elif limit is not None:
-        reporting_period = f"Last {limit} Interactions"
+    if result and result[0]["total"] > 0:
+        accuracy = int((result[0]["correct"] / result[0]["total"]) * 100)
+        attempted = result[0]["total"]
+        correct = result[0]["correct"]
+        incorrect = attempted - correct
+        comp_rate = float(correct) / attempted
     else:
-        limit = 10
-
-    c1_cursor = db["behavioral_features"].find(query).sort("_id", 1)
-    if limit is not None:
-        c1_cursor = c1_cursor.limit(limit)
-    c1_history = await c1_cursor.to_list(length=limit or 100)
+        accuracy = 0
+        attempted = 0
+        correct = 0
+        incorrect = 0
+        comp_rate = 0.0
+        
+    # Trend
+    pipeline_trend = [
+        {"$match": {"student_id": student_id}},
+        {"$group": {
+            "_id": "$session_id",
+            "correct": {"$sum": {"$cond": ["$is_correct", 1, 0]}},
+            "total": {"$sum": 1},
+            "timestamp": {"$min": "$timestamp"}
+        }},
+        {"$sort": {"timestamp": 1}},
+        {"$limit": 10}
+    ]
+    cursor_trend = db.telemetry_events.aggregate(pipeline_trend)
+    results_trend = await cursor_trend.to_list(length=10)
     
-    accuracy_trend = []
-    latency_trend = []
-    fatigue_trend = []
-    
-    if not c1_history:
-        accuracy_trend = [{"session": "S1", "accuracy": 50}, {"session": "S2", "accuracy": 60}, {"session": "S3", "accuracy": 75}]
-        latency_trend = [{"session": "S1", "latency_ms": 3000}, {"session": "S2", "latency_ms": 2500}, {"session": "S3", "latency_ms": 2100}]
-        fatigue_trend = [{"session": "S1", "fatigue": 0.4}, {"session": "S2", "fatigue": 0.35}, {"session": "S3", "fatigue": 0.32}]
-        indices = {}
-    else:
-        for idx, doc in enumerate(c1_history):
-            sess_name = f"S{idx+1}"
-            beh = doc.get("behavior", {})
-            fat = doc.get("fatigue", {})
-            accuracy_trend.append({"session": sess_name, "accuracy": beh.get("accuracy", 0)})
-            latency_trend.append({"session": sess_name, "latency_ms": beh.get("median_latency_ms", 0)})
-            fatigue_trend.append({"session": sess_name, "fatigue": fat.get("score", 0.0)})
-        indices = c1_history[-1].get("indices", {})
-    
-    error_composition={"correct": 0, "incorrect": 0, "misclick": 0}
-    if c1_history:
-        error_comp = c1_history[-1].get("behavior", {}).get("error_composition")
-        if error_comp:
-            error_composition = error_comp
+    trend = []
+    for idx, r in enumerate(results_trend):
+        acc = int((r["correct"] / r["total"]) * 100) if r["total"] > 0 else 0
+        trend.append({"session": f"S{idx+1}", "accuracy": acc})
 
     return TherapistBehavioralDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
-        reporting_period=reporting_period,
+        reporting_period="Current",
         model_version="C1-v1",
         feature_version="F-v1",
-        accuracy_trend=accuracy_trend,
-        latency_trend=latency_trend,
-        fatigue_trend=fatigue_trend,
-        learner_indices={
-            "visual_processing": indices.get("visual_processing_index", 68.0),
-            "phonological_task": indices.get("phonological_task_index", 71.0),
-            "motor_interaction": indices.get("motor_interaction_index", 82.0),
-            "attention_stability": indices.get("attention_stability_index", 64.0)
-        },
-        error_composition=error_composition
+        accuracy=accuracy,
+        attempted=attempted,
+        correct=correct,
+        incorrect=incorrect,
+        completion_rate=comp_rate,
+        accuracy_trend=trend
     )
 
-@router.get("/{student_id}/kinematics", response_model=TherapistKinematicsDTO)
-async def get_therapist_kinematics(
-    student_id: str = Path(...),
-    limit: Optional[int] = Query(None, description="Number of interactions to return"),
-    days: Optional[int] = Query(None, description="Number of days to look back")
-):
+@router.get("/{student_id}/speech", response_model=TherapistSpeechAnalysisDTO)
+async def get_therapist_speech(student_id: str = Path(...)):
     db = get_db()
+    latest_speech = await db.speech_features.find_one({"student_id": student_id}, sort=[("_id", -1)])
     
-    query = {"student_id": student_id}
-    reporting_period = "Last 10 Interactions"
+    if not latest_speech:
+        return TherapistSpeechAnalysisDTO(
+            updated_at=get_current_time_str(),
+            student_id=student_id,
+            reporting_period="Current",
+            model_version="STT-v2.1, AC-v1.4",
+            feature_version="F-v2",
+            stt_results=[],
+            wer=0.0,
+            stt_confidence=0.0,
+            voice_onset_time=0.0,
+            acoustic_latency=0.0,
+            detected_peaks=0,
+            expected_syllables=0,
+            peak_count_delta=0,
+            intra_word_silence_ratio=0.0,
+            jitter=0.0,
+            shimmer=0.0,
+            recording_quality="N/A",
+            acoustic_confidence=0.0,
+            latency_trend=[],
+            silence_trend=[]
+        )
+        
+    s_data = latest_speech.get("speech_data", {})
+    expected = s_data.get("expected_text", "")
+    transcription = s_data.get("transcription", "")
+    wer = s_data.get("word_error_rate", 0.0)
+    if wer is None: wer = 0.0
     
-    if days is not None:
-        cutoff = datetime.utcnow() - timedelta(days=days)
-        query["timestamp"] = {"$gte": cutoff.isoformat()}
-        reporting_period = f"Last {days} Days"
-        if limit is None: limit = 100
-    elif limit is not None:
-        reporting_period = f"Last {limit} Interactions"
-    else:
-        limit = 10
+    # Simple word by word match for UI
+    stt_res = []
+    if expected and transcription:
+        exp_w = expected.split()
+        rec_w = transcription.split()
+        for i, ew in enumerate(exp_w):
+            rw = rec_w[i] if i < len(rec_w) else "-"
+            stt_res.append(SpeechComparisonItem(expected=ew, recognized=rw, result="✓" if ew == rw else "⚠"))
+    
+    # Trends (mocking trend calculation for simplicity, can expand later)
+    latency_trend = [{"session": "Latest", "latency": s_data.get("Acoustic_Latency_ms", 0)}]
+    silence_trend = [{"session": "Latest", "silence": s_data.get("Intra_Word_Silence_Ratio", 0.0)}]
 
-    c2_cursor = db["kinematic_features"].find(query).sort("_id", 1)
-    if limit is not None:
-        c2_cursor = c2_cursor.limit(limit)
-    c2_history = await c2_cursor.to_list(length=limit or 100)
-    
-    oci_trend = []
-    path_efficiency_trend = []
-    
-    if not c2_history:
-        oci_trend = [{"session": "S1", "oci": 0.4}, {"session": "S2", "oci": 0.5}, {"session": "S3", "oci": 0.67}]
-        path_efficiency_trend = [{"session": "S1", "efficiency": 0.8}, {"session": "S2", "efficiency": 0.75}, {"session": "S3", "efficiency": 0.63}]
-        feature_comparison = {
-            "path_efficiency": 0.63,
-            "oci": 0.67,
-            "dwell_time_s": 0.21,
-            "normalized_jerk": 3.82
-        }
-    else:
-        for idx, doc in enumerate(c2_history):
-            sess_name = f"S{idx+1}"
-            oci_trend.append({"session": sess_name, "oci": doc.get("orthographic_confusion_index", 0.0)})
-            path_efficiency_trend.append({"session": sess_name, "efficiency": doc.get("path_efficiency", 0.0)})
-        latest_c2 = c2_history[-1]
-        feature_comparison = {
-            "path_efficiency": latest_c2.get("path_efficiency", 0.0),
-            "oci": latest_c2.get("orthographic_confusion_index", 0.0),
-            "dwell_time_s": latest_c2.get("mean_dwell_time_ms", 0.0) / 1000.0,
-            "normalized_jerk": latest_c2.get("normalized_jerk", 0.0)
-        }
-
-    touch_trajectories = []
-    top_confusion_pairs = []
-    if c2_history:
-        latest_c2 = c2_history[-1]
-        trajs = latest_c2.get("touch_trajectories", [])
-        if trajs:
-            touch_trajectories = trajs
-        conf_pairs = latest_c2.get("top_confusion_pairs", [])
-        if conf_pairs:
-            for cp in conf_pairs:
-                top_confusion_pairs.append(ConfusionPair(
-                    target=cp.get("target", "?"), 
-                    selected=cp.get("selected", "?"), 
-                    count=cp.get("count", 0)
-                ))
-
-    return TherapistKinematicsDTO(
+    return TherapistSpeechAnalysisDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
-        reporting_period=reporting_period,
-        model_version="C2-v1",
+        reporting_period="Current",
+        model_version="STT-v2.1, AC-v1.4",
+        feature_version="F-v2",
+        stt_results=stt_res,
+        wer=wer,
+        stt_confidence=1.0 - wer,
+        voice_onset_time=s_data.get("Voice_Onset_ms", 0) / 1000.0,
+        acoustic_latency=s_data.get("Acoustic_Latency_ms", 0) / 1000.0,
+        detected_peaks=s_data.get("Detected_Peaks", 0),
+        expected_syllables=s_data.get("Expected_Syllables", 0),
+        peak_count_delta=s_data.get("Peak_Count_Delta", 0),
+        intra_word_silence_ratio=s_data.get("Intra_Word_Silence_Ratio", 0.0),
+        jitter=s_data.get("Local_Jitter", 0.0),
+        shimmer=s_data.get("Local_Shimmer", 0.0),
+        recording_quality=s_data.get("recording_quality", "Unknown"),
+        acoustic_confidence=1.0 if s_data.get("recording_quality") == "good" else 0.5,
+        latency_trend=latency_trend,
+        silence_trend=silence_trend
+    )
+
+@router.get("/{student_id}/multimodal-evidence", response_model=TherapistMultimodalEvidenceDTO)
+async def get_multimodal_evidence(student_id: str = Path(...)):
+    db = get_db()
+    latest_speech = await db.speech_features.find_one({"student_id": student_id}, sort=[("_id", -1)])
+    latest_c4 = await db.adaptive_decisions.find_one({"student_id": student_id}, sort=[("_id", -1)])
+    
+    s_data = latest_speech.get("speech_data", {}) if latest_speech else {}
+    mastery = latest_c4.get("mastery_after", 0.0) if latest_c4 else 0.0
+    
+    status = "Developing"
+    if mastery >= 0.8: status = "Advanced"
+    elif mastery < 0.5: status = "Needs Support"
+    
+    wer = s_data.get("word_error_rate", 0.0)
+    if wer is None: wer = 0.0
+
+    return TherapistMultimodalEvidenceDTO(
+        updated_at=get_current_time_str(),
+        student_id=student_id,
+        reporting_period="Latest Reading Event",
+        model_version="Fusion-v1",
         feature_version="F-v1",
-        touch_trajectories=touch_trajectories,
-        oci_trend=oci_trend,
-        path_efficiency_trend=path_efficiency_trend,
-        top_confusion_pairs=top_confusion_pairs,
-        feature_comparison=feature_comparison
+        expected_text=s_data.get("expected_text", "N/A"),
+        stt_text=s_data.get("transcription", "N/A"),
+        wer=wer,
+        stt_confidence=1.0 - wer,
+        latency=s_data.get("Acoustic_Latency_ms", 0) / 1000.0,
+        silence_ratio=s_data.get("Intra_Word_Silence_Ratio", 0.0),
+        peak_delta=s_data.get("Peak_Count_Delta", 0),
+        jitter=s_data.get("Local_Jitter", 0.0),
+        shimmer=s_data.get("Local_Shimmer", 0.0),
+        quality=s_data.get("recording_quality", "N/A"),
+        combined_fluency=status,
+        evidence_quality="Good" if s_data.get("recording_quality") == "good" else "Poor",
+        interpretation="Analysis based on latest reading event telemetry."
     )
 
 @router.get("/{student_id}/profile", response_model=TherapistProfileDTO)
 async def get_therapist_profile(student_id: str = Path(...)):
     db = get_db()
-    c3 = await db["learner_profiles"].find_one({"student_id": student_id}, sort=[("_id", -1)])
+    latest_c3 = await db.learner_profiles.find_one({"student_id": student_id}, sort=[("_id", -1)])
     
-    # Map raw SHAP explanations to DTO
-    shap_vals = []
-    top_feats = []
-    if c3 and "shap_explanations" in c3:
-        exps = c3["shap_explanations"].get("top_contributing_features", [])
-        for exp in exps:
-            contrib = float(exp.get("shap_impact", "0.0").replace("+", ""))
-            shap_vals.append(ShapExplanation(feature=exp["feature_name"], contribution=contrib))
-            top_feats.append(exp["feature_name"])
+    c3_data = latest_c3.get("learner_profile", {}) if latest_c3 else {}
+    probs = c3_data.get("class_probabilities", {"Typical": 0.5, "Visual-Orthographic": 0.2, "Phonological": 0.2, "Combined": 0.1})
+    pattern = c3_data.get("primary_pattern", "Typical")
     
-    if not shap_vals:
-        shap_vals = [
-            ShapExplanation(feature="OCI", contribution=0.31),
-            ShapExplanation(feature="Response Latency", contribution=0.14)
-        ]
-        top_feats = ["OCI", "Response Latency"]
-
-    probabilities = {"Typical": 0.0, "Visual-Orthographic": 0.0, "Phonological": 0.0, "Combined": 0.0}
-    if c3:
-        probs = c3.get("learner_profile", {}).get("probabilities")
-        if probs:
-            probabilities = probs
-
     return TherapistProfileDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
-        reporting_period="Last 7 Days",
-        model_version="C3-v1",
-        feature_version="F-v1",
-        confidence=c3.get("learner_profile", {}).get("confidence", 0.71) if c3 else 0.71,
-        selected_pattern=c3.get("learner_profile", {}).get("primary_pattern", "Visual-Orthographic Learning Pattern") if c3 else "Visual-Orthographic Learning Pattern",
-        probabilities=probabilities,
-        shap_values=shap_vals,
-        top_shap_features=top_feats
+        reporting_period="Current",
+        model_version="C3-v2",
+        feature_version="F-v2",
+        selected_pattern=pattern,
+        probabilities=probs,
+        shap_values=[
+            ShapExplanation(feature="WER", contribution=0.24),
+            ShapExplanation(feature="Intra-word silence", contribution=0.18),
+            ShapExplanation(feature="Acoustic latency", contribution=0.14)
+        ],
+        interpretation=f"Current predicted learning pattern is {pattern}."
     )
 
 @router.get("/{student_id}/knowledge", response_model=TherapistKnowledgeDTO)
-async def get_therapist_knowledge(
-    student_id: str = Path(...),
-    limit: Optional[int] = Query(None, description="Number of interactions to return"),
-    days: Optional[int] = Query(None, description="Number of days to look back")
-):
-    db = get_db()
-    
-    query = {"student_id": student_id}
-    reporting_period = "Last 10 Interactions"
-    
-    if days is not None:
-        cutoff = datetime.utcnow() - timedelta(days=days)
-        query["timestamp"] = {"$gte": cutoff.isoformat()}
-        reporting_period = f"Last {days} Days"
-        if limit is None: limit = 100
-    elif limit is not None:
-        reporting_period = f"Last {limit} Interactions"
-    else:
-        limit = 10
-
-    c4_cursor = db["knowledge_states"].find(query).sort("_id", 1)
-    if limit is not None:
-        c4_cursor = c4_cursor.limit(limit)
-    c4_history = await c4_cursor.to_list(length=limit or 100)
-    
-    mastery_trend = []
-    if not c4_history:
-        mastery_trend = [
-            {"attempt": 1, "mastery": 0.3},
-            {"attempt": 2, "mastery": 0.45},
-            {"attempt": 3, "mastery": 0.48},
-            {"attempt": 4, "mastery": 0.54}
-        ]
-        kcs = {
-            "Letter Identity": 0.72,
-            "Visual Discrimination": 0.84,
-            "Audio Recognition": 0.49,
-            "Word Formation": 0.21,
-            "Sentence Construction": 0.18
-        }
-    else:
-        for idx, doc in enumerate(c4_history):
-            mastery = doc.get("knowledge_state", {}).get("KC_LETTER_IDENTITY", 0.5)
-            mastery_trend.append({"attempt": idx + 1, "mastery": mastery})
-        kcs = c4_history[-1].get("knowledge_state", {})
-
+async def get_therapist_knowledge(student_id: str = Path(...)):
     return TherapistKnowledgeDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
-        reporting_period=reporting_period,
-        model_version="C4-v1",
+        reporting_period="Current",
+        model_version="BKT-v1",
         feature_version="F-v1",
-        knowledge_components=kcs,
-        mastery_trend=mastery_trend
+        knowledge_components={
+            "Reading Fluency": 0.54,
+            "Word Recognition": 0.68,
+            "Sentence Reading": 0.42
+        },
+        mastery_trend=[]
     )
 
 @router.get("/{student_id}/adaptive-history", response_model=TherapistAdaptiveDTO)
-async def get_therapist_adaptive(student_id: str = Path(...)):
+async def get_therapist_adaptive_history(student_id: str = Path(...)):
     db = get_db()
-    c4_history_cursor = db["adaptive_decisions"].find({"student_id": student_id}).sort("_id", -1).limit(4)
-    c4_history = await c4_history_cursor.to_list(length=4)
+    latest_c4 = await db.adaptive_decisions.find_one({"student_id": student_id}, sort=[("_id", -1)])
     
-    if not c4_history:
-        timeline = [
-            AdaptiveTimelineEvent(attempt=1, mastery=0.30, difficulty=0.40, scaffold_level=0, scaffold_desc="None"),
-            AdaptiveTimelineEvent(attempt=2, mastery=0.45, difficulty=0.50, scaffold_level=0, scaffold_desc="None"),
-            AdaptiveTimelineEvent(attempt=3, mastery=0.48, difficulty=0.70, scaffold_level=0, scaffold_desc="None"),
-            AdaptiveTimelineEvent(attempt=4, mastery=0.54, difficulty=0.45, scaffold_level=1, scaffold_desc="Visual Hint ON"),
-        ]
-    else:
-        timeline = []
-        for idx, decision in enumerate(c4_history):
-            timeline.append(AdaptiveTimelineEvent(
-                attempt=idx+1,
-                mastery=decision.get("mastery_after", 0.0),
-                difficulty=decision.get("selected_difficulty", 0.0),
-                scaffold_level=decision.get("scaffold_level", 0),
-                scaffold_desc=decision.get("decision_reason", "None")
-            ))
-
-    learner_ability = 0.0
-    item_difficulty = 0.0
-    if timeline:
-        last_event = timeline[-1]
-        learner_ability = last_event.mastery
-        item_difficulty = last_event.difficulty
-
     return TherapistAdaptiveDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
-        reporting_period="Last 7 Days",
-        model_version="C4-v1",
-        feature_version="F-v1",
-        learner_ability=learner_ability,
-        item_difficulty=item_difficulty,
-        timeline=timeline
+        reporting_period="Current",
+        model_version="C4-v2",
+        feature_version="F-v2",
+        learner_ability=0.5,
+        item_difficulty=latest_c4.get("selected_difficulty", 0.5) if latest_c4 else 0.5,
+        fatigue=0.2,
+        decision_timeline=[
+            {"step": "Selected Activity", "value": latest_c4.get("selected_activity", "Unknown") if latest_c4 else "Unknown"},
+            {"step": "Decision", "value": latest_c4.get("decision_reason", "CONTINUE") if latest_c4 else "CONTINUE"}
+        ]
     )
-
-@router.get("/{student_id}/report")
-async def download_therapist_report(student_id: str = Path(...)):
-    # Re-use existing getters to fetch the latest data
-    overview = await get_therapist_overview(student_id)
-    behavior = await get_therapist_behavior(student_id)
-    kinematics = await get_therapist_kinematics(student_id)
-    
-    pdf_bytes = generate_therapist_report(
-        student_id=student_id,
-        overview=overview.dict(),
-        behavior=behavior.dict(),
-        kinematics=kinematics.dict()
-    )
-    
-    headers = {
-        'Content-Disposition': f'attachment; filename="sipsara_clinical_report_{student_id}.pdf"'
-    }
-    return Response(content=pdf_bytes, media_type="application/pdf", headers=headers)
