@@ -175,19 +175,25 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   // 2. C1 — BEHAVIORAL ANALYTICS
   // ==========================================
   Widget _buildC1BehavioralTab() {
-    final accuracy = _c1Behavioral?['accuracy'] ?? 0.0;
-    final errRate = _c1Behavioral?['error_rate'] ?? 0.0;
-    final misclickRate = _c1Behavioral?['misclick_rate'] ?? 0.0;
-    final indices = _c1Behavioral?['indices'] ?? {};
+    final firstAttemptAcc = _c1Behavioral?['first_attempt_accuracy'];
+    final medianLat = _c1Behavioral?['median_response_latency_ms'];
+    final retryRate = _c1Behavioral?['retry_rate'];
+    final meanAttempts = _c1Behavioral?['mean_attempts_per_round'];
+    final medianTimeToCorrect = _c1Behavioral?['median_time_to_correct_ms'];
+    final correctionRate = _c1Behavioral?['correction_rate'];
+    final fatigue = _c1Behavioral?['behavioral_fatigue_proxy'];
+
+    final kcPerformance = _c1Behavioral?['kc_performance'] ?? {};
+    final errors = _c1Behavioral?['error_distribution'] ?? {};
     
     final trends = _c1Behavioral?['trends'] ?? {};
     final accTrendRaw = trends['accuracy'] as List<dynamic>? ?? [];
     final latTrendRaw = trends['latency'] as List<dynamic>? ?? [];
     final fatTrendRaw = trends['fatigue'] as List<dynamic>? ?? [];
     
-    final accTrend = accTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
-    final latTrend = latTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
-    final fatTrend = fatTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
+    final accTrend = accTrendRaw.any((e) => e['value'] is! num) ? <double>[] : accTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
+    final latTrend = latTrendRaw.any((e) => e['value'] is! num) ? <double>[] : latTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
+    final fatTrend = fatTrendRaw.any((e) => e['value'] is! num) ? <double>[] : fatTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -204,29 +210,35 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             mainAxisSpacing: 12,
             childAspectRatio: 2.0,
             children: [
-              _buildStatCard("Accuracy", "${(accuracy * 100).toInt()}%", Icons.check_circle_outline, AppColors.gentleGreen),
-              _buildStatCard("Median Latency", "${_c1Behavioral?['median_latency_ms'] ?? 0} ms", Icons.timer, AppColors.calmBlue),
-              _buildStatCard("Latency Drift", "${_c1Behavioral?['latency_drift'] ?? 0} ms", Icons.trending_up, AppColors.warmAmber),
-              _buildStatCard("Error Rate", "${(errRate * 100).toInt()}%", Icons.close, AppColors.softCoral),
-              _buildStatCard("Hesitation Rate", "${((_c1Behavioral?['hesitation_rate'] ?? 0) * 100).toInt()}%", Icons.pause_circle_outline, AppColors.calmBlue),
-              _buildStatCard("Fatigue Score", "${_c1Behavioral?['fatigue_score'] ?? 0}", Icons.battery_alert, AppColors.softCoral),
+              _buildStatCard("First Attempt Acc", firstAttemptAcc != null ? "${(firstAttemptAcc * 100).toInt()}%" : "N/A", Icons.check_circle_outline, AppColors.gentleGreen),
+              _buildStatCard("Median Latency", medianLat != null ? "${medianLat.toInt()} ms" : "N/A", Icons.timer, AppColors.calmBlue),
+              _buildStatCard("Retry Rate", retryRate != null ? "${(retryRate * 100).toInt()}%" : "N/A", Icons.replay, AppColors.warmAmber),
+              _buildStatCard("Mean Attempts", meanAttempts != null ? meanAttempts.toStringAsFixed(1) : "N/A", Icons.numbers, AppColors.softCoral),
+              _buildStatCard("Time to Correct", medianTimeToCorrect != null ? "${medianTimeToCorrect.toInt()} ms" : "N/A", Icons.hourglass_bottom, AppColors.calmBlue),
+              _buildStatCard("Correction Rate", correctionRate != null ? "${(correctionRate * 100).toInt()}%" : "N/A", Icons.healing, AppColors.gentleGreen),
+              _buildStatCard("Behavioral Fatigue Indicator", fatigue != null ? fatigue.toStringAsFixed(2) : "N/A", Icons.battery_alert, AppColors.softCoral),
             ],
           ),
           
           const SizedBox(height: 24),
-          Text("Behavioral Indices", style: AppTypography.heading(fontSize: 18)),
+          Text("Knowledge Component Performance", style: AppTypography.heading(fontSize: 18)),
           const SizedBox(height: 12),
-          _buildHorizontalBar("Visual Processing", indices['visual_processing'] ?? 0.0, AppColors.calmBlue),
-          _buildHorizontalBar("Phonological Tasks", indices['phonological_tasks'] ?? 0.0, AppColors.gentleGreen),
-          _buildHorizontalBar("Motor Interaction", indices['motor_interaction'] ?? 0.0, AppColors.warmAmber),
-          _buildHorizontalBar("Attention Stability", indices['attention_stability'] ?? 0.0, AppColors.softCoral),
+          _buildHorizontalBar("Akshara Identity", kcPerformance['KC_AKSHARA_IDENTITY'], AppColors.calmBlue),
+          _buildHorizontalBar("Phoneme Grapheme", kcPerformance['KC_PHONEME_GRAPHEME'], AppColors.gentleGreen),
+          _buildHorizontalBar("Word Recognition", kcPerformance['KC_WORD_RECOGNITION'], AppColors.warmAmber),
+          _buildHorizontalBar("Spelling Sequence", kcPerformance['KC_SPELLING_SEQUENCE'], AppColors.softCoral),
+          _buildHorizontalBar("Sentence Language", kcPerformance['KC_SENTENCE_LANGUAGE'], AppColors.calmBlue),
+          _buildHorizontalBar("Reading Comprehension", kcPerformance['KC_READING_COMPREHENSION'], AppColors.gentleGreen),
+          _buildHorizontalBar("Visual Support", kcPerformance['KC_VISUAL_SUPPORT'], AppColors.warmAmber),
           
           const SizedBox(height: 24),
-          Text("Error Composition", style: AppTypography.heading(fontSize: 18)),
+          Text("Error Distribution", style: AppTypography.heading(fontSize: 18)),
           const SizedBox(height: 12),
-          _buildHorizontalBar("Correct", accuracy, AppColors.gentleGreen),
-          _buildHorizontalBar("Incorrect", errRate, AppColors.warmAmber),
-          _buildHorizontalBar("Misclick", misclickRate, AppColors.softCoral),
+          _buildHorizontalBar("Visual Confusion", errors['visual_confusion'], AppColors.calmBlue),
+          _buildHorizontalBar("Phonological Confusion", errors['phonological_confusion'], AppColors.gentleGreen),
+          _buildHorizontalBar("Sequence Error", errors['sequence_error'], AppColors.warmAmber),
+          _buildHorizontalBar("Unknown Error", errors['unknown_error'], AppColors.softCoral),
+          
           
           if (accTrend.isNotEmpty) ...[
             const SizedBox(height: 24),
@@ -238,7 +250,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           ],
           if (fatTrend.isNotEmpty) ...[
             const SizedBox(height: 24),
-            TrendChart(title: "Fatigue Score", dataPoints: fatTrend, lineColor: AppColors.softCoral, minY: 0),
+            TrendChart(title: "Behavioral Fatigue Indicator", dataPoints: fatTrend, lineColor: AppColors.softCoral, minY: 0),
           ],
         ],
       ),
@@ -544,7 +556,8 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     );
   }
 
-  Widget _buildHorizontalBar(String label, double value, Color color, {String prefix = ""}) {
+  Widget _buildHorizontalBar(String label, dynamic rawValue, Color color, {String prefix = ""}) {
+    final value = rawValue != null ? (rawValue as num).toDouble() : null;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -555,14 +568,15 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             child: Stack(
               children: [
                 Container(height: 16, decoration: BoxDecoration(color: AppColors.borderLight, borderRadius: BorderRadius.circular(4))),
-                FractionallySizedBox(
-                  widthFactor: value.clamp(0.0, 1.0),
-                  child: Container(height: 16, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))),
-                ),
+                if (value != null)
+                  FractionallySizedBox(
+                    widthFactor: value.clamp(0.0, 1.0),
+                    child: Container(height: 16, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))),
+                  ),
               ],
             ),
           ),
-          SizedBox(width: 40, child: Text(" $prefix${(value * 100).toInt()}%", textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+          SizedBox(width: 40, child: Text(value != null ? " $prefix${(value * 100).toInt()}%" : "N/A", textAlign: TextAlign.right, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: value != null ? Colors.black : Colors.grey))),
         ],
       ),
     );
