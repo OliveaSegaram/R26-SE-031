@@ -60,13 +60,16 @@ def convert_to_wav(audio_data: bytes, mime_type: str) -> bytes:
 
 class TTSService:
     @staticmethod
-    def text_to_speech(text: str) -> str:
+    def text_to_speech(text: str, folder: str = "general") -> str:
         """Generate a new speech file for given text and save locally. Returns text_hash."""
         text_hash = hashlib.md5(text.encode()).hexdigest()
-        local_path = os.path.join(os.path.dirname(__file__), "..", "local_audio", f"{text_hash}.wav")
+        folder_dir = os.path.join(os.path.dirname(__file__), "..", "local_audio", folder)
+        os.makedirs(folder_dir, exist_ok=True)
+        local_path = os.path.join(folder_dir, f"{text_hash}.wav")
+        relative_path = f"{folder}/{text_hash}.wav"
         
         if os.path.exists(local_path):
-            return text_hash
+            return relative_path
             
         try:
             api_key = os.environ.get("GEMINI_API_KEY")
@@ -116,12 +119,12 @@ class TTSService:
                 wav_file.writeframes(audio_bytes)
                 
             print(f"Successfully saved locally: {local_path}")
-            return text_hash
+            return relative_path
 
         except Exception as e:
             raise RuntimeError(f"Text-to-speech generation failed: {e}")
 
     @staticmethod
-    async def get_existing_speech(text_hash: str) -> bool:
-        local_path = os.path.join(os.path.dirname(__file__), "..", "local_audio", f"{text_hash}.wav")
+    async def get_existing_speech(text_hash: str, folder: str = "general") -> bool:
+        local_path = os.path.join(os.path.dirname(__file__), "..", "local_audio", folder, f"{text_hash}.wav")
         return os.path.exists(local_path)
