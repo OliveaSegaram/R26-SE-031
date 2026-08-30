@@ -591,7 +591,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          icon is IconData ? Icon(icon, color: color, size: 20) : FaIcon(icon, color: color, size: 20),
+          icon is IconData ? Icon(icon, color: color, size: 20) : FaIcon(icon as FaIconData, color: color, size: 20),
           const SizedBox(height: 4),
           Text(value, style: AppTypography.heading(fontSize: 16, color: AppColors.textPrimary)),
           Text(label, style: AppTypography.caption(fontSize: 10, color: AppColors.textSecondary), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
