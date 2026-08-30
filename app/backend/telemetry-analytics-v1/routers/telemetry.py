@@ -22,6 +22,7 @@ from services.ml_pipeline import generate_cognitive_profile, generate_comp2_prof
 from services.ml_engine import CognitiveLoadClassifier
 from services.report_generator import generate_pdf_report
 from services.assessment_report_generator import generate_assessment_report
+from services.behavioral_engine import extract_session_features
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Telemetry"])
 
@@ -66,8 +67,15 @@ async def submit_telemetry(
     session_doc["student_id"] = str(student_oid)
     session_doc["submitted_at"] = datetime.now(timezone.utc).isoformat()
 
-    await db.telemetry_events.insert_one(session_doc)
-    
+    # Retried submissions update the same complete session and summary.
+    session_key = {"student_id": req.student_id, "session_id": req.session_id, "events": {"$exists": True}}
+    await db.telemetry_events.update_one(session_key, {"$set": session_doc}, upsert=True)
+    summary = extract_session_features(req).model_dump()
+    await db.session_summaries.update_one(
+        {"student_id": req.student_id, "session_id": req.session_id},
+        {"$set": summary}, upsert=True,
+    )
+
     # Assess real-time cognitive load
     events_list = session_doc.get("events", [])
     cognitive_load = CognitiveLoadClassifier.classify(events_list)

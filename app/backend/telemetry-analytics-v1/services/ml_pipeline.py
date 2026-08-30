@@ -183,6 +183,13 @@ def compute_cognitive_indices(features: dict[str, float]) -> dict[str, float]:
     sustained_attention_score = _clamp(100.0 * math.exp(-features["hesitation_ratio"] / 2.0))
 
     return {
+        # New non-overclaiming behavioral terminology
+        "visual_task_performance": round(visual_processing_score, 1),
+        "phonological_task_performance": round(phonological_awareness_score, 1),
+        "motor_interaction_pattern": round(motor_precision_score, 1),
+        "attention_interaction_indicator": round(sustained_attention_score, 1),
+
+        # Legacy fields preserved temporarily for UI compatibility
         "visual_processing_index": round(visual_processing_score, 1),
         "phonological_task_index": round(phonological_awareness_score, 1),
         "motor_interaction_index": round(motor_precision_score, 1),

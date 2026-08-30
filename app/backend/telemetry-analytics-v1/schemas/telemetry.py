@@ -23,11 +23,33 @@ class TelemetryEvent(BaseModel):
     for ML-based dyslexia / dyspraxia profile generation.
     """
     event_id: str = Field(..., description="Unique identifier for this specific event")
+    skill_id: str = Field(default="unknown", description="Skill ID being practiced")
+    activity_id: str = Field(default="unknown", description="Activity ID being practiced")
     item_id: str = Field(default="unknown", description="Specific curriculum item ID, e.g., S2A1R01")
+    item_version: int = Field(default=1)
+    knowledge_component_id: str = Field(default="KC_UNKNOWN")
+    prompt_modality: str = Field(default="visual")
+    response_modality: str = Field(default="tap")
+    research_role: str = Field(default="primary")
+    difficulty_label: str = Field(default="medium")
+    difficulty_b: float = Field(default=0.0)
+    is_anchor: bool = Field(default=False)
+    targets: List[str] = Field(default_factory=list)
+    selected_answers: List[str] = Field(default_factory=list)
+    error_type: str = Field(default="unknown_error")
+
     activity_name: str
     round_number: int = Field(..., ge=1)
     is_correct: bool
     score: int = Field(default=0, ge=0, le=100)
+
+    # --- Attempt & Accuracy Tracking ---
+    attempt_count: int = Field(default=1, ge=1)
+    incorrect_attempt_count: int = Field(default=0, ge=0)
+    first_attempt_correct: Optional[bool] = Field(default=None)
+    final_correct: bool = Field(default=False)
+    time_to_first_response_ms: int = Field(default=0, ge=0)
+    time_to_correct_ms: int = Field(default=0, ge=0)
 
     # --- Dyslexia Cognitive Indicators ---
     first_touch_latency_ms: int = Field(
@@ -45,6 +67,14 @@ class TelemetryEvent(BaseModel):
     hesitation_count: int = Field(
         default=0, ge=0,
         description="Number of pauses > 2s without touch input (reading difficulty indicator)"
+    )
+    correction_count: int = Field(
+        default=0, ge=0,
+        description="Number of self-corrections made during the round"
+    )
+    hint_count: int = Field(
+        default=0, ge=0,
+        description="Number of hints requested or given during the round"
     )
 
     # --- Motor Analysis ---
