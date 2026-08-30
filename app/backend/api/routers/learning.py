@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any, List
 import httpx
 import uuid
 import asyncio
+import os
 from datetime import datetime
 import sys
 from pathlib import Path as PathLib
@@ -58,33 +59,32 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
     # 4. Call C3 (XAI Fusion)
     # We mock the external ML API calls here to simulate the processing and save the structured data.
     
-    # Save C1
-    c1_doc = {
-        "event_id": event_id,
-        "student_id": payload.student_id,
-        "session_id": payload.session_id,
-        "timestamp": datetime.utcnow().isoformat(),
-        "behavior": {
-            "accuracy": 100 if payload.response.is_correct else 0,
-            "median_latency_ms": payload.telemetry.total_round_latency_ms,
-            "latency_std": 100,
-            "latency_drift": 0.05,
-            "error_rate": 0 if payload.response.is_correct else 1,
-            "hesitation_rate": payload.telemetry.hesitation_count / max(1, payload.telemetry.total_round_latency_ms / 1000),
-            "misclick_rate": payload.telemetry.misclick_count / max(1, payload.telemetry.total_round_latency_ms / 1000)
-        },
-        "fatigue": {
-            "score": 0.1 # mock
-        },
-        "indices": {
-            "visual_processing_index": 80.0,
-            "phonological_task_index": 70.0,
-            "motor_interaction_index": 85.0,
-            "attention_stability_index": 75.0
-        },
-        "feature_version": "v1.0"
-    }
-    await db.behavioral_features.insert_one(c1_doc)
+    # 2. Call C1 (Behavioral)
+    try:
+        cursor = db.telemetry_events.find({"session_id": payload.session_id}).sort("timestamp", 1)
+        events_list = await cursor.to_list(length=100)
+        for e in events_list:
+            e.pop("_id", None)
+            
+        c1_payload = {
+            "session_id": payload.session_id,
+            "student_id": payload.student_id,
+            "activity_id": payload.activity_id,
+            "session_duration_seconds": 60, # Approximated for incremental events
+            "events": events_list
+        }
+        
+        telemetry_api_url = os.getenv("TELEMETRY_API_URL", "http://localhost:8025")
+        
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{telemetry_api_url}/api/v1/c1/session",
+                json=c1_payload,
+                timeout=5.0
+            )
+    except Exception as e:
+        print(f"Failed to trigger C1 pipeline: {e}")
+
     
     # Save C2
     c2_doc = {
@@ -206,8 +206,11 @@ async def process_interaction(payload: InteractionPayload, background_tasks: Bac
                 "fatigue_score": fatigue_score,
                 "learner_profile": learner_profile_dict
             }
+            
+            adaptive_api_url = os.getenv("ADAPTIVE_API_URL", "http://localhost:9017")
+            
             c4_resp = await client.post(
-                "http://localhost:9017/update_interaction",
+                f"{adaptive_api_url}/update_interaction",
                 json=adaptive_submit,
                 timeout=5.0
             )
