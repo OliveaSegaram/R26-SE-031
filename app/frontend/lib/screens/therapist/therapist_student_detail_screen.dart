@@ -490,7 +490,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           const SizedBox(height: 16),
           _buildHorizontalBar("Reading Fluency", 0.54, AppColors.gentleGreen),
           _buildHorizontalBar("Word Recognition", 0.68, AppColors.gentleGreen),
-          _buildHorizontalBar("Sentence Reading", 0.42, AppColors.warnRed),
+          _buildHorizontalBar("Sentence Reading", 0.42, AppColors.softCoral),
         ],
       ),
     );
@@ -514,7 +514,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             mainAxisSpacing: 8,
             childAspectRatio: 1.5,
             children: [
-              _buildStatCard("Fatigue", "0.28", Icons.battery_alert, AppColors.warnRed),
+              _buildStatCard("Fatigue", "0.28", Icons.battery_alert, AppColors.softCoral),
               _buildStatCard("IRT Ability (θ)", "0.18", Icons.person, AppColors.calmBlue),
               _buildStatCard("Current Diff", "0.70", Icons.trending_up, AppColors.warmAmber),
             ],
@@ -591,7 +591,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          icon is IconData ? Icon(icon, color: color, size: 20) : FaIcon(icon as IconData, color: color, size: 20),
+          icon is IconData ? Icon(icon, color: color, size: 20) : FaIcon(icon as FaIconData, color: color, size: 20),
           const SizedBox(height: 4),
           Text(value, style: AppTypography.heading(fontSize: 16, color: AppColors.textPrimary)),
           Text(label, style: AppTypography.caption(fontSize: 10, color: AppColors.textSecondary), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
