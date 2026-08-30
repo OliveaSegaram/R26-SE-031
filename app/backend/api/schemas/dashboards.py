@@ -42,85 +42,100 @@ class ParentActivityHistoryDTO(APIResponseBase):
     history: List[ActivityHistoryItem]
 
 # ==========================================
-# THERAPIST DASHBOARD DTOs
+# THERAPIST DASHBOARD DTOs (C1-C4 Architecture)
 # ==========================================
 
 class TherapistOverviewDTO(MLResponseBase):
-    accuracy: int
+    accuracy: float
     attempted_items: int
-    fluency_status: str
+    completed_sessions: int
+    reading_fluency_status: str
     overall_mastery: float
+    current_pattern: str
+    pattern_confidence: float
+    fatigue_status: str
+    last_active: str
 
-class TherapistBehavioralDTO(MLResponseBase):
-    accuracy: int
-    attempted: int
-    correct: int
-    incorrect: int
-    completion_rate: float
-    accuracy_trend: List[Dict[str, Any]] # [{"session": "SES001", "accuracy": 75}]
+class BehavioralIndices(BaseModel):
+    visual_processing: float
+    phonological_tasks: float
+    motor_interaction: float
+    attention_stability: float
 
-class SpeechComparisonItem(BaseModel):
-    expected: str
-    recognized: str
-    result: str # "✓" or "⚠"
+class BehavioralTrends(BaseModel):
+    accuracy: List[Dict[str, Any]]
+    latency: List[Dict[str, Any]]
+    fatigue: List[Dict[str, Any]]
 
-class TherapistSpeechAnalysisDTO(MLResponseBase):
-    # STT Results
-    stt_results: List[SpeechComparisonItem]
+class TherapistC1BehavioralDTO(MLResponseBase):
+    accuracy: float
+    median_latency_ms: float
+    latency_variability: float
+    latency_drift: float
+    error_rate: float
+    error_drift: float
+    hesitation_rate: float
+    misclick_rate: float
+    audio_replay_rate: float
+    fatigue_score: float
+    indices: BehavioralIndices
+    trends: BehavioralTrends
+
+class SpeechLatest(BaseModel):
+    expected_text: str
+    transcription: str
     wer: float
     stt_confidence: float
-    # Acoustic Results
-    voice_onset_time: float
-    acoustic_latency: float
-    detected_peaks: int
-    expected_syllables: int
-    peak_count_delta: int
-    intra_word_silence_ratio: float
+    acoustic_latency_ms: float
+    voice_onset_ms: float
+    peak_delta: int
+    silence_ratio: float
     jitter: float
     shimmer: float
     recording_quality: str
-    acoustic_confidence: float
-    # Charts
-    latency_trend: List[Dict[str, Any]]
-    silence_trend: List[Dict[str, Any]]
 
-class TherapistMultimodalEvidenceDTO(MLResponseBase):
-    expected_text: str
-    stt_text: str
-    wer: float
-    stt_confidence: float
-    latency: float
-    silence_ratio: float
-    peak_delta: int
-    jitter: float
-    shimmer: float
-    quality: str
-    combined_fluency: str
-    evidence_quality: str
-    interpretation: str
+class SpeechTrends(BaseModel):
+    accuracy: List[Dict[str, Any]]
+    wer: List[Dict[str, Any]]
+    latency: List[Dict[str, Any]]
+    silence_ratio: List[Dict[str, Any]]
+    peak_delta: List[Dict[str, Any]]
+
+class TherapistC2SpeechDTO(MLResponseBase):
+    latest: SpeechLatest
+    trends: SpeechTrends
 
 class ShapExplanation(BaseModel):
     feature: str
     contribution: float
 
-class TherapistProfileDTO(MLResponseBase):
-    selected_pattern: str
+class TherapistC3ProfileDTO(MLResponseBase):
+    primary_pattern: str
     probabilities: Dict[str, float]
-    shap_values: List[ShapExplanation]
-    interpretation: str
+    confidence: float
+    modalities_used: List[str]
+    shap_explanations: List[ShapExplanation]
 
-class TherapistKnowledgeDTO(MLResponseBase):
-    knowledge_components: Dict[str, float]
-    mastery_trend: List[Dict[str, Any]]
-
-class AdaptiveTimelineEvent(BaseModel):
-    attempt: int
+class KnowledgeComponent(BaseModel):
+    id: str
+    name: str
     mastery: float
-    difficulty: float
-    scaffold_desc: str
 
-class TherapistAdaptiveDTO(MLResponseBase):
-    learner_ability: float
-    item_difficulty: float
+class AdaptiveHistoryItem(BaseModel):
+    timestamp: str
+    mastery_before: float
+    mastery_after: float
     fatigue: float
-    decision_timeline: List[Dict[str, Any]]
+    previous_difficulty: float
+    selected_difficulty: float
+    scaffold_level: int
+    next_activity: str
+    decision: str
+    reason: str
+
+class TherapistC4AdaptiveDTO(MLResponseBase):
+    knowledge_components: List[KnowledgeComponent]
+    theta: float
+    theta_se: float
+    updated_at: str
+    history: List[AdaptiveHistoryItem]
