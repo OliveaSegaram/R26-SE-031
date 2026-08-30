@@ -17,7 +17,7 @@ class TtsService {
   
   TtsService._internal();
 
-  Future<void> speak(String text) async {
+  Future<void> speak(String text, {String folder = 'general'}) async {
     if (text.isEmpty) return;
     
     try {
@@ -26,7 +26,7 @@ class TtsService {
       final dir = await getTemporaryDirectory();
       // Create a unique, safe filename for this specific text
       final String safeName = base64UrlEncode(utf8.encode(text)).replaceAll('=', '');
-      final file = File('${dir.path}/tts_$safeName.wav');
+      final file = File('${dir.path}/tts_${folder}_$safeName.wav');
       
       // 1. ZERO LATENCY CACHE: Play instantly if we already downloaded it!
       if (await file.exists()) {
@@ -40,7 +40,7 @@ class TtsService {
       final response = await http.post(
         Uri.parse('$_baseUrl/tts/generate'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'text': text}),
+        body: jsonEncode({'text': text, 'folder': folder}),
       );
 
       if (response.statusCode == 200) {
