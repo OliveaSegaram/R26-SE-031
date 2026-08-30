@@ -134,6 +134,17 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
         "policy_version": "Policy-v1.0"
     }
     await db.adaptive_decisions.insert_one(c4_doc)
+    
+    # Save Speech Features
+    if payload.speech:
+        speech_doc = {
+            "event_id": event_id,
+            "student_id": payload.student_id,
+            "session_id": payload.session_id,
+            "timestamp": datetime.utcnow().isoformat(),
+            "speech_data": payload.speech
+        }
+        await db.speech_features.insert_one(speech_doc)
 
 
 @router.post("/interaction")

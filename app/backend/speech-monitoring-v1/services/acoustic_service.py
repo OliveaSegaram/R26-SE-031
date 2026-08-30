@@ -150,6 +150,9 @@ class AcousticAnalysisService:
             peak_delta = abs(detected_peaks - expected_syllables)
             
             # 4. Clinical Prosody (Jitter/Shimmer)
+            # Apply pre-emphasis filter to stabilize Praat's F0 tracking on noisy/pediatric voices
+            filtered_y = librosa.effects.preemphasis(y)
+            sf.write(temp_wav_path, filtered_y, sr, subtype='PCM_16')
             jitter, shimmer = self.extract_prosody(temp_wav_path)
             
             # 5. Intra-word Silence
