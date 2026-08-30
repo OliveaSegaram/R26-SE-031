@@ -14,18 +14,14 @@ class PolicyEngine:
             
         # 2. Mastery logic -> Advance if mastered
         next_activity = current_activity
-        difficulty = 0.5 # default difficulty
+        target_difficulty_b = 0.0 # default medium
         
         if kc_mastery > 0.85:
-            # Advance to next skill
-            next_activity = "Skill_3"
-            difficulty = 0.2
+            # High mastery -> Hard items
+            target_difficulty_b = 1.0
         elif kc_mastery < 0.3:
-            # Drop difficulty
-            difficulty = 0.1
-        elif kc_mastery > 0.6:
-            # Increase difficulty
-            difficulty = 0.8
+            # Low mastery -> Easy items
+            target_difficulty_b = -1.0
             
         # 3. Scaffolding level (0 to 3) based on learner profile
         scaffold_level = 0
@@ -33,14 +29,10 @@ class PolicyEngine:
             vo_risk = learner_profile.get("Visual-Orthographic Learning Pattern", 0.0)
             if kc_mastery < 0.5 and vo_risk > 0.5:
                 scaffold_level = 1
-                
-        # Mock item selection based on difficulty
-        next_item = "S2A1R01" # Would fetch from item bank based on closest difficulty
         
         return {
             "next_activity": next_activity,
-            "next_item": next_item,
-            "difficulty": difficulty,
+            "target_difficulty_b": target_difficulty_b,
             "scaffold_level": scaffold_level,
             "decision": decision
         }

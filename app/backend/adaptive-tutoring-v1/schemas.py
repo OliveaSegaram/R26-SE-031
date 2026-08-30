@@ -8,6 +8,8 @@ class InteractionRequest(BaseModel):
     knowledge_component_id: str
     item_id: str
     is_correct: bool
+    difficulty_b: float = Field(default=0.0)
+    is_anchor: bool = Field(default=False)
     current_session_duration_sec: int
     fatigue_score: float = 0.0
     learner_profile: Optional[Dict[str, float]] = None

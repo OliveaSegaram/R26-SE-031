@@ -7,6 +7,8 @@ from services.irt_engine import irt_engine
 from services.policy_engine import policy_engine
 
 import os
+import random
+from datetime import datetime
 
 app = FastAPI(
     title="Adaptive Tutoring Service",
@@ -74,6 +76,19 @@ async def update_interaction(request: InteractionRequest):
         learner_profile=request.learner_profile
     )
     
+    # UPSERT the incoming item to the item bank (Option B)
+    await db.item_bank.update_one(
+        {"item_id": request.item_id},
+        {"$set": {
+            "knowledge_component_id": request.knowledge_component_id,
+            "activity_id": request.activity_id,
+            "difficulty_b": request.difficulty_b,
+            "is_anchor": request.is_anchor,
+            "last_seen_at": datetime.utcnow()
+        }},
+        upsert=True
+    )
+    
     # Update DB
     await database.knowledge_states_collection.update_one(
         {"student_id": request.student_id},
@@ -84,10 +99,33 @@ async def update_interaction(request: InteractionRequest):
         upsert=True
     )
     
+    # 4. Fetch next item from Item Bank
+    target_difficulty = policy_output["target_difficulty_b"]
+    requires_anchor = random.random() < 0.25 # 25% chance of anchor item
+    
+    # Build query
+    query = {
+        "activity_id": policy_output["next_activity"],
+        "difficulty_b": target_difficulty
+    }
+    if requires_anchor:
+        query["is_anchor"] = True
+
+    # Try to find a matching item
+    next_item_doc = await db.item_bank.find_one(query)
+    
+    # Fallback if no exact match
+    if not next_item_doc:
+        query.pop("is_anchor", None)
+        next_item_doc = await db.item_bank.find_one(query)
+    
+    # Ultimate fallback
+    next_item_id = next_item_doc["item_id"] if next_item_doc else f"{policy_output['next_activity']}_R01"
+    
     next_action = NextAction(
         next_activity=policy_output["next_activity"],
-        next_item=policy_output["next_item"],
-        difficulty=policy_output["difficulty"],
+        next_item=next_item_id,
+        difficulty=target_difficulty,
         scaffold_level=policy_output["scaffold_level"],
         decision=policy_output["decision"]
     )
