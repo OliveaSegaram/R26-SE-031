@@ -31,7 +31,6 @@ def generate_research_pdf(student_id: str, c1_data: dict, c2_data: dict, c3_data
     # ---------------------------------------------------------
     add_section_header("1. Executive Summary")
     pdf.multi_cell(0, 6, "Experimental prototype. Synthetic results are not clinical validation or a finding about a child.", new_x="LMARGIN", new_y="NEXT")
-    pdf.multi_cell(0, 6, safe_str("Data origins: " + ", ".join(str(d.get("data_origin", "unspecified")) for d in (c1_data,c2_data,c3_data,c4_data))), new_x="LMARGIN", new_y="NEXT")
     pdf.cell(0, 8, f"Primary Pattern Detected: {safe_str(c3_data.get('primary_pattern'))} (Confidence: {safe_str(c3_data.get('confidence'))})", ln=True)
     pdf.cell(0, 8, f"Estimated Learner Theta (IRT): {safe_str(c4_data.get('theta'))}", ln=True)
     
