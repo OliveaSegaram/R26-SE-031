@@ -183,10 +183,10 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     final correctionRate = _c1Behavioral?['correction_rate'];
     final fatigue = _c1Behavioral?['behavioral_fatigue_proxy'];
 
-    final kcPerformance = _c1Behavioral?['kc_performance'] ?? {};
-    final errors = _c1Behavioral?['error_distribution'] ?? {};
+    final kcPerformance = _c1Behavioral?['kc_performance'] != null ? Map<String, dynamic>.from(_c1Behavioral!['kc_performance']) : <String, dynamic>{};
+    final errors = _c1Behavioral?['error_distribution'] != null ? Map<String, dynamic>.from(_c1Behavioral!['error_distribution']) : <String, dynamic>{};
     
-    final trends = _c1Behavioral?['trends'] ?? {};
+    final trends = _c1Behavioral?['trends'] != null ? Map<String, dynamic>.from(_c1Behavioral!['trends']) : <String, dynamic>{};
     final accTrendRaw = trends['accuracy'] as List<dynamic>? ?? [];
     final latTrendRaw = trends['latency'] as List<dynamic>? ?? [];
     final fatTrendRaw = trends['fatigue'] as List<dynamic>? ?? [];
