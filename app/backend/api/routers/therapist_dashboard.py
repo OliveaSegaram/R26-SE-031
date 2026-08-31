@@ -14,12 +14,14 @@ from schemas.dashboards import (
     ShapExplanation,
     TherapistC4AdaptiveDTO,
     KnowledgeComponent,
+    KnowledgeComponent,
     AdaptiveHistoryItem
 )
 import sys
 from pathlib import Path as PathLib
 sys.path.insert(0, str(PathLib(__file__).parent.parent.parent.parent))
 from shared.database import get_db
+from utils.research_report_generator import generate_research_pdf
 
 router = APIRouter(
     prefix="/api/v1/therapist/students",
@@ -64,8 +66,8 @@ async def get_therapist_overview(student_id: str = Path(...)):
         
     latest_ks = await db.knowledge_states.find_one({"student_id": student_id}, sort=[("updated_at", -1)])
     mastery = 0.0
-    if latest_ks and "knowledge_components" in latest_ks:
-        kcs = latest_ks["knowledge_components"]
+    if latest_ks and "knowledge_state" in latest_ks:
+        kcs = latest_ks["knowledge_state"]
         if kcs:
             mastery = sum(kcs.values()) / len(kcs)
             
@@ -104,7 +106,7 @@ async def get_therapist_c1_behavioral(student_id: str = Path(...)):
     cursor = db.session_summaries.find({"student_id": student_id}).sort("completed_at", -1).limit(10)
     history = await cursor.to_list(length=10)
     latest = history[0] if history else {}
-    kcs = latest.get("knowledge_components") or {}
+    kcs = latest.get("knowledge_state") or {}
     overall = latest.get("overall") or {}
     errors = latest.get("error_profile") or {}
     fatigue = latest.get("behavioral_fatigue_proxy")
@@ -128,7 +130,7 @@ async def get_therapist_c1_behavioral(student_id: str = Path(...)):
         for state in reversed(history):
             value = state.get("behavioral_fatigue_proxy") if fatigue_field else (
                 (state.get("overall") or {}).get(field)
-                if state.get("knowledge_components") else None
+                if state.get("knowledge_state") else None
             )
             result.append({"session": state["session_id"], "value": value})
         return result
@@ -265,14 +267,14 @@ async def get_therapist_c4_adaptive(student_id: str = Path(...)):
     db = get_db()
     
     latest_ks = await db.knowledge_states.find_one({"student_id": student_id}, sort=[("updated_at", -1)])
-    kcs_raw = latest_ks.get("knowledge_components", {}) if latest_ks else {}
-    theta = latest_ks.get("theta", 0.0) if latest_ks else 0.0
+    kcs_raw = latest_ks.get("knowledge_state", {}) if latest_ks else {}
+    theta = latest_ks.get("theta_estimate", 0.0) if latest_ks else 0.0
     theta_se = latest_ks.get("theta_se", 0.0) if latest_ks else 0.0
     updated_at = str(latest_ks.get("updated_at", get_current_time_str())) if latest_ks else get_current_time_str()
     
     kc_list = []
     for k, v in kcs_raw.items():
-        kc_list.append(KnowledgeComponent(id=f"KC_{k.upper().replace(' ', '_')}", name=k, mastery=v))
+        kc_list.append(KnowledgeComponent(id=f"{k.upper().replace(' ', '_')}", name=k, mastery=v))
         
     cursor = db.adaptive_decisions.find({"student_id": student_id}).sort("_id", 1).limit(20)
     history = await cursor.to_list(length=20)
@@ -280,15 +282,15 @@ async def get_therapist_c4_adaptive(student_id: str = Path(...)):
     timeline = []
     for dec in history:
         timeline.append(AdaptiveHistoryItem(
-            timestamp=str(dec.get("timestamp", get_current_time_str())),
+            timestamp=str(dec.get("created_at", get_current_time_str())),
             mastery_before=dec.get("mastery_before", 0.0),
             mastery_after=dec.get("mastery_after", 0.0),
-            fatigue=dec.get("fatigue_score", 0.0),
+            fatigue=dec.get("behavioral_fatigue_indicator", 0.0),
             previous_difficulty=dec.get("previous_difficulty", 0.0),
             selected_difficulty=dec.get("selected_difficulty", 0.0),
             scaffold_level=dec.get("scaffold_level", 0),
-            next_activity=dec.get("selected_activity", ""),
-            decision=dec.get("decision_reason", ""),
+            next_activity=dec.get("next_activity", ""),
+            decision=dec.get("decision", ""),
             reason=dec.get("decision_reason", "")
         ))
         
@@ -304,3 +306,51 @@ async def get_therapist_c4_adaptive(student_id: str = Path(...)):
         updated_at_state=updated_at,
         history=timeline
     )
+
+@router.get("/{student_id}/research-summary")
+async def get_therapist_research_summary(student_id: str = Path(...)):
+    """Aggregation endpoint for Therapist Dashboard that fetches all 4 components."""
+    # Run all 4 endpoint functions internally
+    c1 = await get_therapist_c1_behavioral(student_id)
+    c2 = await get_therapist_c2_speech(student_id)
+    c3 = await get_therapist_c3_profile(student_id)
+    c4 = await get_therapist_c4_adaptive(student_id)
+    
+    return {
+        "student_id": student_id,
+        "c1_behavioral": c1.dict(),
+        "c2_speech": c2.dict(),
+        "c3_profile": c3.dict(),
+        "c4_adaptive": c4.dict(),
+        "generated_at": get_current_time_str()
+    }
+
+@router.get("/{student_id}/report/pdf")
+async def get_therapist_research_pdf(student_id: str = Path(...)):
+    """Generates a downloadable PDF report incorporating C1-C4 data."""
+    try:
+        c1 = await get_therapist_c1_behavioral(student_id)
+        c2 = await get_therapist_c2_speech(student_id)
+        c3 = await get_therapist_c3_profile(student_id)
+        c4 = await get_therapist_c4_adaptive(student_id)
+        
+        pdf_bytes = generate_research_pdf(
+            student_id, 
+            c1.dict(), 
+            c2.dict(), 
+            c3.dict(), 
+            c4.dict()
+        )
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=Sipsara_Report_{student_id}.pdf"
+            }
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+

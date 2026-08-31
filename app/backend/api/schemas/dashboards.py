@@ -149,4 +149,5 @@ class TherapistC4AdaptiveDTO(MLResponseBase):
     theta: float
     theta_se: float
     updated_at: str
+    updated_at_state: Optional[str] = None  # Knowledge state last updated timestamp
     history: List[AdaptiveHistoryItem]

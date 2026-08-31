@@ -108,6 +108,37 @@ async def get_parent_progress(student_id: str = Path(...)):
         accuracy_trend=trend
     )
 
+@router.get("/{student_id}/skills")
+async def get_parent_skills(student_id: str = Path(...)):
+    db = get_db()
+    latest_ks = await db.knowledge_states.find_one({"student_id": student_id}, sort=[("updated_at", -1)])
+    
+    skills = []
+    if latest_ks and "knowledge_state" in latest_ks:
+        for kc, mastery in latest_ks["knowledge_state"].items():
+            status = "Mastered" if mastery >= 0.8 else ("Progressing" if mastery >= 0.4 else "Needs Support")
+            skills.append({
+                "skill_name": kc.replace("_", " ").title(),
+                "mastery_percentage": int(mastery * 100),
+                "status": status
+            })
+            
+    if not skills:
+        # Fallback to general skills if empty
+        skills = [
+            {"skill_name": "Visual Recognition", "mastery_percentage": 0, "status": "Not Started"},
+            {"skill_name": "Basic Letter Recognition", "mastery_percentage": 0, "status": "Not Started"},
+            {"skill_name": "Form Simple Words", "mastery_percentage": 0, "status": "Not Started"},
+            {"skill_name": "Form Simple Sentences", "mastery_percentage": 0, "status": "Not Started"},
+            {"skill_name": "Reading Comprehension", "mastery_percentage": 0, "status": "Not Started"}
+        ]
+        
+    return {
+        "updated_at": get_current_time_str(),
+        "student_id": student_id,
+        "skills": skills
+    }
+
 @router.get("/{student_id}/learning-pattern", response_model=ParentLearningPatternDTO)
 async def get_parent_learning_pattern(student_id: str = Path(...)):
     db = get_db()
