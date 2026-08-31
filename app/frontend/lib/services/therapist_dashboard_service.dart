@@ -34,4 +34,17 @@ class TherapistDashboardService {
     }
     throw Exception('Failed to download report');
   }
+
+  Future<Map<String, dynamic>> markAssessmentReviewed(String studentId, String category, bool reviewed) async {
+    final headers = await _getHeaders();
+    final response = await http.patch(
+      Uri.parse('$_baseUrl/$studentId/review-assessment/$category'),
+      headers: headers,
+      body: '{"reviewed": $reviewed}',
+    );
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(Uri.splitQueryString(response.body).isNotEmpty ? {} : {});
+    }
+    return {};
+  }
 }
