@@ -30,6 +30,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   Map<String, dynamic>? _c3Profile;
   Map<String, dynamic>? _c4Adaptive;
   String? _errorMessage;
+  String _selectedAssessmentCategory = 'all';
 
   @override
   void initState() {
@@ -86,9 +87,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.student['first_name'] ?? 'student';
+    final String name = _overview?['first_name'] ?? _overview?['student_name'] ?? widget.student['first_name'] ?? widget.student['student_name'] ?? widget.student['name'] ?? 'Student';
     final avatar = AvatarUtils.getCorrectedAvatarPath(
-        widget.student['avatar_url'] as String?, 
+        (_overview?['avatar_url'] ?? widget.student['avatar_url']) as String?, 
         'assets/images/characters/human/human_student_1.png');
 
     return DefaultTabController(
@@ -231,17 +232,11 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             child: Text(recommendation, style: const TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
           ),
           const SizedBox(height: 24),
+          // ── Clinical Therapist Report Export Box (ABOVE Parent Section) ──
+          _buildClinicalReportExportCard(),
+          const SizedBox(height: 24),
           // ── Parent Assessment Answers Section ──
           _buildAssessmentAnswersSection(widget.student),
-          const SizedBox(height: 32),
-          Center(
-            child: ElevatedButton.icon(
-              onPressed: _downloadPdf,
-              icon: const Icon(Icons.download),
-              label: const Text("Share Therapist Report (PDF)"),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.calmBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
-            ),
-          )
         ],
       ),
     );
@@ -828,16 +823,17 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   // CHILD PROFILE DETAILS CARD
   // ==========================================
   Widget _buildChildProfileCard(Map<String, dynamic> student) {
-    final firstName = student['first_name'] ?? 'Student';
-    final lastName = student['last_name'] ?? '';
+    final firstName = _overview?['first_name'] ?? student['first_name'] ?? _overview?['student_name'] ?? student['student_name'] ?? 'Student';
+    final lastName = _overview?['last_name'] ?? student['last_name'] ?? '';
     final fullName = '$firstName $lastName'.trim();
-    final grade = student['grade'] ?? 'Grade 1';
-    final age = student['age'] != null ? "${student['age']} Years" : "6 Years";
-    final studentId = student['student_id'] ?? student['id'] ?? student['_id'] ?? 'N/A';
-    final parentName = student['consent_parent_name'] ?? student['parent_name'] ?? 'Parent / Guardian';
+    final grade = _overview?['grade'] ?? student['grade'] ?? 'Grade 1';
+    final rawAge = _overview?['age'] ?? student['age'];
+    final age = rawAge != null ? "$rawAge Years" : "6 Years";
+    final studentId = student['student_id'] ?? student['id'] ?? student['_id'] ?? _overview?['student_id'] ?? 'N/A';
+    final parentName = _overview?['parent_name'] ?? student['consent_parent_name'] ?? student['parent_name'] ?? 'Parent / Guardian';
     final consentDate = student['consent_date'] ?? 'Registered';
     final avatar = AvatarUtils.getCorrectedAvatarPath(
-        student['avatar_url'] as String?, 
+        (_overview?['avatar_url'] ?? student['avatar_url']) as String?, 
         'assets/images/characters/human/human_student_1.png');
 
     return Container(
@@ -929,11 +925,116 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   }
 
   // ==========================================
-  // PARENT ASSESSMENT ANSWERS SECTION
+  // CLINICAL REPORT EXPORT CARD (ABOVE PARENT SECTION)
+  // ==========================================
+  Widget _buildClinicalReportExportCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.calmBlue.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.3), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.analytics_rounded, color: AppColors.calmBlue, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  "Clinical Therapist Summary Report",
+                  style: AppTypography.heading(fontSize: 16, color: AppColors.textPrimary),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: _downloadPdf,
+                icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                label: const Text("Share Report (PDF)"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.calmBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.info_outline_rounded, color: AppColors.calmBlue, size: 16),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "Note: The Clinical Report includes behavioral analytics, speech interaction metrics, and AI learner profile data. Parent Questionnaire responses below are managed separately and exported as individual medical review PDFs.",
+                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.3),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleAssessmentReviewed(String categoryKey, bool currentStatus) async {
+    final studentId = widget.student['student_id']?.toString() ?? widget.student['id']?.toString() ?? widget.student['_id']?.toString();
+    if (studentId == null) return;
+    try {
+      final newStatus = !currentStatus;
+      setState(() {
+        final revMap = Map<String, dynamic>.from(_overview?['reviewed_assessments'] ?? {});
+        revMap[categoryKey] = newStatus;
+        if (_overview != null) {
+          _overview!['reviewed_assessments'] = revMap;
+        }
+      });
+      await _dashboardService.markAssessmentReviewed(studentId, categoryKey, newStatus);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(newStatus ? 'Assessment marked as reviewed!' : 'Assessment review status updated.'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update review status: $e'), backgroundColor: Colors.red),
+      );
+      _loadAllData();
+    }
+  }
+
+  // ==========================================
+  // PARENT ASSESSMENT ANSWERS SECTION (ALL 4 ASSESSMENTS)
   // ==========================================
   Widget _buildAssessmentAnswersSection(Map<String, dynamic> student) {
-    final rawResults = student['assessment_results'] as List<dynamic>? ?? [];
-    final questions = ComprehensiveAssessmentData.basicAssessment;
+    final basicResults = (_overview?['assessment_results'] as List?)?.cast<bool>() ?? 
+                         (student['assessment_results'] as List?)?.cast<bool>() ?? [];
+
+    final compMap = (_overview?['comprehensive_assessment_results'] as Map?)?.cast<String, dynamic>() ?? 
+                    (student['comprehensive_assessment_results'] as Map?)?.cast<String, dynamic>() ?? {};
+
+    final readingResults = (compMap['reading'] as List?)?.cast<bool>() ?? [];
+    final writingResults = (compMap['writing'] as List?)?.cast<bool>() ?? [];
+    final otherResults = (compMap['other'] as List?)?.cast<bool>() ?? [];
+
+    final totalCompleted = (basicResults.isNotEmpty ? 1 : 0) +
+        (readingResults.isNotEmpty ? 1 : 0) +
+        (writingResults.isNotEmpty ? 1 : 0) +
+        (otherResults.isNotEmpty ? 1 : 0);
 
     return Container(
       width: double.infinity,
@@ -953,136 +1054,380 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Section Title
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Parent Assessment Answers", style: AppTypography.heading(fontSize: 18)),
-                    Text("${rawResults.length} Initial Screening Items Recorded", style: AppTypography.caption(color: AppColors.textSecondary)),
-                  ],
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => _exportAssessmentReport(student),
-                icon: const Icon(Icons.download_rounded, size: 16),
-                label: const Text("Export Sheet"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.calmBlue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                ),
+              Text("දෙමාපිය දැනුවත් කිරීමේ ප්‍රශ්නාවලිය", style: AppTypography.sinhala(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 2),
+              Text(
+                "Parent Awareness Questionnaires ($totalCompleted/4 Completed) — Tap to Expand Details",
+                style: AppTypography.caption(color: AppColors.textSecondary),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          if (rawResults.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.cream,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                "No initial parent assessment submitted for this student yet.",
-                style: TextStyle(color: AppColors.textSecondary, fontStyle: FontStyle.italic),
-              ),
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: questions.length,
-              separatorBuilder: (_, __) => const Divider(height: 16, color: AppColors.borderLight),
-              itemBuilder: (context, index) {
-                final q = questions[index];
-                final bool? val = index < rawResults.length ? rawResults[index] as bool? : null;
-                return _buildAssessmentQuestionItem(index + 1, q.textSi, q.textEn, val);
-              },
+
+          // Category Filter Chips for All 4 Assessments
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildCategoryChip('all', 'සියල්ල (All 4)', totalCompleted),
+                const SizedBox(width: 8),
+                _buildCategoryChip('basic', '1. මූලික පරීක්ෂණය (14)', basicResults.isNotEmpty ? 1 : 0),
+                const SizedBox(width: 8),
+                _buildCategoryChip('reading', '2. කියවීම හා දෘශ්‍ය (10)', readingResults.isNotEmpty ? 1 : 0),
+                const SizedBox(width: 8),
+                _buildCategoryChip('writing', '3. ලිවීම (6)', writingResults.isNotEmpty ? 1 : 0),
+                const SizedBox(width: 8),
+                _buildCategoryChip('other', '4. වෙනත් (12)', otherResults.isNotEmpty ? 1 : 0),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Render Collapsible Cards for Selected Category or All 4 Categories
+          if (_selectedAssessmentCategory == 'all' || _selectedAssessmentCategory == 'basic')
+            _buildCollapsibleAssessmentCard(
+              student: student,
+              categoryKey: 'basic',
+              titleSi: "1. මූලික ඩිස්ලෙක්සියා පරීක්ෂණය (14)",
+              titleEn: "1. Basic Dyslexia Screening",
+              questions: ComprehensiveAssessmentData.basicAssessment,
+              answers: basicResults,
+            ),
+
+          if (_selectedAssessmentCategory == 'all' || _selectedAssessmentCategory == 'reading')
+            _buildCollapsibleAssessmentCard(
+              student: student,
+              categoryKey: 'reading',
+              titleSi: "2. කියවීම හා දෘශ්‍ය සංජානන සම්බන්ධ අපහසුතා (10)",
+              titleEn: "2. Reading & Visual Perception",
+              questions: ComprehensiveAssessmentData.readingAssessment,
+              answers: readingResults,
+            ),
+
+          if (_selectedAssessmentCategory == 'all' || _selectedAssessmentCategory == 'writing')
+            _buildCollapsibleAssessmentCard(
+              student: student,
+              categoryKey: 'writing',
+              titleSi: "3. ලිවීම සම්බන්ධ අපහසුතා (6)",
+              titleEn: "3. Writing Difficulties",
+              questions: ComprehensiveAssessmentData.writingAssessment,
+              answers: writingResults,
+            ),
+
+          if (_selectedAssessmentCategory == 'all' || _selectedAssessmentCategory == 'other')
+            _buildCollapsibleAssessmentCard(
+              student: student,
+              categoryKey: 'other',
+              titleSi: "4. වෙනත් සම්බන්ධ අපහසුතා (12)",
+              titleEn: "4. Other Associated / Health & Speech",
+              questions: ComprehensiveAssessmentData.otherAssessment,
+              answers: otherResults,
             ),
         ],
       ),
     );
   }
 
-  Widget _buildAssessmentQuestionItem(int index, String textSi, String textEn, bool? val) {
-    Color bg;
-    Color border;
-    Color textColor;
-    String labelSi;
-    String labelEn;
+  Widget _buildCollapsibleAssessmentCard({
+    required Map<String, dynamic> student,
+    required String categoryKey,
+    required String titleSi,
+    required String titleEn,
+    required List<ComprehensiveQuestion> questions,
+    required List<bool> answers,
+  }) {
+    final isCompleted = answers.isNotEmpty;
+    final revMap = (_overview?['reviewed_assessments'] as Map?)?.cast<String, dynamic>() ?? 
+                   (student['reviewed_assessments'] as Map?)?.cast<String, dynamic>() ?? {};
+    final isReviewed = revMap[categoryKey] == true;
 
-    if (val == true) {
-      bg = const Color(0xFFFFF3ED);
-      border = AppColors.softCoral;
-      textColor = AppColors.softCoral;
-      labelSi = "ඔව්";
-      labelEn = "YES";
-    } else if (val == false) {
-      bg = const Color(0xFFEFF9F0);
-      border = AppColors.gentleGreen;
-      textColor = AppColors.gentleGreen;
-      labelSi = "නැත";
-      labelEn = "NO";
-    } else {
-      bg = AppColors.borderLight;
-      border = Colors.grey;
-      textColor = Colors.grey;
-      labelSi = "නැත";
-      labelEn = "N/A";
-    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isCompleted ? AppColors.calmBlue.withValues(alpha: 0.3) : AppColors.borderLight, width: 1.5),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          childrenPadding: const EdgeInsets.only(left: 14, right: 14, bottom: 14),
+          title: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(titleSi, style: AppTypography.sinhala(fontSize: 15, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 2),
+                    Text(titleEn, style: AppTypography.caption(color: AppColors.textSecondary, fontSize: 12)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isCompleted ? AppColors.gentleGreen.withValues(alpha: 0.15) : AppColors.warmAmber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: isCompleted ? AppColors.gentleGreen : AppColors.warmAmber),
+                ),
+                child: Text(
+                  isCompleted ? "Finished ✓" : "Pending",
+                  style: TextStyle(
+                    color: isCompleted ? AppColors.gentleGreen : AppColors.warmAmber,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (isCompleted) ...[
+                  InkWell(
+                    onTap: () => _toggleAssessmentReviewed(categoryKey, isReviewed),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isReviewed ? AppColors.calmBlue.withValues(alpha: 0.15) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: isReviewed ? AppColors.calmBlue : AppColors.textHint),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(isReviewed ? Icons.check_circle_rounded : Icons.outlined_flag_rounded,
+                              size: 13, color: isReviewed ? AppColors.calmBlue : AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            isReviewed ? "Reviewed ✓" : "Mark as Reviewed",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isReviewed ? AppColors.calmBlue : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  const Text("Not Submitted", style: TextStyle(fontSize: 11, color: AppColors.textHint, fontStyle: FontStyle.italic)),
+                ],
+                InkWell(
+                  onTap: () => _exportAssessmentMedicalReport(student, categoryKey),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.cream,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.picture_as_pdf_rounded, size: 13, color: AppColors.calmBlue),
+                        SizedBox(width: 4),
+                        Text(
+                          "Export PDF",
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.calmBlue),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          children: [
+            const Divider(height: 16),
+            _buildAssessmentCategoryTable(
+              titleSi: titleSi,
+              titleEn: titleEn,
+              questions: questions,
+              answers: answers,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Row(
+  Widget _buildCategoryChip(String categoryKey, String label, int statusCount) {
+    final isSelected = _selectedAssessmentCategory == categoryKey;
+    return ChoiceChip(
+      label: Text(label, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 12)),
+      selected: isSelected,
+      selectedColor: AppColors.calmBlue.withValues(alpha: 0.2),
+      backgroundColor: AppColors.cream,
+      side: BorderSide(color: isSelected ? AppColors.calmBlue : AppColors.borderLight, width: 1.5),
+      onSelected: (bool selected) {
+        if (selected) {
+          setState(() => _selectedAssessmentCategory = categoryKey);
+        }
+      },
+    );
+  }
+
+  Widget _buildAssessmentCategoryTable({
+    required String titleSi,
+    required String titleEn,
+    required List<ComprehensiveQuestion> questions,
+    required List<bool> answers,
+  }) {
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Category Header Title
         Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.calmBlue.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
+            color: AppColors.calmBlue.withValues(alpha: 0.12),
+            borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
+            border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.3)),
           ),
-          child: Text("$index", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.calmBlue)),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                textSi,
-                style: AppTypography.sinhala(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              Expanded(
+                child: Text("$titleSi ($titleEn)", style: AppTypography.sinhala(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.calmBlueDark)),
               ),
-              const SizedBox(height: 2),
-              Text(
-                textEn,
-                style: AppTypography.caption(fontSize: 12, color: AppColors.textSecondary),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: answers.isNotEmpty ? AppColors.gentleGreen : Colors.orange,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  answers.isNotEmpty ? "${answers.length}/${questions.length} Saved" : "Not Done",
+                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: border.withValues(alpha: 0.5)),
+
+        // Table Header
+        Table(
+          border: TableBorder.all(color: AppColors.borderLight),
+          columnWidths: const {
+            0: FixedColumnWidth(40),
+            1: FlexColumnWidth(4),
+            2: FixedColumnWidth(55),
+            3: FixedColumnWidth(55),
+            4: FixedColumnWidth(65),
+          },
+          children: [
+            TableRow(
+              decoration: const BoxDecoration(color: Color(0xFFF3F4F6)),
+              children: const [
+                TableCell(verticalAlignment: TableCellVerticalAlignment.middle, child: Padding(padding: EdgeInsets.all(6), child: Text("අංකය\n(No)", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10)))),
+                TableCell(verticalAlignment: TableCellVerticalAlignment.middle, child: Padding(padding: EdgeInsets.all(6), child: Text("ප්‍රශ්නය (Question)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)))),
+                TableCell(verticalAlignment: TableCellVerticalAlignment.middle, child: Padding(padding: EdgeInsets.all(6), child: Text("ඔව්\n(Yes)", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: AppColors.softCoral)))),
+                TableCell(verticalAlignment: TableCellVerticalAlignment.middle, child: Padding(padding: EdgeInsets.all(6), child: Text("නැත\n(No)", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: AppColors.gentleGreen)))),
+                TableCell(verticalAlignment: TableCellVerticalAlignment.middle, child: Padding(padding: EdgeInsets.all(6), child: Text("හඳුනාගත\nනොහැක", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Colors.grey)))),
+              ],
+            ),
+            for (int i = 0; i < questions.length; i++)
+              _buildTableRowItem(
+                index: i + 1,
+                question: questions[i],
+                answer: i < answers.length ? answers[i] : null,
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  TableRow _buildTableRowItem({
+    required int index,
+    required ComprehensiveQuestion question,
+    required bool? answer,
+  }) {
+    return TableRow(
+      children: [
+        TableCell(
+          verticalAlignment: TableCellVerticalAlignment.middle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Text("$index", textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
           ),
-          child: Text(
-            "$labelSi / $labelEn",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: textColor),
+        ),
+        TableCell(
+          verticalAlignment: TableCellVerticalAlignment.middle,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(question.textSi, style: AppTypography.sinhala(fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(question.textEn, style: AppTypography.caption(fontSize: 11, color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+        ),
+        // Column 1: ඔව් (Yes)
+        TableCell(
+          verticalAlignment: TableCellVerticalAlignment.middle,
+          child: Center(
+            child: answer == true
+                ? Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Color(0xFFFFF3ED), shape: BoxShape.circle),
+                    child: const Icon(Icons.check_circle_rounded, color: AppColors.softCoral, size: 20),
+                  )
+                : const Icon(Icons.check_box_outline_blank_rounded, color: Colors.black26, size: 18),
+          ),
+        ),
+        // Column 2: නැත (No)
+        TableCell(
+          verticalAlignment: TableCellVerticalAlignment.middle,
+          child: Center(
+            child: answer == false
+                ? Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: Color(0xFFEFF9F0), shape: BoxShape.circle),
+                    child: const Icon(Icons.check_circle_rounded, color: AppColors.gentleGreen, size: 20),
+                  )
+                : const Icon(Icons.check_box_outline_blank_rounded, color: Colors.black26, size: 18),
+          ),
+        ),
+        // Column 3: හඳුනාගත නොහැක (Uncertain / N/A)
+        TableCell(
+          verticalAlignment: TableCellVerticalAlignment.middle,
+          child: Center(
+            child: answer == null
+                ? Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: AppColors.borderLight, shape: BoxShape.circle),
+                    child: const Icon(Icons.help_outline_rounded, color: Colors.grey, size: 18),
+                  )
+                : const Icon(Icons.check_box_outline_blank_rounded, color: Colors.black26, size: 18),
           ),
         ),
       ],
     );
   }
 
-  Future<void> _exportAssessmentReport(Map<String, dynamic> student) async {
+  Future<void> _exportAssessmentMedicalReport(Map<String, dynamic> student, String categoryKey) async {
     final firstName = student['first_name'] ?? 'Student';
     final lastName = student['last_name'] ?? '';
     final fullName = '$firstName $lastName'.trim();
@@ -1091,50 +1436,88 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     final studentId = student['student_id'] ?? student['id'] ?? student['_id'] ?? 'N/A';
     final parentName = student['consent_parent_name'] ?? student['parent_name'] ?? 'Parent / Guardian';
 
-    final rawResults = student['assessment_results'] as List<dynamic>? ?? [];
-    final questions = ComprehensiveAssessmentData.basicAssessment;
+    final basicResults = (_overview?['assessment_results'] as List?)?.cast<bool>() ?? 
+                         (student['assessment_results'] as List?)?.cast<bool>() ?? [];
+
+    final compMap = (_overview?['comprehensive_assessment_results'] as Map?)?.cast<String, dynamic>() ?? 
+                    (student['comprehensive_assessment_results'] as Map?)?.cast<String, dynamic>() ?? {};
+
+    final readingResults = (compMap['reading'] as List?)?.cast<bool>() ?? [];
+    final writingResults = (compMap['writing'] as List?)?.cast<bool>() ?? [];
+    final otherResults = (compMap['other'] as List?)?.cast<bool>() ?? [];
 
     final StringBuffer buffer = StringBuffer();
-    buffer.writeln("==================================================");
-    buffer.writeln("SIPSARA LEARNING TUTORING - PARENT ASSESSMENT SHEET");
-    buffer.writeln("==================================================");
-    buffer.writeln("Student Name: $fullName");
-    buffer.writeln("Grade: $grade | Age: $age");
-    buffer.writeln("Student ID: $studentId");
-    buffer.writeln("Parent / Guardian: $parentName");
-    buffer.writeln("Generated On: ${DateTime.now().toString().split('.')[0]}");
-    buffer.writeln("==================================================\n");
+    buffer.writeln("==========================================================================================");
+    buffer.writeln("                             දෙමාපිය දැනුවත් කිරීමේ ප්‍රශ්නාවලිය");
+    buffer.writeln("   Parent Awareness Questionnaire — Basic Dyslexia Screening (for medical review)");
+    buffer.writeln("==========================================================================================");
+    buffer.writeln("දරුවාගේ නම (Child Name): $fullName | වයස (Age): $age ($grade) | දිනය (Date): ${DateTime.now().toString().split(' ')[0]}");
+    buffer.writeln("Student ID: $studentId | Parent/Guardian: $parentName");
+    buffer.writeln("==========================================================================================");
+    buffer.writeln("උපදෙස්: කරුණාකර පහත එක් එක් ප්‍රශ්නය සඳහා දරුවා පිළිබඳ ඔබේ නිරීක්ෂණයට අනුව");
+    buffer.writeln("\"ඔව්\", \"නැත\" හෝ \"හඳුනාගත නොහැක\" යන කොටුවලින් එකක් ලකුණු කරන්න.");
+    buffer.writeln("------------------------------------------------------------------------------------------\n");
 
-    buffer.writeln("INITIAL SCREENING ASSESSMENT RESPONSES (${rawResults.length}/14 Questions Completed):");
-    buffer.writeln("--------------------------------------------------");
+    void formatCategoryTable(String sectionTitle, List<ComprehensiveQuestion> questions, List<bool> answers) {
+      buffer.writeln("------------------------------------------------------------------------------------------");
+      buffer.writeln(sectionTitle);
+      buffer.writeln("------------------------------------------------------------------------------------------");
+      buffer.writeln("| අංකය | ප්‍රශ්නය                                               | ඔව්(Yes) | නැත(No) | හඳුනාගත නොහැක |");
+      buffer.writeln("+------+-------------------------------------------------------+----------+---------+----------------+");
 
-    for (int i = 0; i < questions.length; i++) {
-      final q = questions[i];
-      final bool? val = i < rawResults.length ? rawResults[i] as bool? : null;
-      final answer = val == true ? "YES / ඔව් (Risk Flagged)" : (val == false ? "NO / නැත (Normal)" : "NOT ANSWERED");
-      buffer.writeln("Q${(i + 1).toString().padLeft(2, '0')}. ${q.textEn}");
-      buffer.writeln("    [Sinhala]: ${q.textSi}");
-      buffer.writeln("    -> RESPONSE: $answer\n");
+      for (int i = 0; i < questions.length; i++) {
+        final q = questions[i];
+        final bool? val = i < answers.length ? answers[i] : null;
+        final String colYes = val == true ? "[ X ]" : "[   ]";
+        final String colNo = val == false ? "[ X ]" : "[   ]";
+        final String colNA = val == null ? "[ X ]" : "[   ]";
+
+        final numStr = (i + 1).toString().padLeft(2, '0');
+        buffer.writeln("|  $numStr  | ${q.textSi}");
+        buffer.writeln("|      | (${q.textEn})".padRight(63) + "|  $colYes  |  $colNo  |     $colNA     |");
+        buffer.writeln("+------+-------------------------------------------------------+----------+---------+----------------+");
+      }
+      buffer.writeln();
     }
+
+    if (categoryKey == 'all' || categoryKey == 'basic') {
+      formatCategoryTable("1. මූලික ඩිස්ලෙක්සියා පරීක්ෂණය (Basic Dyslexia Screening — 14 Questions)", ComprehensiveAssessmentData.basicAssessment, basicResults);
+    }
+    if (categoryKey == 'all' || categoryKey == 'reading') {
+      formatCategoryTable("2. කියවීම හා දෘශ්‍ය සංජානන සම්බන්ධ අපහසුතා (Reading & Visual Perception — 10 Questions)", ComprehensiveAssessmentData.readingAssessment, readingResults);
+    }
+    if (categoryKey == 'all' || categoryKey == 'writing') {
+      formatCategoryTable("3. ලිවීම සම්බන්ධ අපහසුතා (Writing Difficulties — 6 Questions)", ComprehensiveAssessmentData.writingAssessment, writingResults);
+    }
+    if (categoryKey == 'all' || categoryKey == 'other') {
+      formatCategoryTable("4. වෙනත් සම්බන්ධ අපහසුතා (Other Associated / Health & Speech — 12 Questions)", ComprehensiveAssessmentData.otherAssessment, otherResults);
+    }
+
+    buffer.writeln("------------------------------------------------------------------------------------------");
+    buffer.writeln("වෛද්‍ය නිරීක්ෂණ / අදහස් (Doctor Notes & Medical Observations):");
+    buffer.writeln("------------------------------------------------------------------------------------------");
+    buffer.writeln("1. ____________________________________________________________________________________");
+    buffer.writeln("2. ____________________________________________________________________________________");
+    buffer.writeln("3. ____________________________________________________________________________________\n");
 
     try {
       final reportText = buffer.toString();
       final XFile file = XFile.fromData(
         Uint8List.fromList(reportText.codeUnits),
         mimeType: 'text/plain',
-        name: '${fullName.replaceAll(' ', '_')}_Assessment_Report.txt',
+        name: '${fullName.replaceAll(' ', '_')}_Medical_Questionnaire.txt',
       );
       await SharePlus.instance.share(
         ShareParams(
           files: [file],
-          text: 'Sipsara Parent Assessment Report for $fullName',
-          subject: 'Assessment Report - $fullName',
+          text: 'Parent Awareness Questionnaire (Medical Review Report) for $fullName',
+          subject: 'Medical Questionnaire - $fullName',
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error exporting assessment: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error exporting medical questionnaire: $e'), backgroundColor: Colors.red),
       );
     }
   }

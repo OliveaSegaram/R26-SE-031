@@ -20,11 +20,7 @@ class DashboardSection extends StatelessWidget {
         TextButton(onPressed: onRetry, child: const Text('Retry')),
       ])));
     }
-    final origin = data?['data_origin'] ?? 'unspecified';
-    final dataset = data?['dataset_id'];
     return Column(children: [
-      Container(width: double.infinity, color: AppColors.warmAmber.withValues(alpha: .16), padding: const EdgeInsets.all(12),
-        child: Text('${origin == 'synthetic' ? 'SYNTHETIC PP2 DEMONSTRATION' : 'DATA ORIGIN: $origin'}${dataset == null ? '' : ' • $dataset'}\nExperimental evidence; not a diagnosis or validated result for Sri Lankan Grade 1 children. Missing data is unavailable.')),
       Expanded(child: child),
     ]);
   }
