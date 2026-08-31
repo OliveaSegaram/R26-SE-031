@@ -126,16 +126,17 @@
           "reading_comprehension",
           "textbook_reading"
         ],
-        "template_type": "generic_mcq_game",
+        "template_type": "interactive_story",
         "rounds": [
           {
-            "options": [
-              "පාසලට",
-              "කඩේට"
+            "prompt": "රෝස මල",
+            "overlays": [
+              {
+                "text": "රෝස මල",
+                "align_x": 0.0,
+                "align_y": 0.5
+              }
             ],
-            "correctOption": "පාසලට",
-            "correct_index": 0,
-            "prompt": "ළමයා පාසලට යයි. කොහෙද යන්නේ?",
             "item_id": "S6_A2_R01",
             "item_version": 1,
             "difficulty_label": "easy",
@@ -143,13 +144,14 @@
             "is_anchor": false
           },
           {
-            "options": [
-              "පොත",
-              "පෑන"
+            "prompt": "මව කිරිබත් උයයි.",
+            "overlays": [
+              {
+                "text": "මව කිරිබත් උයයි.",
+                "align_x": 0.0,
+                "align_y": 0.5
+              }
             ],
-            "correctOption": "පොත",
-            "correct_index": 0,
-            "prompt": "මල්ලී පොත කියවයි. මොනවාද කියවන්නේ?",
             "item_id": "S6_A2_R02",
             "item_version": 1,
             "difficulty_label": "medium",
@@ -157,13 +159,14 @@
             "is_anchor": false
           },
           {
-            "options": [
-              "බත්",
-              "පාන්"
+            "prompt": "පියා කඩේ යයි.",
+            "overlays": [
+              {
+                "text": "පියා කඩේ යයි.",
+                "align_x": 0.0,
+                "align_y": 0.5
+              }
             ],
-            "correctOption": "බත්",
-            "correct_index": 0,
-            "prompt": "නංගී බත් කයි. මොනවාද කන්නේ?",
             "item_id": "S6_A2_R03",
             "item_version": 1,
             "difficulty_label": "hard",
@@ -173,9 +176,9 @@
         ],
         "requires_speech_monitoring": true,
         "research_metadata": {
-          "knowledge_component_id": "KC_READING_COMPREHENSION",
+          "knowledge_component_id": "KC_ORAL_READING_FLUENCY",
           "prompt_modality": "visual_text",
-          "response_modality": "speech_and_tap",
+          "response_modality": "speech",
           "research_role": "secondary"
         }
       }
