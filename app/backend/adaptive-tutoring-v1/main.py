@@ -130,6 +130,29 @@ async def update_interaction(request: InteractionRequest):
         decision=policy_output["decision"]
     )
     
+    # 5. Log Adaptive Decision
+    await database.adaptive_decisions_collection.insert_one({
+        "student_id": request.student_id,
+        "session_id": request.session_id,
+        "activity_id": request.activity_id,
+        "item_id": request.item_id,
+        "knowledge_component_id": request.knowledge_component_id,
+        "mastery_before": current_prob,
+        "mastery_after": new_prob,
+        "theta_before": theta,
+        "theta_after": theta_new,
+        "previous_difficulty": item_b,
+        "selected_difficulty": target_difficulty,
+        "next_activity": policy_output["next_activity"],
+        "next_item": next_item_id,
+        "scaffold_level": policy_output["scaffold_level"],
+        "behavioral_fatigue_indicator": request.fatigue_score,
+        "decision": policy_output["decision"],
+        "decision_reason": f"Mastery {current_prob:.2f}→{new_prob:.2f}; θ {theta:.2f}→{theta_new:.2f}; selected difficulty {target_difficulty}",
+        "created_at": datetime.utcnow()
+    })
+
+    
     return TutoringResponse(
         student_id=request.student_id,
         updated_knowledge_state=knowledge_state,
