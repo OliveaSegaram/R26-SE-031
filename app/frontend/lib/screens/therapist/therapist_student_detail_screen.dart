@@ -192,7 +192,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     final fatTrendRaw = trends['fatigue'] as List<dynamic>? ?? [];
     
     final accTrend = accTrendRaw.any((e) => e['value'] is! num) ? <double>[] : accTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
-    final latTrend = latTrendRaw.any((e) => e['value'] is! num) ? <double>[] : latTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
+    final latTrend = latTrendRaw.any((e) => e['value'] is! num) ? <double>[] : latTrendRaw.map((e) => ((e['value'] as num) / 1000).toDouble()).toList();
     final fatTrend = fatTrendRaw.any((e) => e['value'] is! num) ? <double>[] : fatTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
     
     return SingleChildScrollView(
@@ -202,58 +202,157 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         children: [
           _buildModelInfo(_c1Behavioral ?? {}),
           const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 2.0,
-            children: [
-              _buildStatCard("First Attempt Acc", firstAttemptAcc != null ? "${(firstAttemptAcc * 100).toInt()}%" : "N/A", Icons.check_circle_outline, AppColors.gentleGreen),
-              _buildStatCard("Median Latency", medianLat != null ? "${medianLat.toInt()} ms" : "N/A", Icons.timer, AppColors.calmBlue),
-              _buildStatCard("Retry Rate", retryRate != null ? "${(retryRate * 100).toInt()}%" : "N/A", Icons.replay, AppColors.warmAmber),
-              _buildStatCard("Mean Attempts", meanAttempts != null ? meanAttempts.toStringAsFixed(1) : "N/A", Icons.numbers, AppColors.softCoral),
-              _buildStatCard("Time to Correct", medianTimeToCorrect != null ? "${medianTimeToCorrect.toInt()} ms" : "N/A", Icons.hourglass_bottom, AppColors.calmBlue),
-              _buildStatCard("Correction Rate", correctionRate != null ? "${(correctionRate * 100).toInt()}%" : "N/A", Icons.healing, AppColors.gentleGreen),
-              _buildStatCard("Behavioral Fatigue Indicator", fatigue != null ? fatigue.toStringAsFixed(2) : "N/A", Icons.battery_alert, AppColors.softCoral),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              int cardsPerRow = constraints.maxWidth > 600 ? 3 : 2;
+              double spacing = 12.0;
+              double cardWidth = (constraints.maxWidth - (spacing * (cardsPerRow - 1))) / cardsPerRow;
+              
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  SizedBox(width: cardWidth, child: _buildStatCard("First-Attempt Accuracy", firstAttemptAcc != null ? "${((firstAttemptAcc as num) * 100).toInt()}%" : "N/A", Icons.check_circle_outline, AppColors.gentleGreen)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("Retry Rate", retryRate != null ? "${((retryRate as num) * 100).toInt()}%" : "N/A", Icons.replay, AppColors.warmAmber)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("Mean Attempts", meanAttempts != null ? (meanAttempts as num).toStringAsFixed(1) : "N/A", Icons.numbers, AppColors.softCoral)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("Median Response Time", medianLat != null ? "${((medianLat as num) / 1000).toStringAsFixed(1)} s" : "N/A", Icons.timer, AppColors.calmBlue)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("Time to Correct", medianTimeToCorrect != null ? "${((medianTimeToCorrect as num) / 1000).toStringAsFixed(1)} s" : "N/A", Icons.hourglass_bottom, AppColors.calmBlue)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("Behavioral Fatigue Indicator", fatigue != null ? (fatigue as num).toStringAsFixed(2) : "N/A", Icons.battery_alert, AppColors.softCoral)),
+                ],
+              );
+            },
           ),
+          
+          const SizedBox(height: 24),
+          Text("Attempt Behavior", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          _buildAttemptBehaviorBar(firstAttemptAcc, retryRate),
           
           const SizedBox(height: 24),
           Text("Knowledge Component Performance", style: AppTypography.heading(fontSize: 18)),
           const SizedBox(height: 12),
           _buildHorizontalBar("Akshara Identity", kcPerformance['KC_AKSHARA_IDENTITY'], AppColors.calmBlue),
-          _buildHorizontalBar("Phoneme Grapheme", kcPerformance['KC_PHONEME_GRAPHEME'], AppColors.gentleGreen),
+          _buildHorizontalBar("Phoneme–Grapheme", kcPerformance['KC_PHONEME_GRAPHEME'], AppColors.gentleGreen),
           _buildHorizontalBar("Word Recognition", kcPerformance['KC_WORD_RECOGNITION'], AppColors.warmAmber),
           _buildHorizontalBar("Spelling Sequence", kcPerformance['KC_SPELLING_SEQUENCE'], AppColors.softCoral),
           _buildHorizontalBar("Sentence Language", kcPerformance['KC_SENTENCE_LANGUAGE'], AppColors.calmBlue),
           _buildHorizontalBar("Reading Comprehension", kcPerformance['KC_READING_COMPREHENSION'], AppColors.gentleGreen),
+          const SizedBox(height: 16),
+          Text("Supportive Measure", style: AppTypography.heading(fontSize: 14)),
+          const SizedBox(height: 8),
           _buildHorizontalBar("Visual Support", kcPerformance['KC_VISUAL_SUPPORT'], AppColors.warmAmber),
           
           const SizedBox(height: 24),
-          Text("Error Distribution", style: AppTypography.heading(fontSize: 18)),
+          Text("Observed Error Pattern", style: AppTypography.heading(fontSize: 18)),
           const SizedBox(height: 12),
-          _buildHorizontalBar("Visual Confusion", errors['visual_confusion'], AppColors.calmBlue),
-          _buildHorizontalBar("Phonological Confusion", errors['phonological_confusion'], AppColors.gentleGreen),
-          _buildHorizontalBar("Sequence Error", errors['sequence_error'], AppColors.warmAmber),
-          _buildHorizontalBar("Unknown Error", errors['unknown_error'], AppColors.softCoral),
+          _buildErrorPattern(errors),
           
-          
-          if (accTrend.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            TrendChart(title: "Accuracy Over Time", dataPoints: accTrend, lineColor: AppColors.gentleGreen, minY: 0),
-          ],
-          if (latTrend.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            TrendChart(title: "Median Latency (ms)", dataPoints: latTrend, lineColor: AppColors.calmBlue, minY: 0),
-          ],
-          if (fatTrend.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            TrendChart(title: "Behavioral Fatigue Indicator", dataPoints: fatTrend, lineColor: AppColors.softCoral, minY: 0),
-          ],
+          const SizedBox(height: 32),
+          Text("Performance Across Sessions", style: AppTypography.heading(fontSize: 18)),
+          const SizedBox(height: 12),
+          if (accTrend.length < 2 && latTrend.length < 2 && fatTrend.length < 2)
+            const Text("Complete more sessions to view this trend.", style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary))
+          else ...[
+            if (accTrend.length >= 2) ...[
+              TrendChart(title: "First-Attempt Accuracy", dataPoints: accTrend, lineColor: AppColors.gentleGreen, minY: 0),
+              const SizedBox(height: 24),
+            ],
+            if (latTrend.length >= 2) ...[
+              TrendChart(title: "Median Response Time (s)", dataPoints: latTrend, lineColor: AppColors.calmBlue, minY: 0),
+              const SizedBox(height: 24),
+            ],
+            if (fatTrend.length >= 2) ...[
+              TrendChart(title: "Behavioral Fatigue Indicator", dataPoints: fatTrend, lineColor: AppColors.softCoral, minY: 0),
+            ],
+          ]
         ],
       ),
+    );
+  }
+
+  Widget _buildAttemptBehaviorBar(dynamic firstAttemptAcc, dynamic retryRate) {
+    if (firstAttemptAcc == null || retryRate == null) {
+      return const Text("Not enough attempt data yet.", style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary));
+    }
+    double first = (firstAttemptAcc as num).toDouble();
+    double retry = (retryRate as num).toDouble();
+    if (first + retry == 0) {
+      return const Text("Not enough attempt data yet.", style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary));
+    }
+    // Normalize to 1.0 just in case
+    double total = first + retry;
+    double firstPct = first / total;
+    double retryPct = retry / total;
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              flex: (firstPct * 100).toInt(),
+              child: Container(
+                height: 24,
+                decoration: const BoxDecoration(
+                  color: AppColors.gentleGreen,
+                  borderRadius: BorderRadius.only(topLeft: Radius.circular(6), bottomLeft: Radius.circular(6)),
+                ),
+              ),
+            ),
+            if ((retryPct * 100).toInt() > 0)
+              Expanded(
+                flex: (retryPct * 100).toInt(),
+                child: Container(
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    color: AppColors.warmAmber,
+                    borderRadius: BorderRadius.only(topRight: Radius.circular(6), bottomRight: Radius.circular(6)),
+                  ),
+                ),
+              )
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("First-attempt success     ${(firstPct * 100).toInt()}%", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.gentleGreen)),
+            Text("Required retry     ${(retryPct * 100).toInt()}%", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.warmAmber)),
+          ],
+        )
+      ],
+    );
+  }
+
+  Widget _buildErrorPattern(Map<String, dynamic> errors) {
+    if (errors.isEmpty) {
+      return const Text("No error-pattern data available yet.", style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary));
+    }
+    
+    // Check if everything is null
+    bool hasData = false;
+    for (var key in ['visual_confusion', 'phonological_confusion', 'sequence_error', 'unknown_error']) {
+      if (errors[key] != null) hasData = true;
+    }
+    if (!hasData) {
+      return const Text("No error-pattern data available yet.", style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary));
+    }
+
+    double visual = (errors['visual_confusion'] as num?)?.toDouble() ?? 0.0;
+    double phono = (errors['phonological_confusion'] as num?)?.toDouble() ?? 0.0;
+    double seq = (errors['sequence_error'] as num?)?.toDouble() ?? 0.0;
+    double unk = (errors['unknown_error'] as num?)?.toDouble() ?? 0.0;
+    
+    if (visual == 0 && phono == 0 && seq == 0 && unk == 0) {
+      return const Text("No first-attempt errors observed in this session.", style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.gentleGreen));
+    }
+    
+    return Column(
+      children: [
+        _buildHorizontalBar("Visual Confusion", errors['visual_confusion'], AppColors.calmBlue),
+        _buildHorizontalBar("Phonological Confusion", errors['phonological_confusion'], AppColors.gentleGreen),
+        _buildHorizontalBar("Sequence Error", errors['sequence_error'], AppColors.warmAmber),
+        _buildHorizontalBar("Unknown / Unclassified", errors['unknown_error'], AppColors.softCoral),
+      ],
     );
   }
 
