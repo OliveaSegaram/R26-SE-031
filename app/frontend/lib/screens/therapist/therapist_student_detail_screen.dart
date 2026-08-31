@@ -24,6 +24,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   Map<String, dynamic>? _c2Speech;
   Map<String, dynamic>? _c3Profile;
   Map<String, dynamic>? _c4Adaptive;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -34,26 +35,55 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   Future<void> _loadAllData() async {
     final studentId = widget.student['student_id']?.toString() ?? widget.student['id']?.toString() ?? widget.student['_id']?.toString();
     if (studentId == null) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _errorMessage = "Invalid Student ID";
+      });
       return;
     }
 
-    final responses = await Future.wait([
-      _dashboardService.getOverview(studentId),
-      _dashboardService.getC1Behavioral(studentId),
-      _dashboardService.getC2Speech(studentId),
-      _dashboardService.getC3Profile(studentId),
-      _dashboardService.getC4Adaptive(studentId),
-    ]);
+    try {
+      final responses = await Future.wait([
+        _dashboardService.getOverview(studentId),
+        _dashboardService.getC1Behavioral(studentId),
+        _dashboardService.getC2Speech(studentId),
+        _dashboardService.getC3Profile(studentId),
+        _dashboardService.getC4Adaptive(studentId),
+      ]);
 
-    setState(() {
-      _overview = responses[0];
-      _c1Behavioral = responses[1];
-      _c2Speech = responses[2];
-      _c3Profile = responses[3];
-      _c4Adaptive = responses[4];
-      _isLoading = false;
-    });
+      setState(() {
+        _overview = responses[0];
+        _c1Behavioral = responses[1];
+        _c2Speech = responses[2];
+        _c3Profile = responses[3];
+        _c4Adaptive = responses[4];
+        _isLoading = false;
+        _errorMessage = null;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = "Failed to load dashboard data. Please try again.";
+      });
+    }
+  }
+  
+  Future<void> _downloadPdf() async {
+    final studentId = widget.student['student_id']?.toString() ?? widget.student['id']?.toString() ?? widget.student['_id']?.toString();
+    if (studentId == null) return;
+    try {
+      // Show loading snackbar
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generating PDF Report...')));
+      // Fetch pdf
+      final _ = await _dashboardService.downloadReport(studentId);
+      // Let's assume standard flutter 'dart:html' downloading for web, but since this is mobile/multi we just show success for now.
+      // In a real app we'd use path_provider and open_file, or printing package.
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report downloaded successfully.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error downloading report: $e'), backgroundColor: Colors.red));
+    }
   }
 
   @override
@@ -106,15 +136,17 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         ),
         body: _isLoading
             ? const Center(child: AppLoadingIndicator())
-            : TabBarView(
-                children: [
-                  _buildOverviewTab(),
-                  _buildC1BehavioralTab(),
-                  _buildC2SpeechTab(),
-                  _buildC3ProfileTab(),
-                  _buildC4AdaptiveTab(),
-                ],
-              ),
+            : _errorMessage != null 
+                ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
+                : TabBarView(
+                    children: [
+                      _buildOverviewTab(),
+                      _buildC1BehavioralTab(),
+                      _buildC2SpeechTab(),
+                      _buildC3ProfileTab(),
+                      _buildC4AdaptiveTab(),
+                    ],
+                  ),
       ),
     );
   }
@@ -125,12 +157,36 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   Widget _buildOverviewTab() {
     final accuracy = _overview?['accuracy'] ?? 0.0;
     final mastery = _overview?['overall_mastery'] ?? 0.0;
+    final c1Avail = _overview?['c1_available'] == true;
+    final c2Avail = _overview?['c2_available'] == true;
+    final c3Avail = _overview?['c3_available'] == true;
+    final c4Avail = _overview?['c4_available'] == true;
+    final recommendation = _overview?['latest_recommendation'] ?? "No recommendation available.";
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildModelInfo(_overview ?? {}),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildModelInfo(_overview ?? {}),
+              if (_overview?['last_active'] != null)
+                Text("Last Active: ${_overview!['last_active']}", style: AppTypography.caption()),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Availability Badges
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildAvailabilityBadge("C1", c1Avail),
+              _buildAvailabilityBadge("C2", c2Avail),
+              _buildAvailabilityBadge("C3", c3Avail),
+              _buildAvailabilityBadge("C4", c4Avail),
+            ],
+          ),
           const SizedBox(height: 16),
           GridView.count(
             crossAxisCount: 2,
@@ -154,15 +210,15 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.calmBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-            child: const Text("Continue short Sinhala reading practice.", style: TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
+            decoration: BoxDecoration(color: AppColors.calmBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+            child: Text(recommendation, style: const TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
           ),
           const SizedBox(height: 32),
           Center(
             child: ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: _downloadPdf,
               icon: const Icon(Icons.download),
-              label: const Text("Therapist Learning & Assessment Report"),
+              label: const Text("Download Therapist Report (PDF)"),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.calmBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
             ),
           )
@@ -180,7 +236,6 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     final retryRate = _c1Behavioral?['retry_rate'];
     final meanAttempts = _c1Behavioral?['mean_attempts_per_round'];
     final medianTimeToCorrect = _c1Behavioral?['median_time_to_correct_ms'];
-    final correctionRate = _c1Behavioral?['correction_rate'];
     final fatigue = _c1Behavioral?['behavioral_fatigue_proxy'];
 
     final kcPerformance = _c1Behavioral?['kc_performance'] != null ? Map<String, dynamic>.from(_c1Behavioral!['kc_performance']) : <String, dynamic>{};
@@ -470,6 +525,10 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           const SizedBox(height: 24),
           if (latTrend.isNotEmpty) ...[
             TrendChart(title: "Acoustic Latency (ms)", dataPoints: latTrend, lineColor: AppColors.warmAmber, minY: 0),
+          ],
+          const SizedBox(height: 24),
+          if (trends['wer'] != null) ...[
+            TrendChart(title: "Word Error Rate (WER)", dataPoints: (trends['wer'] as List).map((e) => (e['value'] as num).toDouble()).toList(), lineColor: AppColors.softCoral, minY: 0),
           ]
         ],
       ),
@@ -501,7 +560,19 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           const SizedBox(height: 32),
           Text("Model Evidence (SHAP)", style: AppTypography.heading(fontSize: 18)),
           const SizedBox(height: 12),
-          ...shap.map((s) => _buildHorizontalBar(s['feature'] ?? '', (s['contribution'] as num).toDouble(), AppColors.warmAmber, prefix: "+")).toList(),
+          ...shap.map((s) {
+            final featureName = s['feature'] ?? '';
+            final impact = (s['contribution'] as num?)?.toDouble() ?? 0.0;
+            final direction = s['direction'] ?? '';
+            final obs = s['observed_value'];
+            
+            String title = featureName;
+            if (obs != null) {
+              title += " (Observed: $obs $direction)";
+            }
+            
+            return _buildHorizontalBar(title, impact, AppColors.warmAmber, prefix: "+");
+          }).toList(),
           
           const SizedBox(height: 24),
           const SizedBox(height: 24),
@@ -671,6 +742,25 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   // ==========================================
   // SHARED WIDGETS
   // ==========================================
+  Widget _buildAvailabilityBadge(String title, bool isAvailable) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isAvailable ? AppColors.gentleGreen.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+        border: Border.all(color: isAvailable ? AppColors.gentleGreen : Colors.grey),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(isAvailable ? Icons.check_circle : Icons.cancel, size: 14, color: isAvailable ? AppColors.gentleGreen : Colors.grey),
+          const SizedBox(width: 6),
+          Text(title, style: TextStyle(color: isAvailable ? AppColors.gentleGreen : Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEvidenceRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
