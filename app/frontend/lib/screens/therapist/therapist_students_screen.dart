@@ -252,13 +252,14 @@ class _TherapistStudentsScreenState extends State<TherapistStudentsScreen> {
                             ],
                           ), // Closes Column
                         ), // Closes Container
-                        ); // Closes GestureDetector
+                        );
                       },
                     ),
-            ),
-          ],
+          ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
   }
 }
