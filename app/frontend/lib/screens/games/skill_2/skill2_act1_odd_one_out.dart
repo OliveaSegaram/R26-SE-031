@@ -397,14 +397,19 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
             size: 20,
           ),
           const SizedBox(width: 8),
-          Text(
-            '${_foundIndices.length} / $_targetCount සොයා ගත්තා',
-            style: AppTypography.sinhala(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: _foundIndices.length == _targetCount
-                  ? const Color(0xFF4E9E4E)
-                  : const Color(0xFF6B7280),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '${_foundIndices.length} / $_targetCount සොයා ගත්තා',
+                style: AppTypography.sinhala(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: _foundIndices.length == _targetCount
+                      ? const Color(0xFF4E9E4E)
+                      : const Color(0xFF6B7280),
+                ),
+              ),
             ),
           ),
         ],
