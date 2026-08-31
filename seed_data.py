@@ -3,6 +3,10 @@ from datetime import datetime
 import uuid
 import sys
 import os
+from dotenv import load_dotenv
+
+# Load .env from app/backend/api
+load_dotenv(os.path.join(os.path.dirname(__file__), "app", "backend", "api", ".env"))
 
 # Add app backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "app", "backend"))
@@ -16,9 +20,11 @@ async def seed_data():
     
     # 1. Clear old data for student
     await db.telemetry_events.delete_many({"student_id": student_id})
-    await db.speech_features.delete_many({"student_id": student_id})
+    await db.speech_analysis.delete_many({"student_id": student_id}) # Changed from speech_features
     await db.learner_profiles.delete_many({"student_id": student_id})
     await db.adaptive_decisions.delete_many({"student_id": student_id})
+    await db.knowledge_states.delete_many({"student_id": student_id})
+    await db.session_summaries.delete_many({"student_id": student_id})
     
     # 2. Insert Telemetry
     for i in range(5):
@@ -40,26 +46,56 @@ async def seed_data():
         
         # Insert Speech for the latest one
         if i == 4:
-            await db.speech_features.insert_one({
-                "event_id": event_id,
+            await db.speech_analysis.insert_one({
                 "student_id": student_id,
                 "session_id": f"SES00{i+1}",
                 "timestamp": datetime.utcnow().isoformat(),
-                "speech_data": {
-                    "transcription": "ගමට යමු",
-                    "Acoustic_Latency_ms": 1400,
-                    "Voice_Onset_ms": 300,
-                    "Detected_Peaks": 4,
-                    "Expected_Syllables": 4,
-                    "Peak_Count_Delta": 0,
-                    "Intra_Word_Silence_Ratio": 0.15,
-                    "Local_Jitter": 0.012,
-                    "Local_Shimmer": 0.025,
-                    "recording_quality": "good",
-                    "expected_text": "ගමට යමු",
-                    "word_error_rate": 0.0
-                }
+                "transcription": "ගමට යමු",
+                "wer": 0.0,
+                "acoustic_latency_ms": 1400,
+                "pause_count": 0,
+                "total_pause_duration_ms": 0,
+                "speech_rate": 2.5
             })
+            
+    # 2.5 Insert Session Summaries
+    for i in range(5):
+        await db.session_summaries.insert_one({
+            "student_id": student_id,
+            "session_id": f"SES00{i+1}",
+            "completed_at": datetime.utcnow().isoformat() + "Z",
+            "overall": {
+                "accuracy": 0.7 + (i * 0.05),
+                "latency_ms": 2000 - (i * 100)
+            },
+            "error_profile": {
+                "Visual-Orthographic": 2,
+                "Phonological": 1
+            },
+            "behavioral_fatigue_proxy": 0.1,
+            "activity_breakdown": {
+                "Activity_1": {
+                    "accuracy": 0.8,
+                    "trials": 3,
+                    "median_response_latency_ms": 1500
+                }
+            }
+        })
+        
+    # 2.6 Insert Knowledge State
+    await db.knowledge_states.insert_one({
+        "student_id": student_id,
+        "updated_at": datetime.utcnow().isoformat() + "Z",
+        "knowledge_state": {
+            "Visual Recognition": 0.85,
+            "Basic Letter Recognition": 0.70,
+            "Form Simple Words": 0.65,
+            "Form Simple Sentences": 0.50,
+            "Reading Comprehension": 0.40
+        },
+        "theta_estimate": 0.55,
+        "theta_se": 0.12
+    })
             
     # 3. Insert Learner Profile
     await db.learner_profiles.insert_one({
@@ -76,12 +112,17 @@ async def seed_data():
     await db.adaptive_decisions.insert_one({
         "student_id": student_id,
         "session_id": "SES005",
-        "timestamp": datetime.utcnow().isoformat(),
+        "activity_id": "Activity_1",
+        "created_at": datetime.utcnow().isoformat() + "Z",
+        "mastery_before": 0.60,
         "mastery_after": 0.68,
+        "behavioral_fatigue_indicator": 0.12,
+        "previous_difficulty": 0.4,
         "selected_difficulty": 0.5,
-        "selected_activity": "Skill_5",
         "scaffold_level": 1,
-        "decision_reason": "CONTINUE"
+        "next_activity": "Skill_5",
+        "decision": "ADVANCE",
+        "decision_reason": "Mastery improved without fatigue"
     })
     
     await close_mongo_connection()
