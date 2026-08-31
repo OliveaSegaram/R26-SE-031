@@ -18,7 +18,7 @@ class XAIEngine:
         features_path = os.path.join(os.path.dirname(__file__), "../models/feature_names.pkl")
         
         if not os.path.exists(model_path):
-            print("WARNING: XGBoost model not found. Using fallback mock mode.")
+            print("WARNING: XGBoost model not found. Inference unavailable.")
             self.model = None
             self.feature_names = []
             self.explainer = None
@@ -30,58 +30,20 @@ class XAIEngine:
         # Initialize TreeExplainer
         self.explainer = shap.TreeExplainer(self.model)
         
-    def _translate_shap_to_human(self, feature_name: str, feature_value: float, shap_val: float) -> str:
-        """
-        Translates specific features into human-readable learning pattern insights.
-        """
-        impact_dir = "positively" if shap_val > 0 else "negatively"
-        
-        if feature_name == "orthographic_confusion_index":
-            if feature_value > 0.4:
-                return f"Frequent selection of visually similar Sinhala mirror letters contributed {impact_dir} to the visual-orthographic pattern prediction."
-            return f"Visual letter discrimination contributed {impact_dir} to the pattern prediction."
-            
-        elif feature_name == "acoustic_latency_ms":
-            if feature_value > 1000:
-                return f"Vocal onset latency ({int(feature_value)}ms) contributed {impact_dir} to the phonological pattern prediction."
-            return f"Vocal onset latency was within typical bounds."
-            
-        elif feature_name == "peak_count_delta":
-            if feature_value >= 2:
-                return f"Vocal peak counts contributed {impact_dir} to the phonological pattern prediction."
-            return f"Syllable blending contributed to the pattern prediction."
-            
-        elif feature_name == "dimensionless_jerk":
-            if feature_value > 100:
-                return f"Touch trajectory kinematics contributed {impact_dir} to the visual-orthographic pattern prediction."
-            return f"Touch movement kinematics were typical."
-            
-        elif feature_name == "time_to_first_touch_ms":
-            if feature_value > 1200:
-                return f"Response latency ({int(feature_value)}ms) contributed {impact_dir} to the predicted learning pattern."
-            return "Initial response latency was typical."
-
-        elif feature_name == "intra_word_silence_ratio":
-            if feature_value > 0.2:
-                return f"Intra-word silence ratio ({feature_value*100:.1f}%) contributed {impact_dir} to the phonological pattern prediction."
-            return "Continuous vocalization was typical."
-            
-        # Fallback
-        return f"This feature contributed {impact_dir} to the predicted learning pattern."
+    def _translate_shap_to_human(self, feature_name, feature_value, shap_val):
+        direction = "increased" if shap_val > 0 else "decreased" if shap_val < 0 else "did not change"
+        return f"{feature_name}={feature_value:.3f} {direction} the explained class's raw model score relative to the SHAP reference. This is model attribution, not a clinical or causal conclusion."
 
     def analyze_patient(self, request_data: dict) -> dict:
         """
         Takes the flat dictionary of features, runs prediction and SHAP, and returns structured result.
         """
         if self.model is None:
-            # Fallback mock mode
-            probas = [0.6, 0.2, 0.1, 0.1]
-            predicted_class = 0
-            final_predicted_risk = 0.4
-            explanations = [
-                {"feature_name": "mock_feature", "value": 0.0, "shap_impact": "+0.00", "human_readable": "Model not loaded. Mock explanation."}
-            ]
+            raise RuntimeError("Fusion model unavailable; no fabricated prediction is returned")
         else:
+            missing = [name for name in self.feature_names if name not in request_data or not np.isfinite(float(request_data[name]))]
+            if missing:
+                raise ValueError("Missing/non-finite fusion inputs: " + ", ".join(missing))
             # Create DataFrame ensuring columns match exactly what model expects
             df = pd.DataFrame([request_data], columns=self.feature_names)
             
@@ -140,7 +102,7 @@ class XAIEngine:
                 "class_probabilities": {SUBTYPE_MAP[i]: round(float(p), 3) for i, p in enumerate(probas)},
                 "primary_pattern": SUBTYPE_MAP[predicted_class],
                 "confidence": round(float(np.max(probas)), 3),
-                "modalities_used": ["C1_Acoustic", "C2_Kinematic"],
+                "modalities_used": ["C2 speech acoustics", "C1 legacy kinematics", "demographics"],
                 "final_predicted_risk": round(final_predicted_risk, 3),
                 "validation_status": "synthetic_only"
             },

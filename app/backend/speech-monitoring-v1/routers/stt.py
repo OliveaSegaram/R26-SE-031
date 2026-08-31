@@ -95,13 +95,13 @@ async def analyze_reading(
         num_expected_words = len(expected_words)
         
         if num_expected_words == 0:
-            wer = 0.0
+            wer = None
         else:
             distance = levenshtein_distance(expected_text, transcription)
             wer = float(distance) / num_expected_words
             
         # Ensure WER is capped at 1.0 (100% error) for sanity, though technically it can exceed 1.0 if many insertions
-        wer = min(1.0, wer)
+        # WER is uncapped: insertion errors can exceed 1.
             
         return {
             "transcription": transcription,
@@ -152,15 +152,15 @@ async def analyze_acoustics(
         norm_expected = normalize_sinhala(expected_text)
         norm_recognized = normalize_sinhala(recognized_text)
         
-        exact_match = (norm_expected == norm_recognized)
+        exact_match = (norm_expected == norm_recognized) if norm_expected else None
         
         # Char Error Rate
         char_dist = levenshtein_distance(" ".join(norm_expected), " ".join(norm_recognized)) if norm_expected else 0
-        cer = min(1.0, float(char_dist) / max(len(norm_expected), 1))
+        cer = float(char_dist) / len(norm_expected) if norm_expected else None
         
         # Word Error Rate
         word_dist = levenshtein_distance(norm_expected, norm_recognized)
-        wer = min(1.0, float(word_dist) / max(len(norm_expected.split()), 1))
+        wer = float(word_dist) / len(norm_expected.split()) if norm_expected.split() else None
         
         # Normalized similarity
         max_len = max(len(norm_expected), len(norm_recognized), 1)
@@ -193,16 +193,24 @@ async def analyze_acoustics(
             "local_shimmer": results.get("Local_Shimmer", 0.0),
             "recording_quality": results.get("recording_quality", "unknown"),
             "created_at": datetime.utcnow(),
-            "feature_version": "c2-v2"
+            "feature_version": "c2-v2",
+            "data_origin": "observed",
+            "validation_status": "not_clinically_validated",
+            "measurement_status": "available" if recognized_text and norm_expected else "incomplete_transcription",
+            "persistence_status": "not_requested"
         }
         
         # Save to DB
         if student_id:
             try:
                 db = get_db()
-                await db.speech_features.insert_one(doc)
+                if not all((session_id, activity_id, item_id)):
+                    raise HTTPException(422, "student/session/activity/item identifiers are required for stored speech")
+                await db.speech_features.insert_one(dict(doc))
+                doc["persistence_status"] = "saved"
             except Exception as e:
-                print(f"Failed to save speech features to DB: {e}")
+                doc["persistence_status"] = "failed"
+                doc["measurement_status"] = "persistence_failed"
                 
         # Return merged results so the caller gets everything
         return {**results, **doc}

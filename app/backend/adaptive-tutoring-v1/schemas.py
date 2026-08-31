@@ -24,4 +24,5 @@ class NextAction(BaseModel):
 class TutoringResponse(BaseModel):
     student_id: str
     updated_knowledge_state: Dict[str, float]
+    previous_knowledge_state: Dict[str, float] = Field(default_factory=dict)
     next_action: NextAction

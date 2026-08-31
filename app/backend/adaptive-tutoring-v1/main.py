@@ -50,8 +50,10 @@ async def update_interaction(request: InteractionRequest):
     
     # Fetch Item parameters from Item Bank
     item_doc = await db.item_bank.find_one({"item_id": request.item_id})
-    item_b = item_doc.get("difficulty_b", 0.0) if item_doc else 0.0
+    item_b = item_doc.get("difficulty_b", request.difficulty_b) if item_doc else request.difficulty_b
     
+    previous_knowledge_state = dict(knowledge_state)
+
     # 1. Update BKT State
     new_prob = bkt_engine.update_knowledge_state(
         current_prob=current_prob,
@@ -94,7 +96,8 @@ async def update_interaction(request: InteractionRequest):
         {"student_id": request.student_id},
         {"$set": {
             "knowledge_state": knowledge_state,
-            "theta_estimate": theta_new
+            "theta_estimate": theta_new,
+            "updated_at": datetime.utcnow()
         }},
         upsert=True
     )
@@ -156,6 +159,7 @@ async def update_interaction(request: InteractionRequest):
     return TutoringResponse(
         student_id=request.student_id,
         updated_knowledge_state=knowledge_state,
+        previous_knowledge_state=previous_knowledge_state,
         next_action=next_action
     )
 

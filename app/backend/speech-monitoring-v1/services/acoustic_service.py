@@ -79,7 +79,7 @@ class AcousticAnalysisService:
         """
         if not HAS_PARSELMOUTH:
             print("Parselmouth is not installed. Skipping prosody extraction.")
-            return 0.0, 0.0
+            return None, None
             
         try:
             sound = parselmouth.Sound(audio_file_path)
@@ -90,13 +90,13 @@ class AcousticAnalysisService:
             shimmer = parselmouth.praat.call([sound, pulses], "Get shimmer (local)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
             
             # Handle NaN values
-            if math.isnan(jitter): jitter = 0.0
-            if math.isnan(shimmer): shimmer = 0.0
+            if math.isnan(jitter): jitter = None
+            if math.isnan(shimmer): shimmer = None
             
             return jitter, shimmer
         except Exception as e:
             print(f"Parselmouth error: {e}")
-            return 0.0, 0.0
+            return None, None
 
     def calculate_intra_word_silence(self, y: np.ndarray, sr: int, top_db: int = 20) -> float:
         """
@@ -216,14 +216,14 @@ class AcousticAnalysisService:
                 "Pause_Count": pause_count,
                 "Mean_Pause_Duration_ms": round(mean_pause_duration_ms, 2),
                 "Pause_Ratio": round(pause_ratio, 4),
-                "Local_Jitter": round(jitter, 6),
-                "Local_Shimmer": round(shimmer, 6),
+                "Local_Jitter": round(jitter, 6) if jitter is not None else None,
+                "Local_Shimmer": round(shimmer, 6) if shimmer is not None else None,
                 # Diagnostic quality flag: helps therapist interpret results
                 # "poor_prosody_extraction" = Praat failed on noisy audio (jitter/shimmer default to 0.0)
                 # "mostly_silence" = Child likely did not speak clearly
                 "recording_quality": (
                     "mostly_silence" if silence_ratio > 0.90
-                    else "poor_prosody_extraction" if (jitter == 0.0 and shimmer == 0.0 and t_voice_onset > 0)
+                    else "poor_prosody_extraction" if (jitter is None or shimmer is None)
                     else "good"
                 ),
             }

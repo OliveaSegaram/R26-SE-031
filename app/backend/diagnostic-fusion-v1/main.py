@@ -55,10 +55,10 @@ async def diagnose_patient(
     engine: XAIEngine = Depends(get_xai_engine)
 ):
     """
-    Ingests multimodal vectors (Acoustic + Kinematic) and returns a Dyslexia Subtype classification 
+    Ingests multimodal vectors and returns an experimental synthetic-trained learning-pattern classification
     along with SHAP explanations.
     """
-    if engine is None:
+    if engine is None or engine.model is None:
         return JSONResponse(
             status_code=503, 
             content={"status": "model_unavailable", "student_id": request.student_id}
@@ -71,6 +71,8 @@ async def diagnose_patient(
         flat_features.update(request.c2_kinematic_vector.dict())
         # Convert age from months to years to match training data scale (range 5-7 years)
         flat_features["age"] = request.student_age_months // 12
+        flat_features["gender"] = request.gender
+        flat_features["time_of_day_hour"] = request.time_of_day_hour
         
         # Analyze
         analysis_result = engine.analyze_patient(flat_features)
@@ -90,6 +92,7 @@ async def diagnose_patient(
         # Construct response
         response = FusionResponse(
             student_id=request.student_id,
+            data_origin=request.data_origin, dataset_id=request.dataset_id,
             learner_profile=analysis_result["learner_profile"],
             shap_explanations=analysis_result["shap_explanations"],
             llm_summary=llm_summary,
@@ -100,9 +103,11 @@ async def diagnose_patient(
         db = get_db()
         diagnosis_doc = response.dict()
         diagnosis_doc["created_at"] = datetime.utcnow()
+        diagnosis_doc["session_id"] = request.session_id
+        diagnosis_doc["item_id"] = request.item_id
         diagnosis_doc["feature_source"] = {
-            "c1_source": "telemetry_analytics_v1",
-            "c2_source": "speech_monitoring_v1"
+            "kinematics_source": "C1 legacy telemetry (request.c2_kinematic_vector)",
+            "acoustic_source": "C2 speech (request.c1_audio_vector)"
         }
         await db.learner_profiles.insert_one(diagnosis_doc)
         
@@ -122,6 +127,8 @@ async def diagnose_patient(
         
         return response
         
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         logger.exception("Error during diagnosis")
         raise HTTPException(status_code=500, detail="Internal ML processing error.")

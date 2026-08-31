@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 class AcousticFeatures(BaseModel):
     acoustic_latency_ms: float = Field(..., description="Time taken to access the word from memory (ms)")
@@ -24,14 +24,20 @@ class FusionRequest(BaseModel):
     student_id: str = Field(..., description="Unique ID for the student")
     c1_audio_vector: AcousticFeatures
     c2_kinematic_vector: KinematicFeatures
-    student_age_months: int = Field(..., description="Crucial baseline anchor")
+    student_age_months: int = Field(..., ge=60, le=95, description="Age in months; synthetic training support is ages 5–7")
+    gender: int = Field(..., ge=0, le=1, description="Legacy training covariate; not a diagnostic claim")
+    time_of_day_hour: int = Field(..., ge=0, le=23)
+    session_id: Optional[str] = None
+    item_id: Optional[str] = None
+    data_origin: Literal["synthetic", "observed", "unspecified"] = "unspecified"
+    dataset_id: Optional[str] = None
 
 class LearnerProfileOutput(BaseModel):
     class_probabilities: dict
     primary_pattern: str
     confidence: float
     modalities_used: list
-    base_prevalence_risk: float
+    base_prevalence_risk: Optional[float] = None  # No population prevalence has been estimated.
     final_predicted_risk: float
 
 class ShapExplanation(BaseModel):
@@ -51,3 +57,7 @@ class FusionResponse(BaseModel):
     llm_summary: Optional[str] = None
     llm_recommendations: Optional[str] = None
     model_version: str = "C3-v1.0"
+    data_origin: str = "unspecified"
+    dataset_id: Optional[str] = None
+    validation_status: str = "synthetic_only"
+    attribution_units: str = "predicted-class raw model margin; not percentage or causal effect"

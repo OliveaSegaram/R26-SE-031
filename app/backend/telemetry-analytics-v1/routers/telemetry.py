@@ -14,6 +14,8 @@ from fastapi.responses import StreamingResponse
 import io
 import httpx
 import asyncio
+import os
+import math
 from bson.objectid import ObjectId
 from datetime import datetime, timezone
 
@@ -29,44 +31,43 @@ from services.behavioral_engine import extract_session_features
 router = APIRouter(prefix="/api/v1/auth", tags=["Telemetry"])
 
 async def _trigger_c3_background(student_id: str, session_summary: dict):
+    """Fuse only explicitly linked, complete inputs. C1 accuracy is not path efficiency."""
+    db = get_db()
+    session_id = session_summary.get("session_id")
+    audit = {"student_id": student_id, "session_id": session_id, "timestamp": datetime.now(timezone.utc),
+             "model_name": "XGBoost", "validation_status": "synthetic_only"}
     try:
-        db = get_db()
-        # Fetch speech features
-        speech = await db.speech_features.find_one({"student_id": student_id}, sort=[("created_at", -1)])
-        if not speech:
-            speech = {}
-
-        overall = session_summary.get("overall", {})
-        error_prof = session_summary.get("error_profile", {})
-        
-        # Build payload matching FusionRequest
-        payload = {
-            "student_id": student_id,
-            "c1_audio_vector": {
-                "acoustic_latency_ms": speech.get("acoustic_latency_ms", 1000.0),
-                "peak_count_delta": speech.get("syllabic_event_mismatch", 0.0),
-                "intra_word_silence_ratio": speech.get("intra_word_silence_ratio", 0.1),
-                "local_jitter": speech.get("local_jitter", 0.01),
-                "local_shimmer": speech.get("local_shimmer", 0.05)
-            },
-            "c2_kinematic_vector": {
-                "time_to_first_touch_ms": overall.get("median_response_latency_ms") or 1200.0,
-                "orthographic_confusion_index": error_prof.get("visual_confusion_rate", 0.1),
-                "path_efficiency_ratio": overall.get("accuracy", 0.8),
-                "dimensionless_jerk": 50.0,
-                "dwell_time_ms": (overall.get("median_response_latency_ms") or 1200.0) * 0.3
-            },
-            "student_age_months": 72
-        }
-
+        speech = await db.speech_features.find_one({"student_id": student_id, "session_id": session_id}, sort=[("created_at", -1)]) or {}
+        motion = await db.kinematic_features.find_one({"student_id": student_id, "session_id": session_id}, sort=[("timestamp", -1)]) or {}
+        student = await db.students.find_one({"_id": ObjectId(student_id)}) or {}
+        audio_names = {"acoustic_latency_ms": "acoustic_latency_ms", "peak_count_delta": "syllabic_event_mismatch",
+                       "intra_word_silence_ratio": "intra_word_silence_ratio", "local_jitter": "local_jitter", "local_shimmer": "local_shimmer"}
+        motion_names = ("time_to_first_touch_ms", "orthographic_confusion_index", "path_efficiency_ratio", "dimensionless_jerk", "dwell_time_ms")
+        audio = {k: speech.get(v) for k,v in audio_names.items()}
+        kinematics = {k: motion.get(k) for k in motion_names}
+        demographics = {"student_age_months": student.get("age_months"), "gender": student.get("gender_code"),
+                        "time_of_day_hour": session_summary.get("time_of_day_hour")}
+        missing = [k for k,v in {**audio, **kinematics, **demographics}.items()
+                   if not isinstance(v, (int,float)) or isinstance(v,bool) or not math.isfinite(v)]
+        origins = {speech.get("data_origin"), motion.get("data_origin")}
+        if origins not in ({"observed"}, {"synthetic"}):
+            missing.append("consistent_explicit_modality_provenance")
+        if speech.get("measurement_status") not in ("available", "synthetic_features"):
+            missing.append("valid_speech_measurement")
+        if speech.get("dataset_id") != motion.get("dataset_id"):
+            missing.append("matched_dataset_id")
+        if missing:
+            await db.model_audit_log.insert_one({**audit, "status": "skipped_missing_inputs", "missing_features": missing})
+            return
+        payload = {"student_id": student_id, "session_id": session_id, "c1_audio_vector": audio,
+                   "c2_kinematic_vector": kinematics, **demographics,
+                   "data_origin": speech["data_origin"], "dataset_id": speech.get("dataset_id")}
         async with httpx.AsyncClient() as client:
-            response = await client.post("http://localhost:9016/diagnose", json=payload, timeout=10.0)
-            if response.status_code != 200:
-                print(f"C3 Fusion Error: {response.text}")
-            else:
-                print(f"C3 Fusion Success for {student_id}")
-    except Exception as e:
-        print(f"Background C3 trigger failed: {e}")
+            response = await client.post(os.getenv("FUSION_API_URL", "http://localhost:9016").rstrip("/") + "/diagnose", json=payload, timeout=15)
+            response.raise_for_status()
+        await db.model_audit_log.insert_one({**audit,"status":"fusion_requested","data_origin":speech["data_origin"]})
+    except Exception:
+        await db.model_audit_log.insert_one({**audit,"status":"fusion_failed"})
 
 # ---------------------------------------------------------------------------
 # POST /telemetry  — Ingest enriched telemetry session

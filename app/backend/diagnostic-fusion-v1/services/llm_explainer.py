@@ -32,21 +32,22 @@ async def generate_diagnostic_summary(
     confidence = learner_profile.get("confidence", 0.0)
     
     # Format SHAP values nicely
-    shap_text = "\n".join([f"- {feat}: {val:+.3f}" for feat, val in shap_explanations.items()])
+    shap_text = "\n".join([f"- {feat}: {float(val):+.3f}" for feat, val in shap_explanations.items()])
     
     system_prompt = (
-        "You are an expert pediatric speech and language therapist and reading specialist. "
-        "You analyze raw machine learning features (SHAP values) and translate them into a "
-        "warm, professional, and easy-to-understand diagnostic summary. Keep your output concise."
+        "Explain an experimental model trained on synthetic data. Do not diagnose a child, "
+        "infer a cause, claim clinical validity, or interpret class scores as calibrated disorder risks. "
+        "SHAP values are signed contributions to a model score, not causal evidence or percentages. "
+        "State the synthetic-only validation limitation. Keep your output concise."
     )
     
     user_prompt = (
         f"Student ID: {student_id}\n"
-        f"Predicted Dyslexia Subtype: {primary_pattern} (Confidence: {confidence:.0%})\n\n"
+        f"Experimental Learning Pattern: {primary_pattern} (Confidence: {confidence:.0%})\n\n"
         f"Machine Learning Feature Impacts (SHAP values):\n{shap_text}\n\n"
         "Based on this data, please provide two sections:\n"
-        "1. SUMMARY: A brief 2-sentence explanation of what these metrics mean for the child's reading profile.\n"
-        "2. RECOMMENDATIONS: 2 specific, actionable exercises or interventions the therapist should focus on."
+        "1. SUMMARY: Two sentences about the model output and its limitation, not a finding about the child.\n"
+        "2. RECOMMENDATIONS: Two data-quality or evaluation checks before interpreting the estimate."
     )
     
     headers = {
