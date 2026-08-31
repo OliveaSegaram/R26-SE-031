@@ -83,6 +83,16 @@ class TherapistOverviewDTO(MLResponseBase):
     c3_available: bool = False
     c4_available: bool = False
     latest_recommendation: Optional[str] = None
+    assessment_results: List[bool] = Field(default_factory=list)
+    comprehensive_assessment_results: Dict[str, List[bool]] = Field(default_factory=dict)
+    reviewed_assessments: Dict[str, bool] = Field(default_factory=dict)
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    student_name: Optional[str] = None
+    grade: Optional[str] = None
+    age: Optional[int] = None
+    avatar_url: Optional[str] = None
+    parent_name: Optional[str] = None
 
 class KCPerformance(BaseModel):
     KC_AKSHARA_IDENTITY: Optional[float] = None

@@ -23,7 +23,33 @@ async def get_therapist_overview(student_id: str):
     mastery = sum(values)/len(values) if values else None
     profile, _, pattern = pattern_profile(profiles[0] if profiles else {})
     fatigue = number(latest.get("behavioral_fatigue_proxy"))
+    from bson import ObjectId
+    student_doc = None
+    try:
+        student_doc = await db.students.find_one({"_id": ObjectId(student_id)})
+    except Exception:
+        pass
     session_ids = await db.session_summaries.distinct("session_id", {"student_id": student_id})
+    assessment_results = student_doc.get("assessment_results", []) if student_doc else []
+    comprehensive_assessment_results = student_doc.get("comprehensive_assessment_results", {}) if student_doc else {}
+    reviewed_assessments = student_doc.get("reviewed_assessments", {}) if student_doc else {}
+
+    first_name = student_doc.get("first_name") if student_doc else None
+    last_name = student_doc.get("last_name") if student_doc else None
+    student_name = f"{first_name or ''} {last_name or ''}".strip() if (first_name or last_name) else None
+    grade = student_doc.get("grade", "Grade 1") if student_doc else "Grade 1"
+    age = student_doc.get("age") if student_doc else None
+    avatar_url = student_doc.get("avatar_url") if student_doc else None
+
+    parent_name = None
+    if student_doc and "parent_id" in student_doc:
+        try:
+            parent_doc = await db.users.find_one({"_id": ObjectId(student_doc["parent_id"])})
+            if parent_doc:
+                parent_name = parent_doc.get("name")
+        except Exception:
+            pass
+
     return TherapistOverviewDTO(**mlbase(student_id, latest, "descriptive + BKT/IRT", "c1-v2"),
         accuracy=number((latest.get("overall") or {}).get("accuracy")), attempted_items=latest.get("total_trials", 0),
         completed_sessions=len([x for x in session_ids if x]), reading_fluency_status=mastery_status(mastery),
@@ -31,7 +57,17 @@ async def get_therapist_overview(student_id: str):
         fatigue_status="Unavailable" if fatigue is None else f"Proxy {fatigue:.2f} (not a diagnosis)",
         last_active=timestamp(latest), c1_available=bool(summaries), c2_available=bool(speeches),
         c3_available=bool(profiles), c4_available=bool(states),
-        latest_recommendation=decisions[0].get("decision_reason") if decisions else None)
+        latest_recommendation=decisions[0].get("decision_reason") if decisions else None,
+        assessment_results=assessment_results,
+        comprehensive_assessment_results=comprehensive_assessment_results,
+        reviewed_assessments=reviewed_assessments,
+        first_name=first_name,
+        last_name=last_name,
+        student_name=student_name,
+        grade=grade,
+        age=age,
+        avatar_url=avatar_url,
+        parent_name=parent_name)
 
 @router.get("/{student_id}/c1-behavioral", response_model=TherapistC1BehavioralDTO)
 async def get_therapist_c1_behavioral(student_id: str):
@@ -111,3 +147,29 @@ async def get_therapist_research_pdf(student_id: str):
     d=await get_therapist_research_summary(student_id)
     content=generate_research_pdf(student_id,d["c1_behavioral"],d["c2_speech"],d["c3_profile"],d["c4_adaptive"])
     return Response(content=content,media_type="application/pdf",headers={"Content-Disposition":f'attachment; filename="Sipsara_Report_{student_id}.pdf"'})
+
+from pydantic import BaseModel
+class ReviewAssessmentRequest(BaseModel):
+    reviewed: bool = True
+
+@router.patch("/{student_id}/review-assessment/{category}")
+async def review_assessment(student_id: str, category: str, req: ReviewAssessmentRequest):
+    db = get_db()
+    from bson import ObjectId
+    try:
+        obj_id = ObjectId(student_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid student ID")
+    
+    field = f"reviewed_assessments.{category}"
+    await db.students.update_one(
+        {"_id": obj_id},
+        {"$set": {field: req.reviewed}}
+    )
+    student_doc = await db.students.find_one({"_id": obj_id})
+    return {
+        "student_id": student_id,
+        "category": category,
+        "reviewed": req.reviewed,
+        "reviewed_assessments": student_doc.get("reviewed_assessments", {}) if student_doc else {}
+    }
