@@ -256,7 +256,6 @@ class _TherapistStudentsScreenState extends State<TherapistStudentsScreen> {
                       },
                     ),
             ),
-    );
           ],
         ),
       ),
