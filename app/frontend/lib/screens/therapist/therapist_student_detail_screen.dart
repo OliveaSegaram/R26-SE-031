@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'package:share_plus/share_plus.dart';
 import '../../theme/app_theme.dart';
 import '../../services/therapist_dashboard_service.dart';
@@ -7,6 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../widgets/app_loading_indicator.dart';
 import '../../widgets/trend_chart.dart';
 import '../../widgets/research_evidence_panel.dart';
+import '../../models/comprehensive_assessment_questions.dart';
 
 class TherapistStudentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -173,6 +175,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             ],
           ),
           const SizedBox(height: 16),
+          // ── Child Details Section ──
+          _buildChildProfileCard(widget.student),
+          const SizedBox(height: 16),
           // Availability Badges
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -209,6 +214,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             decoration: BoxDecoration(color: AppColors.calmBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
             child: Text(recommendation, style: const TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
           ),
+          const SizedBox(height: 24),
+          // ── Parent Assessment Answers Section ──
+          _buildAssessmentAnswersSection(widget.student),
           const SizedBox(height: 32),
           Center(
             child: ElevatedButton.icon(
@@ -798,5 +806,320 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         ],
       ),
     );
+  }
+
+  // ==========================================
+  // CHILD PROFILE DETAILS CARD
+  // ==========================================
+  Widget _buildChildProfileCard(Map<String, dynamic> student) {
+    final firstName = student['first_name'] ?? 'Student';
+    final lastName = student['last_name'] ?? '';
+    final fullName = '$firstName $lastName'.trim();
+    final grade = student['grade'] ?? 'Grade 1';
+    final age = student['age'] != null ? "${student['age']} Years" : "6 Years";
+    final studentId = student['student_id'] ?? student['id'] ?? student['_id'] ?? 'N/A';
+    final parentName = student['consent_parent_name'] ?? student['parent_name'] ?? 'Parent / Guardian';
+    final consentDate = student['consent_date'] ?? 'Registered';
+    final avatar = AvatarUtils.getCorrectedAvatarPath(
+        student['avatar_url'] as String?, 
+        'assets/images/characters/human/human_student_1.png');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.calmBlue.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundImage: AssetImage(avatar),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fullName,
+                      style: AppTypography.heading(fontSize: 20, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$grade • Age: $age',
+                      style: AppTypography.subheading(fontSize: 14, color: AppColors.calmBlue),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.gentleGreen.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.gentleGreen.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.verified_user_rounded, color: AppColors.gentleGreen, size: 16),
+                    SizedBox(width: 4),
+                    Text('Active Student', style: TextStyle(color: AppColors.gentleGreen, fontWeight: FontWeight.bold, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24, thickness: 1, color: AppColors.borderLight),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              _buildDetailChip(Icons.badge_outlined, "Student ID", studentId.toString()),
+              _buildDetailChip(Icons.family_restroom_rounded, "Parent / Guardian", parentName.toString()),
+              _buildDetailChip(Icons.calendar_today_rounded, "Consent Date", consentDate.toString()),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailChip(IconData icon, String label, String value) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: AppColors.textSecondary),
+        const SizedBox(width: 6),
+        Text('$label: ', style: AppTypography.caption(color: AppColors.textSecondary)),
+        Flexible(
+          child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.textDark), overflow: TextOverflow.ellipsis),
+        ),
+      ],
+    );
+  }
+
+  // ==========================================
+  // PARENT ASSESSMENT ANSWERS SECTION
+  // ==========================================
+  Widget _buildAssessmentAnswersSection(Map<String, dynamic> student) {
+    final rawResults = student['assessment_results'] as List<dynamic>? ?? [];
+    final questions = ComprehensiveAssessmentData.basicAssessment;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Parent Assessment Answers", style: AppTypography.heading(fontSize: 18)),
+                    Text("${rawResults.length} Initial Screening Items Recorded", style: AppTypography.caption(color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => _exportAssessmentReport(student),
+                icon: const Icon(Icons.download_rounded, size: 16),
+                label: const Text("Export Sheet"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.calmBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (rawResults.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.cream,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                "No initial parent assessment submitted for this student yet.",
+                style: TextStyle(color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: questions.length,
+              separatorBuilder: (_, __) => const Divider(height: 16, color: AppColors.borderLight),
+              itemBuilder: (context, index) {
+                final q = questions[index];
+                final bool? val = index < rawResults.length ? rawResults[index] as bool? : null;
+                return _buildAssessmentQuestionItem(index + 1, q.textSi, q.textEn, val);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssessmentQuestionItem(int index, String textSi, String textEn, bool? val) {
+    Color bg;
+    Color border;
+    Color textColor;
+    String labelSi;
+    String labelEn;
+
+    if (val == true) {
+      bg = const Color(0xFFFFF3ED);
+      border = AppColors.softCoral;
+      textColor = AppColors.softCoral;
+      labelSi = "ඔව්";
+      labelEn = "YES";
+    } else if (val == false) {
+      bg = const Color(0xFFEFF9F0);
+      border = AppColors.gentleGreen;
+      textColor = AppColors.gentleGreen;
+      labelSi = "නැත";
+      labelEn = "NO";
+    } else {
+      bg = AppColors.borderLight;
+      border = Colors.grey;
+      textColor = Colors.grey;
+      labelSi = "නැත";
+      labelEn = "N/A";
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.calmBlue.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Text("$index", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.calmBlue)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                textSi,
+                style: AppTypography.sinhala(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                textEn,
+                style: AppTypography.caption(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: border.withValues(alpha: 0.5)),
+          ),
+          child: Text(
+            "$labelSi / $labelEn",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: textColor),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _exportAssessmentReport(Map<String, dynamic> student) async {
+    final firstName = student['first_name'] ?? 'Student';
+    final lastName = student['last_name'] ?? '';
+    final fullName = '$firstName $lastName'.trim();
+    final grade = student['grade'] ?? 'Grade 1';
+    final age = student['age'] != null ? "${student['age']} Years" : "6 Years";
+    final studentId = student['student_id'] ?? student['id'] ?? student['_id'] ?? 'N/A';
+    final parentName = student['consent_parent_name'] ?? student['parent_name'] ?? 'Parent / Guardian';
+
+    final rawResults = student['assessment_results'] as List<dynamic>? ?? [];
+    final questions = ComprehensiveAssessmentData.basicAssessment;
+
+    final StringBuffer buffer = StringBuffer();
+    buffer.writeln("==================================================");
+    buffer.writeln("SIPSARA LEARNING TUTORING - PARENT ASSESSMENT SHEET");
+    buffer.writeln("==================================================");
+    buffer.writeln("Student Name: $fullName");
+    buffer.writeln("Grade: $grade | Age: $age");
+    buffer.writeln("Student ID: $studentId");
+    buffer.writeln("Parent / Guardian: $parentName");
+    buffer.writeln("Generated On: ${DateTime.now().toString().split('.')[0]}");
+    buffer.writeln("==================================================\n");
+
+    buffer.writeln("INITIAL SCREENING ASSESSMENT RESPONSES (${rawResults.length}/14 Questions Completed):");
+    buffer.writeln("--------------------------------------------------");
+
+    for (int i = 0; i < questions.length; i++) {
+      final q = questions[i];
+      final bool? val = i < rawResults.length ? rawResults[i] as bool? : null;
+      final answer = val == true ? "YES / ඔව් (Risk Flagged)" : (val == false ? "NO / නැත (Normal)" : "NOT ANSWERED");
+      buffer.writeln("Q${(i + 1).toString().padLeft(2, '0')}. ${q.textEn}");
+      buffer.writeln("    [Sinhala]: ${q.textSi}");
+      buffer.writeln("    -> RESPONSE: $answer\n");
+    }
+
+    try {
+      final reportText = buffer.toString();
+      final XFile file = XFile.fromData(
+        Uint8List.fromList(reportText.codeUnits),
+        mimeType: 'text/plain',
+        name: '${fullName.replaceAll(' ', '_')}_Assessment_Report.txt',
+      );
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [file],
+          text: 'Sipsara Parent Assessment Report for $fullName',
+          subject: 'Assessment Report - $fullName',
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error exporting assessment: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 }
