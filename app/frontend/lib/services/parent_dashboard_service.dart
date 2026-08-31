@@ -4,7 +4,7 @@ import '../config/api_config.dart';
 import '../services/auth_service.dart';
 
 class ParentDashboardService {
-  final String _baseUrl = ApiConfig.authBaseUrl.replaceFirst('/auth', '/parent/students');
+  final String _baseUrl = ApiConfig.telemetryBaseUrl.replaceFirst('/auth', '/parent/students');
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await AuthService().getAccessToken();

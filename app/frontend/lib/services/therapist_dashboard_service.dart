@@ -4,7 +4,7 @@ import '../config/api_config.dart';
 import '../services/auth_service.dart';
 
 class TherapistDashboardService {
-  final String _baseUrl = ApiConfig.authBaseUrl.replaceFirst('/auth', '/therapist/students');
+  final String _baseUrl = ApiConfig.telemetryBaseUrl.replaceFirst('/auth', '/therapist/students');
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await AuthService().getAccessToken();

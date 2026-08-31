@@ -32,7 +32,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   }
 
   Future<void> _loadAllData() async {
-    final studentId = widget.student['id']?.toString() ?? widget.student['_id']?.toString();
+    final studentId = widget.student['student_id']?.toString() ?? widget.student['id']?.toString() ?? widget.student['_id']?.toString();
     if (studentId == null) {
       setState(() => _isLoading = false);
       return;
