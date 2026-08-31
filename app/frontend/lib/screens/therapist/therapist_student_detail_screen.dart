@@ -1306,7 +1306,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text("$titleSi ($titleEn)", style: AppTypography.sinhala(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.calmBlueDark)),
+                child: SelectableText("$titleSi ($titleEn)", style: AppTypography.sinhala(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.calmBlueDark)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1365,7 +1365,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           verticalAlignment: TableCellVerticalAlignment.middle,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            child: Text("$index", textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            child: SelectableText("$index", textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
           ),
         ),
         TableCell(
@@ -1375,9 +1375,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(question.textSi, style: AppTypography.sinhala(fontSize: 13, fontWeight: FontWeight.w600)),
+                SelectableText(question.textSi, style: AppTypography.sinhala(fontSize: 13, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
-                Text(question.textEn, style: AppTypography.caption(fontSize: 11, color: AppColors.textSecondary)),
+                SelectableText(question.textEn, style: AppTypography.caption(fontSize: 11, color: AppColors.textSecondary)),
               ],
             ),
           ),
