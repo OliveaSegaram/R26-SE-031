@@ -4,7 +4,8 @@ import '../config/api_config.dart';
 import '../services/auth_service.dart';
 
 class TherapistDashboardService {
-  final String _baseUrl = ApiConfig.telemetryBaseUrl.replaceFirst('/auth', '/therapist/students');
+  // Therapist dashboard routes live on the auth service (port 8015), NOT the telemetry service.
+  String get _baseUrl => ApiConfig.therapistDashboardBaseUrl;
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await AuthService().getAccessToken();

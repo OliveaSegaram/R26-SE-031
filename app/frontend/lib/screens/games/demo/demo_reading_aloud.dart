@@ -62,9 +62,23 @@ class _DemoReadingAloudState extends State<DemoReadingAloud>
 
     if (audioFile != null) {
       // Send to backend for STT and WER calculation
+      String studentId = 'STU001';
+      String sessionId = DateTime.now().toIso8601String();
+      String activityId = widget.activityNode.id;
+      String itemId = 'demo_item';
+      
+      final telemetry = TelemetryWrapper.of(context);
+      if (telemetry != null) {
+        studentId = telemetry.widget.studentData?['id'] ?? telemetry.widget.studentData?['_id'] ?? 'STU001';
+      }
+      
       final results = await VoiceAnalysisService().analyzeAudio(
         audioFile,
         _targetSentence,
+        studentId: studentId,
+        sessionId: sessionId,
+        activityId: activityId,
+        itemId: itemId,
       );
 
       setState(() {

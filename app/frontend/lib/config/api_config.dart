@@ -74,6 +74,22 @@ class ApiConfig {
     return 'https://adaptedmind-auth-api.onrender.com/api/v1/learning';
   }
 
+  /// Parent Dashboard API (Port 8015 — auth service, NOT 8025)
+  static String get parentDashboardBaseUrl {
+    if (isDevelopment) {
+      return 'http://$_localHost:8015/api/v1/parent/students';
+    }
+    return 'https://adaptedmind-auth-api.onrender.com/api/v1/parent/students';
+  }
+
+  /// Therapist Dashboard API (Port 8015 — auth service, NOT 8025)
+  static String get therapistDashboardBaseUrl {
+    if (isDevelopment) {
+      return 'http://$_localHost:8015/api/v1/therapist/students';
+    }
+    return 'https://adaptedmind-auth-api.onrender.com/api/v1/therapist/students';
+  }
+
   // --- Helper Methods ---
 
   /// Resolves the absolute URL for a profile picture

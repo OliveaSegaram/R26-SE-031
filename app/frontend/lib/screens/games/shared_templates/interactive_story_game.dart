@@ -106,9 +106,23 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
     final audioFile = await VoiceAnalysisService().stopRecording();
 
     if (audioFile != null) {
+      String studentId = 'STU001';
+      String sessionId = DateTime.now().toIso8601String();
+      String activityId = widget.activityNode.id;
+      String itemId = 'story_item';
+      
+      final telemetry = TelemetryWrapper.of(context);
+      if (telemetry != null) {
+        studentId = telemetry.widget.studentData?['id'] ?? telemetry.widget.studentData?['_id'] ?? 'STU001';
+      }
+
       final results = await VoiceAnalysisService().analyzeAudio(
         audioFile,
         targetSentence,
+        studentId: studentId,
+        sessionId: sessionId,
+        activityId: activityId,
+        itemId: itemId,
         expectedSyllables: expectedSyllables,
         tStimulus: _tStimulus,
         tRecordStart: _tRecordStart,
@@ -120,8 +134,8 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
       });
       
       // Log the acoustic metrics to telemetry
-      final telemetry = TelemetryWrapper.of(context);
-      if (telemetry != null) {
+      final telemetryAfter = TelemetryWrapper.of(context);
+      if (telemetryAfter != null) {
         debugPrint('TELEMETRY (Acoustic): Latency=${results['Acoustic_Latency_ms']}, PeakDelta=${results['Peak_Count_Delta']}, Jitter=${results['Local_Jitter']}, Shimmer=${results['Local_Shimmer']}');
         // Currently, TelemetryWrapper doesn't have a specific method for these yet, but we log it to console as requested.
         // If there was a logCustomMetric method we could use it: telemetry.logCustomMetric(results);
