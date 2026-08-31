@@ -1329,9 +1329,8 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           columnWidths: const {
             0: FixedColumnWidth(40),
             1: FlexColumnWidth(4),
-            2: FixedColumnWidth(55),
-            3: FixedColumnWidth(55),
-            4: FixedColumnWidth(65),
+            2: FixedColumnWidth(65),
+            3: FixedColumnWidth(65),
           },
           children: [
             TableRow(
@@ -1341,7 +1340,6 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                 TableCell(verticalAlignment: TableCellVerticalAlignment.middle, child: Padding(padding: EdgeInsets.all(6), child: Text("ප්‍රශ්නය (Question)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)))),
                 TableCell(verticalAlignment: TableCellVerticalAlignment.middle, child: Padding(padding: EdgeInsets.all(6), child: Text("ඔව්\n(Yes)", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: AppColors.softCoral)))),
                 TableCell(verticalAlignment: TableCellVerticalAlignment.middle, child: Padding(padding: EdgeInsets.all(6), child: Text("නැත\n(No)", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: AppColors.gentleGreen)))),
-                TableCell(verticalAlignment: TableCellVerticalAlignment.middle, child: Padding(padding: EdgeInsets.all(6), child: Text("හඳුනාගත\nනොහැක", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9, color: Colors.grey)))),
               ],
             ),
             for (int i = 0; i < questions.length; i++)
@@ -1410,19 +1408,6 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                 : const Icon(Icons.check_box_outline_blank_rounded, color: Colors.black26, size: 18),
           ),
         ),
-        // Column 3: හඳුනාගත නොහැක (Uncertain / N/A)
-        TableCell(
-          verticalAlignment: TableCellVerticalAlignment.middle,
-          child: Center(
-            child: answer == null
-                ? Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: AppColors.borderLight, shape: BoxShape.circle),
-                    child: const Icon(Icons.help_outline_rounded, color: Colors.grey, size: 18),
-                  )
-                : const Icon(Icons.check_box_outline_blank_rounded, color: Colors.black26, size: 18),
-          ),
-        ),
       ],
     );
   }
@@ -1462,20 +1447,19 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
       buffer.writeln("------------------------------------------------------------------------------------------");
       buffer.writeln(sectionTitle);
       buffer.writeln("------------------------------------------------------------------------------------------");
-      buffer.writeln("| අංකය | ප්‍රශ්නය                                               | ඔව්(Yes) | නැත(No) | හඳුනාගත නොහැක |");
-      buffer.writeln("+------+-------------------------------------------------------+----------+---------+----------------+");
+      buffer.writeln("| අංකය | ප්‍රශ්නය                                               | ඔව්(Yes) | නැත(No) |");
+      buffer.writeln("+------+-------------------------------------------------------+----------+---------+");
 
       for (int i = 0; i < questions.length; i++) {
         final q = questions[i];
         final bool? val = i < answers.length ? answers[i] : null;
         final String colYes = val == true ? "[ X ]" : "[   ]";
         final String colNo = val == false ? "[ X ]" : "[   ]";
-        final String colNA = val == null ? "[ X ]" : "[   ]";
 
         final numStr = (i + 1).toString().padLeft(2, '0');
         buffer.writeln("|  $numStr  | ${q.textSi}");
-        buffer.writeln("|      | (${q.textEn})".padRight(63) + "|  $colYes  |  $colNo  |     $colNA     |");
-        buffer.writeln("+------+-------------------------------------------------------+----------+---------+----------------+");
+        buffer.writeln("|      | (${q.textEn})".padRight(63) + "|  $colYes  |  $colNo  |");
+        buffer.writeln("+------+-------------------------------------------------------+----------+---------+");
       }
       buffer.writeln();
     }
