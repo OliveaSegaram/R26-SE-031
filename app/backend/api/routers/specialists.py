@@ -109,6 +109,12 @@ async def get_connected_students(current_user: dict = Depends(get_current_user))
     for s in students:
         s["id"] = str(s["_id"])
         del s["_id"]
+        
+        # Convert any other ObjectIds (e.g. parent_id) to strings to prevent FastAPI 500 crashes
+        for k, v in s.items():
+            if isinstance(v, ObjectId):
+                s[k] = str(v)
+
         # Do not return sensitive fields like parent_password
         if "parent_password" in s:
             del s["parent_password"]
