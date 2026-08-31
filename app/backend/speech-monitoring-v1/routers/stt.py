@@ -1,8 +1,28 @@
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from services.stt_service import get_stt_engine
 import math
+import unicodedata
+from datetime import datetime
+from database import get_db
 
 router = APIRouter(prefix="/stt", tags=["Speech-to-Text"])
+
+def normalize_sinhala(text: str) -> str:
+    """Normalize Sinhala text for comparison."""
+    if not text:
+        return ""
+    # NFC normalization
+    text = unicodedata.normalize('NFC', text)
+    # Trim and collapse whitespace
+    text = " ".join(text.split())
+    # Keep only Sinhala unicode range and spaces
+    # Sinhala Unicode range: \u0D80 - \u0DFF
+    filtered = []
+    for c in text:
+        if ('\u0D80' <= c <= '\u0DFF') or c.isspace():
+            filtered.append(c)
+    return "".join(filtered).strip()
+
 
 def levenshtein_distance(s1: str, s2: str) -> int:
     """Calculate the Levenshtein distance between two strings (measured in words)."""
@@ -94,6 +114,10 @@ async def analyze_reading(
 
 @router.post("/analyze-acoustics")
 async def analyze_acoustics(
+    student_id: str = Form(None),
+    session_id: str = Form(None),
+    activity_id: str = Form(None),
+    item_id: str = Form(None),
     expected_text: str = Form(""),
     expected_syllables: int = Form(0),
     t_stimulus: int = Form(0),
@@ -123,7 +147,66 @@ async def analyze_acoustics(
             t_record_start=t_record_start
         )
         
-        return results
+        # Calculate ASR metrics
+        recognized_text = results.get("transcription", "")
+        norm_expected = normalize_sinhala(expected_text)
+        norm_recognized = normalize_sinhala(recognized_text)
+        
+        exact_match = (norm_expected == norm_recognized)
+        
+        # Char Error Rate
+        char_dist = levenshtein_distance(" ".join(norm_expected), " ".join(norm_recognized)) if norm_expected else 0
+        cer = min(1.0, float(char_dist) / max(len(norm_expected), 1))
+        
+        # Word Error Rate
+        word_dist = levenshtein_distance(norm_expected, norm_recognized)
+        wer = min(1.0, float(word_dist) / max(len(norm_expected.split()), 1))
+        
+        # Normalized similarity
+        max_len = max(len(norm_expected), len(norm_recognized), 1)
+        normalized_similarity = max(0.0, 1.0 - (float(char_dist) / max_len))
+        
+        doc = {
+            "student_id": student_id,
+            "session_id": session_id,
+            "activity_id": activity_id,
+            "item_id": item_id,
+            "expected_text": expected_text,
+            "recognized_text": recognized_text,
+            "asr_engine": "whisper",
+            "asr_confidence": None, # Whisper local doesn't expose confidence easily without tokens
+            "exact_match": exact_match,
+            "character_error_rate": cer,
+            "word_error_rate": wer,
+            "normalized_similarity": normalized_similarity,
+            "acoustic_latency_ms": results.get("Acoustic_Latency_ms", 0.0),
+            "voice_onset_ms": results.get("Voice_Onset_ms", 0.0),
+            "detected_peaks": results.get("Detected_Peaks", 0),
+            "expected_syllables": results.get("Expected_Syllables", 0),
+            "syllabic_event_mismatch": results.get("Peak_Count_Delta", 0),
+            "intra_word_silence_ratio": results.get("Intra_Word_Silence_Ratio", 0.0),
+            "speech_duration_ms": results.get("Speech_Duration_ms", 0.0),
+            "pause_count": results.get("Pause_Count", 0),
+            "mean_pause_duration_ms": results.get("Mean_Pause_Duration_ms", 0.0),
+            "pause_ratio": results.get("Pause_Ratio", 0.0),
+            "local_jitter": results.get("Local_Jitter", 0.0),
+            "local_shimmer": results.get("Local_Shimmer", 0.0),
+            "recording_quality": results.get("recording_quality", "unknown"),
+            "created_at": datetime.utcnow(),
+            "feature_version": "c2-v2"
+        }
+        
+        # Save to DB
+        if student_id:
+            try:
+                db = get_db()
+                await db.speech_features.insert_one(doc)
+            except Exception as e:
+                print(f"Failed to save speech features to DB: {e}")
+                
+        # Return merged results so the caller gets everything
+        return {**results, **doc}
+
         
     except Exception as e:
         print(f"Acoustic analysis error: {e}")

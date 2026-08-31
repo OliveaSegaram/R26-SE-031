@@ -33,3 +33,9 @@ async def close_mongo_connection():
 
 def get_fs() -> AsyncIOMotorGridFSBucket:
     return db_instance.fs
+
+def get_db():
+    if db_instance.client is None:
+        raise RuntimeError("Database not initialized")
+    db_name = os.getenv("MONGODB_DB_NAME", "r26_se_031")
+    return db_instance.client[db_name]
