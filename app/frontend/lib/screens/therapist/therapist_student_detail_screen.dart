@@ -90,7 +90,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         'assets/images/characters/human/human_student_1.png');
 
     return DefaultTabController(
-      length: 6,
+      length: 5,
       child: Scaffold(
         backgroundColor: AppColors.cream,
         appBar: AppBar(
@@ -123,11 +123,10 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             indicatorColor: AppColors.calmBlue,
             tabs: [
               Tab(text: "Overview"),
-              Tab(text: "C1 — Behavioral Analytics"),
-              Tab(text: "C2 — Speech & Sinhala Interaction"),
-              Tab(text: "C3 — Learner Profile & XAI"),
-              Tab(text: "C4 — Adaptive Learning"),
-              Tab(text: "PP2 Evidence"),
+              Tab(text: "Behavioral Analytics"),
+              Tab(text: "Speech & Sinhala Interaction"),
+              Tab(text: "Learner Profile & XAI"),
+              Tab(text: "Adaptive Learning"),
             ],
           ),
         ),
@@ -142,7 +141,6 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                       DashboardSection(data: _c2Speech, onRetry: _loadAllData, child: _buildC2SpeechTab()),
                       DashboardSection(data: _c3Profile, onRetry: _loadAllData, child: _buildC3ProfileTab()),
                       DashboardSection(data: _c4Adaptive, onRetry: _loadAllData, child: _buildC4AdaptiveTab()),
-                      DashboardSection(data: _evidence, onRetry: _loadAllData, child: ResearchEvidencePanel(data: _evidence ?? {})),
                     ],
                   ),
       ),
@@ -179,10 +177,10 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildAvailabilityBadge("C1", c1Avail),
-              _buildAvailabilityBadge("C2", c2Avail),
-              _buildAvailabilityBadge("C3", c3Avail),
-              _buildAvailabilityBadge("C4", c4Avail),
+              _buildAvailabilityBadge("Behavioral", c1Avail),
+              _buildAvailabilityBadge("Speech", c2Avail),
+              _buildAvailabilityBadge("Learner Profile", c3Avail),
+              _buildAvailabilityBadge("Adaptive", c4Avail),
             ],
           ),
           const SizedBox(height: 16),

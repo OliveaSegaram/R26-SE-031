@@ -70,7 +70,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
         'assets/images/characters/human/human_student_1.png');
 
     return DefaultTabController(
-      length: 6,
+      length: 5,
       child: Scaffold(
         backgroundColor: AppColors.cream,
         appBar: AppBar(
@@ -134,7 +134,6 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
               Tab(text: "Reading Pattern"),
               Tab(text: "Activity History"),
               Tab(text: "Reports"),
-              Tab(text: "PP2 Evidence"),
             ],
           ),
         ),
@@ -147,7 +146,6 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
                   DashboardSection(data: _learningPattern, onRetry: _loadAllData, child: _buildReadingPatternTab()),
                   DashboardSection(data: _activityHistory, onRetry: _loadAllData, child: _buildActivityHistoryTab()),
                   _buildReportsTab(),
-                  DashboardSection(data: _evidence, onRetry: _loadAllData, child: ResearchEvidencePanel(data: _evidence ?? {}, simplified: true)),
                 ],
               ),
       ),
