@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/v1/specialists", tags=["Specialists"])
 @router.get("/lookup/{clinic_code}")
 async def lookup_specialist(clinic_code: str):
     db = get_db()
-    specialist = await db.users.find_one({"role": "specialist", "clinic_code": clinic_code.upper()})
+    specialist = await db.users.find_one({"role": {"$in": ["specialist", "therapist"]}, "clinic_code": clinic_code.upper()})
     
     if not specialist:
         raise HTTPException(
@@ -48,7 +48,11 @@ async def connect_specialist(req: SpecialistConnectRequest, current_user: dict =
     except:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid student ID format.")
         
-    student = await db.students.find_one({"_id": student_oid, "parent_id": str(current_user["_id"])})
+    parent_oid = current_user["_id"]
+    student = await db.students.find_one({
+        "_id": student_oid, 
+        "parent_id": {"$in": [parent_oid, str(parent_oid)]}
+    })
     if not student:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
@@ -56,7 +60,10 @@ async def connect_specialist(req: SpecialistConnectRequest, current_user: dict =
         )
         
     # Find the specialist by clinic_code
-    specialist = await db.users.find_one({"role": "specialist", "clinic_code": req.clinic_code.upper()})
+    specialist = await db.users.find_one({
+        "role": {"$in": ["specialist", "therapist"]}, 
+        "clinic_code": req.clinic_code.upper()
+    })
     if not specialist:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
@@ -68,7 +75,7 @@ async def connect_specialist(req: SpecialistConnectRequest, current_user: dict =
     await db.therapist_connections.update_one(
         {"student_id": str(student["_id"]), "therapist_id": str(specialist["_id"])},
         {"$set": {
-            "parent_id": str(current_user["_id"]),
+            "parent_id": str(parent_oid),
             "status": "active",
             "connected_at": datetime.utcnow(),
         }},
@@ -81,8 +88,8 @@ async def connect_specialist(req: SpecialistConnectRequest, current_user: dict =
 async def get_connected_students(current_user: dict = Depends(get_current_user)):
     db = get_db()
     
-    # Verify the current user is a specialist
-    if current_user.get("role") != "specialist":
+    # Verify the current user is a specialist or therapist
+    if current_user.get("role") not in ["specialist", "therapist"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail="Only specialists can access connected students."

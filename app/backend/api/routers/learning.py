@@ -33,6 +33,10 @@ class InteractionPayload(BaseModel):
     response: InteractionResponseModel
     telemetry: TelemetryModel
     speech: Optional[Any] = None
+    difficulty_b: float = 0.0
+    is_anchor: bool = False
+    first_attempt_correct: Optional[bool] = None
+    event_id: Optional[str] = None
 
 async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, event_id: str):
     db = get_db()
@@ -54,82 +58,23 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
     }
     await db.telemetry_events.insert_one(telemetry_doc)
 
-    # 2. Call C1 (Behavioral)
-    # 3. Call C2 (Kinematics)
-    # 4. Call C3 (XAI Fusion)
-    # We mock the external ML API calls here to simulate the processing and save the structured data.
-    
-    # 2. Call C1 (Behavioral)
-    try:
-        cursor = db.telemetry_events.find({"session_id": payload.session_id}).sort("timestamp", 1)
-        events_list = await cursor.to_list(length=100)
-        for e in events_list:
-            e.pop("_id", None)
-            
-        c1_payload = {
-            "session_id": payload.session_id,
-            "student_id": payload.student_id,
-            "activity_id": payload.activity_id,
-            "session_duration_seconds": 60, # Approximated for incremental events
-            "events": events_list
-        }
-        
-        telemetry_api_url = os.getenv("TELEMETRY_API_URL", "http://localhost:8025")
-        
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                f"{telemetry_api_url}/api/v1/c1/session",
-                json=c1_payload,
-                timeout=5.0
-            )
-    except Exception as e:
-        print(f"Failed to trigger C1 pipeline: {e}")
+    # C1 descriptive processing is performed by authenticated end-of-session ingestion.
+    # No duplicate call to the incompatible legacy /api/v1/c1/session route is made.
 
-    
-    # Save C2
-    c2_doc = {
-        "event_id": event_id,
-        "student_id": payload.student_id,
-        "session_id": payload.session_id,
-        "timestamp": datetime.utcnow().isoformat(),
-        "time_to_first_touch_ms": payload.telemetry.first_touch_latency_ms,
-        "path_length": 500.0,
-        "straight_line_distance": 450.0,
-        "path_efficiency": 0.9,
-        "mean_velocity": 200.0,
-        "velocity_variance": 50.0,
-        "mean_dwell_time_ms": 100.0,
-        "normalized_jerk": 2.5,
-        "orthographic_confusion_index": 0.2 if payload.response.is_correct else 0.8,
-        "feature_version": "v1.0"
-    }
-    await db.kinematic_features.insert_one(c2_doc)
-    
-    # Save C3
-    c3_doc = {
-        "event_id": event_id,
-        "student_id": payload.student_id,
-        "session_id": payload.session_id,
-        "timestamp": datetime.utcnow().isoformat(),
-        "learner_profile": {
-            "class_probabilities": {"Typical": 0.8, "Visual-Orthographic": 0.1, "Phonological": 0.05, "Combined": 0.05},
-            "primary_pattern": "Typical",
-            "confidence": 0.8,
-            "modalities_used": ["C1_Acoustic", "C2_Kinematic"]
-        },
-        "shap_explanations": {
-            "top_contributing_features": [{"feature_name": "OCI", "value": 0.2, "shap_impact": "-0.1"}]
-        },
-        "model_version": "C3-v1.0"
-    }
-    await db.learner_profiles.insert_one(c3_doc)
-    
+    # No fabricated kinematic vectors or classifier outputs are written here.
+    # Synthetic PP2 records must come from scripts/pp2_synthetic_benchmark.py,
+    # with dataset_id/data_origin and actual computed outputs.
+
     # Save C4 Decision
     c4_doc = {
         "event_id": event_id,
         "student_id": payload.student_id,
         "session_id": payload.session_id,
         "timestamp": datetime.utcnow().isoformat(),
+        "mastery_before": c4_result.get("previous_knowledge_state", {}).get(payload.knowledge_component_id),
+        "previous_difficulty": payload.difficulty_b,
+        "item_id": payload.item_id,
+        "decision": c4_result.get("next_action", {}).get("decision", "Unavailable"),
         "mastery_after": c4_result.get("updated_knowledge_state", {}).get(payload.knowledge_component_id, 0.5),
         "selected_difficulty": c4_result.get("next_action", {}).get("difficulty", 0.5),
         "selected_activity": c4_result.get("next_action", {}).get("next_activity", "Skill_2"),
@@ -137,7 +82,10 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
         "decision_reason": c4_result.get("next_action", {}).get("decision", "CONTINUE"),
         "policy_version": "Policy-v1.0"
     }
-    await db.adaptive_decisions.insert_one(c4_doc)
+    if c4_result.get("updated_knowledge_state"):
+        c4_doc["data_origin"] = "observed"
+        c4_doc["validation_status"] = "not_clinically_validated"
+        await db.adaptive_decisions.insert_one(c4_doc)
     
     # Save Speech Features and Transcriptions separately as requested
     if payload.speech:
@@ -182,13 +130,13 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
 @router.post("/interaction")
 async def process_interaction(payload: InteractionPayload, background_tasks: BackgroundTasks):
     db = get_db()
-    event_id = str(uuid.uuid4())
+    event_id = payload.event_id or str(uuid.uuid4())
     
     # Fetch latest fatigue from C1 and learner profile from C3 to inform C4
-    c1 = await db.behavioral_features.find_one({"student_id": payload.student_id}, sort=[("_id", -1)])
+    c1 = await db.session_summaries.find_one({"student_id": payload.student_id}, sort=[("_id", -1)])
     c3 = await db.learner_profiles.find_one({"student_id": payload.student_id}, sort=[("_id", -1)])
     
-    fatigue_score = c1.get("fatigue", {}).get("score", 0.0) if c1 else 0.0
+    fatigue_score = (c1.get("behavioral_fatigue_proxy") or 0.0) if c1 else 0.0
     learner_profile_dict = c3.get("learner_profile", {}).get("class_probabilities", {}) if c3 else {}
     
     c4_result = {}
@@ -201,7 +149,9 @@ async def process_interaction(payload: InteractionPayload, background_tasks: Bac
                 "activity_id": payload.activity_id,
                 "knowledge_component_id": payload.knowledge_component_id,
                 "item_id": payload.item_id,
-                "is_correct": payload.response.is_correct,
+                "is_correct": payload.first_attempt_correct if payload.first_attempt_correct is not None else payload.response.is_correct,
+                "difficulty_b": payload.difficulty_b,
+                "is_anchor": payload.is_anchor,
                 "current_session_duration_sec": payload.telemetry.total_round_latency_ms // 1000,
                 "fatigue_score": fatigue_score,
                 "learner_profile": learner_profile_dict
@@ -218,17 +168,7 @@ async def process_interaction(payload: InteractionPayload, background_tasks: Bac
                 c4_result = c4_resp.json()
         except Exception as e:
             print(f"C4 pipeline error: {e}")
-            # Fallback
-            c4_result = {
-                "updated_knowledge_state": {payload.knowledge_component_id: 0.5},
-                "next_action": {
-                    "next_activity": payload.activity_id,
-                    "next_item": payload.item_id,
-                    "difficulty": 0.5,
-                    "scaffold_level": 0,
-                    "decision": "CONTINUE"
-                }
-            }
+            c4_result = {}
 
     # Dispatch background tasks for ML processing and persistence
     background_tasks.add_task(run_background_pipeline, payload, c4_result, event_id)
