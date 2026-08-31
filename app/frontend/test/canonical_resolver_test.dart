@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sipsara/models/curriculum_models.dart';
+import 'package:sipsara_app/models/curriculum_models.dart';
 
 void main() {
   group('CanonicalItemResolver Tests', () {
