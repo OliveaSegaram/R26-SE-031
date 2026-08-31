@@ -32,11 +32,13 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
   final Set<int> _selectedIndices = {};
   bool _isCorrect = false;
   bool _activityComplete = false;
+  int _attemptCount = 0;
   int _currentRoundIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _attemptCount = 0;
     final skillId = widget.activityNode?.skillId ?? '';
     final activityId = widget.activityNode?.id ?? '';
     if (skillId.isNotEmpty && activityId.isNotEmpty) {
@@ -46,12 +48,10 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
       );
     }
     final rounds = widget.activityNode?.rounds ?? [];
-    if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
+    if (_currentRoundIndex >= rounds.length && rounds.isNotEmpty) {
       _currentRoundIndex = 0;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playAudioPrompt(autoPlay: true);
-    });
+    _playAudioPrompt(autoPlay: true);
   }
 
   @override
@@ -65,25 +65,16 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
     if (rounds.isEmpty) return;
 
     final currentRound = rounds[_currentRoundIndex];
-    final audioText =
-        currentRound['audio_text']?.toString() ??
-        currentRound['prompt']?.toString() ??
-        'වෘත්තය';
-    String spokenInstruction = audioText
-        .replaceAll('මා', 'ම')
-        .replaceAllMapped(
-          RegExp(r" '?(.)'? අකුර"),
-          (match) => ' ${match.group(1)}, අකුර',
-        )
-        .replaceAllMapped(
-          RegExp(r" '?(.)'? පින්තූරය"),
-          (match) => ' ${match.group(1)}, පින්තූරය',
-        )
-        .replaceAllMapped(
-          RegExp(r" '?(.)'? තෝරන්න"),
-          (match) => ' ${match.group(1)}යන්න තෝරන්න',
-        );
-    
+    final prompt = currentRound['prompt']?.toString() ?? 'ගැලපෙන පින්තූරය තෝරන්න';
+    final targetWord = currentRound['target_word']?.toString() ?? '';
+
+    String spokenInstruction;
+    if (prompt.contains('සමාන') || prompt.contains('ගැලපෙන')) {
+      spokenInstruction = '$targetWord, ශබ්දයට සමාන ශබ්දය තෝරන්න';
+    } else {
+      spokenInstruction = '$targetWord, ශබ්දය ඇති පින්තූරය තෝරන්න';
+    }
+
     if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
       return;
     }
@@ -107,75 +98,87 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
       }
     });
 
-
     if (_selectedIndices.length == correctIndices.length) {
+      _attemptCount++;
       bool isRight = _selectedIndices.containsAll(correctIndices);
-
       int score = isRight ? 100 : 0;
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
-        score,
-      );
 
       if (isRight) {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
         setState(() {
           _isCorrect = true;
         });
         SoundUtils.playFeedback('audio/correct.mp3');
 
-        Future.delayed(const Duration(milliseconds: 1400), () {
-          if (!mounted) return;
-          if (_currentRoundIndex < totalRounds - 1) {
-            setState(() {
-              _currentRoundIndex++;
-              final sId = widget.activityNode?.skillId ?? '';
-              final aId = widget.activityNode?.id ?? '';
-              if (sId.isNotEmpty && aId.isNotEmpty) {
-                int progress =
-                    ((_currentRoundIndex /
-                                (widget.activityNode?.rounds.length ?? 1)) *
-                            100)
-                        .toInt();
-                ProgressService().saveActivityScore(sId, aId, progress);
-                ProgressService().saveActivityState(
-                  sId,
-                  aId,
-                  _currentRoundIndex,
-                );
-              }
-              _selectedIndices.clear();
-              _isCorrect = false;
-            });
-            _playAudioPrompt(autoPlay: true);
-          } else {
-            setState(() {
-              _activityComplete = true;
-              final sId = widget.activityNode?.skillId ?? '';
-              final aId = widget.activityNode?.id ?? '';
-              if (sId.isNotEmpty && aId.isNotEmpty) {
-                ProgressService().saveActivityScore(sId, aId, 100);
-                ProgressService().clearActivityState(sId, aId);
-              }
-            });
-          }
-        });
+        _advanceRoundAfterDelay(totalRounds);
       } else {
         SoundUtils.playFeedback('audio/wrong.mp3');
-        Future.delayed(const Duration(milliseconds: 800), () {
-          if (mounted) {
-            setState(() {
-              _selectedIndices.clear();
-            });
-          }
-        });
+
+        if (_attemptCount >= 2) {
+          context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(0);
+          setState(() {
+            _selectedIndices.clear();
+            _selectedIndices.addAll(correctIndices);
+            _isCorrect = true;
+          });
+          _advanceRoundAfterDelay(totalRounds);
+        } else {
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (mounted) {
+              setState(() {
+                _selectedIndices.clear();
+              });
+            }
+          });
+        }
       }
     } else if (!wasSelected) {
-      // Intermediate tap feedback
       if (correctIndices.contains(index)) {
         SoundUtils.playFeedback('audio/correct.mp3');
       } else {
         SoundUtils.playFeedback('audio/wrong.mp3');
       }
     }
+  }
+
+  void _advanceRoundAfterDelay(int totalRounds) {
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      if (_currentRoundIndex < totalRounds - 1) {
+        setState(() {
+          _currentRoundIndex++;
+          _attemptCount = 0;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            int progress =
+                ((_currentRoundIndex /
+                            (widget.activityNode?.rounds.length ?? 1)) *
+                        100)
+                    .toInt();
+            ProgressService().saveActivityScore(sId, aId, progress);
+            ProgressService().saveActivityState(
+              sId,
+              aId,
+              _currentRoundIndex,
+            );
+          }
+          _selectedIndices.clear();
+          _isCorrect = false;
+        });
+        _playAudioPrompt(autoPlay: true);
+      } else {
+        setState(() {
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
+      }
+    });
   }
 
   @override

@@ -28,10 +28,12 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
   bool _isCorrect = false;
   bool _activityComplete = false;
   int _currentRoundIndex = 0;
+  int _attemptCount = 0;
 
   @override
   void initState() {
     super.initState();
+    _attemptCount = 0;
     final skillId = widget.activityNode?.skillId ?? '';
     final activityId = widget.activityNode?.id ?? '';
     if (skillId.isNotEmpty && activityId.isNotEmpty) {
@@ -69,38 +71,64 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
   void _checkAnswer(int index, int correctIndex, int totalRounds) async {
     if (_isCorrect) return;
 
+    _attemptCount++;
     setState(() {
       _selectedIndex = index;
     });
 
     final bool isRight = (index == correctIndex);
     int score = isRight ? 100 : 0;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
 
     if (isRight) {
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
       setState(() {
         _isCorrect = true;
       });
       SoundUtils.playFeedback('audio/correct.mp3');
 
-      Future.delayed(const Duration(milliseconds: 1400), () {
-        if (!mounted) return;
-        if (_currentRoundIndex < totalRounds - 1) {
-          setState(() {
-            _currentRoundIndex++;
-              final sId = widget.activityNode?.skillId ?? '';
-              final aId = widget.activityNode?.id ?? '';
-              if (sId.isNotEmpty && aId.isNotEmpty) {
-                int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
-                ProgressService().saveActivityScore(sId, aId, progress);
-                ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
-              }
-            _selectedIndex = null;
-            _isCorrect = false;
-          });
-          _playAudioPrompt(autoPlay: true);
-        } else {
-          setState(() {
+      _advanceRoundAfterDelay(totalRounds);
+    } else {
+      SoundUtils.playFeedback('audio/wrong.mp3');
+
+      if (_attemptCount >= 2) {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(0);
+        setState(() {
+          _selectedIndex = correctIndex;
+          _isCorrect = true;
+        });
+        _advanceRoundAfterDelay(totalRounds);
+      } else {
+        Future.delayed(const Duration(milliseconds: 700), () {
+          if (mounted && !_isCorrect) {
+            setState(() {
+              _selectedIndex = null;
+            });
+          }
+        });
+      }
+    }
+  }
+
+  void _advanceRoundAfterDelay(int totalRounds) {
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      if (_currentRoundIndex < totalRounds - 1) {
+        setState(() {
+          _currentRoundIndex++;
+          _attemptCount = 0;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
+            ProgressService().saveActivityScore(sId, aId, progress);
+            ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+          }
+          _selectedIndex = null;
+          _isCorrect = false;
+        });
+        _playAudioPrompt(autoPlay: true);
+      } else {
+        setState(() {
           _activityComplete = true;
           final sId = widget.activityNode?.skillId ?? '';
           final aId = widget.activityNode?.id ?? '';
@@ -109,18 +137,8 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
             ProgressService().clearActivityState(sId, aId);
           }
         });
-        }
-      });
-    } else {
-      SoundUtils.playFeedback('audio/wrong.mp3');
-      Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted && !_isCorrect) {
-          setState(() {
-            _selectedIndex = null;
-          });
-        }
-      });
-    }
+      }
+    });
   }
 
   @override
