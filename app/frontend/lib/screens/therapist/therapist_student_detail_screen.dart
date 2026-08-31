@@ -860,7 +860,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                     const SizedBox(height: 2),
                     Text(
                       '$grade • Age: $age',
-                      style: AppTypography.subheading(fontSize: 14, color: AppColors.calmBlue),
+                      style: AppTypography.body(fontSize: 14, color: AppColors.calmBlue),
                     ),
                   ],
                 ),
