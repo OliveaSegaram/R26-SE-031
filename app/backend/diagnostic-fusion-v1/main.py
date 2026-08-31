@@ -7,6 +7,7 @@ import os
 
 from schemas import FusionRequest, FusionResponse
 from services.xai_engine import get_xai_engine, XAIEngine
+from services.llm_explainer import generate_diagnostic_summary
 from database import connect_to_mongo, close_mongo_connection, get_db
 
 # Configure logging
@@ -67,11 +68,24 @@ async def diagnose_patient(
         # Analyze
         analysis_result = engine.analyze_patient(flat_features)
         
+        # Extract simple SHAP dictionary for the LLM
+        simple_shap = {item["feature_name"]: item["shap_value"] 
+                       for item in analysis_result["shap_explanations"]["top_contributing_features"]}
+        
+        # Call LLM Explainer asynchronously
+        llm_summary, llm_recommendations = await generate_diagnostic_summary(
+            request.student_id, 
+            analysis_result["learner_profile"], 
+            simple_shap
+        )
+        
         # Construct response
         response = FusionResponse(
             student_id=request.student_id,
             learner_profile=analysis_result["learner_profile"],
-            shap_explanations=analysis_result["shap_explanations"]
+            shap_explanations=analysis_result["shap_explanations"],
+            llm_summary=llm_summary,
+            llm_recommendations=llm_recommendations
         )
         
         # Save to database

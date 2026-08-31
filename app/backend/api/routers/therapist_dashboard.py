@@ -255,7 +255,9 @@ async def get_therapist_c3_profile(student_id: str = Path(...)):
         probabilities=probs,
         confidence=conf,
         modalities_used=mods,
-        shap_explanations=shap_list
+        shap_explanations=shap_list,
+        llm_summary=latest_c3.get("llm_summary") if latest_c3 else None,
+        llm_recommendations=latest_c3.get("llm_recommendations") if latest_c3 else None
     )
 
 @router.get("/{student_id}/c4-adaptive", response_model=TherapistC4AdaptiveDTO)

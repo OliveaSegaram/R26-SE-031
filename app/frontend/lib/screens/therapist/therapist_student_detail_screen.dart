@@ -504,21 +504,50 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           ...shap.map((s) => _buildHorizontalBar(s['feature'] ?? '', (s['contribution'] as num).toDouble(), AppColors.warmAmber, prefix: "+")).toList(),
           
           const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.cardSurface, border: Border.all(color: AppColors.borderLight), borderRadius: BorderRadius.circular(8)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Interpretation", style: AppTypography.caption(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text(
-                  "Speech-related latency and intra-word pausing contributed strongly to the current ${pattern.toLowerCase()} learning-pattern prediction.",
-                  style: const TextStyle(fontStyle: FontStyle.italic),
-                ),
-              ],
-            ),
-          )
+          const SizedBox(height: 24),
+          if (_c3Profile?['llm_summary'] != null)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.calmBlue.withValues(alpha: 0.1),
+                border: Border.all(color: AppColors.calmBlue),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.auto_awesome, color: AppColors.calmBlue, size: 20),
+                      const SizedBox(width: 8),
+                      Text("AI Diagnostic Summary", style: AppTypography.heading(fontSize: 16, color: AppColors.calmBlue)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(_c3Profile!['llm_summary'], style: AppTypography.body(fontSize: 14)),
+                  const SizedBox(height: 16),
+                  Text("Recommendations", style: AppTypography.heading(fontSize: 14, color: AppColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  Text(_c3Profile!['llm_recommendations'] ?? '', style: AppTypography.body(fontSize: 14)),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: AppColors.cardSurface, border: Border.all(color: AppColors.borderLight), borderRadius: BorderRadius.circular(8)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Interpretation", style: AppTypography.caption(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Speech-related latency and intra-word pausing contributed strongly to the current ${pattern.toLowerCase()} learning-pattern prediction.",
+                    style: const TextStyle(fontStyle: FontStyle.italic),
+                  ),
+                ],
+              ),
+            )
         ],
       ),
     );

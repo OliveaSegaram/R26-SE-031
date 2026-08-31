@@ -46,4 +46,6 @@ class FusionResponse(BaseModel):
     component: str = "Component_3_XAI_Fusion"
     learner_profile: LearnerProfileOutput
     shap_explanations: ShapExplanationsData
+    llm_summary: Optional[str] = None
+    llm_recommendations: Optional[str] = None
     model_version: str = "C3-v1.0"

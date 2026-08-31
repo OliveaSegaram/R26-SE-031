@@ -124,6 +124,8 @@ class TherapistC3ProfileDTO(MLResponseBase):
     confidence: float
     modalities_used: List[str]
     shap_explanations: List[ShapExplanation]
+    llm_summary: Optional[str] = None
+    llm_recommendations: Optional[str] = None
 
 class KnowledgeComponent(BaseModel):
     id: str
