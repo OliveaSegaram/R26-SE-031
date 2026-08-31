@@ -5,63 +5,139 @@ def generate_research_pdf(student_id: str, c1_data: dict, c2_data: dict, c3_data
     pdf = FPDF()
     pdf.add_page()
     
-    # Title
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"Sipsara R26-SE-031 Research Report: {student_id}", ln=True, align='C')
-    pdf.ln(10)
+    def safe_str(text):
+        if not text:
+            return "N/A"
+        # Convert to string and replace unprintable latin-1 chars
+        return str(text).encode('latin-1', 'replace').decode('latin-1')
+        
+    def add_section_header(title):
+        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 14)
+        pdf.set_fill_color(240, 240, 240)
+        pdf.cell(0, 10, title, ln=True, fill=True)
+        pdf.ln(2)
+        pdf.set_font("Arial", '', 11)
+
+    # Title & Header
+    pdf.set_font("Arial", 'B', 18)
+    pdf.cell(0, 12, f"Sipsara R26-SE-031 - Research Report", ln=True, align='C')
+    pdf.set_font("Arial", 'I', 12)
+    pdf.cell(0, 8, f"Student ID: {student_id} | Generated: {safe_str(c1_data.get('updated_at'))}", ln=True, align='C')
+    pdf.ln(5)
     
-    # C1
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "C1: Behavioral Telemetry", ln=True)
-    pdf.set_font("Arial", '', 10)
+    # ---------------------------------------------------------
+    # Section 1: Overview
+    # ---------------------------------------------------------
+    add_section_header("1. Executive Summary")
+    pdf.cell(0, 8, f"Primary Pattern Detected: {safe_str(c3_data.get('primary_pattern'))} (Confidence: {c3_data.get('confidence', 0):.2f})", ln=True)
+    pdf.cell(0, 8, f"Estimated Learner Theta (IRT): {c4_data.get('theta', 0):.2f}", ln=True)
+    
+    # ---------------------------------------------------------
+    # Section 2: C1 Behavioral Telemetry
+    # ---------------------------------------------------------
+    add_section_header("2. C1: Behavioral Telemetry")
     if c1_data:
         pdf.cell(0, 8, f"First Attempt Accuracy: {c1_data.get('first_attempt_accuracy', 'N/A')}", ln=True)
-        pdf.cell(0, 8, f"Fatigue Proxy: {c1_data.get('behavioral_fatigue_proxy', 'N/A')}", ln=True)
-        pdf.cell(0, 8, f"Errors: {c1_data.get('error_distribution', {})}", ln=True)
-    else:
-        pdf.cell(0, 8, "No data available.", ln=True)
-    pdf.ln(5)
+        pdf.cell(0, 8, f"Median Response Latency: {c1_data.get('median_response_latency_ms', 'N/A')} ms", ln=True)
+        pdf.cell(0, 8, f"Behavioral Fatigue Proxy: {c1_data.get('behavioral_fatigue_proxy', 'N/A')}", ln=True)
         
-    # C2
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "C2: Speech & Acoustic Monitoring", ln=True)
-    pdf.set_font("Arial", '', 10)
+        pdf.ln(3)
+        pdf.set_font("Arial", 'B', 11)
+        pdf.cell(0, 8, "Error Distribution:", ln=True)
+        pdf.set_font("Arial", '', 11)
+        errs = c1_data.get("error_distribution", {})
+        if errs:
+            for k, v in errs.items():
+                pdf.cell(0, 6, f" - {k.replace('_', ' ').title()}: {v if v is not None else 'N/A'}", ln=True)
+    else:
+        pdf.cell(0, 8, "No C1 data available.", ln=True)
+        
+    # ---------------------------------------------------------
+    # Section 3: C2 Speech & Acoustic Monitoring
+    # ---------------------------------------------------------
+    add_section_header("3. C2: Speech & Acoustic Monitoring")
     if c2_data and c2_data.get('latest'):
         latest = c2_data['latest']
-        pdf.cell(0, 8, f"Transcription: {latest.get('transcription', 'N/A')}", ln=True)
-        pdf.cell(0, 8, f"WER: {latest.get('wer', 'N/A')}", ln=True)
+        pdf.cell(0, 8, f"Expected Text: {safe_str(latest.get('expected_text'))}", ln=True)
+        pdf.cell(0, 8, f"Transcription: {safe_str(latest.get('transcription'))}", ln=True)
+        pdf.cell(0, 8, f"Word Error Rate (WER): {latest.get('wer', 'N/A')}", ln=True)
         pdf.cell(0, 8, f"Acoustic Latency: {latest.get('acoustic_latency_ms', 'N/A')} ms", ln=True)
+        pdf.cell(0, 8, f"Intra-Word Silence Ratio: {latest.get('silence_ratio', 'N/A')}", ln=True)
+        pdf.cell(0, 8, f"Local Jitter: {latest.get('jitter', 'N/A')} | Local Shimmer: {latest.get('shimmer', 'N/A')}", ln=True)
+        pdf.cell(0, 8, f"Recording Quality: {safe_str(latest.get('recording_quality'))}", ln=True)
     else:
-        pdf.cell(0, 8, "No data available.", ln=True)
-    pdf.ln(5)
+        pdf.cell(0, 8, "No C2 data available.", ln=True)
 
-    # C3
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "C3: Diagnostic Fusion & XAI", ln=True)
-    pdf.set_font("Arial", '', 10)
+    # ---------------------------------------------------------
+    # Section 4: C3 Diagnostic Fusion & XAI
+    # ---------------------------------------------------------
+    add_section_header("4. C3: Diagnostic Fusion & XAI")
     if c3_data:
-        pdf.cell(0, 8, f"Primary Pattern: {c3_data.get('primary_pattern', 'N/A')}", ln=True)
-        pdf.cell(0, 8, f"Confidence: {c3_data.get('confidence', 'N/A')}", ln=True)
-        if 'llm_summary' in c3_data and c3_data['llm_summary']:
-            # Replace unsupported characters for standard fonts or just use encode string
-            summary_text = str(c3_data['llm_summary']).encode('latin-1', 'replace').decode('latin-1')
-            pdf.multi_cell(0, 8, f"Summary: {summary_text}")
+        probs = c3_data.get("probabilities", {})
+        if probs:
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, "Class Probabilities:", ln=True)
+            pdf.set_font("Arial", '', 11)
+            for k, v in probs.items():
+                pdf.cell(0, 6, f" - {k}: {v:.2f}", ln=True)
+        
+        shaps = c3_data.get("shap_explanations", [])
+        if shaps:
+            pdf.ln(3)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, "Top Feature Contributions (SHAP):", ln=True)
+            pdf.set_font("Arial", '', 11)
+            for s in shaps:
+                impact = s.get('contribution', 0)
+                direction = s.get('direction', 'unknown')
+                feature = safe_str(s.get('feature', ''))
+                pdf.cell(0, 6, f" - {feature}: {impact:.4f} ({direction})", ln=True)
+                
+        if c3_data.get("llm_summary"):
+            pdf.ln(3)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, "LLM Generated Summary:", ln=True)
+            pdf.set_font("Arial", '', 11)
+            pdf.multi_cell(0, 6, safe_str(c3_data["llm_summary"]))
     else:
-        pdf.cell(0, 8, "No data available.", ln=True)
-    pdf.ln(5)
+        pdf.cell(0, 8, "No C3 data available.", ln=True)
 
-    # C4
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, "C4: Adaptive Tutoring Decisions", ln=True)
-    pdf.set_font("Arial", '', 10)
+    # ---------------------------------------------------------
+    # Section 5: C4 Adaptive Learning
+    # ---------------------------------------------------------
+    add_section_header("5. C4: Adaptive Learning State")
     if c4_data:
-        pdf.cell(0, 8, f"Estimated Theta: {c4_data.get('theta', 'N/A')}", ln=True)
-        if c4_data.get('history') and len(c4_data['history']) > 0:
-            last = c4_data['history'][-1]
-            decision_text = str(last.get('decision', 'N/A')).encode('latin-1', 'replace').decode('latin-1')
-            pdf.multi_cell(0, 8, f"Last Decision: {decision_text}")
+        kcs = c4_data.get("knowledge_components", [])
+        if kcs:
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, "Knowledge Components Mastery (BKT):", ln=True)
+            pdf.set_font("Arial", '', 11)
+            for kc in kcs:
+                pdf.cell(0, 6, f" - {safe_str(kc.get('name'))}: {kc.get('mastery', 0):.2f}", ln=True)
+                
+        history = c4_data.get("history", [])
+        if history:
+            pdf.ln(3)
+            pdf.set_font("Arial", 'B', 11)
+            pdf.cell(0, 8, "Latest Adaptive Decision:", ln=True)
+            pdf.set_font("Arial", '', 11)
+            last = history[-1]
+            pdf.cell(0, 6, f"Decision: {safe_str(last.get('decision'))}", ln=True)
+            pdf.multi_cell(0, 6, f"Reason: {safe_str(last.get('reason'))}")
+            pdf.cell(0, 6, f"Difficulty Selected: {last.get('selected_difficulty', 'N/A')}", ln=True)
     else:
-        pdf.cell(0, 8, "No data available.", ln=True)
+        pdf.cell(0, 8, "No C4 data available.", ln=True)
+        
+    # ---------------------------------------------------------
+    # Section 6: Research Limitations
+    # ---------------------------------------------------------
+    add_section_header("6. Research Disclaimers")
+    pdf.set_font("Arial", 'I', 10)
+    pdf.multi_cell(0, 6, "This report is generated by the Sipsara R26-SE-031 research prototype. "
+                         "Data representations and ML predictions (XGBoost/SHAP) are based on synthetic "
+                         "or preliminary field data and have not been validated for clinical diagnostic use. "
+                         "This tool is intended strictly for exploratory research in dysgraphia/dyslexia subtypes.")
 
     # Return bytes
     out = pdf.output(dest='S')

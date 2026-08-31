@@ -35,6 +35,17 @@ def get_current_time_str() -> str:
 async def get_therapist_overview(student_id: str = Path(...)):
     db = get_db()
     
+    # Check data availability
+    c1_count = await db.session_summaries.count_documents({"student_id": student_id})
+    c2_count = await db.speech_features.count_documents({"student_id": student_id})
+    c3_count = await db.learner_profiles.count_documents({"student_id": student_id})
+    c4_count = await db.adaptive_decisions.count_documents({"student_id": student_id})
+    
+    c1_available = c1_count > 0
+    c2_available = c2_count > 0
+    c3_available = c3_count > 0
+    c4_available = c4_count > 0
+
     sessions_list = await db.session_summaries.distinct("session_id", {"student_id": student_id})
     completed_sessions = len(sessions_list)
 
@@ -81,6 +92,11 @@ async def get_therapist_overview(student_id: str = Path(...)):
     if latest_lp and "learner_profile" in latest_lp:
         pattern = latest_lp["learner_profile"].get("primary_pattern", "Unknown")
         pattern_conf = latest_lp["learner_profile"].get("confidence", 0.0)
+        
+    latest_decision = await db.adaptive_decisions.find_one({"student_id": student_id}, sort=[("_id", -1)])
+    recommendation = "No recommendation available yet."
+    if latest_decision and "decision_reason" in latest_decision:
+        recommendation = latest_decision["decision_reason"]
             
     return TherapistOverviewDTO(
         updated_at=get_current_time_str(),
@@ -96,7 +112,12 @@ async def get_therapist_overview(student_id: str = Path(...)):
         current_pattern=pattern,
         pattern_confidence=pattern_conf,
         fatigue_status=fatigue_status,
-        last_active=last_active
+        last_active=last_active,
+        c1_available=c1_available,
+        c2_available=c2_available,
+        c3_available=c3_available,
+        c4_available=c4_available,
+        latest_recommendation=recommendation
     )
 
 @router.get("/{student_id}/c1-behavioral", response_model=TherapistC1BehavioralDTO)
@@ -106,7 +127,7 @@ async def get_therapist_c1_behavioral(student_id: str = Path(...)):
     cursor = db.session_summaries.find({"student_id": student_id}).sort("completed_at", -1).limit(10)
     history = await cursor.to_list(length=10)
     latest = history[0] if history else {}
-    kcs = latest.get("knowledge_state") or {}
+    kcs = latest.get("knowledge_components") or {}
     overall = latest.get("overall") or {}
     errors = latest.get("error_profile") or {}
     fatigue = latest.get("behavioral_fatigue_proxy")
@@ -142,6 +163,7 @@ async def get_therapist_c1_behavioral(student_id: str = Path(...)):
         reporting_period="Latest session",
         model_version="descriptive",
         feature_version=latest.get("feature_version", "c1-v2"),
+        last_data_at=latest.get("completed_at"),
         first_attempt_accuracy=overall.get("accuracy"),
         median_response_latency_ms=overall.get("median_response_latency_ms"),
         retry_rate=overall.get("retry_rate"),
@@ -163,11 +185,11 @@ async def get_therapist_c2_speech(student_id: str = Path(...)):
     db = get_db()
     
     latest_speech = await db.speech_features.find_one({"student_id": student_id}, sort=[("_id", -1)])
-    s_data = latest_speech.get("speech_data", {}) if latest_speech else {}
+    latest_speech = latest_speech or {}
     
-    expected = s_data.get("expected_text", "")
-    recognized = s_data.get("transcription", "")
-    wer = s_data.get("word_error_rate", 0.0)
+    expected = latest_speech.get("expected_text", "")
+    recognized = latest_speech.get("recognized_text", "")
+    wer = latest_speech.get("word_error_rate", 0.0)
     stt_conf = 1.0 - wer if wer is not None else 0.0
     
     pipeline_trends = [
@@ -181,41 +203,50 @@ async def get_therapist_c2_speech(student_id: str = Path(...)):
     lat_trend = []
     sil_trend = []
     peak_trend = []
+    wer_trend = []
     
     for idx, t in enumerate(trends_res):
-        td = t.get("speech_data", {})
-        lat_trend.append({"session": f"S{idx+1}", "value": td.get("Acoustic_Latency_ms", 0)})
-        sil_trend.append({"session": f"S{idx+1}", "value": td.get("Intra_Word_Silence_Ratio", 0.0)})
-        peak_trend.append({"session": f"S{idx+1}", "value": td.get("Peak_Count_Delta", 0)})
+        sess_label = t.get("session_id") or f"S{idx+1}"
+        lat_trend.append({"session": sess_label, "value": t.get("acoustic_latency_ms", 0)})
+        sil_trend.append({"session": sess_label, "value": t.get("intra_word_silence_ratio", 0.0)})
+        peak_trend.append({"session": sess_label, "value": t.get("syllabic_event_mismatch", 0)})
+        wer_trend.append({"session": sess_label, "value": t.get("word_error_rate", 0.0)})
         
     latest_obj = SpeechLatest(
         expected_text=expected,
         transcription=recognized,
         wer=wer or 0.0,
         stt_confidence=stt_conf,
-        acoustic_latency_ms=s_data.get("Acoustic_Latency_ms", 0.0),
-        voice_onset_ms=s_data.get("Voice_Onset_ms", 0.0),
-        peak_delta=s_data.get("Peak_Count_Delta", 0),
-        silence_ratio=s_data.get("Intra_Word_Silence_Ratio", 0.0),
-        jitter=s_data.get("Local_Jitter", 0.0),
-        shimmer=s_data.get("Local_Shimmer", 0.0),
-        recording_quality=s_data.get("recording_quality", "Unknown")
+        acoustic_latency_ms=latest_speech.get("acoustic_latency_ms", 0.0),
+        voice_onset_ms=latest_speech.get("voice_onset_ms", 0.0),
+        peak_delta=latest_speech.get("syllabic_event_mismatch", 0),
+        silence_ratio=latest_speech.get("intra_word_silence_ratio", 0.0),
+        jitter=latest_speech.get("local_jitter", 0.0),
+        shimmer=latest_speech.get("local_shimmer", 0.0),
+        recording_quality=latest_speech.get("recording_quality", "Unknown")
     )
     
     trends_obj = SpeechTrends(
-        accuracy=[],
-        wer=[],
+        accuracy=[], # Optional placeholder
+        wer=wer_trend,
         latency=lat_trend,
         silence_ratio=sil_trend,
         peak_delta=peak_trend
     )
     
+    created_at_str = latest_speech.get("created_at")
+    if isinstance(created_at_str, datetime):
+        created_at_str = created_at_str.isoformat() + "Z"
+    else:
+        created_at_str = str(created_at_str) if created_at_str else None
+        
     return TherapistC2SpeechDTO(
         updated_at=get_current_time_str(),
         student_id=student_id,
         reporting_period="Current",
         model_version="V1",
         feature_version="V1",
+        last_data_at=created_at_str,
         latest=latest_obj,
         trends=trends_obj
     )
@@ -244,8 +275,16 @@ async def get_therapist_c3_profile(student_id: str = Path(...)):
             
         shap_list.append(ShapExplanation(
             feature=feature.get("feature_name", ""),
-            contribution=impact
+            contribution=impact,
+            observed_value=feature.get("observed_value"),
+            direction=feature.get("direction")
         ))
+        
+    created_at_str = latest_c3.get("created_at") if latest_c3 else latest_c3.get("timestamp") if latest_c3 else None
+    if isinstance(created_at_str, datetime):
+        created_at_str = created_at_str.isoformat() + "Z"
+    else:
+        created_at_str = str(created_at_str) if created_at_str else None
         
     return TherapistC3ProfileDTO(
         updated_at=get_current_time_str(),
@@ -253,6 +292,7 @@ async def get_therapist_c3_profile(student_id: str = Path(...)):
         reporting_period="Current",
         model_version="C3-v1.0",
         feature_version="F-v1",
+        last_data_at=created_at_str,
         primary_pattern=pattern,
         probabilities=probs,
         confidence=conf,
@@ -273,8 +313,22 @@ async def get_therapist_c4_adaptive(student_id: str = Path(...)):
     updated_at = str(latest_ks.get("updated_at", get_current_time_str())) if latest_ks else get_current_time_str()
     
     kc_list = []
+    
+    # Mapping for raw KC IDs to human readable names
+    kc_name_map = {
+        "KC_AKSHARA_IDENTITY": "Akshara Identity",
+        "KC_PHONEME_GRAPHEME": "Phoneme-Grapheme Mapping",
+        "KC_WORD_RECOGNITION": "Word Recognition",
+        "KC_SPELLING_SEQUENCE": "Spelling Sequence",
+        "KC_SENTENCE_LANGUAGE": "Sentence & Language",
+        "KC_READING_COMPREHENSION": "Reading Comprehension",
+        "KC_VISUAL_SUPPORT": "Visual Support"
+    }
+    
     for k, v in kcs_raw.items():
-        kc_list.append(KnowledgeComponent(id=f"{k.upper().replace(' ', '_')}", name=k, mastery=v))
+        # Fallback to Title Cased string if not in map
+        mapped_name = kc_name_map.get(k.upper().replace(' ', '_'), k.title())
+        kc_list.append(KnowledgeComponent(id=f"{k.upper().replace(' ', '_')}", name=mapped_name, mastery=v))
         
     cursor = db.adaptive_decisions.find({"student_id": student_id}).sort("_id", 1).limit(20)
     history = await cursor.to_list(length=20)
@@ -300,6 +354,7 @@ async def get_therapist_c4_adaptive(student_id: str = Path(...)):
         reporting_period="Current",
         model_version="C4-v2",
         feature_version="F-v2",
+        last_data_at=updated_at,
         knowledge_components=kc_list,
         theta=theta,
         theta_se=theta_se,

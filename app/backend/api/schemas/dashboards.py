@@ -10,6 +10,7 @@ class MLResponseBase(APIResponseBase):
     model_version: str
     feature_version: str
     confidence: Optional[float] = None
+    last_data_at: Optional[str] = None
 
 # ==========================================
 # PARENT DASHBOARD DTOs
@@ -55,6 +56,11 @@ class TherapistOverviewDTO(MLResponseBase):
     pattern_confidence: float
     fatigue_status: str
     last_active: str
+    c1_available: bool = False
+    c2_available: bool = False
+    c3_available: bool = False
+    c4_available: bool = False
+    latest_recommendation: Optional[str] = None
 
 class KCPerformance(BaseModel):
     KC_AKSHARA_IDENTITY: Optional[float] = None
@@ -117,6 +123,8 @@ class TherapistC2SpeechDTO(MLResponseBase):
 class ShapExplanation(BaseModel):
     feature: str
     contribution: float
+    observed_value: Optional[float] = None
+    direction: Optional[str] = None
 
 class TherapistC3ProfileDTO(MLResponseBase):
     primary_pattern: str
