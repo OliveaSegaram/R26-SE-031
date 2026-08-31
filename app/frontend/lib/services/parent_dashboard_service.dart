@@ -1,63 +1,13 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
-import '../services/auth_service.dart';
+import 'dashboard_client.dart';
 
 class ParentDashboardService {
-  // Parent dashboard routes live on the auth service (port 8015), NOT the telemetry service.
   String get _baseUrl => ApiConfig.parentDashboardBaseUrl;
-
-  Future<Map<String, String>> _getHeaders() async {
-    final token = await AuthService().getAccessToken();
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
-
-  Future<Map<String, dynamic>> getOverview(String studentId) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/$studentId/overview'),
-      headers: await _getHeaders(),
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-    return {};
-  }
-
-  Future<Map<String, dynamic>> getSkills(String studentId) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/$studentId/skills'),
-      headers: await _getHeaders(),
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-    return {};
-  }
-
-  Future<Map<String, dynamic>> getLearningPattern(String studentId) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/$studentId/learning-pattern'),
-      headers: await _getHeaders(),
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-    return {};
-  }
-
-  Future<Map<String, dynamic>> getActivityHistory(String studentId, [String filter = "limit=10"]) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/$studentId/activity-history?$filter'),
-      headers: await _getHeaders(),
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-    return {};
-  }
-
-
+  final _client = DashboardClient();
+  Future<Map<String, dynamic>> getOverview(String id) => _client.get('$_baseUrl/$id/overview');
+  Future<Map<String, dynamic>> getSkills(String id) => _client.get('$_baseUrl/$id/skills');
+  Future<Map<String, dynamic>> getProgress(String id) => _client.get('$_baseUrl/$id/progress');
+  Future<Map<String, dynamic>> getLearningPattern(String id) => _client.get('$_baseUrl/$id/learning-pattern');
+  Future<Map<String, dynamic>> getActivityHistory(String id, [String filter = 'limit=10']) => _client.get('$_baseUrl/$id/activity-history?$filter');
+  Future<Map<String, dynamic>> getResearchEvidence(String id) => _client.get('$_baseUrl/$id/research-evidence');
 }

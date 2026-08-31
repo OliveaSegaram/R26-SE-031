@@ -3,6 +3,7 @@ import '../../../models/curriculum_models.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/telemetry_wrapper.dart';
 import '../../../services/voice_analysis_service.dart';
+import '../../../services/telemetry_service.dart';
 
 /// Interactive Story Game
 /// Shows images with a vertical scroll.
@@ -106,14 +107,16 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
     final audioFile = await VoiceAnalysisService().stopRecording();
 
     if (audioFile != null) {
-      String studentId = 'STU001';
-      String sessionId = DateTime.now().toIso8601String();
+      String? studentId;
+      String sessionId = TelemetryService().sessionId;
       String activityId = widget.activityNode.id;
-      String itemId = 'story_item';
+      final index = _currentPage.round().clamp(0, widget.activityNode.rounds.length - 1);
+      final round = widget.activityNode.rounds[index];
+      String itemId = CanonicalItemResolver.resolve(widget.activityNode, round, index).itemId;
       
       final telemetry = TelemetryWrapper.of(context);
       if (telemetry != null) {
-        studentId = telemetry.widget.studentData?['id'] ?? telemetry.widget.studentData?['_id'] ?? 'STU001';
+        studentId = telemetry.widget.studentData?['id'] ?? telemetry.widget.studentData?['_id'] ;
       }
 
       final results = await VoiceAnalysisService().analyzeAudio(
@@ -128,6 +131,7 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
         tRecordStart: _tRecordStart,
       );
 
+      if (!mounted) return;
       setState(() {
         _isAnalyzing = false;
         _analysisResults = results;
@@ -143,9 +147,9 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
 
       // We are logging these metrics, so we can always pass them for now since it's zero-shot
       // We check word error rate as a fallback just in case STT ran, but primarily we proceed.
-      final double wer = (results['word_error_rate'] ?? 0.0) as double;
+      final double? wer = (results['word_error_rate'] as num?)?.toDouble();
 
-      if (wer < 0.5) {
+      if (wer != null && wer < 0.5 && results['persistence_status'] != 'failed' && results['measurement_status'] == 'available') {
         // Success
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

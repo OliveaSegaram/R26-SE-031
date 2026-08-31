@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../theme/app_theme.dart';
 import '../../services/therapist_dashboard_service.dart';
 import '../../utils/avatar_utils.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../widgets/app_loading_indicator.dart';
 import '../../widgets/trend_chart.dart';
+import '../../widgets/research_evidence_panel.dart';
 
 class TherapistStudentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -18,6 +20,7 @@ class TherapistStudentDetailScreen extends StatefulWidget {
 class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScreen> {
   final TherapistDashboardService _dashboardService = TherapistDashboardService();
   bool _isLoading = true;
+  Map<String, dynamic>? _evidence;
   
   Map<String, dynamic>? _overview;
   Map<String, dynamic>? _c1Behavioral;
@@ -33,41 +36,33 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   }
 
   Future<void> _loadAllData() async {
+    if (mounted) setState(() => _isLoading = true);
     final studentId = widget.student['student_id']?.toString() ?? widget.student['id']?.toString() ?? widget.student['_id']?.toString();
-    if (studentId == null) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = "Invalid Student ID";
-      });
-      return;
+    Future<Map<String, dynamic>> capture(Future<Map<String, dynamic>> request) async {
+      try { return await request; } catch (e) { return {'_error': e.toString()}; }
     }
-
-    try {
-      final responses = await Future.wait([
-        _dashboardService.getOverview(studentId),
-        _dashboardService.getC1Behavioral(studentId),
-        _dashboardService.getC2Speech(studentId),
-        _dashboardService.getC3Profile(studentId),
-        _dashboardService.getC4Adaptive(studentId),
-      ]);
-
-      setState(() {
-        _overview = responses[0];
-        _c1Behavioral = responses[1];
-        _c2Speech = responses[2];
-        _c3Profile = responses[3];
-        _c4Adaptive = responses[4];
-        _isLoading = false;
-        _errorMessage = null;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = "Failed to load dashboard data. Please try again.";
-      });
-    }
+    final responses = studentId == null || studentId.isEmpty
+        ? List.generate(6, (_) => <String, dynamic>{'_error': 'Invalid student ID'})
+        : await Future.wait([
+            capture(_dashboardService.getOverview(studentId)),
+            capture(_dashboardService.getC1Behavioral(studentId)),
+            capture(_dashboardService.getC2Speech(studentId)),
+            capture(_dashboardService.getC3Profile(studentId)),
+            capture(_dashboardService.getC4Adaptive(studentId)),
+            capture(_dashboardService.getResearchEvidence(studentId)),
+          ]);
+    if (!mounted) return;
+    setState(() {
+      _overview = responses[0];
+      _c1Behavioral = responses[1];
+      _c2Speech = responses[2];
+      _c3Profile = responses[3];
+      _c4Adaptive = responses[4];
+      _evidence = responses[5];
+      _isLoading = false;
+      _errorMessage = null;
+    });
   }
-  
   Future<void> _downloadPdf() async {
     final studentId = widget.student['student_id']?.toString() ?? widget.student['id']?.toString() ?? widget.student['_id']?.toString();
     if (studentId == null) return;
@@ -75,11 +70,12 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
       // Show loading snackbar
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generating PDF Report...')));
       // Fetch pdf
-      final _ = await _dashboardService.downloadReport(studentId);
+      final bytes = await _dashboardService.downloadReport(studentId);
+      await SharePlus.instance.share(ShareParams(files: [XFile.fromData(bytes, mimeType: 'application/pdf', name: 'Sipsara_Report.pdf')], fileNameOverrides: ['Sipsara_Report.pdf']));
       // Let's assume standard flutter 'dart:html' downloading for web, but since this is mobile/multi we just show success for now.
       // In a real app we'd use path_provider and open_file, or printing package.
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report downloaded successfully.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report ready in the share dialog.')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error downloading report: $e'), backgroundColor: Colors.red));
@@ -94,7 +90,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         'assets/images/characters/human/human_student_1.png');
 
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Scaffold(
         backgroundColor: AppColors.cream,
         appBar: AppBar(
@@ -131,6 +127,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
               Tab(text: "C2 — Speech & Sinhala Interaction"),
               Tab(text: "C3 — Learner Profile & XAI"),
               Tab(text: "C4 — Adaptive Learning"),
+              Tab(text: "PP2 Evidence"),
             ],
           ),
         ),
@@ -140,11 +137,12 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                 ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
                 : TabBarView(
                     children: [
-                      _buildOverviewTab(),
-                      _buildC1BehavioralTab(),
-                      _buildC2SpeechTab(),
-                      _buildC3ProfileTab(),
-                      _buildC4AdaptiveTab(),
+                      DashboardSection(data: _overview, onRetry: _loadAllData, child: _buildOverviewTab()),
+                      DashboardSection(data: _c1Behavioral, onRetry: _loadAllData, child: _buildC1BehavioralTab()),
+                      DashboardSection(data: _c2Speech, onRetry: _loadAllData, child: _buildC2SpeechTab()),
+                      DashboardSection(data: _c3Profile, onRetry: _loadAllData, child: _buildC3ProfileTab()),
+                      DashboardSection(data: _c4Adaptive, onRetry: _loadAllData, child: _buildC4AdaptiveTab()),
+                      DashboardSection(data: _evidence, onRetry: _loadAllData, child: ResearchEvidencePanel(data: _evidence ?? {})),
                     ],
                   ),
       ),
@@ -155,8 +153,8 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   // 1. OVERVIEW
   // ==========================================
   Widget _buildOverviewTab() {
-    final accuracy = _overview?['accuracy'] ?? 0.0;
-    final mastery = _overview?['overall_mastery'] ?? 0.0;
+    final accuracy = _overview?['accuracy'];
+    final mastery = _overview?['overall_mastery'];
     final c1Avail = _overview?['c1_available'] == true;
     final c2Avail = _overview?['c2_available'] == true;
     final c3Avail = _overview?['c3_available'] == true;
@@ -196,9 +194,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             mainAxisSpacing: 12,
             childAspectRatio: 1.5,
             children: [
-              _buildStatCard("Reading Accuracy", "${(accuracy * 100).toInt()}%", FontAwesomeIcons.bullseye, AppColors.gentleGreen),
-              _buildStatCard("Overall Mastery", "${(mastery * 100).toInt()}%", FontAwesomeIcons.brain, AppColors.calmBlue),
-              _buildStatCard("Current Skill", _overview?['reading_fluency_status'] ?? "-", FontAwesomeIcons.chartLine, AppColors.warmAmber),
+              _buildStatCard("First-attempt Accuracy", metricText(accuracy, scale: 100, suffix: '%', decimals: 0), FontAwesomeIcons.bullseye, AppColors.gentleGreen),
+              _buildStatCard("Mean BKT Estimate", metricText(mastery, scale: 100, suffix: '%', decimals: 0), FontAwesomeIcons.brain, AppColors.calmBlue),
+              _buildStatCard("Model Mastery Status", _overview?['reading_fluency_status'] ?? "-", FontAwesomeIcons.chartLine, AppColors.warmAmber),
               _buildStatCard("Fatigue", _overview?['fatigue_status'] ?? "Low", FontAwesomeIcons.batteryHalf, AppColors.softCoral),
               _buildStatCard("Current Pattern", _overview?['current_pattern'] ?? "Unknown", FontAwesomeIcons.puzzlePiece, AppColors.calmBlue),
               _buildStatCard("Completed Sessions", "${_overview?['completed_sessions'] ?? 0}", FontAwesomeIcons.calendarCheck, AppColors.gentleGreen),
@@ -218,7 +216,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             child: ElevatedButton.icon(
               onPressed: _downloadPdf,
               icon: const Icon(Icons.download),
-              label: const Text("Download Therapist Report (PDF)"),
+              label: const Text("Share Therapist Report (PDF)"),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.calmBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
             ),
           )
@@ -246,9 +244,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     final latTrendRaw = trends['latency'] as List<dynamic>? ?? [];
     final fatTrendRaw = trends['fatigue'] as List<dynamic>? ?? [];
     
-    final accTrend = accTrendRaw.any((e) => e['value'] is! num) ? <double>[] : accTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
-    final latTrend = latTrendRaw.any((e) => e['value'] is! num) ? <double>[] : latTrendRaw.map((e) => ((e['value'] as num) / 1000).toDouble()).toList();
-    final fatTrend = fatTrendRaw.any((e) => e['value'] is! num) ? <double>[] : fatTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
+    final accTrend = accTrendRaw.map((e) => (e['value'] as num?)?.toDouble()).toList();
+    final latTrend = latTrendRaw.map((e) => e['value'] is num ? (e['value'] as num).toDouble() / 1000 : null).toList();
+    final fatTrend = fatTrendRaw.map((e) => (e['value'] as num?)?.toDouble()).toList();
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -296,6 +294,8 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           Text("Supportive Measure", style: AppTypography.heading(fontSize: 14)),
           const SizedBox(height: 8),
           _buildHorizontalBar("Visual Support", kcPerformance['KC_VISUAL_SUPPORT'], AppColors.warmAmber),
+          _buildHorizontalBar("Letter Sequence Memory", kcPerformance['KC_ORTHOGRAPHIC_MEMORY'], AppColors.calmBlue),
+          _buildHorizontalBar("Oral Reading", kcPerformance['KC_ORAL_READING_FLUENCY'], AppColors.calmBlue),
           
           const SizedBox(height: 24),
           Text("Observed Error Pattern", style: AppTypography.heading(fontSize: 18)),
@@ -309,15 +309,15 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             const Text("Complete more sessions to view this trend.", style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary))
           else ...[
             if (accTrend.length >= 2) ...[
-              TrendChart(title: "First-Attempt Accuracy", dataPoints: accTrend, lineColor: AppColors.gentleGreen, minY: 0),
+              TrendChart(title: "First-Attempt Accuracy", dataPoints: accTrend, labels: accTrendRaw.map((e) => e['session'].toString()).toList(), lineColor: AppColors.gentleGreen, minY: 0),
               const SizedBox(height: 24),
             ],
             if (latTrend.length >= 2) ...[
-              TrendChart(title: "Median Response Time (s)", dataPoints: latTrend, lineColor: AppColors.calmBlue, minY: 0),
+              TrendChart(title: "Median Response Time (s)", dataPoints: latTrend, labels: latTrendRaw.map((e) => e['session'].toString()).toList(), lineColor: AppColors.calmBlue, minY: 0),
               const SizedBox(height: 24),
             ],
             if (fatTrend.length >= 2) ...[
-              TrendChart(title: "Behavioral Fatigue Indicator", dataPoints: fatTrend, lineColor: AppColors.softCoral, minY: 0),
+              TrendChart(title: "Behavioral Fatigue Indicator", dataPoints: fatTrend, labels: fatTrendRaw.map((e) => e['session'].toString()).toList(), lineColor: AppColors.softCoral),
             ],
           ]
         ],
@@ -325,58 +325,11 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     );
   }
 
-  Widget _buildAttemptBehaviorBar(dynamic firstAttemptAcc, dynamic retryRate) {
-    if (firstAttemptAcc == null || retryRate == null) {
-      return const Text("Not enough attempt data yet.", style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary));
-    }
-    double first = (firstAttemptAcc as num).toDouble();
-    double retry = (retryRate as num).toDouble();
-    if (first + retry == 0) {
-      return const Text("Not enough attempt data yet.", style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textSecondary));
-    }
-    // Normalize to 1.0 just in case
-    double total = first + retry;
-    double firstPct = first / total;
-    double retryPct = retry / total;
-
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              flex: (firstPct * 100).toInt(),
-              child: Container(
-                height: 24,
-                decoration: const BoxDecoration(
-                  color: AppColors.gentleGreen,
-                  borderRadius: BorderRadius.only(topLeft: Radius.circular(6), bottomLeft: Radius.circular(6)),
-                ),
-              ),
-            ),
-            if ((retryPct * 100).toInt() > 0)
-              Expanded(
-                flex: (retryPct * 100).toInt(),
-                child: Container(
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: AppColors.warmAmber,
-                    borderRadius: BorderRadius.only(topRight: Radius.circular(6), bottomRight: Radius.circular(6)),
-                  ),
-                ),
-              )
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text("First-attempt success     ${(firstPct * 100).toInt()}%", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.gentleGreen)),
-            Text("Required retry     ${(retryPct * 100).toInt()}%", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.warmAmber)),
-          ],
-        )
-      ],
-    );
-  }
+  Widget _buildAttemptBehaviorBar(dynamic firstAttemptAcc, dynamic retryRate) => Column(children: [
+    _buildHorizontalBar('First-attempt success', firstAttemptAcc, AppColors.gentleGreen),
+    _buildHorizontalBar('Trials with retries', retryRate, AppColors.warmAmber),
+    const Text('Separate rates with the same trial denominator; they are not normalized into a 100% stacked chart.'),
+  ]);
 
   Widget _buildErrorPattern(Map<String, dynamic> errors) {
     if (errors.isEmpty) {
@@ -418,7 +371,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
     final latest = _c2Speech?['latest'] ?? {};
     final trends = _c2Speech?['trends'] ?? {};
     final latTrendRaw = trends['latency'] as List<dynamic>? ?? [];
-    final latTrend = latTrendRaw.map((e) => (e['value'] as num).toDouble()).toList();
+    final latTrend = latTrendRaw.map((e) => (e['value'] as num?)?.toDouble()).toList();
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -435,7 +388,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.calmBlue, width: 2),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -452,8 +405,8 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                         children: [
                           Text("STT EVIDENCE", style: AppTypography.caption(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
                           const SizedBox(height: 8),
-                          _buildEvidenceRow("WER", "${latest['wer'] ?? 0.0}"),
-                          _buildEvidenceRow("Confidence", "${((latest['stt_confidence'] ?? 0.0) * 100).toInt()}%"),
+                          _buildEvidenceRow("WER", metricText(latest['wer'])),
+                          _buildEvidenceRow("Confidence", metricText(latest['stt_confidence'], scale: 100, suffix: '%')),
                         ],
                       )
                     ),
@@ -464,9 +417,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                         children: [
                           Text("ACOUSTIC EVIDENCE", style: AppTypography.caption(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
                           const SizedBox(height: 8),
-                          _buildEvidenceRow("Latency", "${(latest['acoustic_latency_ms'] ?? 0.0) / 1000}s"),
-                          _buildEvidenceRow("Silence", "${latest['silence_ratio'] ?? 0.0}"),
-                          _buildEvidenceRow("Peak Δ", "${latest['peak_delta'] ?? 0}"),
+                          _buildEvidenceRow("Latency", metricText(latest['acoustic_latency_ms'], scale: .001, suffix: ' s')),
+                          _buildEvidenceRow("Silence", metricText(latest['silence_ratio'])),
+                          _buildEvidenceRow("Peak Δ", metricText(latest['peak_delta'])),
                           _buildEvidenceRow("Quality", "${latest['recording_quality'] ?? 'Unknown'}"),
                         ],
                       )
@@ -479,11 +432,11 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: AppColors.gentleGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(color: AppColors.gentleGreen.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                   child: Column(
                     children: [
                       Text("Reading Evidence", style: AppTypography.caption(color: AppColors.textSecondary)),
-                      Text("Consistent", style: AppTypography.heading(fontSize: 20, color: AppColors.gentleGreen)),
+                      Text(latest['measurement_status']?.toString() ?? "Unavailable", style: AppTypography.heading(fontSize: 20, color: AppColors.gentleGreen)),
                     ],
                   ),
                 )
@@ -492,6 +445,11 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           ),
           
           const SizedBox(height: 24),
+          _buildEvidenceRow('Thresholded pauses (200–3000 ms)', metricText(latest['pause_count'], decimals: 0)),
+          _buildEvidenceRow('Mean detected pause', metricText(latest['mean_pause_duration_ms'], suffix: ' ms')),
+          _buildEvidenceRow('Detected pause ratio', metricText(latest['pause_ratio'])),
+          _buildEvidenceRow('Active-span duration', metricText(latest['speech_duration_ms'], suffix: ' ms')),
+          const Text('Thresholded acoustic intervals, not validated linguistic pause or syllable annotations.'),
           Text("Expected vs Recognized", style: AppTypography.heading(fontSize: 18)),
           const SizedBox(height: 12),
           Container(
@@ -516,9 +474,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: _buildStatCard("Current Jitter", "${latest['jitter'] ?? 0.0}", Icons.multiline_chart, AppColors.calmBlue)),
+              Expanded(child: _buildStatCard("Current Jitter", metricText(latest['jitter']), Icons.multiline_chart, AppColors.calmBlue)),
               const SizedBox(width: 12),
-              Expanded(child: _buildStatCard("Current Shimmer", "${latest['shimmer'] ?? 0.0}", Icons.waves, AppColors.calmBlue)),
+              Expanded(child: _buildStatCard("Current Shimmer", metricText(latest['shimmer']), Icons.waves, AppColors.calmBlue)),
             ],
           ),
           
@@ -528,7 +486,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           ],
           const SizedBox(height: 24),
           if (trends['wer'] != null) ...[
-            TrendChart(title: "Word Error Rate (WER)", dataPoints: (trends['wer'] as List).map((e) => (e['value'] as num).toDouble()).toList(), lineColor: AppColors.softCoral, minY: 0),
+            TrendChart(title: "Word Error Rate (WER)", dataPoints: (trends['wer'] as List).map((e) => (e['value'] as num?)?.toDouble()).toList(), lineColor: AppColors.softCoral, minY: 0),
           ]
         ],
       ),
@@ -552,10 +510,10 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
           const SizedBox(height: 16),
           Text("Learning Pattern Probabilities", style: AppTypography.heading(fontSize: 18)),
           const SizedBox(height: 12),
-          _buildHorizontalBar("Typical", probs['Typical'] ?? 0.0, AppColors.calmBlue),
-          _buildHorizontalBar("Visual-Orthographic", probs['Visual-Orthographic'] ?? 0.0, AppColors.calmBlue),
-          _buildHorizontalBar("Phonological", probs['Phonological'] ?? 0.0, pattern == 'Phonological' ? AppColors.softCoral : AppColors.calmBlue),
-          _buildHorizontalBar("Combined", probs['Combined'] ?? 0.0, pattern == 'Combined' ? AppColors.softCoral : AppColors.calmBlue),
+          _buildHorizontalBar("Typical", probs['Typical'], AppColors.calmBlue),
+          _buildHorizontalBar("Visual-Orthographic", probs['Visual-Orthographic'], AppColors.calmBlue),
+          _buildHorizontalBar("Phonological", probs['Phonological'], pattern == 'Phonological' ? AppColors.softCoral : AppColors.calmBlue),
+          _buildHorizontalBar("Combined", probs['Combined'], pattern == 'Combined' ? AppColors.softCoral : AppColors.calmBlue),
           
           const SizedBox(height: 32),
           Text("Model Evidence (SHAP)", style: AppTypography.heading(fontSize: 18)),
@@ -571,7 +529,9 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
               title += " (Observed: $obs $direction)";
             }
             
-            return _buildHorizontalBar(title, impact, AppColors.warmAmber, prefix: "+");
+            return ListTile(contentPadding: EdgeInsets.zero, title: Text(title),
+              subtitle: Text(impact >= 0 ? 'Increases explained model score (raw margin)' : 'Decreases explained model score (raw margin)'),
+              trailing: Text('${impact >= 0 ? '+' : ''}${impact.toStringAsFixed(3)}'));
           }).toList(),
           
           const SizedBox(height: 24),
@@ -591,7 +551,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                     children: [
                       const Icon(Icons.auto_awesome, color: AppColors.calmBlue, size: 20),
                       const SizedBox(width: 8),
-                      Text("AI Diagnostic Summary", style: AppTypography.heading(fontSize: 16, color: AppColors.calmBlue)),
+                      Text("Experimental Model Summary", style: AppTypography.heading(fontSize: 16, color: AppColors.calmBlue)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -613,7 +573,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                   Text("Interpretation", style: AppTypography.caption(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Text(
-                    "Speech-related latency and intra-word pausing contributed strongly to the current ${pattern.toLowerCase()} learning-pattern prediction.",
+                    "No generated interpretation is available. SHAP describes model behavior; it does not establish a cause or a learning difficulty.",
                     style: const TextStyle(fontStyle: FontStyle.italic),
                   ),
                 ],
@@ -630,8 +590,8 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
   Widget _buildC4AdaptiveTab() {
     final kcs = _c4Adaptive?['knowledge_components'] as List<dynamic>? ?? [];
     final history = _c4Adaptive?['history'] as List<dynamic>? ?? [];
-    final theta = _c4Adaptive?['theta'] ?? 0.0;
-    final thetaSe = _c4Adaptive?['theta_se'] ?? 0.0;
+    final theta = _c4Adaptive?['theta'];
+    final thetaSe = _c4Adaptive?['theta_se'];
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -649,7 +609,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: Text("CURRENT DECISION", style: AppTypography.heading(fontSize: 16, color: AppColors.calmBlue))),
+                  Center(child: Text("LATEST RECOMMENDATION (NOT APPLIED IN GAME)", style: AppTypography.heading(fontSize: 16, color: AppColors.calmBlue))),
                   const Divider(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -658,7 +618,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Difficulty", style: AppTypography.caption()),
-                          Text("${history.last['previous_difficulty'] ?? 0.0} → ${history.last['selected_difficulty'] ?? 0.0}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text("${metricText(history.last['previous_difficulty'])} → ${metricText(history.last['selected_difficulty'])}", style: const TextStyle(fontWeight: FontWeight.bold)),
                         ],
                       ),
                       Column(
@@ -682,16 +642,16 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             const SizedBox(height: 24),
           ],
           
-          Text("Knowledge Mastery (BKT)", style: AppTypography.heading(fontSize: 18)),
+          Text("Estimated KC Mastery (BKT)", style: AppTypography.heading(fontSize: 18)),
           const SizedBox(height: 12),
           ...kcs.map((kc) => _buildHorizontalBar(kc['name'] ?? '', (kc['mastery'] as num).toDouble(), AppColors.gentleGreen)).toList(),
           
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _buildStatCard("IRT Ability (θ)", "${theta.toStringAsFixed(2)}", Icons.person, AppColors.calmBlue)),
+              Expanded(child: _buildStatCard("IRT Ability (θ)", metricText(theta), Icons.person, AppColors.calmBlue)),
               const SizedBox(width: 12),
-              Expanded(child: _buildStatCard("IRT SE", "${thetaSe.toStringAsFixed(2)}", Icons.error_outline, AppColors.textSecondary)),
+              Expanded(child: _buildStatCard("IRT SE", metricText(thetaSe), Icons.error_outline, AppColors.textSecondary)),
             ],
           ),
           
@@ -719,15 +679,15 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Mastery ${(dec['mastery_after'] as num? ?? 0.0).toStringAsFixed(2)}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                        Text("Difficulty ${(dec['selected_difficulty'] as num? ?? 0.0).toStringAsFixed(2)}", style: const TextStyle(color: AppColors.textSecondary)),
+                        Text("Mastery ${metricText(dec['mastery_after'])}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text("Difficulty ${metricText(dec['selected_difficulty'])}", style: const TextStyle(color: AppColors.textSecondary)),
                       ],
                     ),
                   ),
                   if ((dec['scaffold_level'] ?? 0) > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.warmAmber.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+                      decoration: BoxDecoration(color: AppColors.warmAmber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
                       child: Text("Scaffold ON", style: TextStyle(color: AppColors.warmAmber, fontSize: 10, fontWeight: FontWeight.bold)),
                     )
                 ],
@@ -806,7 +766,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

@@ -4,6 +4,7 @@ import '../../services/parent_dashboard_service.dart';
 import '../../utils/avatar_utils.dart';
 import '../../widgets/app_loading_indicator.dart';
 import '../../widgets/trend_chart.dart';
+import '../../widgets/research_evidence_panel.dart';
 
 class ChildProgressScreen extends StatefulWidget {
   final Map<String, dynamic> studentData;
@@ -17,6 +18,8 @@ class ChildProgressScreen extends StatefulWidget {
 class _ChildProgressScreenState extends State<ChildProgressScreen> {
   final ParentDashboardService _dashboardService = ParentDashboardService();
   bool _isLoading = true;
+  Map<String, dynamic>? _evidence;
+  Map<String, dynamic>? _progress;
   
   Map<String, dynamic>? _overview;
   Map<String, dynamic>? _skills;
@@ -31,24 +34,29 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
   }
 
   Future<void> _loadAllData() async {
-    final studentId = widget.studentData['id']?.toString() ?? widget.studentData['_id']?.toString();
-    if (studentId == null) {
-      setState(() => _isLoading = false);
-      return;
+    if (mounted) setState(() => _isLoading = true);
+    final studentId = widget.studentData['student_id']?.toString() ?? widget.studentData['id']?.toString() ?? widget.studentData['_id']?.toString();
+    Future<Map<String, dynamic>> capture(Future<Map<String, dynamic>> request) async {
+      try { return await request; } catch (e) { return {'_error': e.toString()}; }
     }
-
-    final responses = await Future.wait([
-      _dashboardService.getOverview(studentId),
-      _dashboardService.getSkills(studentId),
-      _dashboardService.getLearningPattern(studentId),
-      _dashboardService.getActivityHistory(studentId, _currentFilter),
-    ]);
-
+    final responses = studentId == null || studentId.isEmpty
+        ? List.generate(6, (_) => <String, dynamic>{'_error': 'Invalid student ID'})
+        : await Future.wait([
+            capture(_dashboardService.getOverview(studentId)),
+            capture(_dashboardService.getSkills(studentId)),
+            capture(_dashboardService.getLearningPattern(studentId)),
+            capture(_dashboardService.getActivityHistory(studentId, _currentFilter)),
+            capture(_dashboardService.getProgress(studentId)),
+            capture(_dashboardService.getResearchEvidence(studentId)),
+          ]);
+    if (!mounted) return;
     setState(() {
       _overview = responses[0];
       _skills = responses[1];
       _learningPattern = responses[2];
       _activityHistory = responses[3];
+      _progress = responses[4];
+      _evidence = responses[5];
       _isLoading = false;
     });
   }
@@ -62,7 +70,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
         'assets/images/characters/human/human_student_1.png');
 
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Scaffold(
         backgroundColor: AppColors.cream,
         appBar: AppBar(
@@ -126,6 +134,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
               Tab(text: "Reading Pattern"),
               Tab(text: "Activity History"),
               Tab(text: "Reports"),
+              Tab(text: "PP2 Evidence"),
             ],
           ),
         ),
@@ -133,11 +142,12 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             ? const Center(child: AppLoadingIndicator())
             : TabBarView(
                 children: [
-                  _buildOverviewTab(),
-                  _buildReadingProgressTab(),
-                  _buildReadingPatternTab(),
-                  _buildActivityHistoryTab(),
+                  DashboardSection(data: _overview, onRetry: _loadAllData, child: _buildOverviewTab()),
+                  DashboardSection(data: _progress, onRetry: _loadAllData, child: _buildReadingProgressTab()),
+                  DashboardSection(data: _learningPattern, onRetry: _loadAllData, child: _buildReadingPatternTab()),
+                  DashboardSection(data: _activityHistory, onRetry: _loadAllData, child: _buildActivityHistoryTab()),
                   _buildReportsTab(),
+                  DashboardSection(data: _evidence, onRetry: _loadAllData, child: ResearchEvidencePanel(data: _evidence ?? {}, simplified: true)),
                 ],
               ),
       ),
@@ -151,8 +161,8 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
     // Reading Sessions: 6
     // Reading Progress: Developing
     
-    final accuracy = _overview?['accuracy'] ?? 0;
-    final practice = _overview?['practice_time_minutes'] ?? 0;
+    final accuracy = _overview?['accuracy'];
+    final practice = _overview?['practice_time_minutes'];
     final sessions = _overview?['sessions_completed'] ?? 0;
     final progress = _overview?['reading_progress'] ?? "Developing";
 
@@ -171,15 +181,15 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             mainAxisSpacing: 12,
             childAspectRatio: 1.5,
             children: [
-              _buildStatCard("Reading Accuracy", "$accuracy%", Icons.track_changes_rounded, AppColors.gentleGreen),
-              _buildStatCard("Reading Practice", "$practice min", Icons.schedule_rounded, AppColors.calmBlue),
+              _buildStatCard("First-attempt accuracy", metricText(accuracy, suffix: '%', decimals: 0), Icons.track_changes_rounded, AppColors.gentleGreen),
+              _buildStatCard("Reading Practice", metricText(practice, suffix: ' min', decimals: 0), Icons.schedule_rounded, AppColors.calmBlue),
               _buildStatCard("Reading Sessions", "$sessions", Icons.videogame_asset_rounded, AppColors.softCoral),
               _buildStatCard("Reading Progress", progress, Icons.trending_up_rounded, AppColors.warmAmber),
             ],
           ),
           const SizedBox(height: 24),
           
-          Text("Fluency Status", style: AppTypography.heading(fontSize: 20)),
+          Text("Interpretation Limits", style: AppTypography.heading(fontSize: 20)),
           const SizedBox(height: 16),
           _buildFluencyCard(),
         ],
@@ -187,48 +197,12 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
     );
   }
 
-  Widget _buildFluencyCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Reading Fluency", style: AppTypography.heading(fontSize: 18, color: AppColors.textPrimary)),
-              Text(_overview?['reading_progress'] ?? "Developing", style: AppTypography.heading(fontSize: 16, color: AppColors.calmBlue)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Simple visual progress bar approximation (70% full)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: 0.7,
-              minHeight: 12,
-              backgroundColor: AppColors.borderLight,
-              color: AppColors.calmBlue,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            "* System-derived reading performance indicator (not a clinically validated score).",
-            style: AppTypography.caption(fontSize: 11, color: AppColors.textSecondary),
-          )
-        ],
-      ),
-    );
-  }
+  Widget _buildFluencyCard() => const Padding(padding: EdgeInsets.all(16),
+    child: Text('Oral-reading fluency has not been validated. Accuracy and BKT mastery are different measures and are not used as a fluency score.'));
 
   Widget _buildReadingProgressTab() {
-    List<dynamic> trendRaw = _overview?['accuracy_trend'] ?? [];
-    List<double> trendData = trendRaw.isNotEmpty ? trendRaw.map((e) => (e['accuracy'] as num).toDouble()).toList() : [0.0];
+    List<dynamic> trendRaw = _progress?['accuracy_trend'] ?? [];
+    List<double?> trendData = trendRaw.map((e) => (e['accuracy'] as num?)?.toDouble()).toList();
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -240,10 +214,17 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
           TrendChart(
             title: "Reading Accuracy (%)",
             dataPoints: trendData,
+            labels: trendRaw.map((e) => e['session'].toString()).toList(),
             lineColor: AppColors.calmBlue,
             minY: 0,
             maxY: 100,
           ),
+          Text('Estimated skill mastery', style: AppTypography.heading(fontSize: 18)),
+          if (_skills?['_error'] != null) Text(_skills!['_error'].toString()),
+          ...((_skills?['skills'] as List?) ?? []).map((r) => ListTile(
+            title: Text(r['skill_name'].toString()), subtitle: Text(r['status'].toString()),
+            trailing: Text(metricText(r['mastery_percentage'], suffix: '%', decimals: 0)),
+          )),
         ],
       ),
     );
@@ -270,7 +251,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _learningPattern?['observation'] ?? "Your child is showing steady reading development.",
+                    _learningPattern?['observation'] ?? "No learning-pattern evidence is available.",
                     style: AppTypography.body(fontSize: 16),
                   ),
                 ),
@@ -327,26 +308,12 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
                 DataColumn(label: Text('Result', style: TextStyle(fontWeight: FontWeight.bold))),
                 DataColumn(label: Text('Time', style: TextStyle(fontWeight: FontWeight.bold))),
               ],
-              rows: const [
-                DataRow(cells: [
-                  DataCell(Text('Aug 30')),
-                  DataCell(Text('පෙළපොතෙන් කියවමු - 1')),
-                  DataCell(Text('80%')),
-                  DataCell(Text('5 min')),
-                ]),
-                DataRow(cells: [
-                  DataCell(Text('Aug 29')),
-                  DataCell(Text('කවුද?')),
-                  DataCell(Text('75%')),
-                  DataCell(Text('4 min')),
-                ]),
-                DataRow(cells: [
-                  DataCell(Text('Aug 28')),
-                  DataCell(Text('මොනවාද?')),
-                  DataCell(Text('85%')),
-                  DataCell(Text('4 min')),
-                ]),
-              ],
+              rows: ((_activityHistory?['history'] as List?) ?? []).map((r) => DataRow(cells: [
+                DataCell(Text('${r['session_date']}')),
+                DataCell(Text('${r['activity_name']}')),
+                DataCell(Text(metricText(r['accuracy'], suffix: '%', decimals: 0))),
+                DataCell(Text(metricText(r['duration_minutes'], suffix: ' min', decimals: 0))),
+              ])).toList(),
             ),
           ),
         ],
@@ -354,40 +321,8 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
     );
   }
 
-  Widget _buildReportsTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.picture_as_pdf_rounded, size: 64, color: AppColors.softCoral),
-          const SizedBox(height: 24),
-          Text("Download Official Report", style: AppTypography.heading(fontSize: 20)),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40.0),
-            child: Text(
-              "Report includes reading progress, accuracy trend, practice time, fluency status, and simple observations.",
-              textAlign: TextAlign.center,
-              style: AppTypography.caption(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              // Implementation to download report from /api/v1/parent/students/{id}/report
-            },
-            icon: const Icon(Icons.download),
-            label: const Text("Download PDF"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.calmBlue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildReportsTab() => const Center(child: Padding(padding: EdgeInsets.all(24),
+    child: Text('Parent PDF export is not available yet. Use the PP2 Evidence tab to inspect objectives, baseline results and limitations.')));
 
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Container(

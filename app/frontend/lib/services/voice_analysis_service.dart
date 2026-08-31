@@ -178,16 +178,18 @@ class VoiceAnalysisService {
         print('VoiceAnalysisService API Error: ${response.body}');
         return {
           'transcription': '',
-          'word_error_rate': 1.0,
-          'Acoustic_Latency_ms': 0,
+          'word_error_rate': null,
+          'Acoustic_Latency_ms': null,
+          'measurement_status': 'request_failed',
         };
       }
     } catch (e) {
       print('VoiceAnalysisService Network Error: $e');
       return {
         'transcription': '',
-        'word_error_rate': 1.0,
-        'Acoustic_Latency_ms': 0,
+        'word_error_rate': null,
+        'Acoustic_Latency_ms': null,
+        'measurement_status': 'request_failed',
       };
     }
   }

@@ -307,16 +307,21 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
     // --- NEW: Real-time Orchestrator Submission (C1-C4) ---
     final studentId = widget.studentData?['id'] ?? widget.studentData?['_id'] ?? 'STU001';
-    final sessionId = TelemetryService().sessionStartTime?.toIso8601String() ?? DateTime.now().toIso8601String();
+    final sessionId = TelemetryService().sessionId;
 
     final payload = {
       "student_id": studentId,
       "session_id": sessionId,
       "activity_id": widget.activityNode.id,
       "item_id": canonical.itemId,
+      "knowledge_component_id": event.knowledgeComponentId,
+      "difficulty_b": canonical.difficultyB,
+      "is_anchor": canonical.isAnchor,
+      "first_attempt_correct": event.firstAttemptCorrect,
+      "event_id": '$sessionId:${TelemetryService().sessionEvents.length - 1}',
       "response": {
         "selected_character": "item", 
-        "is_correct": finalRoundScore > 0
+        "is_correct": event.firstAttemptCorrect ?? event.isCorrect
       },
       "telemetry": {
         "first_touch_latency_ms": event.firstTouchLatencyMs >= 0 ? event.firstTouchLatencyMs : 0,

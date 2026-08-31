@@ -181,6 +181,7 @@ class TelemetryService {
   final List<TelemetryEvent> _sessionEvents = [];
   DateTime? _sessionStartTime;
   String? _sessionId;
+  String get sessionId => _sessionId ??= const Uuid().v4();
   
   DateTime? get sessionStartTime => _sessionStartTime;
   
