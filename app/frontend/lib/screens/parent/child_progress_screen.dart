@@ -81,6 +81,16 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: AppColors.calmBlue),
+              tooltip: 'Reload latest data',
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Refreshing dashboard data...'), duration: Duration(seconds: 1)),
+                );
+                _loadAllData();
+              },
+            ),
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
               child: DropdownButton<String>(
@@ -139,8 +149,11 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
         ),
         body: _isLoading
             ? const Center(child: AppLoadingIndicator())
-            : TabBarView(
-                children: [
+            : RefreshIndicator(
+                onRefresh: _loadAllData,
+                color: AppColors.calmBlue,
+                child: TabBarView(
+                  children: [
                   DashboardSection(data: _overview, onRetry: _loadAllData, child: _buildOverviewTab()),
                   DashboardSection(data: _progress, onRetry: _loadAllData, child: _buildReadingProgressTab()),
                   DashboardSection(data: _learningPattern, onRetry: _loadAllData, child: _buildReadingPatternTab()),
@@ -148,6 +161,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
                   _buildReportsTab(),
                 ],
               ),
+            ),
       ),
     );
   }

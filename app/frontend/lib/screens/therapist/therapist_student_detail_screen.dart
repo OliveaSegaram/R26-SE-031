@@ -102,6 +102,18 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
             onPressed: () => Navigator.pop(context),
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: AppColors.calmBlue),
+              tooltip: 'Reload latest data',
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Refreshing student data...'), duration: Duration(seconds: 1)),
+                );
+                _loadAllData();
+              },
+            ),
+          ],
           title: Row(
             children: [
               CircleAvatar(
@@ -136,14 +148,18 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             ? const Center(child: AppLoadingIndicator())
             : _errorMessage != null 
                 ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
-                : TabBarView(
-                    children: [
-                      DashboardSection(data: _overview, onRetry: _loadAllData, child: _buildOverviewTab()),
-                      DashboardSection(data: _c1Behavioral, onRetry: _loadAllData, child: _buildC1BehavioralTab()),
-                      DashboardSection(data: _c2Speech, onRetry: _loadAllData, child: _buildC2SpeechTab()),
-                      DashboardSection(data: _c3Profile, onRetry: _loadAllData, child: _buildC3ProfileTab()),
-                      DashboardSection(data: _c4Adaptive, onRetry: _loadAllData, child: _buildC4AdaptiveTab()),
-                    ],
+                : RefreshIndicator(
+                    onRefresh: _loadAllData,
+                    color: AppColors.calmBlue,
+                    child: TabBarView(
+                      children: [
+                        DashboardSection(data: _overview, onRetry: _loadAllData, child: _buildOverviewTab()),
+                        DashboardSection(data: _c1Behavioral, onRetry: _loadAllData, child: _buildC1BehavioralTab()),
+                        DashboardSection(data: _c2Speech, onRetry: _loadAllData, child: _buildC2SpeechTab()),
+                        DashboardSection(data: _c3Profile, onRetry: _loadAllData, child: _buildC3ProfileTab()),
+                        DashboardSection(data: _c4Adaptive, onRetry: _loadAllData, child: _buildC4AdaptiveTab()),
+                      ],
+                    ),
                   ),
       ),
     );
