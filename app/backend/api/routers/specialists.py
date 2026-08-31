@@ -63,10 +63,15 @@ async def connect_specialist(req: SpecialistConnectRequest, current_user: dict =
             detail="Invalid clinic code. Please check with your specialist."
         )
         
-    # Create or update connection
-    await db.connections.update_one(
-        {"student_id": str(student["_id"]), "specialist_id": str(specialist["_id"])},
-        {"$set": {"parent_consent": True}},
+    # Create or update connection in therapist_connections
+    from datetime import datetime
+    await db.therapist_connections.update_one(
+        {"student_id": str(student["_id"]), "therapist_id": str(specialist["_id"])},
+        {"$set": {
+            "parent_id": str(current_user["_id"]),
+            "status": "active",
+            "connected_at": datetime.utcnow(),
+        }},
         upsert=True
     )
     
@@ -83,8 +88,10 @@ async def get_connected_students(current_user: dict = Depends(get_current_user))
             detail="Only specialists can access connected students."
         )
         
-    # Find all connections for this specialist
-    connections_cursor = db.connections.find({"specialist_id": str(current_user["_id"])})
+    # Find all connections for this specialist in therapist_connections
+    connections_cursor = db.therapist_connections.find(
+        {"therapist_id": str(current_user["_id"]), "status": "active"}
+    )
     connections = await connections_cursor.to_list(length=100)
     
     if not connections:
