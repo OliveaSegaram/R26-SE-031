@@ -233,9 +233,11 @@ def classify_risk(
             
             return {
                 "overall_risk": overall_risk,
-                "dyslexia_risk": overall_risk,
-                "dyspraxia_risk": overall_risk,
-                "adhd_risk": overall_risk,
+                # Use the same key names as the heuristic path so generate_interventions works
+                "visual_dyslexia_risk": overall_risk,
+                "phonological_dyslexia_risk": overall_risk,
+                "motor_dysgraphia_risk": overall_risk,
+                "attention_risk": overall_risk,
                 "model_used": "RandomForest"
             }
         except Exception as e:

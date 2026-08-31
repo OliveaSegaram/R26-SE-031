@@ -18,7 +18,11 @@ class XAIEngine:
         features_path = os.path.join(os.path.dirname(__file__), "../models/feature_names.pkl")
         
         if not os.path.exists(model_path):
-            raise FileNotFoundError("XGBoost model not found. Please run scripts/train_synthetic_model.py first.")
+            print("WARNING: XGBoost model not found. Using fallback mock mode.")
+            self.model = None
+            self.feature_names = []
+            self.explainer = None
+            return
             
         self.model = joblib.load(model_path)
         self.feature_names = joblib.load(features_path)
@@ -69,70 +73,76 @@ class XAIEngine:
         """
         Takes the flat dictionary of features, runs prediction and SHAP, and returns structured result.
         """
-        # Create DataFrame ensuring columns match exactly what model expects
-        df = pd.DataFrame([request_data], columns=self.feature_names)
-        
-        # 1. Predict probabilities and class
-        probas = self.model.predict_proba(df)[0]
-        predicted_class = int(np.argmax(probas))
-        
-        # Base prevalence is technically the prior, but we'll define a baseline risk of ANY deficit.
-        # Let's say baseline risk is the sum of probabilities for classes 1, 2, 3 in the training set
-        # (which was 0.25+0.25+0.1 = 0.6 in our synthetic, but clinically let's mock it at 0.15 for the report)
-        base_prevalence_risk = 0.15 
-        
-        # Final predicted risk is the probability of the predicted class (if it's a deficit) 
-        # or the sum of all deficit probabilities.
-        final_predicted_risk = float(1.0 - probas[0]) # 1 - P(Normal)
-        
-        # 2. SHAP Explanation
-        # For multi-class, shap_values is a list of arrays (one for each class).
-        # We'll explain the predicted class's output.
-        shap_values = self.explainer.shap_values(df)
-        
-        # TreeExplainer might return a list for multiclass, or an array with shape (1, num_features, num_classes)
-        if isinstance(shap_values, list):
-            class_shap_values = shap_values[predicted_class][0]
-        elif len(shap_values.shape) == 3:
-            class_shap_values = shap_values[0, :, predicted_class]
+        if self.model is None:
+            # Fallback mock mode
+            probas = [0.6, 0.2, 0.1, 0.1]
+            predicted_class = 0
+            final_predicted_risk = 0.4
+            explanations = [
+                {"feature_name": "mock_feature", "value": 0.0, "shap_impact": "+0.00", "human_readable": "Model not loaded. Mock explanation."}
+            ]
         else:
-            class_shap_values = shap_values[0]
-
-        # Get top contributing features (sort by absolute SHAP value)
-        feature_importance = []
-        for i, feat_name in enumerate(self.feature_names):
-            val = float(df.iloc[0][feat_name])
-            s_val = float(class_shap_values[i])
+            # Create DataFrame ensuring columns match exactly what model expects
+            df = pd.DataFrame([request_data], columns=self.feature_names)
             
-            # We only really care about features that pushed the prediction HIGHER (positive SHAP)
-            # if we are explaining a deficit, or all top features. Let's get top 3 by absolute value.
-            feature_importance.append({
-                "feature_name": feat_name,
-                "value": val,
-                "shap_val": s_val,
-                "abs_shap": abs(s_val)
-            })
+            # 1. Predict probabilities and class
+            probas = self.model.predict_proba(df)[0]
+            predicted_class = int(np.argmax(probas))
             
-        # Sort by absolute SHAP impact
-        feature_importance.sort(key=lambda x: x["abs_shap"], reverse=True)
-        top_features = feature_importance[:3] # keep top 3
-        
-        explanations = []
-        for f in top_features:
-            sign = "+" if f["shap_val"] > 0 else ""
-            explanations.append({
-                "feature_name": f["feature_name"],
-                "value": round(f["value"], 3),
-                "shap_impact": f"{sign}{f['shap_val']:.2f}",
-                "human_readable": self._translate_shap_to_human(f["feature_name"], f["value"], f["shap_val"])
-            })
+            # Final predicted risk is the probability of the predicted class (if it's a deficit) 
+            # or the sum of all deficit probabilities.
+            final_predicted_risk = float(1.0 - probas[0]) # 1 - P(Normal)
+            
+            # 2. SHAP Explanation
+            # For multi-class, shap_values is a list of arrays (one for each class).
+            # We'll explain the predicted class's output.
+            shap_values = self.explainer.shap_values(df)
+            
+            # TreeExplainer might return a list for multiclass, or an array with shape (1, num_features, num_classes)
+            if isinstance(shap_values, list):
+                class_shap_values = shap_values[predicted_class][0]
+            elif len(shap_values.shape) == 3:
+                class_shap_values = shap_values[0, :, predicted_class]
+            else:
+                class_shap_values = shap_values[0]
+    
+            # Get top contributing features (sort by absolute SHAP value)
+            feature_importance = []
+            for i, feat_name in enumerate(self.feature_names):
+                val = float(df.iloc[0][feat_name])
+                s_val = float(class_shap_values[i])
+                
+                # We only really care about features that pushed the prediction HIGHER (positive SHAP)
+                # if we are explaining a deficit, or all top features. Let's get top 3 by absolute value.
+                feature_importance.append({
+                    "feature_name": feat_name,
+                    "value": val,
+                    "shap_val": s_val,
+                    "abs_shap": abs(s_val)
+                })
+                
+            # Sort by absolute SHAP impact
+            feature_importance.sort(key=lambda x: x["abs_shap"], reverse=True)
+            top_features = feature_importance[:3] # keep top 3
+            
+            explanations = []
+            for f in top_features:
+                sign = "+" if f["shap_val"] > 0 else ""
+                explanations.append({
+                    "feature_name": f["feature_name"],
+                    "value": round(f["value"], 3),
+                    "shap_impact": f"{sign}{f['shap_val']:.2f}",
+                    "human_readable": self._translate_shap_to_human(f["feature_name"], f["value"], f["shap_val"])
+                })
 
         return {
             "learner_profile": {
                 "class_probabilities": {SUBTYPE_MAP[i]: round(float(p), 3) for i, p in enumerate(probas)},
                 "primary_pattern": SUBTYPE_MAP[predicted_class],
                 "confidence": round(float(np.max(probas)), 3),
-                "modalities_used": ["C1_Acoustic", "C2_Kinematic"]
+                "modalities_used": ["C1_Acoustic", "C2_Kinematic"],
+                "final_predicted_risk": round(final_predicted_risk, 3),
+                "validation_status": "synthetic_only"
             },
             "shap_explanations": {
                 "top_contributing_features": explanations

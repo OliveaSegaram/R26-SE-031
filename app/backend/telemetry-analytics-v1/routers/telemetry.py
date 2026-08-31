@@ -9,9 +9,11 @@ Endpoints:
   GET  /api/v1/auth/telemetry/{sid}/analytics  — ML cognitive profile + risk report
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, BackgroundTasks
 from fastapi.responses import StreamingResponse
 import io
+import httpx
+import asyncio
 from bson.objectid import ObjectId
 from datetime import datetime, timezone
 
@@ -26,6 +28,45 @@ from services.behavioral_engine import extract_session_features
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Telemetry"])
 
+async def _trigger_c3_background(student_id: str, session_summary: dict):
+    try:
+        db = get_db()
+        # Fetch speech features
+        speech = await db.speech_features.find_one({"student_id": student_id}, sort=[("created_at", -1)])
+        if not speech:
+            speech = {}
+
+        overall = session_summary.get("overall", {})
+        error_prof = session_summary.get("error_profile", {})
+        
+        # Build payload matching FusionRequest
+        payload = {
+            "student_id": student_id,
+            "c1_audio_vector": {
+                "acoustic_latency_ms": speech.get("acoustic_latency_ms", 1000.0),
+                "peak_count_delta": speech.get("syllabic_event_mismatch", 0.0),
+                "intra_word_silence_ratio": speech.get("intra_word_silence_ratio", 0.1),
+                "local_jitter": speech.get("local_jitter", 0.01),
+                "local_shimmer": speech.get("local_shimmer", 0.05)
+            },
+            "c2_kinematic_vector": {
+                "time_to_first_touch_ms": overall.get("median_response_latency_ms") or 1200.0,
+                "orthographic_confusion_index": error_prof.get("visual_confusion_rate", 0.1),
+                "path_efficiency_ratio": overall.get("accuracy", 0.8),
+                "dimensionless_jerk": 50.0,
+                "dwell_time_ms": (overall.get("median_response_latency_ms") or 1200.0) * 0.3
+            },
+            "student_age_months": 72
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post("http://localhost:9016/diagnose", json=payload, timeout=10.0)
+            if response.status_code != 200:
+                print(f"C3 Fusion Error: {response.text}")
+            else:
+                print(f"C3 Fusion Success for {student_id}")
+    except Exception as e:
+        print(f"Background C3 trigger failed: {e}")
 
 # ---------------------------------------------------------------------------
 # POST /telemetry  — Ingest enriched telemetry session
@@ -34,6 +75,7 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Telemetry"])
 @router.post("/telemetry", status_code=status.HTTP_201_CREATED)
 async def submit_telemetry(
     req: TelemetrySessionSubmit,
+    background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
 ):
     """
@@ -79,6 +121,9 @@ async def submit_telemetry(
     # Assess real-time cognitive load
     events_list = session_doc.get("events", [])
     cognitive_load = CognitiveLoadClassifier.classify(events_list)
+
+    # Trigger C3 Background Fusion
+    background_tasks.add_task(_trigger_c3_background, str(student_oid), summary)
 
     return {
         "message": "Telemetry session logged successfully.",
@@ -398,12 +443,13 @@ async def export_telemetry_csv(
                 d_os, d_mod
             ]
             writer.writerow(row)
-            
-            return StreamingResponse(
+
+    return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=sipsara_telemetry_datalake.csv"}
     )
+
 
 # ---------------------------------------------------------------------------
 # GET /students/{student_id}/assessment/report/pdf

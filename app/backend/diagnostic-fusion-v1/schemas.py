@@ -31,6 +31,8 @@ class LearnerProfileOutput(BaseModel):
     primary_pattern: str
     confidence: float
     modalities_used: list
+    base_prevalence_risk: float
+    final_predicted_risk: float
 
 class ShapExplanation(BaseModel):
     feature_name: str

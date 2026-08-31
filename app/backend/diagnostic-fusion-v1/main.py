@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import logging
 from datetime import datetime
@@ -48,7 +49,7 @@ app.add_middleware(
 def health_check():
     return {"status": "ok", "service": "diagnostic-fusion-v1"}
 
-@app.post("/diagnose", response_model=FusionResponse)
+@app.post("/diagnose")
 async def diagnose_patient(
     request: FusionRequest,
     engine: XAIEngine = Depends(get_xai_engine)
@@ -57,6 +58,12 @@ async def diagnose_patient(
     Ingests multimodal vectors (Acoustic + Kinematic) and returns a Dyslexia Subtype classification 
     along with SHAP explanations.
     """
+    if engine is None:
+        return JSONResponse(
+            status_code=503, 
+            content={"status": "model_unavailable", "student_id": request.student_id}
+        )
+        
     try:
         # Flatten the request into a single dictionary matching the feature columns
         flat_features = {}
@@ -69,7 +76,8 @@ async def diagnose_patient(
         analysis_result = engine.analyze_patient(flat_features)
         
         # Extract simple SHAP dictionary for the LLM
-        simple_shap = {item["feature_name"]: item["shap_value"] 
+        # Note: the key is "shap_impact" (formatted string), not "shap_value"
+        simple_shap = {item["feature_name"]: item["shap_impact"] 
                        for item in analysis_result["shap_explanations"]["top_contributing_features"]}
         
         # Call LLM Explainer asynchronously
@@ -92,7 +100,25 @@ async def diagnose_patient(
         db = get_db()
         diagnosis_doc = response.dict()
         diagnosis_doc["created_at"] = datetime.utcnow()
+        diagnosis_doc["feature_source"] = {
+            "c1_source": "telemetry_analytics_v1",
+            "c2_source": "speech_monitoring_v1"
+        }
         await db.learner_profiles.insert_one(diagnosis_doc)
+        
+        # Audit Log
+        audit_doc = {
+            "student_id": request.student_id,
+            "timestamp": datetime.utcnow(),
+            "model_name": "XGBoost",
+            "model_version": "C3-v1.0",
+            "validation_status": "synthetic_only",
+            "input_features": flat_features,
+            "output_probabilities": analysis_result["learner_profile"]["class_probabilities"],
+            "predicted_pattern": analysis_result["learner_profile"]["primary_pattern"],
+            "feature_source": diagnosis_doc["feature_source"]
+        }
+        await db.model_audit_log.insert_one(audit_doc)
         
         return response
         
