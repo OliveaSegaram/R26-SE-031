@@ -18,27 +18,19 @@ async def save_session(session_data: dict) -> None:
     )
 
 async def save_events(events_list: list[dict]) -> None:
-    """
-    Save raw telemetry events.
-    Checks for event_id to prevent duplicate inserts (idempotency).
-    """
     db = get_db()
     if not events_list:
         return
         
-    # Standard mongodb approach: try inserting all, ignore duplicates if we set up a unique index on event_id.
-    # Alternatively, use bulk write with upserts.
-    from pymongo import UpdateOne
-    operations = [
-        UpdateOne(
-            {"event_id": event["event_id"]},
-            {"$setOnInsert": event},
-            upsert=True
-        ) for event in events_list if "event_id" in event
-    ]
-    
-    if operations:
-        await db.telemetry_events.bulk_write(operations, ordered=False)
+    for event in events_list:
+        if "event_id" in event:
+            await db.telemetry_events.update_one(
+                {"event_id": event["event_id"]},
+                {"$set": event},
+                upsert=True
+            )
+        else:
+            await db.telemetry_events.insert_one(event)
 
 async def get_session(session_id: str) -> dict | None:
     db = get_db()

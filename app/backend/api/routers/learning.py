@@ -22,6 +22,7 @@ class TelemetryModel(BaseModel):
     total_round_latency_ms: int
     hesitation_count: int
     misclick_count: int
+    audio_replay_count: int = 0
     touch_stream: List[Any] = []
 
 class InteractionPayload(BaseModel):
@@ -43,6 +44,7 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
     
     # 1. Save Telemetry
     telemetry_doc = {
+        "schema_version": "2.0",
         "event_id": event_id,
         "student_id": payload.student_id,
         "session_id": payload.session_id,
@@ -54,16 +56,16 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
         "total_round_latency_ms": payload.telemetry.total_round_latency_ms,
         "hesitation_count": payload.telemetry.hesitation_count,
         "misclick_count": payload.telemetry.misclick_count,
-        "audio_replay_count": 0
+        "audio_replay_count": getattr(payload.telemetry, "audio_replay_count", 0)
     }
-    await db.telemetry_events.insert_one(telemetry_doc)
+    await db.telemetry_events.update_one(
+        {"event_id": event_id},
+        {"$setOnInsert": telemetry_doc},
+        upsert=True
+    )
 
     # C1 descriptive processing is performed by authenticated end-of-session ingestion.
     # No duplicate call to the incompatible legacy /api/v1/c1/session route is made.
-
-    # No fabricated kinematic vectors or classifier outputs are written here.
-    # Synthetic PP2 records must come from scripts/pp2_synthetic_benchmark.py,
-    # with dataset_id/data_origin and actual computed outputs.
 
     # Save C4 Decision
     c4_doc = {
@@ -75,8 +77,8 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
         "previous_difficulty": payload.difficulty_b,
         "item_id": payload.item_id,
         "decision": c4_result.get("next_action", {}).get("decision", "Unavailable"),
-        "mastery_after": c4_result.get("updated_knowledge_state", {}).get(payload.knowledge_component_id, 0.5),
-        "selected_difficulty": c4_result.get("next_action", {}).get("difficulty", 0.5),
+        "mastery_after": c4_result.get("updated_knowledge_state", {}).get(payload.knowledge_component_id),
+        "selected_difficulty": c4_result.get("next_action", {}).get("difficulty"),
         "selected_activity": c4_result.get("next_action", {}).get("next_activity", "Skill_2"),
         "scaffold_level": c4_result.get("next_action", {}).get("scaffold_level", 0),
         "decision_reason": c4_result.get("next_action", {}).get("decision", "CONTINUE"),

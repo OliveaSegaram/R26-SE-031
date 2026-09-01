@@ -96,23 +96,45 @@ async def submit_telemetry(
         )
 
     # Ownership check — parent can only submit for their own students
-    student = await db.students.find_one(
-        {"_id": student_oid, "parent_id": current_user["_id"]}
-    )
-    if not student:
+    student = await db.students.find_one({"_id": student_oid})
+    if not student or str(student.get("parent_id")) != str(current_user["_id"]):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Student not found or does not belong to your account.",
         )
 
-    # Persist to dedicated telemetry_events collection (not the students collection)
+    # Persist to dedicated telemetry_sessions collection
     session_doc = req.model_dump()
     session_doc["student_id"] = str(student_oid)
     session_doc["submitted_at"] = datetime.now(timezone.utc).isoformat()
+    session_doc["schema_version"] = "2.0"
 
     # Retried submissions update the same complete session and summary.
-    session_key = {"student_id": req.student_id, "session_id": req.session_id, "events": {"$exists": True}}
-    await db.telemetry_events.update_one(session_key, {"$set": session_doc}, upsert=True)
+    session_key = {"student_id": req.student_id, "session_id": req.session_id}
+    await db.telemetry_sessions.update_one(session_key, {"$set": session_doc}, upsert=True)
+    
+    # Store individual events idempotently
+    from pymongo import UpdateOne
+    events_list = session_doc.get("events", [])
+    if events_list:
+        operations = []
+        for event in events_list:
+            event["schema_version"] = "2.0"
+            event["session_id"] = req.session_id
+            event["student_id"] = req.student_id
+            if "event_id" in event:
+                operations.append(UpdateOne(
+                    {"event_id": event["event_id"]},
+                    {"$set": event},
+                    upsert=True
+                ))
+        try:
+            await db.telemetry_events.bulk_write(operations, ordered=False)
+        except TypeError:
+            # Fallback for mongomock compatibility in tests
+            for op in operations:
+                await db.telemetry_events.update_one(op._filter, op._doc, upsert=op._upsert)
+
     summary = extract_session_features(req).model_dump()
     await db.session_summaries.update_one(
         {"student_id": req.student_id, "session_id": req.session_id},
@@ -122,6 +144,24 @@ async def submit_telemetry(
     # Assess real-time cognitive load
     events_list = session_doc.get("events", [])
     cognitive_load = CognitiveLoadClassifier.classify(events_list)
+
+    # Process & Save C1 State for Therapist/Parent dashboards
+    from services.c1.processor import process_session
+    from services.ml.inference import predict_c1_pattern
+    from repositories import c1_repository
+    
+    try:
+        events_data = [e.model_dump() if hasattr(e, "model_dump") else dict(e) for e in req.events]
+        for e in events_data:
+            e["session_id"] = req.session_id
+            e["student_id"] = req.student_id
+            
+        c1_partial = process_session(req.session_id, req.student_id, events_data)
+        model_metadata = predict_c1_pattern(c1_partial["behavior"])
+        c1_partial["model"] = model_metadata
+        await c1_repository.save_c1_state(c1_partial)
+    except Exception as err:
+        print(f"C1 processing error in telemetry router: {err}")
 
     # Trigger C3 Background Fusion
     background_tasks.add_task(_trigger_c3_background, str(student_oid), summary)
@@ -176,8 +216,8 @@ async def get_telemetry(
                 detail="Student not found.",
             )
 
-    cursor = db.telemetry_events.find(
-        {"student_id": student_id}
+    cursor = db.telemetry_sessions.find(
+        {"student_id": student_id, "schema_version": "2.0"}
     ).sort("submitted_at", -1).limit(200)
 
     sessions = await cursor.to_list(length=200)
@@ -186,6 +226,44 @@ async def get_telemetry(
         del s["_id"]
 
     return sessions
+
+
+@router.get("/telemetry/{student_id}/c3-ready")
+async def get_c3_ready_features(
+    student_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Retrieve feature bundle formatted for Component 3 fusion models.
+    Aggregates KC-level performance and phonological metrics.
+    """
+    db = get_db()
+    cursor = db.telemetry_events.find({"student_id": student_id})
+    events = await cursor.to_list(length=1000)
+    if not events:
+        raise HTTPException(status_code=404, detail="No telemetry events found")
+
+    akshara_events = [e for e in events if e.get("knowledge_component_id") == "KC_AKSHARA_IDENTITY"]
+    word_events = [e for e in events if e.get("knowledge_component_id") == "KC_WORD_RECOGNITION"]
+
+    akshara_acc = sum(1 for e in akshara_events if e.get("is_correct")) / len(akshara_events) if akshara_events else 0.0
+    akshara_lat = float(akshara_events[0].get("first_touch_latency_ms", 0)) if akshara_events else 0.0
+
+    word_acc = sum(1 for e in word_events if e.get("is_correct")) / len(word_events) if word_events else 0.0
+    word_lat = float(word_events[0].get("total_round_latency_ms", 0)) if word_events else 0.0
+
+    overall_acc = sum(1 for e in events if e.get("is_correct")) / len(events) if events else 0.0
+    phono_rate = sum(1 for e in events if e.get("error_type") == "phonological_confusion") / len(events) if events else 0.0
+
+    return {
+        "student_id": student_id,
+        "akshara_accuracy": akshara_acc,
+        "akshara_median_latency_ms": akshara_lat,
+        "word_recognition_accuracy": word_acc,
+        "word_recognition_median_latency_ms": word_lat,
+        "overall_accuracy": overall_acc,
+        "phonological_confusion_rate": phono_rate,
+    }
 
 
 # ---------------------------------------------------------------------------
