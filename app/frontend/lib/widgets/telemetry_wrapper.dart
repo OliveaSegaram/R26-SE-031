@@ -62,6 +62,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   String? _firstErrorType;
 
   // ---- Session accumulators ----
+  int _totalScore = 0;
   int _roundsCompletedTotal = 0;
   int _currentRound = 1;
 
