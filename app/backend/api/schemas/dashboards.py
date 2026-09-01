@@ -31,6 +31,7 @@ class MLResponseBase(APIResponseBase):
     feature_version: str
     confidence: Optional[float] = None
     last_data_at: Optional[str] = None
+    skip_reason: Optional[str] = None
 
 # ==========================================
 # PARENT DASHBOARD DTOs

@@ -109,7 +109,8 @@ async def get_therapist_c3_profile(student_id: str):
                 direction="increases model score" if contribution>0 else "decreases model score" if contribution<0 else "neutral"))
     return TherapistC3ProfileDTO(**mlbase(student_id, doc, "unavailable", "unavailable"), primary_pattern=pattern,
         probabilities=probs, confidence=number(profile.get("confidence")), modalities_used=profile.get("modalities_used") or [],
-        shap_explanations=explanations, llm_summary=doc.get("llm_summary"), llm_recommendations=doc.get("llm_recommendations"))
+        shap_explanations=explanations, llm_summary=doc.get("llm_summary"), llm_recommendations=doc.get("llm_recommendations"),
+        skip_reason="Insufficient historical data to formulate a diagnosis" if not rows else None)
 
 @router.get("/{student_id}/c4-adaptive", response_model=TherapistC4AdaptiveDTO)
 async def get_therapist_c4_adaptive(student_id: str):
