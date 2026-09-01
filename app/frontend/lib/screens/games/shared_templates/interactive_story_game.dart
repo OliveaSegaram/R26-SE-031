@@ -43,11 +43,6 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
       }
     });
     
-    // Add hardware diagnostic popup
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _runDiagnostic();
-    });
-    
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),

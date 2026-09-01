@@ -306,19 +306,28 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     TelemetryService().logInteraction(event);
 
     // --- NEW: Real-time Orchestrator Submission (C1-C4) ---
-    final studentId = widget.studentData?['id'] ?? widget.studentData?['_id'] ?? 'STU001';
-    final sessionId = TelemetryService().sessionId;
+    final studentId = widget.studentData?['student_id'] ?? widget.studentData?['id'] ?? widget.studentData?['_id'];
+    if (studentId == null || studentId.toString().isEmpty) {
+      debugPrint('TELEMETRY: Skipped real-time submission because student_id is unavailable.');
+    } else {
+      final sessionId = TelemetryService().sessionId;
 
     final payload = {
+      "schema_version": "2.0",
       "student_id": studentId,
       "session_id": sessionId,
       "activity_id": widget.activityNode.id,
       "item_id": canonical.itemId,
       "knowledge_component_id": event.knowledgeComponentId,
+      "event_id": '$sessionId:${TelemetryService().sessionEvents.length - 1}',
       "difficulty_b": canonical.difficultyB,
       "is_anchor": canonical.isAnchor,
       "first_attempt_correct": event.firstAttemptCorrect,
-      "event_id": '$sessionId:${TelemetryService().sessionEvents.length - 1}',
+      "attempt_count": event.attemptCount,
+      "incorrect_attempt_count": event.incorrectAttemptCount,
+      "first_error_type": event.errorType,
+      "hint_count": event.hintCount,
+      "correction_count": event.correctionCount,
       "response": {
         "selected_character": "item", 
         "is_correct": event.firstAttemptCorrect ?? event.isCorrect
@@ -333,11 +342,12 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     };
     
     // Fire and forget
-    StudentService().submitInteraction(payload).then((result) {
-      if (result != null) {
-        debugPrint('TELEMETRY: Received C1-C4 result: $result');
-      }
-    });
+      StudentService().submitInteraction(payload).then((result) {
+        if (result != null) {
+          debugPrint('TELEMETRY: Received C1-C4 result: $result');
+        }
+      });
+    }
 
     debugPrint(
       'TELEMETRY: Round $_currentRound | '
@@ -407,7 +417,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => GameFactory.buildGame(widget.activityNode),
+              builder: (context) => GameFactory.buildGame(widget.activityNode, studentData: widget.studentData),
             ),
           );
         } else {
