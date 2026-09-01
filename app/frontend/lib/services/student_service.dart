@@ -166,7 +166,7 @@ class StudentService {
 
   /// Submit assessment results for an existing student.
   /// Returns null on success, or an error message string on failure.
-  Future<String?> submitAssessment(String studentId, List<bool> assessmentResults) async {
+  Future<String?> submitAssessment(String studentId, List<Map<String, dynamic>> assessmentResults) async {
     try {
       final token = await _getAccessToken();
       if (token == null) return 'Not authenticated.';
@@ -196,10 +196,13 @@ class StudentService {
 
   /// Submit comprehensive assessment results for a specific category.
   /// Returns null on success, or an error message string on failure.
-  Future<String?> submitComprehensiveAssessment(String studentId, String category, List<bool> assessmentResults) async {
+  Future<String?> submitComprehensiveAssessment(String studentId, String category, List<Map<String, dynamic>> assessmentResults) async {
     try {
       final token = await _getAccessToken();
       if (token == null) return 'Not authenticated.';
+
+      debugPrint('[STUDENT_SERVICE] Submitting $category comprehensive assessment for student: $studentId');
+      debugPrint('[STUDENT_SERVICE] Payload answers count: ${assessmentResults.length}');
 
       final response = await http.patch(
         Uri.parse('$_baseUrl/students/$studentId/comprehensive-assessment/$category'),
@@ -210,7 +213,14 @@ class StudentService {
         body: jsonEncode({'assessment_results': assessmentResults}),
       );
 
+      debugPrint('[STUDENT_SERVICE] Server response status: ${response.statusCode}');
+      debugPrint('[STUDENT_SERVICE] Server response body: ${response.body}');
+
       if (response.statusCode == 200) {
+        try {
+          final updatedStudent = jsonDecode(response.body);
+          await _updateCachedStudent(studentId, updatedStudent);
+        } catch (_) {}
         return null; // Success
       } else {
         final data = jsonDecode(response.body);
@@ -220,7 +230,27 @@ class StudentService {
         return 'Failed to submit comprehensive assessment.';
       }
     } catch (e) {
+      debugPrint('[STUDENT_SERVICE] Network error submitting assessment: $e');
       return 'Failed to connect to the server.';
+    }
+  }
+
+  Future<void> _updateCachedStudent(String studentId, Map<String, dynamic> updatedStudent) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString('cached_students_list');
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(cachedStr);
+        final index = list.indexWhere((s) => s['id'] == studentId || s['_id'] == studentId);
+        if (index != -1) {
+          list[index] = updatedStudent;
+        } else {
+          list.add(updatedStudent);
+        }
+        await prefs.setString('cached_students_list', jsonEncode(list));
+      }
+    } catch (e) {
+      debugPrint('[STUDENT_SERVICE] Error updating cached student: $e');
     }
   }
 

@@ -93,7 +93,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
         'assets/images/characters/human/human_student_1.png');
 
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Scaffold(
         backgroundColor: AppColors.cream,
         appBar: AppBar(
@@ -142,6 +142,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
               Tab(text: "Speech & Sinhala Interaction"),
               Tab(text: "Learner Profile & XAI"),
               Tab(text: "Adaptive Learning"),
+              Tab(text: "Parent Assessment"),
             ],
           ),
         ),
@@ -159,6 +160,7 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                         DashboardSection(data: _c2Speech, onRetry: _loadAllData, child: _buildC2SpeechTab()),
                         DashboardSection(data: _c3Profile, onRetry: _loadAllData, child: _buildC3ProfileTab()),
                         DashboardSection(data: _c4Adaptive, onRetry: _loadAllData, child: _buildC4AdaptiveTab()),
+                        DashboardSection(data: {}, onRetry: _loadAllData, child: _buildAssessmentTab()),
                       ],
                     ),
                   ),
@@ -232,13 +234,21 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
             child: Text(recommendation, style: const TextStyle(fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
           ),
           const SizedBox(height: 24),
-          // ── Clinical Therapist Report Export Box (ABOVE Parent Section) ──
+          // ── Clinical Therapist Report Export Box ──
           _buildClinicalReportExportCard(),
           const SizedBox(height: 24),
-          // ── Parent Assessment Answers Section ──
-          _buildAssessmentAnswersSection(widget.student),
         ],
       ),
+    );
+  }
+
+  // ==========================================
+  // 1b. PARENT ASSESSMENT TAB
+  // ==========================================
+  Widget _buildAssessmentTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: _buildAssessmentAnswersSection(widget.student),
     );
   }
 
@@ -282,12 +292,12 @@ class _TherapistStudentDetailScreenState extends State<TherapistStudentDetailScr
                 spacing: spacing,
                 runSpacing: spacing,
                 children: [
-                  SizedBox(width: cardWidth, child: _buildStatCard("First-Attempt Accuracy", firstAttemptAcc != null ? "${((firstAttemptAcc as num) * 100).toInt()}%" : "N/A", Icons.check_circle_outline, AppColors.gentleGreen)),
-                  SizedBox(width: cardWidth, child: _buildStatCard("Retry Rate", retryRate != null ? "${((retryRate as num) * 100).toInt()}%" : "N/A", Icons.replay, AppColors.warmAmber)),
-                  SizedBox(width: cardWidth, child: _buildStatCard("Mean Attempts", meanAttempts != null ? (meanAttempts as num).toStringAsFixed(1) : "N/A", Icons.numbers, AppColors.softCoral)),
-                  SizedBox(width: cardWidth, child: _buildStatCard("Median Response Time", medianLat != null ? "${((medianLat as num) / 1000).toStringAsFixed(1)} s" : "N/A", Icons.timer, AppColors.calmBlue)),
-                  SizedBox(width: cardWidth, child: _buildStatCard("Time to Correct", medianTimeToCorrect != null ? "${((medianTimeToCorrect as num) / 1000).toStringAsFixed(1)} s" : "N/A", Icons.hourglass_bottom, AppColors.calmBlue)),
-                  SizedBox(width: cardWidth, child: _buildStatCard("Behavioral Fatigue Indicator", fatigue != null ? (fatigue as num).toStringAsFixed(2) : "N/A", Icons.battery_alert, AppColors.softCoral)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("First-Attempt Accuracy", firstAttemptAcc != null ? "${((firstAttemptAcc as num) * 100).toInt()}%" : "Insufficient data", Icons.check_circle_outline, AppColors.gentleGreen)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("Retry Rate", retryRate != null ? "${((retryRate as num) * 100).toInt()}%" : "Insufficient data", Icons.replay, AppColors.warmAmber)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("Mean Attempts", meanAttempts != null ? (meanAttempts as num).toStringAsFixed(1) : "Insufficient data", Icons.numbers, AppColors.softCoral)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("Median Response Time", medianLat != null ? "${((medianLat as num) / 1000).toStringAsFixed(1)} s" : "Insufficient data", Icons.timer, AppColors.calmBlue)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("Time to Correct", medianTimeToCorrect != null ? "${((medianTimeToCorrect as num) / 1000).toStringAsFixed(1)} s" : "Insufficient data", Icons.hourglass_bottom, AppColors.calmBlue)),
+                  SizedBox(width: cardWidth, child: _buildStatCard("Behavioral Fatigue Indicator", fatigue != null ? (fatigue as num).toStringAsFixed(2) : "Insufficient data", Icons.battery_alert, AppColors.softCoral)),
                 ],
               );
             },

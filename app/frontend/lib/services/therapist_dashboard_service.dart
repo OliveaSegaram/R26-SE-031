@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../services/auth_service.dart';
@@ -20,7 +21,9 @@ class TherapistDashboardService {
   Future<Map<String, dynamic>> getC1Behavioral(String id) => _client.get('$_baseUrl/$id/c1-behavioral');
   Future<Map<String, dynamic>> getC2Speech(String id) => _client.get('$_baseUrl/$id/c2-speech');
   Future<Map<String, dynamic>> getC3Profile(String id) => _client.get('$_baseUrl/$id/c3-profile');
+  Future<Map<String, dynamic>> generateC3AiSummary(String id) => _client.post('$_baseUrl/students/$id/c3-ai-summary');
   Future<Map<String, dynamic>> getC4Adaptive(String id) => _client.get('$_baseUrl/$id/c4-adaptive');
+  Future<Map<String, dynamic>> getPerformanceTree(String id) => _client.get('$_baseUrl/students/$id/performance-tree');
   Future<Map<String, dynamic>> getResearchEvidence(String id) => _client.get('$_baseUrl/$id/research-evidence');
 
   Future<Uint8List> downloadReport(String studentId) async {
@@ -43,8 +46,8 @@ class TherapistDashboardService {
       body: '{"reviewed": $reviewed}',
     );
     if (response.statusCode == 200) {
-      return Map<String, dynamic>.from(Uri.splitQueryString(response.body).isNotEmpty ? {} : {});
+      return jsonDecode(response.body) as Map<String, dynamic>;
     }
-    return {};
+    throw Exception('Failed to update assessment review status');
   }
 }

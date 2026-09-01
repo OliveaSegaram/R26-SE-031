@@ -177,6 +177,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
     final practice = _overview?['practice_time_minutes'];
     final sessions = _overview?['sessions_completed'] ?? 0;
     final progress = _overview?['reading_progress'] ?? "Developing";
+    final assessment = Map<String, dynamic>.from(_overview?['assessment_summary'] ?? {});
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -198,6 +199,20 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
               _buildStatCard("Reading Sessions", "$sessions", Icons.videogame_asset_rounded, AppColors.softCoral),
               _buildStatCard("Reading Progress", progress, Icons.trending_up_rounded, AppColors.warmAmber),
             ],
+          ),
+          const SizedBox(height: 24),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: AppColors.calmBlue.withValues(alpha: .10), borderRadius: BorderRadius.circular(16)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Parent Assessment Summary', style: AppTypography.heading(fontSize: 18)),
+              const SizedBox(height: 8),
+              Text('Completed categories: ${assessment['completed_categories'] ?? 0}/${assessment['total_categories'] ?? 4}'),
+              Text('Reported observations: ${assessment['reported_observations'] ?? 0}'),
+              const SizedBox(height: 6),
+              const Text('This is a parent observation summary for discussion with the therapist; it is not a diagnosis.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            ]),
           ),
           const SizedBox(height: 24),
           
