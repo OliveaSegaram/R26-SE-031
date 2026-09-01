@@ -1,5 +1,3 @@
-import 'dart:math';
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/telemetry_service.dart';
 import '../services/telemetry/plugins/voice_analysis_plugin.dart';
@@ -64,7 +62,6 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   String? _firstErrorType;
 
   // ---- Session accumulators ----
-  int _totalScore = 0;
   int _roundsCompletedTotal = 0;
   int _currentRound = 1;
 
