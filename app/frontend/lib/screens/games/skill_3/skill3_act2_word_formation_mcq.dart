@@ -35,6 +35,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
   bool _isCorrect = false;
   bool _activityComplete = false;
   int _currentRoundIndex = 0;
+  int _attemptCount = 0;
 
   // Animations
   late AnimationController _pulseController;
@@ -126,63 +127,79 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     if (_isCorrect) return;
     if (_selectedIndex != null) return;
 
+    _attemptCount++;
     setState(() {
       _selectedIndex = index;
     });
 
     final bool isRight = (index == correctIndex);
     int score = isRight ? 100 : 0;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
-      score,
-    );
 
     if (isRight) {
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+        score,
+      );
       setState(() {
         _isCorrect = true;
       });
       SoundUtils.playFeedback('audio/correct.mp3');
 
-      Future.delayed(const Duration(milliseconds: 1400), () {
-        if (!mounted) return;
-        if (_currentRoundIndex < totalRounds - 1) {
-          setState(() {
-            _currentRoundIndex++;
-            final sId = widget.activityNode?.skillId ?? '';
-            final aId = widget.activityNode?.id ?? '';
-            if (sId.isNotEmpty && aId.isNotEmpty) {
-              int progress =
-                  ((_currentRoundIndex /
-                              (widget.activityNode?.rounds.length ?? 1)) *
-                          100)
-                      .toInt();
-              ProgressService().saveActivityScore(sId, aId, progress);
-              ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
-            }
-            _selectedIndex = null;
-            _isCorrect = false;
-          });
-          _playAudioPrompt(autoPlay: true);
-        } else {
-          setState(() {
-            _activityComplete = true;
-            final sId = widget.activityNode?.skillId ?? '';
-            final aId = widget.activityNode?.id ?? '';
-            if (sId.isNotEmpty && aId.isNotEmpty) {
-              ProgressService().saveActivityScore(sId, aId, 100);
-              ProgressService().clearActivityState(sId, aId);
-            }
-          });
-        }
-      });
+      _advanceRoundAfterDelay(totalRounds);
     } else {
       SoundUtils.playFeedback('audio/wrong.mp3');
-      Future.delayed(const Duration(milliseconds: 600), () {
-        if (!mounted) return;
+
+      if (_attemptCount >= 2) {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(0);
         setState(() {
-          _selectedIndex = null;
+          _selectedIndex = correctIndex;
+          _isCorrect = true;
         });
-      });
+        _advanceRoundAfterDelay(totalRounds);
+      } else {
+        Future.delayed(const Duration(milliseconds: 700), () {
+          if (!mounted) return;
+          setState(() {
+            _selectedIndex = null;
+          });
+        });
+      }
     }
+  }
+
+  void _advanceRoundAfterDelay(int totalRounds) {
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      if (_currentRoundIndex < totalRounds - 1) {
+        setState(() {
+          _currentRoundIndex++;
+          _attemptCount = 0;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            int progress =
+                ((_currentRoundIndex /
+                            (widget.activityNode?.rounds.length ?? 1)) *
+                        100)
+                    .toInt();
+            ProgressService().saveActivityScore(sId, aId, progress);
+            ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+          }
+          _selectedIndex = null;
+          _isCorrect = false;
+        });
+        _playAudioPrompt(autoPlay: true);
+      } else {
+        setState(() {
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
+      }
+    });
   }
 
   /// Extracts the letters inside single quotes from the prompt string.

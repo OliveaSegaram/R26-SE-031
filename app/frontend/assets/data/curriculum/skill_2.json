@@ -99,7 +99,12 @@
                   ]
                 }
               }
-            ]
+            ],
+            "item_id": "S2_A1_R01",
+            "item_version": 1,
+            "difficulty_label": "easy",
+            "difficulty_b": -1.0,
+            "is_anchor": false
           },
           {
             "core_round": 2,
@@ -185,7 +190,12 @@
                   ]
                 }
               }
-            ]
+            ],
+            "item_id": "S2_A1_R02",
+            "item_version": 1,
+            "difficulty_label": "easy",
+            "difficulty_b": -1.0,
+            "is_anchor": false
           },
           {
             "core_round": 3,
@@ -271,7 +281,12 @@
                   ]
                 }
               }
-            ]
+            ],
+            "item_id": "S2_A1_R03",
+            "item_version": 1,
+            "difficulty_label": "easy",
+            "difficulty_b": -1.0,
+            "is_anchor": false
           },
           {
             "core_round": 4,
@@ -357,7 +372,12 @@
                   ]
                 }
               }
-            ]
+            ],
+            "item_id": "S2_A1_R04",
+            "item_version": 1,
+            "difficulty_label": "medium",
+            "difficulty_b": 0.0,
+            "is_anchor": true
           },
           {
             "core_round": 5,
@@ -473,7 +493,12 @@
                   ]
                 }
               }
-            ]
+            ],
+            "item_id": "S2_A1_R05",
+            "item_version": 1,
+            "difficulty_label": "medium",
+            "difficulty_b": 0.0,
+            "is_anchor": false
           },
           {
             "core_round": 6,
@@ -589,7 +614,12 @@
                   ]
                 }
               }
-            ]
+            ],
+            "item_id": "S2_A1_R06",
+            "item_version": 1,
+            "difficulty_label": "hard",
+            "difficulty_b": 1.0,
+            "is_anchor": false
           },
           {
             "core_round": 7,
@@ -705,9 +735,20 @@
                   ]
                 }
               }
-            ]
+            ],
+            "item_id": "S2_A1_R07",
+            "item_version": 1,
+            "difficulty_label": "hard",
+            "difficulty_b": 1.0,
+            "is_anchor": false
           }
-        ]
+        ],
+        "research_metadata": {
+          "knowledge_component_id": "KC_AKSHARA_IDENTITY",
+          "prompt_modality": "visual",
+          "response_modality": "tap",
+          "research_role": "primary"
+        }
       },
       {
         "id": "act_2",
@@ -882,7 +923,13 @@
               }
             ]
           }
-        ]
+        ],
+        "research_metadata": {
+          "knowledge_component_id": "KC_AKSHARA_IDENTITY",
+          "prompt_modality": "visual",
+          "response_modality": "tap",
+          "research_role": "primary"
+        }
       },
       {
         "id": "act_3",
@@ -1100,7 +1147,13 @@
               }
             ]
           }
-        ]
+        ],
+        "research_metadata": {
+          "knowledge_component_id": "KC_PHONEME_GRAPHEME",
+          "prompt_modality": "audio",
+          "response_modality": "tap",
+          "research_role": "primary"
+        }
       },
       {
         "id": "act_4",
@@ -1332,7 +1385,13 @@
               }
             ]
           }
-        ]
+        ],
+        "research_metadata": {
+          "knowledge_component_id": "KC_AKSHARA_IDENTITY",
+          "prompt_modality": "visual_text",
+          "response_modality": "tap",
+          "research_role": "primary"
+        }
       },
       {
         "id": "act_5",
@@ -1354,7 +1413,12 @@
               "ර",
               "ට",
               "ම"
-            ]
+            ],
+            "item_id": "S2_A5_R01",
+            "item_version": 1,
+            "difficulty_label": "easy",
+            "difficulty_b": -1.0,
+            "is_anchor": false
           },
           {
             "show_seconds": 5,
@@ -1366,7 +1430,12 @@
               "ම",
               "ක්",
               "ල්"
-            ]
+            ],
+            "item_id": "S2_A5_R02",
+            "item_version": 1,
+            "difficulty_label": "easy",
+            "difficulty_b": -1.0,
+            "is_anchor": false
           },
           {
             "show_seconds": 5,
@@ -1380,7 +1449,12 @@
               "ම",
               "ක",
               "න"
-            ]
+            ],
+            "item_id": "S2_A5_R03",
+            "item_version": 1,
+            "difficulty_label": "medium",
+            "difficulty_b": 0.0,
+            "is_anchor": false
           },
           {
             "show_seconds": 4,
@@ -1394,7 +1468,12 @@
               "ස",
               "ට්",
               "ග"
-            ]
+            ],
+            "item_id": "S2_A5_R04",
+            "item_version": 1,
+            "difficulty_label": "medium",
+            "difficulty_b": 0.0,
+            "is_anchor": true
           },
           {
             "show_seconds": 4,
@@ -1408,9 +1487,20 @@
               "වි",
               "රි",
               "මි"
-            ]
+            ],
+            "item_id": "S2_A5_R05",
+            "item_version": 1,
+            "difficulty_label": "hard",
+            "difficulty_b": 1.0,
+            "is_anchor": false
           }
-        ]
+        ],
+        "research_metadata": {
+          "knowledge_component_id": "KC_ORTHOGRAPHIC_MEMORY",
+          "prompt_modality": "visual",
+          "response_modality": "sequence_tap",
+          "research_role": "secondary"
+        }
       }
     ],
     "total_activities": 5

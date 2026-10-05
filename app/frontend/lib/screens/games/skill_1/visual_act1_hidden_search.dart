@@ -412,13 +412,17 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-
-                    Text(
-                      widget.activityNode.title.isEmpty ? 'Picture Hunt' : widget.activityNode.title,
-                      style: AppTypography.heading(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF3E3E3E),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          widget.activityNode.title.isEmpty ? 'Picture Hunt' : widget.activityNode.title,
+                          style: AppTypography.heading(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF3E3E3E),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -625,14 +629,19 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
               size: 20,
             ),
             const SizedBox(width: 8),
-            Text(
-              '$_foundCount / $_targetCount සොයා ගත්තා',
-              style: AppTypography.sinhala(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: _foundCount == _targetCount
-                    ? const Color(0xFF4E9E4E)
-                    : const Color(0xFF6B7280),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '$_foundCount / $_targetCount සොයා ගත්තා',
+                  style: AppTypography.sinhala(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: _foundCount == _targetCount
+                        ? const Color(0xFF4E9E4E)
+                        : const Color(0xFF6B7280),
+                  ),
+                ),
               ),
             ),
           ],

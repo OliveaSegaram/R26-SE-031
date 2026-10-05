@@ -195,6 +195,10 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
     final bool isRight = (index == _correctIndex);
     
     if (isRight) {
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+        100,
+        selectedAnswers: [selectedAnswer],
+      );
       setState(() {
         _isRoundComplete = true;
       });

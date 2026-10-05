@@ -43,7 +43,15 @@ def _get_default_state(activity_id: str) -> dict:
         }
     return {}
 
-app = FastAPI(title="Adaptive Tutoring Service", version="1.0")
+import os
+import random
+from datetime import datetime
+
+app = FastAPI(
+    title="Adaptive Tutoring Service",
+    version="1.0",
+    root_path=os.getenv("ROOT_PATH", "")
+)
 
 @app.on_event("startup")
 async def startup_db_client():
@@ -317,8 +325,8 @@ async def update_interaction(request: InteractionRequest):
     # Save final decision
     next_action = NextAction(
         next_activity=policy_output["next_activity"],
-        next_item=policy_output["next_item"],
-        difficulty=policy_output["difficulty"],
+        next_item=next_item_id,
+        difficulty=target_difficulty,
         scaffold_level=policy_output["scaffold_level"],
         decision=policy_output["decision"],
         next_phase=policy_output.get("next_phase", "CORE"),
@@ -458,6 +466,29 @@ async def update_interaction(request: InteractionRequest):
     
     # Add policy_reason to selection_evidence for API response completeness
     selection_evidence["policy_reason"] = policy_output["policy_reason"]
+    
+    # 5. Log Adaptive Decision
+    await database.adaptive_decisions_collection.insert_one({
+        "student_id": request.student_id,
+        "session_id": request.session_id,
+        "activity_id": request.activity_id,
+        "item_id": request.item_id,
+        "knowledge_component_id": request.knowledge_component_id,
+        "mastery_before": current_prob,
+        "mastery_after": new_prob,
+        "theta_before": theta,
+        "theta_after": theta_new,
+        "previous_difficulty": item_b,
+        "selected_difficulty": target_difficulty,
+        "next_activity": policy_output["next_activity"],
+        "next_item": next_item_id,
+        "scaffold_level": policy_output["scaffold_level"],
+        "behavioral_fatigue_indicator": request.fatigue_score,
+        "decision": policy_output["decision"],
+        "decision_reason": f"Mastery {current_prob:.2f}→{new_prob:.2f}; θ {theta:.2f}→{theta_new:.2f}; selected difficulty {target_difficulty}",
+        "created_at": datetime.utcnow()
+    })
+
     
     return TutoringResponse(
         student_id=request.student_id,

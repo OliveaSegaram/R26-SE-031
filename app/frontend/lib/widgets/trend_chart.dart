@@ -4,7 +4,8 @@ import '../theme/app_theme.dart';
 
 class TrendChart extends StatelessWidget {
   final String title;
-  final List<double> dataPoints;
+  final List<double?> dataPoints;
+  final List<String>? labels;
   final Color lineColor;
   final String yAxisTitle;
   final double? minY;
@@ -14,6 +15,7 @@ class TrendChart extends StatelessWidget {
     super.key,
     required this.title,
     required this.dataPoints,
+    this.labels,
     this.lineColor = AppColors.calmBlue,
     this.yAxisTitle = '',
     this.minY,
@@ -22,7 +24,7 @@ class TrendChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (dataPoints.isEmpty) {
+    if (dataPoints.whereType<double>().where((v) => v.isFinite).isEmpty) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -44,7 +46,7 @@ class TrendChart extends StatelessWidget {
     final spots = dataPoints
         .asMap()
         .entries
-        .map((e) => FlSpot(e.key.toDouble(), e.value))
+        .map((e) => e.value == null || !e.value!.isFinite ? FlSpot.nullSpot : FlSpot(e.key.toDouble(), e.value!))
         .toList();
 
     return Container(
@@ -85,7 +87,7 @@ class TrendChart extends StatelessWidget {
                         return Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
-                            "S${value.toInt() + 1}",
+                            labels != null && value.toInt() >= 0 && value.toInt() < labels!.length ? labels![value.toInt()] : 'S${value.toInt() + 1}',
                             style: AppTypography.caption(fontSize: 10, color: AppColors.textHint),
                           ),
                         );
@@ -113,7 +115,7 @@ class TrendChart extends StatelessWidget {
                 lineBarsData: [
                   LineChartBarData(
                     spots: spots,
-                    isCurved: true,
+                    isCurved: false,
                     color: lineColor,
                     barWidth: 3,
                     isStrokeCapRound: true,

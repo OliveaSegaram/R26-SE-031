@@ -152,6 +152,9 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
   void _onSlotTapped(int slotIndex) {
     if (_isChecking || _filledSlots[slotIndex] == null) return;
 
+    // Moving an already placed unit back to the pool is a correction
+    context.findAncestorStateOfType<TelemetryWrapperState>()?.logCorrection();
+
     setState(() {
       final placed = _filledSlots[slotIndex]!;
       _poolLetters[placed.poolIndex] = placed.letter;
@@ -178,6 +181,7 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
       });
       context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
         100,
+        selectedAnswers: _filledSlots.map((e) => e!.letter).toList(),
       );
       SoundUtils.playFeedback('audio/correct.mp3');
 
@@ -212,8 +216,10 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
       });
     } else {
       // Incorrect
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
-        0,
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.logAttempt(
+        isCorrect: false,
+        selectedAnswers: _filledSlots.map((e) => e!.letter).toList(),
+        errorType: 'sequence_error',
       );
       SoundUtils.playFeedback('audio/wrong.mp3');
 
