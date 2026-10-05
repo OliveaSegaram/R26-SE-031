@@ -237,10 +237,10 @@ class ActivityNode {
       rounds: json['rounds'] != null
           ? List<Map<String, dynamic>>.from(
               (json['rounds'] as Iterable).map((r) => Map<String, dynamic>.from(r as Map)))
-          : <Map<String, dynamic>>[],
-      researchMetadata: json['research_metadata'] != null 
-          ? ResearchMetadata.fromJson(json['research_metadata']) 
-          : null,
+          : (json['core_rounds'] != null
+              ? List<Map<String, dynamic>>.from(
+                  (json['core_rounds'] as Iterable).map((r) => Map<String, dynamic>.from(r as Map)))
+              : <Map<String, dynamic>>[]),
     );
   }
 }
