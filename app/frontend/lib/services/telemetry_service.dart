@@ -106,6 +106,8 @@ class TelemetryService {
   final List<TelemetryEvent> _sessionEvents = [];
   DateTime? _sessionStartTime;
   
+  DateTime? get sessionStartTime => _sessionStartTime;
+  
   /// Expose the session events for debugging and the temporary dashboard
   List<TelemetryEvent> get sessionEvents => List.unmodifiable(_sessionEvents);
 

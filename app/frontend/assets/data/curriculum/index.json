@@ -1,7 +1,7 @@
 [
   {
     "id": "skill_1",
-    "title": "පින්තූර හඳුනාගැනීම",
+    "title": "පින්තූර හඳුනාගනිමු",
     "description": "පින්තූර හඳුනාගනිමු! 👁️",
     "file_path": "skill_1.json",
     "total_activities": 5,
@@ -13,7 +13,7 @@
   },
   {
     "id": "skill_2",
-    "title": "මූලික අකුරු හඳුනාගැනීම",
+    "title": "මූලික අකුරු හඳුනාගනිමු",
     "description": "විනෝදයෙන් අකුරු ඉගෙන ගනිමු! 🎵",
     "file_path": "skill_2.json",
     "total_activities": 5,
@@ -25,7 +25,7 @@
   },
   {
     "id": "skill_3",
-    "title": "සරල වචන සැකසීම",
+    "title": "සරල වචන සකසමු",
     "description": "අකුරු එකතු කර සරල වචන සාදමු! 🧩",
     "file_path": "skill_3.json",
     "total_activities": 5,
@@ -37,7 +37,7 @@
   },
   {
     "id": "skill_4",
-    "title": "සරල වාක්‍ය සැකසීම",
+    "title": "සරල වාක්‍ය සකසමු",
     "description": "සරල වාක්‍ය කියවමු! 🏆",
     "file_path": "skill_4.json",
     "total_activities": 5,
@@ -49,7 +49,7 @@
   },
   {
     "id": "skill_5",
-    "title": "කියවා තේරුම් ගැනීම",
+    "title": "කියවා තේරුම් ගනිමු",
     "description": "සැබෑ උගතෙකු සේ ඔබ කියවන දේ තේරුම් ගන්න! 🧠",
     "file_path": "skill_5.json",
     "total_activities": 4,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../widgets/telemetry_wrapper.dart';
@@ -6,19 +7,22 @@ import '../../../../models/curriculum_models.dart';
 import '../../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../../services/progress_service.dart';
+import '../shared_widgets/shared_celebration_popup.dart';
 
-/// Activity 9: වචනයට සවන් දී රූපය සොයමු (Listen to Word & Find Image)
+/// Activity 9: වචනයට සවන් දී පින්තූරය සොයමු (Listen to Word & Find Image)
 /// Template: audio_image_match_game
 class Skill4Act1Mcq extends StatefulWidget {
   final ActivityNode? activityNode;
+  final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill4Act1Mcq({super.key, this.activityNode, this.isRemedial = false});
+  const Skill4Act1Mcq({super.key, this.activityNode, this.isRemedial = false, this.studentData});
 
   @override
   State<Skill4Act1Mcq> createState() => _Skill4Act1McqState();
 }
 
 class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
+  String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
   bool _isCorrect = false;
@@ -38,7 +42,7 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
       _currentRoundIndex = 0;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playAudioPrompt();
+      _playAudioPrompt(autoPlay: true);
     });
   }
 
@@ -48,13 +52,18 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
     super.dispose();
   }
 
-  void _playAudioPrompt() {
+  void _playAudioPrompt({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
     final currentRound = rounds[_currentRoundIndex];
     final audioText = currentRound['audio_text']?.toString() ?? currentRound['prompt']?.toString() ?? 'වෘත්තය';
-    TtsService().speak(audioText);
+    
+    if (autoPlay && _lastSpokenInstruction == audioText) {
+      return;
+    }
+    _lastSpokenInstruction = audioText;
+    TtsService().speak(audioText, folder: 'skill_4');
   }
 
   void _checkAnswer(int index, int correctIndex, int totalRounds) async {
@@ -72,7 +81,7 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
       setState(() {
         _isCorrect = true;
       });
-      await _audioPlayer.play(AssetSource('audio/correct.mp3'));
+      SoundUtils.playFeedback('audio/correct.mp3');
 
       Future.delayed(const Duration(milliseconds: 1400), () {
         if (!mounted) return;
@@ -89,7 +98,7 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
             _selectedIndex = null;
             _isCorrect = false;
           });
-          _playAudioPrompt();
+          _playAudioPrompt(autoPlay: true);
         } else {
           setState(() {
           _activityComplete = true;
@@ -103,7 +112,7 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
         }
       });
     } else {
-      await _audioPlayer.play(AssetSource('audio/wrong.mp3'));
+      SoundUtils.playFeedback('audio/wrong.mp3');
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted && !_isCorrect) {
           setState(() {
@@ -119,7 +128,7 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
     var rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('වචනයට සවන් දී රූපය සොයමු')),
+        appBar: AppBar(title: const Text('වචනයට සවන් දී පින්තූරය සොයමු')),
         body: const Center(child: Text('No rounds available.')),
       );
     }
@@ -129,8 +138,8 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.skillTitle ?? 'වචනයට සවන් දී රූපය සොයමු';
-    final promptText = currentRound['prompt']?.toString() ?? 'අසා සිටින රූපය තෝරන්න';
+    final titleText = widget.activityNode?.title ?? 'වචනයට සවන් දී පින්තූරය සොයමු';
+    final promptText = currentRound['prompt']?.toString() ?? 'අසා සිටින පින්තූරය තෝරන්න';
     final imageUrl = currentRound['image_url']?.toString();
     var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
     var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
@@ -174,6 +183,8 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
     }
 
     return SharedGameLayout(
+      studentData: widget.studentData,
+      activityTitle: widget.activityNode?.title ?? '',
       title: titleText,
       currentRoundIndex: _currentRoundIndex,
       totalRounds: rounds.length,
@@ -237,12 +248,12 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq> {
                 ),
               ),
             ),
-            SizedBox(height: options.length > 3 ? 16 : 32),
+            const SizedBox(height: 16),
             if (imageUrl != null)
               Container(
-                margin: EdgeInsets.only(bottom: options.length > 3 ? 16 : 32),
-                width: options.length > 3 ? 180 : 240,
-                height: options.length > 3 ? 180 : 240,
+                margin: const EdgeInsets.only(bottom: 16),
+                width: 200,
+                height: 200,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),

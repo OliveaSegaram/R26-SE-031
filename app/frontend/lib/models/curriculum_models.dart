@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import '../services/progress_service.dart';
 import '../services/student_service.dart';
+import '../config/api_config.dart';
 
 class CurriculumIndex {
   final List<SkillSummary> skills;
@@ -148,40 +149,16 @@ class SkillDetail {
 
     return SkillDetail(id: fallbackId, title: fallbackTitle, introText: '', audioUrl: '', activities: []);
   }
-  // Toggle this to 'true' before building the final APK for deployment
-  static const bool _isProduction = false;
-
   static String get _baseUrl {
-    if (_isProduction) {
-      return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
-    }
-    return 'http://10.0.2.2:8015/api/v1/auth';
+    return ApiConfig.authBaseUrl;
   }
 
   static Future<SkillDetail> load(String fileName) async {
     final skillId = fileName.replaceAll('.json', '');
-    String responseData = '';
     
-    try {
-      // 1. Try fetching from CMS backend first
-      final studentId = ProgressService().currentStudentId;
-      final url = Uri.parse('$_baseUrl/activities/$skillId?student_id=$studentId');
-      final res = await http.get(url).timeout(const Duration(seconds: 3));
-      if (res.statusCode == 200) {
-        final decoded = json.decode(res.body);
-        // If it's a valid skill with activities, use it
-        if (decoded is Map && decoded.containsKey('activities') && (decoded['activities'] as List).isNotEmpty) {
-          responseData = res.body;
-        }
-      }
-    } catch (e) {
-      // Ignore network errors and fallback to local
-    }
-
-    // 2. Fallback to local hardcoded JSON if backend failed or returned empty
-    if (responseData.isEmpty) {
-      responseData = await rootBundle.loadString('assets/data/curriculum/$fileName');
-    }
+    // We strictly load from local JSON to ensure only the 5 correct activities are shown
+    // (Bypassing the CMS backend which was returning 11 incorrect activities)
+    String responseData = await rootBundle.loadString('assets/data/curriculum/$fileName');
 
     final skillDetail = SkillDetail.fromJson(json.decode(responseData), skillId, 'Skill Details');
 
@@ -258,7 +235,10 @@ class ActivityNode {
       rounds: json['rounds'] != null
           ? List<Map<String, dynamic>>.from(
               (json['rounds'] as Iterable).map((r) => Map<String, dynamic>.from(r as Map)))
-          : <Map<String, dynamic>>[],
+          : (json['core_rounds'] != null
+              ? List<Map<String, dynamic>>.from(
+                  (json['core_rounds'] as Iterable).map((r) => Map<String, dynamic>.from(r as Map)))
+              : <Map<String, dynamic>>[]),
     );
   }
 }

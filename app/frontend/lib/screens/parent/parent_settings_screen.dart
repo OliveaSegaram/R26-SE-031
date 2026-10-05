@@ -14,6 +14,7 @@ import '../../services/student_service.dart';
 import '../../services/progress_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../services/localization_service.dart';
+import '../../config/api_config.dart';
 
 /// Parent Account Screen — Frontend Redesign with World-Class UX
 class ParentSettingsScreen extends StatefulWidget {
@@ -84,13 +85,13 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Profile Photo',
+                LocalizationService.instance.t('profile_photo'),
                 style: AppTypography.heading(fontSize: 18),
               ),
               const SizedBox(height: 24),
               ListTile(
                 leading: const Icon(Icons.photo_library, color: AppColors.calmBlue),
-                title: const Text('Change Photo'),
+                title: Text(LocalizationService.instance.t('change_photo')),
                 onTap: () {
                   Navigator.pop(context);
                   _openPicker();
@@ -98,7 +99,7 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
               ),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                title: Text(LocalizationService.instance.t('remove_photo'), style: const TextStyle(color: Colors.red)),
                 onTap: () {
                   Navigator.pop(context);
                   _removePhoto();
@@ -298,11 +299,8 @@ class _ParentSettingsScreenState extends State<ParentSettingsScreen>
                     ],
                     image: _profilePictureUrl != null && _profilePictureUrl!.isNotEmpty
                         ? DecorationImage(
-                            // Build the full URL if it's relative
                             image: NetworkImage(
-                              _profilePictureUrl!.startsWith('http') 
-                                  ? _profilePictureUrl! 
-                                  : 'https://adaptedmind-auth-api.onrender.com$_profilePictureUrl'
+                              ApiConfig.getProfileImageUrl(_profilePictureUrl!),
                             ),
                             fit: BoxFit.cover,
                           )

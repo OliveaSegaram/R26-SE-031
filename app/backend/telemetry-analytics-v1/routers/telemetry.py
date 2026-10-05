@@ -15,7 +15,7 @@ import io
 from bson.objectid import ObjectId
 from datetime import datetime, timezone
 
-from shared.database import get_db
+from database import get_db
 from dependencies import get_current_user
 from schemas.telemetry import TelemetrySessionSubmit
 from services.ml_pipeline import generate_cognitive_profile, generate_comp2_profile

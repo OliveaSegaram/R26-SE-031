@@ -417,6 +417,11 @@ class ProgressService {
     await prefs.remove(failsKey);
     await prefs.remove(stateKey);
 
+    // Also reset the streak
+    await prefs.remove(_keyStreakCount);
+    await prefs.remove(_keyStreakEarned);
+    await prefs.remove(_keyLastActiveDate);
+
     // Clear skill intro seen flags for all skills
     for (int i = 0; i <= 10; i++) {
       await prefs.remove('intro_seen_skill_${studentId}_skill_$i');

@@ -102,7 +102,7 @@ class _CharacterShopScreenState extends State<CharacterShopScreen> with TickerPr
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'character shop',
+          'යාලුවෙක් තෝරමු',
           style: AppTypography.heading(fontSize: 22, color: AppColors.textPrimary),
         ),
         centerTitle: true,
@@ -152,8 +152,8 @@ class _CharacterShopScreenState extends State<CharacterShopScreen> with TickerPr
                     ),
                     child: Row(
                       children: [
-                        _buildTab('Humans', CharacterType.human),
-                        _buildTab('Mascots', CharacterType.mascot),
+                        _buildTab('ළමුන්', CharacterType.human),
+                        _buildTab('සුරතලුන්', CharacterType.mascot),
                       ],
                     ),
                   ),
@@ -242,14 +242,14 @@ class _CharacterShopScreenState extends State<CharacterShopScreen> with TickerPr
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Select Character',
+                                'යාලුවෙක් තෝරන්න',
                                 style: AppTypography.heading(
                                   fontSize: 22,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
                               Text(
-                                '${characters.where((c) => !c.isLocked).length}/${characters.length} Unlocked',
+                                '${characters.where((c) => !c.isLocked).length}/${characters.length} ක් විවෘතයි',
                                 style: AppTypography.caption(
                                   fontSize: 16,
                                   color: AppColors.calmBlue,

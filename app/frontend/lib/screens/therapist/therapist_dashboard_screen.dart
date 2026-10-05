@@ -4,7 +4,9 @@ import '../../services/auth_service.dart';
 import 'therapist_students_screen.dart';
 import 'therapist_messages_screen.dart';
 import 'therapist_profile_screen.dart';
+import '../../config/api_config.dart';
 import 'therapist_student_detail_screen.dart';
+import '../../services/localization_service.dart';
 
 class TherapistDashboardScreen extends StatefulWidget {
   const TherapistDashboardScreen({super.key});
@@ -31,9 +33,12 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
+    return ListenableBuilder(
+      listenable: LocalizationService.instance,
+      builder: (context, _) {
+        return Scaffold(
+          body: IndexedStack(
+            index: _currentIndex,
         children: [
           _DashboardHome(
             profile: _profile,
@@ -63,21 +68,22 @@ class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.dashboard_rounded, 'home'),
-                _buildNavItem(1, Icons.people_outline_rounded, 'students'),
+                _buildNavItem(0, Icons.dashboard_rounded, LocalizationService.instance.t('dash_nav_home')),
+                _buildNavItem(1, Icons.people_outline_rounded, LocalizationService.instance.t('nav_students')),
                 _buildNavItem(
                   2,
                   Icons.chat_bubble_outline_rounded,
-                  'messages',
+                  LocalizationService.instance.t('messages'),
                   badgeCount: 3,
                 ),
-                _buildNavItem(3, Icons.person_outline_rounded, 'profile'),
+                _buildNavItem(3, Icons.person_outline_rounded, LocalizationService.instance.t('nav_profile')),
               ],
             ),
           ),
         ),
       ),
-    );
+      );
+    });
   }
 
   Widget _buildNavItem(
@@ -249,9 +255,7 @@ class _DashboardHome extends StatelessWidget {
                                     profilePicUrl.isNotEmpty
                                 ? DecorationImage(
                                     image: NetworkImage(
-                                      profilePicUrl.startsWith('http')
-                                          ? profilePicUrl
-                                          : 'https://adaptedmind-auth-api.onrender.com$profilePicUrl',
+                                      ApiConfig.getProfileImageUrl(profilePicUrl),
                                     ),
                                     fit: BoxFit.cover,
                                   )

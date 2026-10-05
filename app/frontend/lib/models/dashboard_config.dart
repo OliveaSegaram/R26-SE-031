@@ -68,10 +68,10 @@ class GreetingConfig {
 
   factory GreetingConfig.fromJson(Map<String, dynamic> json) {
     return GreetingConfig(
-      morning: json['morning'] ?? 'Good morning, {name}! ☀️',
-      afternoon: json['afternoon'] ?? 'Good afternoon, {name}! 🌤️',
-      evening: json['evening'] ?? 'Good evening, {name}! 🌙',
-      night: json['night'] ?? 'Good night, {name}! 🌌',
+      morning: json['morning'] ?? 'Good morning, {name}!',
+      afternoon: json['afternoon'] ?? 'Good afternoon, {name}!',
+      evening: json['evening'] ?? 'Good evening, {name}!',
+      night: json['night'] ?? 'Good night, {name}!',
     );
   }
 }

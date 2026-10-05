@@ -30,6 +30,7 @@ dependencies:
   url_launcher: ^6.3.0
   flutter_sound: ^9.30.0
   permission_handler: ^13.0.1
+  flutter_dotenv: ^6.0.1
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
@@ -41,6 +42,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - .env
     - assets/images/
     - assets/images/backgrounds/
     - assets/images/branding/
@@ -53,6 +55,11 @@ flutter:
     - assets/images/activity_icons/vehicles/
     - assets/images/activity_icons/nature/
     - assets/images/activity_icons/body_parts/
+    - assets/images/activity_icons/flowers/
+    - assets/images/activity_icons/basket/
+    - assets/images/activity_icons/places/
+    - assets/images/activity_icons/plants/
+    - assets/images/activity_icons/people/
     - assets/images/skills/
     - assets/images/games/
     - assets/images/story/

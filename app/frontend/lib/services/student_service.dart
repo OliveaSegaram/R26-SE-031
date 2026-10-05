@@ -1,22 +1,22 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../config/api_config.dart';
+
 /// Handles all student-related API calls.
 /// Separated from AuthService for clean architecture.
 class StudentService {
   static String get _baseUrl {
-    // Cloud Server (Render):
-    return 'https://adaptedmind-auth-api.onrender.com/api/v1/auth';
+    return ApiConfig.authBaseUrl;
   }
 
   static String get _telemetryBaseUrl {
-    // Local Testing for the new microservice (Port 8025)
-    return 'http://10.0.2.2:8025/api/v1/auth';
+    return ApiConfig.telemetryBaseUrl;
   }
 
   Future<String?> _getAccessToken() async {
@@ -257,19 +257,22 @@ class StudentService {
     }
   }
 
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await _getAccessToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
   /// Submit telemetry session data to the backend.
   /// Returns null on success, or an error message string on failure.
   Future<String?> submitTelemetry(Map<String, dynamic> payload) async {
     try {
-      final token = await _getAccessToken();
-      if (token == null) return 'Not authenticated.';
-
+      final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$_telemetryBaseUrl/telemetry'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('${ApiConfig.c1BaseUrl}/session'),
+        headers: headers,
         body: jsonEncode(payload),
       );
 
@@ -284,6 +287,28 @@ class StudentService {
       }
     } catch (e) {
       return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Submit real-time interaction to the unified C1-C4 pipeline.
+  Future<Map<String, dynamic>?> submitInteraction(Map<String, dynamic> payload) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('${ApiConfig.learningBaseUrl}/interaction'),
+        headers: headers,
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        debugPrint('Failed to submit interaction: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error submitting interaction: $e');
+      return null;
     }
   }
 
@@ -418,6 +443,29 @@ class StudentService {
       }
     } catch (e) {
       return 'Failed to connect to the server.';
+    }
+  }
+
+  /// Fetch C1 Behavioral Learner-State history for a student
+  Future<List<dynamic>> getC1History(String studentId, {int limit = 5}) async {
+    try {
+      final token = await _getAccessToken();
+      if (token == null) return [];
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.c1BaseUrl}/student/$studentId/history?limit=$limit'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 }
