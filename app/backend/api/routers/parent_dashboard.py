@@ -113,7 +113,7 @@ async def get_parent_learning_pattern(student_id:str):
     return ParentLearningPatternDTO(**base(student_id,doc),observation=obs,recommended_practices=[])
 
 @router.get("/{student_id}/activity-history",response_model=ParentActivityHistoryDTO)
-async def get_parent_activity_history(student_id:str,limit:int=Query(10,ge=1,le=50),days:int|None=Query(None,ge=1,le=365)):
+async def get_parent_activity_history(student_id:str,limit:int=Query(10,ge=1,le=50),days:Optional[int]=Query(None,ge=1,le=365)):
     db=get_db(); rows=await records(db,"session_summaries",student_id)
     cutoff=(datetime.now(timezone.utc)-timedelta(days=days)).isoformat().replace("+00:00","Z") if days else None
     if cutoff: rows=[r for r in rows if (timestamp(r) or "")>=cutoff]
