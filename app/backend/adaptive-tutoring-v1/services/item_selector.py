@@ -8,7 +8,8 @@ class ItemSelector:
         target_difficulty: float,
         candidates: List[Dict[str, Any]],
         confirmation_required: bool = False,
-        forced_item_id: Optional[str] = None
+        forced_item_id: Optional[str] = None,
+        excluded_item_ids: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
         Adaptive item selection using provisional IRT difficulty parameters,
@@ -30,8 +31,24 @@ class ItemSelector:
                 "selection_reason": "NO_CANDIDATE_FALLBACK"
             }
             
-        # 1. Filter valid candidates
+        # 1. Filter valid candidates. Ordinary IRT selection must not cycle
+        # through items already completed in this activity. Explicit state-
+        # machine overrides may still repeat an item for confirmation.
         valid_candidates = [c for c in candidates if c.get("activity_id") == current_activity]
+        excluded = set(excluded_item_ids or [])
+        unseen_candidates = [
+            candidate for candidate in valid_candidates
+            if candidate.get("item_id") not in excluded
+        ]
+        if unseen_candidates:
+            valid_candidates = unseen_candidates
+        elif valid_candidates and excluded:
+            return {
+                "selected_item": "COMPLETE",
+                "selected_difficulty": 0.0,
+                "target_difficulty": target_difficulty,
+                "selection_reason": "ALL_ACTIVE_ITEMS_ADMINISTERED",
+            }
         
         if not valid_candidates:
             return {
