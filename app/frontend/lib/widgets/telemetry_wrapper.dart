@@ -560,9 +560,17 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
         ? rounds[_currentRound - 1]
         : {};
 
-    final canonical = CanonicalItemResolver.resolve(
+    final fallbackCanonical = CanonicalItemResolver.resolve(
       widget.activityNode,
       roundData,
+      _currentRound - 1,
+    );
+    final payloadItemId = CanonicalItemResolver.normalizeItemId(
+      itemId ?? fallbackCanonical.itemId,
+    );
+    final canonical = CanonicalItemResolver.resolveByItemId(
+      widget.activityNode,
+      payloadItemId,
       _currentRound - 1,
     );
     final researchMeta = widget.activityNode.researchMetadata;
@@ -614,10 +622,6 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     // --- NEW: Real-time Orchestrator Submission (C1-C4) ---
     final studentId = _studentId;
     final sessionId = TelemetryService().sessionId;
-
-    final payloadItemId = CanonicalItemResolver.normalizeItemId(
-      itemId ?? canonical.itemId,
-    );
 
     final payload = {
       "schema_version": "2.0",
