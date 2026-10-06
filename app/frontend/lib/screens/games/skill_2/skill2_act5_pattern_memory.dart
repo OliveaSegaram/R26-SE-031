@@ -2,13 +2,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../widgets/telemetry_wrapper.dart';
-import '../../../../models/curriculum_models.dart';
+import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
-import '../../../../services/progress_service.dart';
+import '../../../services/progress_service.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
-import '../../../../services/tts_service.dart';
+import '../../../services/tts_service.dart';
+import '../../../adaptive/controllers/adaptive_choice_controller.dart';
+import '../../../adaptive/models/adaptive_scaffold_models.dart';
+import '../../../adaptive/widgets/adaptive_answer_pool.dart';
 
 /// Activity 5: අකුරු මතකයෙන් සකසමු (Remember the Pattern)
 /// Template: pattern_memory_game
@@ -41,15 +44,15 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
   bool _isCorrect = false;
   bool _activityComplete = false;
   int _currentRoundIndex = 0;
-  
+
   String _currentItemId = '';
   String? _currentVariantId;
 
   String? _wrongTappedOption;
   String? _correctTappedOption;
-  
-  final Set<String> _removedOptionIds = {};
-  bool _highlightCorrect = false;
+
+  final AdaptiveChoiceController<String> _choiceController =
+      AdaptiveChoiceController<String>();
 
   @override
   void initState() {
@@ -70,32 +73,70 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
     _setupRound();
     _startMemorizeTimer();
   }
-  
+
   void _setupRound() {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isNotEmpty && _currentRoundIndex < rounds.length) {
       final currentRound = rounds[_currentRoundIndex];
-      _currentItemId = currentRound['item_id']?.toString() ?? 'S2A5R0${_currentRoundIndex + 1}';
-      
+      _currentItemId = CanonicalItemResolver.normalizeItemId(
+        currentRound['item_id']?.toString() ??
+            CanonicalItemResolver.canonicalItemId(
+              skillId: widget.activityNode?.skillId ?? 'skill_2',
+              activityId: widget.activityNode?.id ?? 'act_5',
+              roundNumber: _currentRoundIndex + 1,
+            ),
+      );
+
       // If a variant is selected by C4, load its data instead
-      if (_currentVariantId != null && currentRound.containsKey('adaptive_variants')) {
-        final variants = currentRound['adaptive_variants'] as List<dynamic>? ?? [];
-        final variant = variants.firstWhere((v) => v['variant_id'] == _currentVariantId, orElse: () => null);
+      if (_currentVariantId != null &&
+          currentRound.containsKey('adaptive_variants')) {
+        final variants =
+            currentRound['adaptive_variants'] as List<dynamic>? ?? [];
+        final variant = variants.firstWhere(
+          (v) => v['variant_id'] == _currentVariantId,
+          orElse: () => null,
+        );
         if (variant != null && variant.containsKey('content')) {
-          _currentItemId = variant['item_id']?.toString() ?? '';
+          final variantId = variant['variant_id']?.toString();
+          final variantItemId = variant['item_id']?.toString();
+          _currentItemId = CanonicalItemResolver.normalizeItemId(
+            variantItemId != null && variantItemId.isNotEmpty
+                ? variantItemId
+                : '${_currentItemId}_${variantId ?? 'variant'}',
+          );
         }
       }
     }
-    _removedOptionIds.clear();
-    _highlightCorrect = false;
+    final data = _getCurrentRoundData();
+    final pattern =
+        (data['pattern'] as List?)?.map((value) => value.toString()).toList() ??
+        const <String>[];
+    final options =
+        (data['options'] as List?)?.map((value) => value.toString()).toList() ??
+        const <String>[];
+    _choiceController.configure(
+      List<AdaptiveOption<String>>.generate(
+        options.length,
+        (index) => AdaptiveOption<String>(
+          id: _optionId(index),
+          value: options[index],
+          role: pattern.contains(options[index])
+              ? AdaptiveOptionRole.sequenceToken
+              : AdaptiveOptionRole.unrelatedDistractor,
+        ),
+      ),
+    );
     _isCorrect = false;
   }
+
+  String _optionId(int index) => '${_currentItemId}_O${index + 1}';
 
   @override
   void dispose() {
     _timer?.cancel();
     _audioPlayer.dispose();
     _timerController.dispose();
+    _choiceController.dispose();
     super.dispose();
   }
 
@@ -103,15 +144,19 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
     var r = widget.activityNode?.rounds ?? [];
     return r.length > 5 ? r.sublist(0, 5) : r;
   }
-  
+
   Map<String, dynamic> _getCurrentRoundData() {
     final rounds = _rounds;
     if (rounds.isEmpty || _currentRoundIndex >= rounds.length) return {};
-    
+
     Map<String, dynamic> roundData = rounds[_currentRoundIndex];
-    if (_currentVariantId != null && roundData.containsKey('adaptive_variants')) {
+    if (_currentVariantId != null &&
+        roundData.containsKey('adaptive_variants')) {
       final variants = roundData['adaptive_variants'] as List<dynamic>? ?? [];
-      final variant = variants.firstWhere((v) => v['variant_id'] == _currentVariantId, orElse: () => null);
+      final variant = variants.firstWhere(
+        (v) => v['variant_id'] == _currentVariantId,
+        orElse: () => null,
+      );
       if (variant != null && variant.containsKey('content')) {
         roundData = variant['content'] as Map<String, dynamic>;
       }
@@ -120,7 +165,9 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
   }
 
   void _playCurrentInstruction({bool autoPlay = false}) {
-    final promptText = _isMemorizing ? 'රටාව මතක තබා ගන්න!' : 'රටාව නැවත සකසන්න';
+    final promptText = _isMemorizing
+        ? 'රටාව මතක තබා ගන්න!'
+        : 'රටාව නැවත සකසන්න';
     String spokenInstruction = promptText
         .replaceAll('මා', 'ම')
         .replaceAllMapped(
@@ -131,7 +178,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
-    
+
     if (autoPlay && _spokenInstructions.contains(spokenInstruction)) {
       return;
     }
@@ -150,8 +197,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
       _countdown = showSeconds;
       _userSequence.clear();
       _isCorrect = false;
-      _removedOptionIds.clear();
-      _highlightCorrect = false;
+      _choiceController.reset();
     });
 
     _playCurrentInstruction(autoPlay: true);
@@ -171,9 +217,10 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
           _isMemorizing = false;
         });
         _playCurrentInstruction(autoPlay: true);
-        
+
         // Reset telemetry timers so memorization time isn't counted as hesitation/latency
-        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        final wrapper = context
+            .findAncestorStateOfType<TelemetryWrapperState>();
         wrapper?.resetRoundTimers();
       }
     });
@@ -184,28 +231,32 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
       _completeActivity();
       return;
     }
-    
+
     int totalRounds = widget.activityNode?.rounds.length ?? 1;
     setState(() {
       if (nextAction != null && nextAction.containsKey('next_item')) {
-         final nextItem = nextAction['next_item'].toString();
-         final regex = RegExp(r'R(\d+)');
-         final match = regex.firstMatch(nextItem);
-         if (match != null && match.group(1) != null) {
-            int roundNum = int.tryParse(match.group(1)!) ?? (_currentRoundIndex + 1);
-            _currentRoundIndex = roundNum - 1;
-         } else {
-            _currentRoundIndex++;
-         }
+        final nextItem = nextAction['next_item'].toString();
+        final regex = RegExp(r'R(\d+)');
+        final match = regex.firstMatch(nextItem);
+        if (match != null && match.group(1) != null) {
+          int roundNum =
+              int.tryParse(match.group(1)!) ?? (_currentRoundIndex + 1);
+          _currentRoundIndex = roundNum - 1;
+        } else {
+          _currentRoundIndex++;
+        }
 
-         if (nextItem.contains('V1')) _currentVariantId = 'V1';
-         else if (nextItem.contains('V2')) _currentVariantId = 'V2';
-         else _currentVariantId = null;
+        if (nextItem.contains('V1'))
+          _currentVariantId = 'V1';
+        else if (nextItem.contains('V2'))
+          _currentVariantId = 'V2';
+        else
+          _currentVariantId = null;
       } else {
-         _currentVariantId = null;
-         _currentRoundIndex++;
+        _currentVariantId = null;
+        _currentRoundIndex++;
       }
-      
+
       final sId = widget.activityNode?.skillId ?? '';
       final aId = widget.activityNode?.id ?? '';
       if (sId.isNotEmpty && aId.isNotEmpty) {
@@ -215,7 +266,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
       }
       _setupRound();
     });
-    
+
     if (_currentRoundIndex < totalRounds || _currentVariantId != null) {
       _startMemorizeTimer();
     } else {
@@ -235,22 +286,9 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
     });
   }
 
-  void _processScaffoldAction(Map<String, dynamic> nextAction) {
-    setState(() {
-      if (nextAction['remove_option_ids'] != null) {
-        final List<dynamic> removeIds = nextAction['remove_option_ids'];
-        for (var id in removeIds) {
-           _removedOptionIds.add(id.toString());
-        }
-      }
-      if (nextAction['highlight_correct'] == true) {
-        _highlightCorrect = true;
-      }
-    });
-  }
-
   void _addItemToUserSequence(
     String item,
+    String optionId,
     List<String> targetPattern,
     List<String> allOptions,
     int totalRounds,
@@ -262,36 +300,55 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
       // Wrong item picked
       setState(() {
         _wrongTappedOption = item;
+        _choiceController.markIncorrect(optionId);
       });
       SoundUtils.playFeedback('audio/wrong.mp3');
-      
+
       // Calculate genuine distractors
-      List<String> genuineDistractors = allOptions.where((opt) => 
-         !targetPattern.contains(opt) && 
-         !_userSequence.contains(opt) && 
-         !_removedOptionIds.contains(opt)
-      ).toList();
-      
+      final genuineDistractors = _choiceController.visibleOptions
+          .where((option) => !targetPattern.contains(option.value))
+          .map((option) => option.id)
+          .toList();
+      final expectedIds = _choiceController.visibleOptions
+          .where((option) => option.value == targetPattern[currentIndex])
+          .map((option) => option.id)
+          .toList();
+
       final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
       if (wrapper != null) {
         final result = await wrapper.registerAdaptiveWrongAttempt(
           itemId: _currentItemId,
           extraTelemetry: {
             "selected_option_id": item,
-            "correct_option_id": targetPattern[currentIndex],
+            "selected_option_ids": [optionId],
+            "correct_option_ids": expectedIds,
             "original_options_count": allOptions.length,
             "incorrect_option_ids": genuineDistractors,
-          }
+            "visible_option_ids": _choiceController.visibleOptions
+                .map((option) => option.id)
+                .toList(),
+            "supported_actions": [
+              "REMOVE_OPTION",
+              "HIGHLIGHT_OPTION",
+              "REVEAL_FIRST_TOKEN",
+              "REPLAY_INSTRUCTION",
+            ],
+            "minimum_visible_options": 2,
+            "error_type": "sequence_memory_error",
+          },
         );
-        if (result != null && result['next_action'] != null) {
-           _processScaffoldAction(result['next_action']);
-        }
+        wrapper.applyScaffoldResult<String>(
+          controller: _choiceController,
+          result: result,
+          correctOptionIds: expectedIds,
+        );
       }
-      
+
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
           setState(() {
             _wrongTappedOption = null;
+            _choiceController.clearTransientFeedback();
             // DO NOT clear user sequence!
           });
         }
@@ -303,8 +360,9 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
     setState(() {
       _correctTappedOption = item;
       _userSequence.add(item);
+      _choiceController.markCorrect(optionId);
     });
-    
+
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) {
         setState(() {
@@ -321,19 +379,23 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
         _isCorrect = true;
       });
       SoundUtils.playFeedback('audio/correct.mp3');
-      
+
       final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
       if (wrapper != null) {
-         final result = await wrapper.completeAdaptiveRound(100, itemId: _currentItemId);
-         Future.delayed(const Duration(milliseconds: 1400), () {
-            if (!mounted) return;
-            _transitionToNextRound(result?['next_action']);
-         });
+        final result = await wrapper.completeAdaptiveRound(
+          100,
+          itemId: _currentItemId,
+          selectedAnswers: List<String>.from(_userSequence),
+        );
+        Future.delayed(const Duration(milliseconds: 1400), () {
+          if (!mounted) return;
+          _transitionToNextRound(result?['next_action']);
+        });
       } else {
-         Future.delayed(const Duration(milliseconds: 1400), () {
-            if (!mounted) return;
-            _transitionToNextRound(null);
-         });
+        Future.delayed(const Duration(milliseconds: 1400), () {
+          if (!mounted) return;
+          _transitionToNextRound(null);
+        });
       }
     }
   }
@@ -561,114 +623,42 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
                               width: 2,
                             ),
                           ),
-                          child: Wrap(
-                            spacing: 16.0,
-                            runSpacing: 16.0,
-                            alignment: WrapAlignment.center,
-                            children: options.map((opt) {
-                              if (_removedOptionIds.contains(opt)) {
-                                return SizedBox(width: hasLongText ? 150 : itemSize, height: hasLongText ? 80 : itemSize);
-                              }
-                              
-                              final isWrong = _wrongTappedOption == opt;
-                              final isCorrect = _correctTappedOption == opt;
-                              final isPressed = isWrong || isCorrect;
-                              
-                              final isExpectedNext = _userSequence.length < targetPattern.length && targetPattern[_userSequence.length] == opt;
-                              final isHighlighted = _highlightCorrect && isExpectedNext;
-
-                              Color tileColor = Colors.white;
-                              Color borderColor = Colors.transparent;
-                              Color textColor = AppColors.textPrimary;
-                              double borderWidth = isPressed || isHighlighted ? 4.0 : 1.0;
-
-                              if (isCorrect) {
-                                tileColor = const Color(
-                                  0xFF6DBE6D,
-                                ).withValues(alpha: 0.15);
-                                borderColor = const Color(0xFF6DBE6D);
-                                textColor = const Color(0xFF6DBE6D);
-                              } else if (isWrong) {
-                                tileColor = const Color(
-                                  0xFFE87C6D,
-                                ).withValues(alpha: 0.15);
-                                borderColor = const Color(0xFFE87C6D);
-                                textColor = const Color(0xFFE87C6D);
-                              } else if (isHighlighted) {
-                                tileColor = const Color(0xFF6DBE6D).withValues(alpha: 0.15);
-                                borderColor = const Color(0xFF6DBE6D);
-                                textColor = AppColors.textPrimary;
-                              }
-
-                              return GestureDetector(
+                          child: AdaptiveAnswerPool<String>(
+                            controller: _choiceController,
+                            spacing: 16,
+                            minExtent: itemSize,
+                            maxExtent: itemSize,
+                            itemBuilder: (context, option, state, extent) {
+                              return AdaptiveOptionFrame(
+                                state: state,
                                 onTap: () => _addItemToUserSequence(
-                                  opt,
+                                  option.value,
+                                  option.id,
                                   targetPattern,
                                   options,
                                   _rounds.length,
                                 ),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 150),
-                                  margin: EdgeInsets.all(spacing / 2),
-                                  width: hasLongText ? null : itemSize,
-                                  height: hasLongText ? null : itemSize,
-                                  padding: hasLongText
-                                      ? const EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 16,
-                                        )
-                                      : null,
-                                  decoration: BoxDecoration(
-                                    color: tileColor,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: isPressed || isHighlighted
-                                          ? borderColor
-                                          : const Color(0xFFE2E8F0),
-                                      width: borderWidth,
-                                    ),
-                                    boxShadow: [
-                                      if (isCorrect || isHighlighted)
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFF6DBE6D,
-                                          ).withValues(alpha: 0.3),
-                                          blurRadius: 16,
-                                          spreadRadius: 2,
-                                        )
-                                      else if (isWrong)
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFFE87C6D,
-                                          ).withValues(alpha: 0.3),
-                                          blurRadius: 16,
-                                          spreadRadius: 2,
-                                        )
-                                      else if (!isPressed)
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.08,
-                                          ),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                    ],
+                                width: hasLongText ? null : extent,
+                                height: hasLongText ? null : extent,
+                                padding: hasLongText
+                                    ? const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 16,
+                                      )
+                                    : const EdgeInsets.all(12),
+                                semanticLabel: option.value,
+                                child: Text(
+                                  option.value,
+                                  style: TextStyle(
+                                    fontSize: hasLongText ? 40.0 : fontSize,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.1,
+                                    color: AppColors.textPrimary,
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      opt,
-                                      style: TextStyle(
-                                        fontSize: hasLongText ? 40.0 : fontSize,
-                                        fontWeight: FontWeight.bold,
-                                        height: 1.1,
-                                        color: textColor,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
                               );
-                            }).toList(),
+                            },
                           ),
                         ),
                       ),
