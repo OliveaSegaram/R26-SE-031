@@ -36,8 +36,8 @@
       #sipsara-c4-clear-map .c4-row { grid-template-columns:34px 1fr; }
       #sipsara-c4-clear-map .c4-arrow { display:none; }
       #sipsara-c4-clear-map .c4-box::before { display:block; margin-bottom:6px; font-weight:500; }
-      #sipsara-c4-clear-map .c4-box.current::before { content:"CURRENT"; color:var(--destructive); }
-      #sipsara-c4-clear-map .c4-box.target::before { content:"TARGET"; color:var(--green); }
+      #sipsara-c4-clear-map .c4-box.current::before { content:"BEFORE"; color:var(--destructive); }
+      #sipsara-c4-clear-map .c4-box.target::before { content:"IMPLEMENTED"; color:var(--green); }
       #sipsara-c4-clear-map .c4-box.target { grid-column:2; }
       #sipsara-c4-clear-map .c4-result, #sipsara-c4-clear-map .journey { grid-template-columns:1fr; }
       #sipsara-c4-clear-map .c4-result .c4-arrow { display:grid; }
@@ -58,64 +58,64 @@
   <section data-section="comparison" aria-label="Stage-by-stage system comparison">
     <div class="c4-headings">
       <div></div>
-      <div class="c4-col-title c4-current-title"><strong>CURRENT SYSTEM</strong><span>What the repository does now</span></div>
+      <div class="c4-col-title c4-current-title"><strong>BEFORE REFACTOR</strong><span>What the repository previously did</span></div>
       <div></div>
-      <div class="c4-col-title c4-target-title"><strong>TARGET SYSTEM</strong><span>What the completed research system should do</span></div>
+      <div class="c4-col-title c4-target-title"><strong>IMPLEMENTED FOUNDATION</strong><span>What Component 4 now does</span></div>
     </div>
 
     <div class="c4-row">
       <div class="c4-step">1</div>
       <article class="card c4-box current"><h3>Activity content</h3><p>Rounds mainly contain prompt, options and correct answer.</p><p>Skill 2 has adaptive variants; other skills mostly do not.</p></article>
       <div class="c4-arrow">→</div>
-      <article class="card c4-box target"><h3>Research item bank</h3><p>Every scored task has item ID, Sinhala KC tags, difficulty, distractor type, equivalent variants and allowed scaffolds.</p></article>
+      <article class="card c4-box target"><h3>Validated research item bank</h3><p>157 canonical records carry Sinhala KC tags, provisional difficulty, stable option IDs, equivalent groups, validation state and allowed scaffolds.</p></article>
     </div>
 
     <div class="c4-row">
       <div class="c4-step">2</div>
       <article class="card c4-box current"><h3>Response evidence</h3><p>Main signal is correct/incorrect plus latency and touch counts.</p><p>An answer completed after highlighting may still increase mastery as “correct”.</p></article>
       <div class="c4-arrow">→</div>
-      <article class="card c4-box target"><h3>Standard learning event</h3><p>Stores first independent answer, final answer, attempts, assistance, latency, C1/C2 features and task-specific evidence.</p></article>
+      <article class="card c4-box target"><h3>Standard learning event</h3><p>Stores first and final correctness, selected answers, attempts, errors, latency, item/KC identity, assistance and treatment fidelity.</p></article>
     </div>
 
     <div class="c4-row">
       <div class="c4-step">3</div>
       <article class="card c4-box current"><h3>Learner estimation</h3><p>Provisional BKT values are almost identical across KCs.</p><p>One global IRT theta mixes visual, phonological and language skills.</p></article>
       <div class="c4-arrow">→</div>
-      <article class="card c4-box target"><h3>Two trained learner models</h3><p><strong>Fitted BKT:</strong> mastery for each Sinhala KC.</p><p><strong>Multidomain IRT:</strong> item difficulty and separate visual, phonological and comprehension abilities.</p></article>
+      <article class="card c4-box target"><h3>BKT + IRT/Rasch pipeline</h3><p><strong>BKT:</strong> updates mastery for each Sinhala KC.</p><p><strong>IRT/Rasch:</strong> updates ability online; the offline calibrator fits item difficulty only after enough real first-attempt data exists.</p></article>
     </div>
 
     <div class="c4-row">
       <div class="c4-step">4</div>
       <article class="card c4-box current"><h3>Support decision</h3><p>Skill 2 follows hand-coded state machines.</p><p>Other skills receive a generic fallback; current C1/C2/C3 gateway values are mocked.</p></article>
       <div class="c4-arrow">→</div>
-      <article class="card c4-box target"><h3>Two trained decision models</h3><p><strong>Fatigue/struggle classifier:</strong> predicts when support or a break is needed.</p><p><strong>Constrained contextual bandit:</strong> selects the best approved scaffold.</p></article>
+      <article class="card c4-box target"><h3>Child-safe scaffold policy</h3><p>A deterministic, auditable policy selects only actions declared by the task adapter.</p><p>No unvalidated classifier or bandit is presented as trained on children.</p></article>
     </div>
 
     <div class="c4-row">
       <div class="c4-step">5</div>
       <article class="card c4-box current"><h3>Next action in Flutter</h3><p>Adaptive navigation is explicitly accepted only for Skill 2.</p><p>Other activities continue using their local fixed sequence.</p></article>
       <div class="c4-arrow">→</div>
-      <article class="card c4-box target"><h3>Shared adaptive contract</h3><p>Every scored activity understands: retry, easier equivalent, harder equivalent, scaffold, confirmation, pause and stop.</p></article>
+      <article class="card c4-box target"><h3>Shared adaptive contract</h3><p>All six skill families use semantic commands for retry, remove, highlight, replay, reveal and worked examples; answer pools reflow automatically.</p></article>
     </div>
 
     <div class="c4-row">
       <div class="c4-step">6</div>
       <article class="card c4-box current"><h3>Stopping and evidence</h3><p>SE calculation exists but is unused. Decisions may be stored more than once.</p><p>No trained-policy evaluation across all skills.</p></article>
       <div class="c4-arrow">→</div>
-      <article class="card c4-box target"><h3>Safe stopping and validation</h3><p>Minimum/maximum items, unassisted confirmation, calibrated uncertainty and fatigue limits.</p><p>One auditable record and child-level validation.</p></article>
+      <article class="card c4-box target"><h3>Auditable validation path</h3><p>Stable event/action IDs prevent duplicate application; inactive duplicate variants cannot be selected.</p><p>Calibration status and sample count clearly separate provisional parameters from fitted results.</p></article>
     </div>
 
     <div class="c4-result">
-      <div class="card"><strong>Current conclusion</strong><span>Functional Skill 2 adaptive prototype—not yet a complete ML-based ITS.</span></div>
+      <div class="card"><strong>Before</strong><span>Functional Skill 2 adaptive prototype with activity-specific rendering and incomplete research evidence.</span></div>
       <div class="c4-arrow">→</div>
-      <div class="card"><strong>Target conclusion</strong><span>Four fitted models inside a child-safe adaptive framework covering every measurable Sinhala task.</span></div>
+      <div class="card"><strong>Implemented now</strong><span>A cross-skill adaptive ML foundation with truthful provisional parameters; real-child calibration and outcome validation remain research phases.</span></div>
     </div>
   </section>
 
   <section data-section="journey" hidden aria-label="Example response journey comparison">
     <div class="journey">
       <div>
-        <h3 class="lane-title current">CURRENT: child confuses “බ” and “ප”</h3>
+        <h3 class="lane-title current">BEFORE: child confuses “බ” and “ප”</h3>
         <div class="journey-step"><div class="dot">1</div><div><strong>Child taps “ප”</strong><span>Wrong attempt and latency are recorded.</span></div></div>
         <div class="journey-step"><div class="dot">2</div><div><strong>Skill check</strong><span>If this is not Skill 2, adaptive result is ignored.</span></div></div>
         <div class="journey-step"><div class="dot">3</div><div><strong>Fixed handling</strong><span>Skill 2 uses its activity-specific retry/highlight sequence.</span></div></div>
@@ -123,11 +123,11 @@
         <div class="journey-step"><div class="dot">5</div><div><strong>Continue</strong><span>No validated proof that this scaffold was best for this child.</span></div></div>
       </div>
       <div>
-        <h3 class="lane-title target">TARGET: same child, same confusion</h3>
+        <h3 class="lane-title target">IMPLEMENTED: same child, same confusion</h3>
         <div class="journey-step"><div class="dot">1</div><div><strong>Independent response stored</strong><span>Wrong “ප”, visual-distractor tag, latency and touch evidence are preserved.</span></div></div>
-        <div class="journey-step"><div class="dot">2</div><div><strong>BKT + IRT update</strong><span>KC grapheme discrimination decreases; visual-domain ability and uncertainty update.</span></div></div>
-        <div class="journey-step"><div class="dot">3</div><div><strong>Struggle model predicts need</strong><span>Combines errors, hesitation, OCI, fatigue and previous support history.</span></div></div>
-        <div class="journey-step"><div class="dot">4</div><div><strong>Bandit selects an approved scaffold</strong><span>Highlights the distinguishing loop or removes one irrelevant distractor.</span></div></div>
+        <div class="journey-step"><div class="dot">2</div><div><strong>BKT + IRT update</strong><span>KC mastery and ability evidence update from the scored response.</span></div></div>
+        <div class="journey-step"><div class="dot">3</div><div><strong>Policy detects repeated difficulty</strong><span>Uses attempts, current scaffold state and the task's declared capabilities.</span></div></div>
+        <div class="journey-step"><div class="dot">4</div><div><strong>Approved scaffold is applied</strong><span>Highlights the target or removes one irrelevant distractor using stable option IDs.</span></div></div>
         <div class="journey-step"><div class="dot">5</div><div><strong>Equivalent unassisted confirmation</strong><span>A new බ/ප item tests whether learning transferred without help.</span></div></div>
         <div class="journey-step"><div class="dot">6</div><div><strong>Evidence-based next action</strong><span>Continue, remediate, switch KC, pause for fatigue or terminate with a recorded reason.</span></div></div>
       </div>
