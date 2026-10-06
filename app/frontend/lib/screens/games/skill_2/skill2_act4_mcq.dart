@@ -35,6 +35,7 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
   
   bool _isCorrect = false;
   bool _activityComplete = false;
+  int _attemptCount = 0;
   int _currentRoundIndex = 0;
   String _currentItemId = '';
   String? _currentVariantId;
@@ -47,13 +48,14 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
   @override
   void initState() {
     super.initState();
+    _attemptCount = 0;
     final skillId = widget.activityNode?.skillId ?? '';
     final activityId = widget.activityNode?.id ?? '';
     if (skillId.isNotEmpty && activityId.isNotEmpty) {
       _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
     }
     final rounds = widget.activityNode?.rounds ?? [];
-    if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
+    if (_currentRoundIndex >= rounds.length && rounds.isNotEmpty) {
       _currentRoundIndex = 0;
     }
     
@@ -322,6 +324,46 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
            _highlightIndices.remove(index);
        });
     }
+  }
+
+  void _advanceRoundAfterDelay(int totalRounds) {
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      if (_currentRoundIndex < totalRounds - 1) {
+        setState(() {
+          _currentRoundIndex++;
+          _attemptCount = 0;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            int progress =
+                ((_currentRoundIndex /
+                            (widget.activityNode?.rounds.length ?? 1)) *
+                        100)
+                    .toInt();
+            ProgressService().saveActivityScore(sId, aId, progress);
+            ProgressService().saveActivityState(
+              sId,
+              aId,
+              _currentRoundIndex,
+            );
+          }
+          _selectedIndices.clear();
+          _isCorrect = false;
+        });
+        _playAudioPrompt(autoPlay: true);
+      } else {
+        setState(() {
+          _activityComplete = true;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
+      }
+    });
   }
 
   @override

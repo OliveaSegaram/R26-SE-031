@@ -183,6 +183,13 @@ def compute_cognitive_indices(features: dict[str, float]) -> dict[str, float]:
     sustained_attention_score = _clamp(100.0 * math.exp(-features["hesitation_ratio"] / 2.0))
 
     return {
+        # New non-overclaiming behavioral terminology
+        "visual_task_performance": round(visual_processing_score, 1),
+        "phonological_task_performance": round(phonological_awareness_score, 1),
+        "motor_interaction_pattern": round(motor_precision_score, 1),
+        "attention_interaction_indicator": round(sustained_attention_score, 1),
+
+        # Legacy fields preserved temporarily for UI compatibility
         "visual_processing_index": round(visual_processing_score, 1),
         "phonological_task_index": round(phonological_awareness_score, 1),
         "motor_interaction_index": round(motor_precision_score, 1),
@@ -226,9 +233,11 @@ def classify_risk(
             
             return {
                 "overall_risk": overall_risk,
-                "dyslexia_risk": overall_risk,
-                "dyspraxia_risk": overall_risk,
-                "adhd_risk": overall_risk,
+                # Use the same key names as the heuristic path so generate_interventions works
+                "visual_dyslexia_risk": overall_risk,
+                "phonological_dyslexia_risk": overall_risk,
+                "motor_dysgraphia_risk": overall_risk,
+                "attention_risk": overall_risk,
                 "model_used": "RandomForest"
             }
         except Exception as e:

@@ -91,6 +91,7 @@ def start_services():
         print(f"[START] {svc['name']} on port {svc['port']}...")
         env = os.environ.copy()
         env["PORT"] = str(svc["port"])
+        env["ROOT_PATH"] = f"/{svc['name']}"
         
         # Wait for port to be free before launching — prevents [Errno 98] crash
         if not wait_for_port_free(svc["port"]):
@@ -130,8 +131,20 @@ if not os.path.exists(LOCK_FILE):
 else:
     print("[INIT] Services already started by another worker.")
 
+from fastapi.middleware.cors import CORSMiddleware
+
 # Create Gateway App
 app = FastAPI(title="Azure ML Gateway")
+
+# Enable CORS for Swagger UI cross-origin requests from Render
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 client = httpx.AsyncClient(timeout=60.0)
 
 async def proxy_request(request: Request, service_port: int, path: str):
@@ -160,19 +173,19 @@ async def proxy_request(request: Request, service_port: int, path: str):
         import traceback
         return {"error": str(e), "traceback": traceback.format_exc()}
 
-@app.api_route("/speech/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
+@app.api_route("/speech/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"])
 async def proxy_speech(request: Request, path: str):
     return await proxy_request(request, 9011, path)
 
-@app.api_route("/telemetry/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
+@app.api_route("/telemetry/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"])
 async def proxy_telemetry(request: Request, path: str):
     return await proxy_request(request, 9014, path)
 
-@app.api_route("/diagnostic/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
+@app.api_route("/diagnostic/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"])
 async def proxy_diagnostic(request: Request, path: str):
     return await proxy_request(request, 9016, path)
 
-@app.api_route("/tutoring/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD"])
+@app.api_route("/tutoring/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"])
 async def proxy_tutoring(request: Request, path: str):
     return await proxy_request(request, 9017, path)
 

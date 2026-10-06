@@ -178,13 +178,19 @@ class SharedCelebrationPopup extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      'ඉදිරියට යමු',
-                      style: AppTypography.sinhala(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'ඉදිරියට යමු',
+                          style: AppTypography.sinhala(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),

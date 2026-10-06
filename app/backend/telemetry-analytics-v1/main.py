@@ -19,6 +19,7 @@ app = FastAPI(
     description="Microservice for cognitive profiling, risk assessment, and report generation.",
     version="1.0.0",
     lifespan=lifespan,
+    root_path=os.getenv("ROOT_PATH", ""),
 )
 
 app.add_middleware(
