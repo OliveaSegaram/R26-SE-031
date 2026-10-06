@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../widgets/telemetry_wrapper.dart';
-import '../../../../models/curriculum_models.dart';
-import '../../../../services/tts_service.dart';
+import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
+import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
-import '../../../../services/progress_service.dart';
+import '../../../services/progress_service.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
+import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
 
 /// Activity 8: පින්තූරයට ගැලපෙන හිස්තැන පුරවමු (Fill Blank Slot Matching Image)
 /// Template: fill_blank_game
@@ -15,13 +16,19 @@ class Skill4Act2FillBlank extends StatefulWidget {
   final ActivityNode? activityNode;
   final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill4Act2FillBlank({super.key, this.activityNode, this.isRemedial = false, this.studentData});
+  const Skill4Act2FillBlank({
+    super.key,
+    this.activityNode,
+    this.isRemedial = false,
+    this.studentData,
+  });
 
   @override
   State<Skill4Act2FillBlank> createState() => _Skill4Act2FillBlankState();
 }
 
-class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerProviderStateMixin {
+class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank>
+    with TickerProviderStateMixin, ChoiceScaffoldAdapter<Skill4Act2FillBlank> {
   String _lastSpokenInstruction = '';
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -34,7 +41,10 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
     final skillId = widget.activityNode?.skillId ?? '';
     final activityId = widget.activityNode?.id ?? '';
     if (skillId.isNotEmpty && activityId.isNotEmpty) {
-      _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
+      _currentRoundIndex = ProgressService().getActivityState(
+        skillId,
+        activityId,
+      );
     }
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
@@ -64,9 +74,11 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
   void _playCurrentInstruction({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
-    
-    final instruction = widget.activityNode?.description ?? 'පින්තූර පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි පින්තූරය තෝරන්න.';
-    
+
+    final instruction =
+        widget.activityNode?.description ??
+        'පින්තූර පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි පින්තූරය තෝරන්න.';
+
     String spokenInstruction = instruction
         .replaceAll('මා', 'ම')
         .replaceAllMapped(
@@ -78,7 +90,6 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
           (match) => '${match.group(1)}, පින්තූරය',
         );
 
-    
     if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
       return;
     }
@@ -91,27 +102,38 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
   bool _isCorrect = false;
   bool _activityComplete = false;
   int _currentRoundIndex = 0;
+  int _attemptCount = 0;
 
   @override
   void dispose() {
     _pulseController.dispose();
     _bounceController.dispose();
     _audioPlayer.dispose();
+    disposeChoiceScaffoldAdapter();
     super.dispose();
   }
 
-  void _checkAnswer(int index, String selectedOption, String correctOption, int totalRounds) async {
+  void _checkAnswer(
+    int index,
+    String selectedOption,
+    String correctOption,
+    int totalRounds,
+  ) async {
     if (_isCorrect) return;
+    if (isAdaptivelyRemoved(index)) return;
+    _attemptCount++;
 
     setState(() {
       _selectedIndex = index;
     });
 
     final bool isRight = (selectedOption == correctOption);
-    int score = isRight ? 100 : 0;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
-
     if (isRight) {
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+        100,
+        itemId: adaptiveItemId,
+        selectedAnswers: <String>[selectedOption],
+      );
       _bounceController.forward(from: 0.0);
       setState(() {
         _isCorrect = true;
@@ -123,31 +145,43 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
         if (_currentRoundIndex < totalRounds - 1) {
           setState(() {
             _currentRoundIndex++;
-              final sId = widget.activityNode?.skillId ?? '';
-              final aId = widget.activityNode?.id ?? '';
-              if (sId.isNotEmpty && aId.isNotEmpty) {
-                int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
-                ProgressService().saveActivityScore(sId, aId, progress);
-                ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
-              }
+            final sId = widget.activityNode?.skillId ?? '';
+            final aId = widget.activityNode?.id ?? '';
+            if (sId.isNotEmpty && aId.isNotEmpty) {
+              int progress =
+                  ((_currentRoundIndex /
+                              (widget.activityNode?.rounds.length ?? 1)) *
+                          100)
+                      .toInt();
+              ProgressService().saveActivityScore(sId, aId, progress);
+              ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+            }
             _selectedIndex = null;
             _isCorrect = false;
+            _attemptCount = 0;
           });
           _playCurrentInstruction(autoPlay: true);
         } else {
           setState(() {
-          _activityComplete = true;
-          final sId = widget.activityNode?.skillId ?? '';
-          final aId = widget.activityNode?.id ?? '';
-          if (sId.isNotEmpty && aId.isNotEmpty) {
-            ProgressService().saveActivityScore(sId, aId, 100);
-            ProgressService().clearActivityState(sId, aId);
-          }
-        });
+            _activityComplete = true;
+            final sId = widget.activityNode?.skillId ?? '';
+            final aId = widget.activityNode?.id ?? '';
+            if (sId.isNotEmpty && aId.isNotEmpty) {
+              ProgressService().saveActivityScore(sId, aId, 100);
+              ProgressService().clearActivityState(sId, aId);
+            }
+          });
         }
       });
     } else {
       SoundUtils.playFeedback('audio/wrong.mp3');
+      final correctIndex = adaptiveOptionLabels.indexOf(correctOption);
+      await requestChoiceScaffold(
+        selectedIndex: index,
+        options: adaptiveOptionLabels,
+        correctIndex: correctIndex < 0 ? 0 : correctIndex,
+        errorType: 'sentence_completion_error',
+      );
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
           setState(() {
@@ -167,24 +201,33 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
         body: const Center(child: Text('No rounds available.')),
       );
     }
-    
+
     if (rounds.length > 5) {
       rounds = rounds.sublist(0, 5);
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'පින්තූරයට ගැලපෙන හිස්තැන පුරවමු';
-    final instructionText = widget.activityNode?.description ?? 'පින්තූර පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි පින්තූරය තෝරන්න.';
+    final titleText =
+        widget.activityNode?.title ?? 'පින්තූරයට ගැලපෙන හිස්තැන පුරවමු';
+    final instructionText =
+        widget.activityNode?.description ??
+        'පින්තූර පෙළෙහි හිස්තැනට ගැලපෙන නිවැරදි පින්තූරය තෝරන්න.';
 
-    final sequence = (currentRound['sequence'] as List?)?.map((e) => e?.toString()).toList() ?? ['🔴', '🔵', null, '🟢'];
-    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🟡', '🟣', '🔴', '⭐'];
-    final correctOption = currentRound['correctOption']?.toString() ?? options.first;
-    
+    final sequence =
+        (currentRound['sequence'] as List?)
+            ?.map((e) => e?.toString())
+            .toList() ??
+        ['🔴', '🔵', null, '🟢'];
+    var options =
+        (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ??
+        ['🟡', '🟣', '🔴', '⭐'];
+    final correctOption =
+        currentRound['correctOption']?.toString() ?? options.first;
+
     if (widget.isRemedial && options.length > 2) {
       var distractors = options.where((item) => item != correctOption).toList();
       if (distractors.isNotEmpty) distractors = distractors.sublist(0, 1);
       options = [correctOption, ...distractors];
-      options.shuffle();
     }
 
     return SharedGameLayout(
@@ -196,7 +239,8 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
       isRoundComplete: _isCorrect,
       isActivityComplete: _activityComplete,
       onNext: () {
-        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        final wrapper = context
+            .findAncestorStateOfType<TelemetryWrapperState>();
         if (wrapper != null) {
           wrapper.completeActivity(context);
         } else {
@@ -217,7 +261,11 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
                   // ── Premium Sequence Card (now contains Image) ──
                   Expanded(
                     flex: 6,
-                    child: _buildSequenceCard(sequence, correctOption, currentRound['image_url']?.toString()),
+                    child: _buildSequenceCard(
+                      sequence,
+                      correctOption,
+                      currentRound['image_url']?.toString(),
+                    ),
                   ),
 
                   const SizedBox(height: 16),
@@ -225,7 +273,11 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
                   // ── Premium Answer Pool ──
                   Expanded(
                     flex: 5,
-                    child: _buildAnswerPool(options, correctOption, rounds.length),
+                    child: _buildAnswerPool(
+                      options,
+                      correctOption,
+                      rounds.length,
+                    ),
                   ),
 
                   const SizedBox(height: 16),
@@ -239,7 +291,11 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
   }
 
   /// Premium floating sequence card with image and animated blank slot
-  Widget _buildSequenceCard(List<String?> sequence, String correctOption, String? imageUrl) {
+  Widget _buildSequenceCard(
+    List<String?> sequence,
+    String correctOption,
+    String? imageUrl,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       decoration: BoxDecoration(
@@ -254,7 +310,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
             color: AppColors.warmAmber.withValues(alpha: 0.2),
             blurRadius: 24,
             offset: const Offset(0, 8),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -276,7 +332,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
                       blurRadius: 16,
                       spreadRadius: 4,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 child: ClipRRect(
@@ -284,7 +340,9 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
                   child: Image.asset(
                     imageUrl,
                     fit: BoxFit.cover,
-                    alignment: imageUrl.contains('moon_shining') ? Alignment.topCenter : Alignment.center,
+                    alignment: imageUrl.contains('moon_shining')
+                        ? Alignment.topCenter
+                        : Alignment.center,
                   ),
                 ),
               ),
@@ -295,13 +353,21 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
               mainAxisAlignment: MainAxisAlignment.center,
               children: sequence.map((item) {
                 final isBlank = (item == null);
-                final currentText = isBlank ? (_isCorrect ? correctOption : '') : item;
+                final currentText = isBlank
+                    ? (_isCorrect ? correctOption : '')
+                    : item;
                 final isWide = false;
 
                 if (isBlank) {
-                  return Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: _buildBlankSlot(correctOption, isWide));
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: _buildBlankSlot(correctOption, isWide),
+                  );
                 } else {
-                  return Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: _buildFilledSlot(item, isWide));
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: _buildFilledSlot(item, isWide),
+                  );
                 }
               }).toList(),
             ),
@@ -349,7 +415,9 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
                     ]
                   : [
                       BoxShadow(
-                        color: const Color(0xFF64B5F6).withValues(alpha: glowOpacity * 0.4),
+                        color: const Color(
+                          0xFF64B5F6,
+                        ).withValues(alpha: glowOpacity * 0.4),
                         blurRadius: 20,
                         spreadRadius: 2,
                       ),
@@ -429,7 +497,18 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
   }
 
   /// Premium answer pool with bouncy interactive tiles
-  Widget _buildAnswerPool(List<String> options, String correctOption, int totalRounds) {
+  Widget _buildAnswerPool(
+    List<String> options,
+    String correctOption,
+    int totalRounds,
+  ) {
+    final correctIndex = options.indexOf(correctOption);
+    configureAdaptiveChoices(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+      options: options,
+      correctIndex: correctIndex < 0 ? 0 : correctIndex,
+    );
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -444,7 +523,10 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
           end: Alignment.bottomCenter,
         ),
         borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 3),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.9),
+          width: 3,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -460,23 +542,37 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
             spacing: 16,
             runSpacing: 16,
             alignment: WrapAlignment.center,
-            children: List.generate(options.length, (index) {
-              return _buildOptionTile(index, options[index], correctOption, totalRounds, options.length);
-            }),
+            children: <Widget>[
+              for (int index = 0; index < options.length; index++)
+                if (!isAdaptivelyRemoved(index))
+                  _buildOptionTile(
+                    index,
+                    options[index],
+                    correctOption,
+                    totalRounds,
+                    adaptiveChoices.visibleOptions.length,
+                  ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildOptionTile(int index, String optionText, String correctOption, int totalRounds, int totalOptions) {
+  Widget _buildOptionTile(
+    int index,
+    String optionText,
+    String correctOption,
+    int totalRounds,
+    int totalOptions,
+  ) {
     final isSelected = (_selectedIndex == index);
     final isRight = isSelected && (optionText == correctOption);
     final isWrong = isSelected && (optionText != correctOption);
     final isHidden = _isCorrect && (optionText == correctOption);
+    final isHinted = isAdaptivelyHighlighted(index);
 
     final isPressed = isRight || isWrong;
-    
 
     double tileWidth = 145.0;
     double tileHeight = 90.0;
@@ -517,9 +613,8 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
           color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
           blurRadius: 16,
           spreadRadius: 2,
-        )
+        ),
       ];
-      
     } else if (isWrong) {
       tileColor = const Color(0xFFE87C6D).withValues(alpha: 0.15);
       borderColor = const Color(0xFFE87C6D);
@@ -529,9 +624,12 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
           color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
           blurRadius: 16,
           spreadRadius: 2,
-        )
+        ),
       ];
-      
+    } else if (isHinted) {
+      tileColor = AppColors.warmAmberLight.withValues(alpha: 0.42);
+      borderColor = AppColors.warmAmber;
+      borderWidth = 4.0;
     }
 
     return GestureDetector(
@@ -549,10 +647,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank> with TickerPr
           decoration: BoxDecoration(
             color: tileColor,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: borderColor,
-              width: borderWidth,
-            ),
+            border: Border.all(color: borderColor, width: borderWidth),
             boxShadow: shadows,
           ),
           child: Center(
