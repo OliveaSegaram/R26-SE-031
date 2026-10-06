@@ -130,9 +130,9 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
 
     final bool isRight = (selectedOption == correctOption);
     if (isRight) {
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+      final transition = await completeAdaptiveChoiceTask(
         100,
-        itemId: adaptiveItemId,
+        roundIndex: _currentRoundIndex,
         selectedAnswers: <String>[selectedOption],
       );
       setState(() {
@@ -144,9 +144,9 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
 
       Future.delayed(const Duration(milliseconds: 1400), () {
         if (!mounted) return;
-        if (_currentRoundIndex < totalRounds - 1) {
+        if (transition != null && !transition.isComplete) {
           setState(() {
-            _currentRoundIndex++;
+            _currentRoundIndex = transition.roundIndex;
             final sId = widget.activityNode?.skillId ?? '';
             final aId = widget.activityNode?.id ?? '';
             if (sId.isNotEmpty && aId.isNotEmpty) {
@@ -210,7 +210,10 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
       rounds = rounds.sublist(0, 5);
     }
 
-    final currentRound = rounds[_currentRoundIndex];
+    final currentRound = adaptiveRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    );
     final titleText =
         widget.activityNode?.title ?? 'පින්තූරයට ගැලපෙන හිස්තැන සොයමු';
     final instructionText =

@@ -82,7 +82,10 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
   void _playCurrentInstruction({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
-    final currentRound = rounds[_currentRoundIndex];
+    final currentRound = adaptiveSequenceRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    );
     final instructionText =
         currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වචනය සාදන්න';
     String spokenInstruction = instructionText
@@ -114,7 +117,10 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
-    final currentRound = rounds[_currentRoundIndex];
+    final currentRound = adaptiveSequenceRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    );
     final scrambledList =
         (currentRound['scrambled_letters'] as List?)
             ?.map((e) => e.toString())
@@ -195,16 +201,17 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
       setState(() {
         _isCorrect = true;
       });
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+      final transition = await completeAdaptiveSequenceTask(
         100,
+        roundIndex: _currentRoundIndex,
         selectedAnswers: _filledSlots.map((e) => e!.letter).toList(),
       );
       SoundUtils.playFeedback('audio/correct.mp3');
 
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (!mounted) return;
-        if (_currentRoundIndex < rounds.length - 1) {
-          _currentRoundIndex++;
+        if (transition != null && !transition.isComplete) {
+          _currentRoundIndex = transition.roundIndex;
           final sId = widget.activityNode?.skillId ?? '';
           final aId = widget.activityNode?.id ?? '';
           if (sId.isNotEmpty && aId.isNotEmpty) {
@@ -280,7 +287,10 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
       rounds = rounds.sublist(0, 5);
     }
 
-    final currentRound = rounds[_currentRoundIndex];
+    final currentRound = adaptiveSequenceRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    );
     final titleText = widget.activityNode?.title ?? 'අකුරු පිළිවෙලට සකසමු';
     final promptText =
         currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වචනය සාදන්න';
