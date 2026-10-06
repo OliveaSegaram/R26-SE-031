@@ -9,6 +9,7 @@ import '../../../widgets/telemetry_wrapper.dart';
 import '../../../theme/app_theme.dart';
 import '../../../services/tts_service.dart';
 import '../../../services/progress_service.dart';
+import '../../../adaptive/controllers/adaptive_task_coordinator.dart';
 import 'widgets/pattern_background.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
 
@@ -53,6 +54,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
   // ── Game state ──
   int _currentRoundIndex = 0;
   late List<MemoryRound> _rounds;
+  late AdaptiveTaskCoordinator _taskCoordinator;
   bool _activityComplete = false;
   bool _isProcessingTap =
       false; // Prevents tapping other cards while one is animating
@@ -146,6 +148,10 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
       widget.activityNode.id,
     );
     if (_currentRoundIndex >= _rounds.length) _currentRoundIndex = 0;
+    _taskCoordinator = AdaptiveTaskCoordinator(
+      activity: widget.activityNode,
+      initialRoundIndex: _currentRoundIndex,
+    );
 
     final rng = Random(20261006);
     _currentInstruction = _instructions[rng.nextInt(_instructions.length)];
@@ -220,6 +226,9 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
   }
 
   List<MemoryRound> _generateRounds({int seed = 20261006}) {
+    if (widget.activityNode.rounds.isNotEmpty) {
+      return widget.activityNode.rounds.map(_memoryRoundFromData).toList();
+    }
     // Progressive Difficulty Levels - Tailored for Grade 1
     final config = [
       {'count': 2, 'time': 6000}, // Very easy start
@@ -250,6 +259,18 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
       );
     }
     return rounds;
+  }
+
+  MemoryRound _memoryRoundFromData(Map<String, dynamic> data) {
+    final assets = (data['assets'] as Iterable? ?? const <dynamic>[])
+        .map((value) => value.toString())
+        .toList();
+    return MemoryRound(
+      itemCount: assets.length,
+      memoryDurationMs: (data['show_milliseconds'] as num?)?.toInt() ?? 4000,
+      assets: assets,
+      targetAsset: data['target_asset']?.toString() ?? assets.first,
+    );
   }
 
   void _setupCardControllers() {
@@ -340,7 +361,8 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
 
   // ── Game logic ──
 
-  MemoryRound get _currentRound => _rounds[_currentRoundIndex];
+  MemoryRound get _currentRound =>
+      _memoryRoundFromData(_taskCoordinator.roundData);
 
   void _onCardTapped(int index) {
     if (_currentPhase != MemoryPhase.recall || _isProcessingTap) return;
@@ -372,11 +394,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
       SoundUtils.playFeedback('audio/wrong.mp3');
       final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
       if (wrapper != null) {
-        final itemId = CanonicalItemResolver.canonicalItemId(
-          skillId: widget.activityNode.skillId,
-          activityId: widget.activityNode.id,
-          roundNumber: _currentRoundIndex + 1,
-        );
+        final itemId = _taskCoordinator.itemId;
         final targetIndex = _currentRound.assets.indexOf(
           _currentRound.targetAsset,
         );
@@ -432,16 +450,22 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
     }
   }
 
-  void _nextRound() {
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
-      100,
-    );
+  Future<void> _nextRound() async {
+    final result = await context
+        .findAncestorStateOfType<TelemetryWrapperState>()
+        ?.completeAdaptiveRound(
+          100,
+          currentRoundIndex: _currentRoundIndex,
+          itemId: _taskCoordinator.itemId,
+        );
+    if (!mounted) return;
+    final transition = _taskCoordinator.applyResult(result);
 
-    if (_currentRoundIndex < _rounds.length - 1) {
+    if (!transition.isComplete) {
       _roundTransitionController.reverse().then((_) {
         if (!mounted) return;
         setState(() {
-          _currentRoundIndex++;
+          _currentRoundIndex = transition.roundIndex;
         });
         ProgressService().saveActivityState(
           widget.activityNode.skillId,

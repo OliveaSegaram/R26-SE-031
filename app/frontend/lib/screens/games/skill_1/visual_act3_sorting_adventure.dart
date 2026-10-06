@@ -10,6 +10,7 @@ import '../../../widgets/telemetry_wrapper.dart';
 import '../../../theme/app_theme.dart';
 import '../../../services/tts_service.dart';
 import '../../../services/progress_service.dart';
+import '../../../adaptive/controllers/adaptive_task_coordinator.dart';
 import 'logic/sorting_generator.dart';
 import 'models/sorting_round.dart';
 import 'widgets/pattern_background.dart';
@@ -41,6 +42,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   // ── Game state ──
   int _currentRoundIndex = 0;
   late List<SortingRound> _rounds;
+  late AdaptiveTaskCoordinator _taskCoordinator;
 
   // Track items dynamically
   List<String> _objectQueue = [];
@@ -118,12 +120,16 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   @override
   void initState() {
     super.initState();
-    _rounds = SortingGenerator.generateRounds();
+    _rounds = SortingGenerator.fromCurriculumRounds(widget.activityNode.rounds);
     _currentRoundIndex = ProgressService().getActivityState(
       widget.activityNode.skillId,
       widget.activityNode.id,
     );
     if (_currentRoundIndex >= _rounds.length) _currentRoundIndex = 0;
+    _taskCoordinator = AdaptiveTaskCoordinator(
+      activity: widget.activityNode,
+      initialRoundIndex: _currentRoundIndex,
+    );
 
     final rng = Random();
     _currentMascot = _mascots[rng.nextInt(_mascots.length)];
@@ -280,7 +286,8 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
 
   // ── Game logic ──
 
-  SortingRound get _currentRound => _rounds[_currentRoundIndex];
+  SortingRound get _currentRound =>
+      SortingGenerator.fromCurriculum(_taskCoordinator.roundData);
   int get _totalObjects => _currentRound.objects.length;
   int get _sortedCount =>
       _totalObjects - (_objectQueue.length + _visibleObjects.length);
@@ -337,11 +344,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
       final categories = _currentRound.categories.keys.toList();
       if (wrapper != null && correctCategory != null) {
-        final itemId = CanonicalItemResolver.canonicalItemId(
-          skillId: widget.activityNode.skillId,
-          activityId: widget.activityNode.id,
-          roundNumber: _currentRoundIndex + 1,
-        );
+        final itemId = _taskCoordinator.itemId;
         final selectedIndex = categories.indexOf(categoryKey);
         final correctIndex = categories.indexOf(correctCategory);
         unawaited(
@@ -400,16 +403,22 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     });
   }
 
-  void _nextRound() {
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
-      100,
-    );
+  Future<void> _nextRound() async {
+    final result = await context
+        .findAncestorStateOfType<TelemetryWrapperState>()
+        ?.completeAdaptiveRound(
+          100,
+          currentRoundIndex: _currentRoundIndex,
+          itemId: _taskCoordinator.itemId,
+        );
+    if (!mounted) return;
+    final transition = _taskCoordinator.applyResult(result);
 
-    if (_currentRoundIndex < _rounds.length - 1) {
+    if (!transition.isComplete) {
       _roundTransitionController.reverse().then((_) {
         if (!mounted) return;
         setState(() {
-          _currentRoundIndex++;
+          _currentRoundIndex = transition.roundIndex;
           _roundComplete = false;
           _lastCorrectCategory = null;
           final rng = Random();

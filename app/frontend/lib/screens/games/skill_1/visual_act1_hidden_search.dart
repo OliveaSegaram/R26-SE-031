@@ -10,6 +10,7 @@ import '../../../theme/app_theme.dart';
 import '../../../services/tts_service.dart';
 import '../../../services/progress_service.dart';
 import '../../../adaptive/controllers/adaptive_choice_controller.dart';
+import '../../../adaptive/controllers/adaptive_task_coordinator.dart';
 import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import 'logic/hidden_search_generator.dart';
 import 'widgets/pattern_background.dart';
@@ -40,6 +41,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   // ── Game state ──
   int _currentRoundIndex = 0;
   late HiddenSearchGameData _gameData;
+  late AdaptiveTaskCoordinator _taskCoordinator;
   List<_GameItem> _items = [];
   int _foundCount = 0;
   int _targetCount = 0;
@@ -101,6 +103,10 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
       widget.activityNode.id,
     );
     if (_currentRoundIndex >= _gameData.rounds.length) _currentRoundIndex = 0;
+    _taskCoordinator = AdaptiveTaskCoordinator(
+      activity: widget.activityNode,
+      initialRoundIndex: _currentRoundIndex,
+    );
     final savedScore = ProgressService().getActivityScore(
       widget.activityNode.skillId,
       widget.activityNode.id,
@@ -199,7 +205,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   // ── Round initialization ──
   void _initRound() {
     if (_currentRoundIndex >= _gameData.rounds.length) return;
-    final round = _gameData.rounds[_currentRoundIndex];
+    final round = _activeRound;
 
     _targetCount = round.targetCount;
     _foundCount = 0;
@@ -291,15 +297,13 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   }
 
   String get _currentItemId {
-    final roundData = _currentRoundIndex < widget.activityNode.rounds.length
-        ? widget.activityNode.rounds[_currentRoundIndex]
-        : const <String, dynamic>{};
-    return CanonicalItemResolver.resolve(
-      widget.activityNode,
-      roundData,
-      _currentRoundIndex,
-    ).itemId;
+    return _taskCoordinator.itemId;
   }
+
+  HiddenSearchRound get _activeRound =>
+      HiddenSearchGenerator.generateFromCurriculum(<Map<String, dynamic>>[
+        _taskCoordinator.roundData,
+      ]).rounds.first;
 
   String _optionIdForItem(_GameItem item) =>
       '${_currentItemId}_${item.stableSuffix}';
@@ -367,7 +371,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
           isCorrect: true,
         );
     if (!mounted) return;
-
+    final transition = _taskCoordinator.applyResult(result);
     final nextAction = result?['next_action'];
     final decision = nextAction is Map
         ? nextAction['decision']?.toString()
@@ -385,20 +389,10 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
               .clamp(0, _gameData.rounds.length)
               .toInt()
         : _completedCoreCount;
-    var nextRoundIndex = completedRoundIndex + 1;
-    if (nextAction is Map) {
-      final normalized = CanonicalItemResolver.normalizeItemId(
-        nextAction['next_item']?.toString() ?? '',
-      );
-      final match = RegExp(
-        r'^S1A1R(\d+)',
-        caseSensitive: false,
-      ).firstMatch(normalized);
-      final selectedRound = int.tryParse(match?.group(1) ?? '');
-      if (selectedRound != null) nextRoundIndex = selectedRound - 1;
-    }
+    final nextRoundIndex = transition.roundIndex;
 
     if (!backendComplete &&
+        !transition.isComplete &&
         nextRoundIndex >= 0 &&
         nextRoundIndex < _gameData.rounds.length) {
       _roundTransitionController.reverse().then((_) {
@@ -457,7 +451,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
   /// Play the instruction aloud via TTS and trigger speaker bounce
   void _playInstruction({bool autoPlay = false}) {
     if (_gameData.rounds.isEmpty) return;
-    final round = _gameData.rounds[_currentRoundIndex];
+    final round = _activeRound;
 
     if (autoPlay && _lastSpokenInstruction == round.instructionText) {
       return;
@@ -476,7 +470,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
       return const Scaffold(body: Center(child: AppLoadingIndicator()));
     }
 
-    final round = _gameData.rounds[_currentRoundIndex];
+    final round = _activeRound;
     final String title = round.instructionText;
     final String targetPath =
         'assets/images/activity_icons/${round.targetPath}';

@@ -114,7 +114,7 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
     super.initState();
 
     // Generate randomized rounds dynamically
-    _rounds = PatternGenerator.generateRounds();
+    _rounds = PatternGenerator.fromCurriculumRounds(widget.activityNode.rounds);
     _currentRoundIndex = ProgressService().getActivityState(
       widget.activityNode.skillId,
       widget.activityNode.id,
@@ -243,7 +243,7 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
   }
 
   void _scrollToEndOfTrain() {
-    if (_rounds[_currentRoundIndex].sequence.length <= 4) return;
+    if (_activeRound.sequence.length <= 4) return;
 
     if (_trainScrollController.hasClients) {
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -280,7 +280,7 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
     _matchedChoiceIndex = -1;
     _answerRevealed = false;
     _flyController.reset();
-    final round = _rounds[_currentRoundIndex];
+    final round = _activeRound;
     configureAdaptiveChoices(
       activity: widget.activityNode,
       roundIndex: _currentRoundIndex,
@@ -292,7 +292,7 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
 
   void _onChoiceTapped(int index) {
     if (_roundComplete) return;
-    final currentRound = _rounds[_currentRoundIndex];
+    final currentRound = _activeRound;
     if (index >= currentRound.options.length) return;
 
     final choicePath = currentRound.options[index];
@@ -343,17 +343,19 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
     } catch (_) {}
   }
 
-  void _nextRound() {
+  Future<void> _nextRound() async {
     if (!mounted) return;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+    final transition = await completeAdaptiveChoiceTask(
       100,
+      roundIndex: _currentRoundIndex,
     );
+    if (!mounted) return;
 
-    if (_currentRoundIndex < _rounds.length - 1) {
+    if (transition != null && !transition.isComplete) {
       _roundTransitionController.reverse().then((_) {
         if (!mounted) return;
         setState(() {
-          _currentRoundIndex++;
+          _currentRoundIndex = transition.roundIndex;
           _initRound();
         });
         ProgressService().saveActivityState(
@@ -384,6 +386,13 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
       _celebrationController.forward();
     }
   }
+
+  PatternRound get _activeRound => PatternGenerator.fromCurriculum(
+    adaptiveRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    ),
+  );
 
   void _finishActivity() {
     final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
@@ -650,7 +659,7 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
 
   // ── Train Section ──
   Widget _buildTrainSection() {
-    final round = _rounds[_currentRoundIndex];
+    final round = _activeRound;
 
     // Build carriages based on sequence
     List<Widget> carriageWidgets = [];
@@ -816,23 +825,25 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
 
   // ── Answer Choices ──
   Widget _buildChoiceTokens() {
-    final round = _rounds[_currentRoundIndex];
+    final round = _activeRound;
     return Wrap(
       spacing: 20,
       runSpacing: 20,
       alignment: WrapAlignment.center,
-      children: List.generate(round.options.length, (index) {
-        return PatternAnswerToken(
-          tokenKey: _choiceKeys[index],
-          imagePath: round.options[index],
-          onTap: () => _onChoiceTapped(index),
-          shakeAnimation: _shakeAnimations[index],
-          isHinted: isAdaptivelyHighlighted(index),
-          isHidden:
-              (_matchedChoiceIndex == index &&
-              !_answerRevealed), // hide the matched token during flight
-        );
-      }),
+      children: [
+        for (var index = 0; index < round.options.length; index++)
+          if (!isAdaptivelyRemoved(index))
+            PatternAnswerToken(
+              tokenKey: _choiceKeys[index],
+              imagePath: round.options[index],
+              onTap: () => _onChoiceTapped(index),
+              shakeAnimation: _shakeAnimations[index],
+              isHinted: isAdaptivelyHighlighted(index),
+              isHidden:
+                  (_matchedChoiceIndex == index &&
+                  !_answerRevealed), // hide the matched token during flight
+            ),
+      ],
     );
   }
 
@@ -878,7 +889,7 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
               ),
               padding: const EdgeInsets.all(8),
               child: Image.asset(
-                'assets/images/activity_icons/${_rounds[_currentRoundIndex].options[_matchedChoiceIndex]}',
+                'assets/images/activity_icons/${_activeRound.options[_matchedChoiceIndex]}',
                 fit: BoxFit.contain,
               ),
             ),
