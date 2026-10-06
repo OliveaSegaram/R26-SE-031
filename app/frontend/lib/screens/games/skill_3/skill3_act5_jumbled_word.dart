@@ -1,14 +1,16 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../widgets/telemetry_wrapper.dart';
-import '../../../../models/curriculum_models.dart';
-import '../../../../services/tts_service.dart';
+import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
+import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
-import '../../../../services/progress_service.dart';
+import '../../../services/progress_service.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
+import '../../../adaptive/adapters/sequence_scaffold_adapter.dart';
 
 class PlacedLetter {
   final String letter;
@@ -32,7 +34,7 @@ class Skill3Act5JumbledWord extends StatefulWidget {
 }
 
 class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, SequenceScaffoldAdapter {
   String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isCorrect = false;
@@ -81,7 +83,8 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
     final currentRound = rounds[_currentRoundIndex];
-    final instructionText = currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වචනය සාදන්න';
+    final instructionText =
+        currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වචනය සාදන්න';
     String spokenInstruction = instructionText
         .replaceAll('මා', 'ම')
         .replaceAllMapped(
@@ -92,7 +95,7 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
-    
+
     if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
       return;
     }
@@ -117,6 +120,19 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
             ?.map((e) => e.toString())
             .toList() ??
         [];
+    final correctWord = currentRound['correct_word']?.toString() ?? '';
+    final firstCorrectToken = scrambledList.cast<String?>().firstWhere(
+      (token) => token != null && correctWord.startsWith(token),
+      orElse: () => null,
+    );
+    configureAdaptiveSequence(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+      poolTokens: scrambledList,
+      correctSequence: firstCorrectToken == null
+          ? const <String>[]
+          : <String>[firstCorrectToken],
+    );
 
     setState(() {
       _poolLetters = List.from(scrambledList);
@@ -216,10 +232,11 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
       });
     } else {
       // Incorrect
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.logAttempt(
-        isCorrect: false,
-        selectedAnswers: _filledSlots.map((e) => e!.letter).toList(),
-        errorType: 'sequence_error',
+      final selectedPoolIndices = _filledSlots
+          .map((entry) => entry!.poolIndex)
+          .toList();
+      unawaited(
+        requestSequenceScaffold(selectedPoolIndices: selectedPoolIndices),
       );
       SoundUtils.playFeedback('audio/wrong.mp3');
 
@@ -458,65 +475,75 @@ class _Skill3Act5JumbledWordState extends State<Skill3Act5JumbledWord>
                           borderRadius: BorderRadius.circular(40),
                           border: Border.all(color: Colors.white, width: 3),
                         ),
-                        child: Wrap(
-                          spacing: 24,
-                          runSpacing: 24,
-                          alignment: WrapAlignment.center,
-                          children: List.generate(_poolLetters.length, (index) {
-                            final letter = _poolLetters[index];
-                            final isAvailable = letter != null;
-                            return GestureDetector(
-                              onTap: () => _onPoolLetterTapped(index),
-                              child: AnimatedOpacity(
-                                duration: const Duration(milliseconds: 200),
-                                opacity: isAvailable ? 1.0 : 0.0,
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeOut,
-                                  width: 90,
-                                  height: 90,
-                                  margin: const EdgeInsets.all(4.0),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(
-                                      color: const Color(0xFFE5E7EB),
-                                      width: 1.5,
+                        child: Builder(
+                          builder: (context) {
+                            final availableLetters = _poolLetters
+                                .asMap()
+                                .entries
+                                .where((entry) => entry.value != null)
+                                .toList();
+                            return Wrap(
+                              spacing: 24,
+                              runSpacing: 24,
+                              alignment: WrapAlignment.center,
+                              children: availableLetters.map((entry) {
+                                final index = entry.key;
+                                final letter = entry.value!;
+                                final isHinted = isAdaptiveTokenHinted(index);
+                                return GestureDetector(
+                                  onTap: () => _onPoolLetterTapped(index),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeOut,
+                                    width: 90,
+                                    height: 90,
+                                    margin: const EdgeInsets.all(4.0),
+                                    decoration: BoxDecoration(
+                                      color: isHinted
+                                          ? AppColors.warmAmberLight
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: isHinted
+                                            ? AppColors.warmAmber
+                                            : const Color(0xFFE5E7EB),
+                                        width: isHinted ? 4 : 1.5,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(
+                                            0xFF4A90D9,
+                                          ).withValues(alpha: 0.08),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
                                     ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(
-                                          0xFF4A90D9,
-                                        ).withValues(alpha: 0.08),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4.0,
-                                      ),
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          letter ?? '',
-                                          maxLines: 1,
-                                          style: AppTypography.sinhala(
-                                            fontSize: 46,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.textPrimary,
-                                            height: 1.3,
+                                    child: Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4.0,
+                                        ),
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            letter,
+                                            maxLines: 1,
+                                            style: AppTypography.sinhala(
+                                              fontSize: 46,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textPrimary,
+                                              height: 1.3,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
+                                );
+                              }).toList(),
                             );
-                          }),
+                          },
                         ),
                       ),
                     ],

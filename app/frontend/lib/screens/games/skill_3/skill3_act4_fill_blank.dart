@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:sipsara_app/utils/sound_utils.dart';
 import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../widgets/telemetry_wrapper.dart';
-import '../../../../models/curriculum_models.dart';
+import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
-import '../../../../services/progress_service.dart';
+import '../../../services/progress_service.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
-import '../../../../services/tts_service.dart';
+import '../../../services/tts_service.dart';
+import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
 
 /// Skill 3 Activity 4 (Fill Blank Slot Matching Image)
 /// Template: fill_blank_game
@@ -28,13 +29,14 @@ class Skill3Act4FillBlank extends StatefulWidget {
 }
 
 class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, ChoiceScaffoldAdapter<Skill3Act4FillBlank> {
   String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedOptionIndex;
   bool _isCorrect = false;
   bool _activityComplete = false;
   int _currentRoundIndex = 0;
+  int _attemptCount = 0;
 
   // Animations
   late AnimationController _pulseController;
@@ -95,7 +97,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
-    
+
     if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
       return;
     }
@@ -108,6 +110,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     _pulseController.dispose();
     _bounceController.dispose();
     _audioPlayer.dispose();
+    disposeChoiceScaffoldAdapter();
     super.dispose();
   }
 
@@ -118,18 +121,20 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     int totalRounds,
   ) async {
     if (_isCorrect) return;
+    if (isAdaptivelyRemoved(index)) return;
+    _attemptCount++;
 
     setState(() {
       _selectedOptionIndex = index;
     });
 
     final bool isRight = (selectedOption == correctOption);
-    int score = isRight ? 100 : 0;
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
-      score,
-    );
-
     if (isRight) {
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+        100,
+        itemId: adaptiveItemId,
+        selectedAnswers: <String>[selectedOption],
+      );
       setState(() {
         _isCorrect = true;
       });
@@ -155,6 +160,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
             }
             _selectedOptionIndex = null;
             _isCorrect = false;
+            _attemptCount = 0;
           });
           _pulseController.repeat(reverse: true);
           _bounceController.reset();
@@ -173,6 +179,12 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
       });
     } else {
       SoundUtils.playFeedback('audio/wrong.mp3');
+      await requestChoiceScaffold(
+        selectedIndex: index,
+        options: adaptiveOptionLabels,
+        correctIndex: optionsIndexForCorrect(correctOption),
+        errorType: 'word_completion_error',
+      );
       Future.delayed(const Duration(milliseconds: 600), () {
         if (!mounted) return;
         setState(() {
@@ -180,6 +192,11 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
         });
       });
     }
+  }
+
+  int optionsIndexForCorrect(String correctOption) {
+    final index = adaptiveOptionLabels.indexOf(correctOption);
+    return index < 0 ? 0 : index;
   }
 
   @override
@@ -217,7 +234,6 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
       var distractors = options.where((item) => item != correctOption).toList();
       if (distractors.isNotEmpty) distractors = distractors.sublist(0, 1);
       options = [correctOption, ...distractors];
-      options.shuffle();
     }
 
     return SharedGameLayout(
@@ -458,6 +474,13 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     String correctOption,
     int totalRounds,
   ) {
+    final correctIndex = options.indexOf(correctOption);
+    configureAdaptiveChoices(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+      options: options,
+      correctIndex: correctIndex < 0 ? 0 : correctIndex,
+    );
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -488,14 +511,16 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
         spacing: 16,
         runSpacing: 16,
         alignment: WrapAlignment.center,
-        children: List.generate(options.length, (index) {
-          return _buildOptionTile(
-            index,
-            options[index],
-            correctOption,
-            totalRounds,
-          );
-        }),
+        children: <Widget>[
+          for (int index = 0; index < options.length; index++)
+            if (!isAdaptivelyRemoved(index))
+              _buildOptionTile(
+                index,
+                options[index],
+                correctOption,
+                totalRounds,
+              ),
+        ],
       ),
     );
   }
@@ -510,6 +535,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     final isRight = isSelected && (optionText == correctOption);
     final isWrong = isSelected && (optionText != correctOption);
     final isHidden = _isCorrect && (optionText == correctOption);
+    final isHinted = isAdaptivelyHighlighted(index);
 
     final isPressed = isRight || isWrong;
 
@@ -551,6 +577,10 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
           spreadRadius: 2,
         ),
       ];
+    } else if (isHinted) {
+      tileColor = AppColors.warmAmberLight.withValues(alpha: 0.42);
+      borderColor = AppColors.warmAmber;
+      borderWidth = 4.0;
     }
 
     return GestureDetector(

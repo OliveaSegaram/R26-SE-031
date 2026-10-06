@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../widgets/telemetry_wrapper.dart';
-import '../../../../models/curriculum_models.dart';
-import '../../../../services/tts_service.dart';
+import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
+import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
-import '../../../../services/progress_service.dart';
+import '../../../services/progress_service.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
+import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
 
 /// Skill 3 Activity 1 (Image MCQ)
 /// Premium redesign: Displays a central Image and the child must select the matching word.
@@ -27,7 +28,7 @@ class Skill3Act1ImageMcq extends StatefulWidget {
 }
 
 class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, ChoiceScaffoldAdapter<Skill3Act1ImageMcq> {
   String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
@@ -98,6 +99,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     _speakerBounceController.dispose();
     _imageBounceController.dispose();
     _audioPlayer.dispose();
+    disposeChoiceScaffoldAdapter();
     super.dispose();
   }
 
@@ -120,7 +122,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
           RegExp(r"'?(.)'? පින්තූරය"),
           (match) => '${match.group(1)}, පින්තූරය',
         );
-    
+
     if (autoPlay && _lastSpokenInstruction == spokenInstruction) {
       return;
     }
@@ -135,6 +137,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
   void _checkAnswer(int index, int correctIndex, int totalRounds) async {
     if (_isCorrect) return;
     if (_selectedIndex != null) return;
+    if (isAdaptivelyRemoved(index)) return;
 
     _attemptCount++;
     setState(() {
@@ -147,6 +150,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     if (isRight) {
       context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
         score,
+        itemId: adaptiveItemId,
       );
       setState(() {
         _isCorrect = true;
@@ -159,9 +163,20 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
       _advanceRoundAfterDelay(totalRounds);
     } else {
       SoundUtils.playFeedback('audio/wrong.mp3');
+      await requestChoiceScaffold(
+        selectedIndex: index,
+        options: adaptiveOptionLabels,
+        correctIndex: correctIndex,
+        errorType: 'image_word_mapping_error',
+      );
+      if (mounted) setState(() {});
 
-      if (_attemptCount >= 2) {
-        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(0);
+      if (_attemptCount >= 3) {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+          0,
+          itemId: adaptiveItemId,
+          attemptAlreadyLogged: true,
+        );
         setState(() {
           _selectedIndex = correctIndex;
           _isCorrect = true;
@@ -247,9 +262,14 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
       var distractors = options.where((item) => item != correctItem).toList();
       if (distractors.isNotEmpty) distractors = distractors.sublist(0, 1);
       options = [correctItem, ...distractors];
-      options.shuffle();
       correctIndex = options.indexOf(correctItem);
     }
+    configureAdaptiveChoices(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+      options: options,
+      correctIndex: correctIndex,
+    );
 
     return SharedGameLayout(
       studentData: widget.studentData,
@@ -386,15 +406,17 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
         spacing: 12,
         runSpacing: 12,
         alignment: WrapAlignment.center,
-        children: List.generate(options.length, (index) {
-          return _buildOptionTile(
-            index,
-            options[index],
-            correctIndex,
-            totalRounds,
-            options.length,
-          );
-        }),
+        children: <Widget>[
+          for (int index = 0; index < options.length; index++)
+            if (!isAdaptivelyRemoved(index))
+              _buildOptionTile(
+                index,
+                options[index],
+                correctIndex,
+                totalRounds,
+                options.length,
+              ),
+        ],
       ),
     );
   }
@@ -463,6 +485,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     final isRight = isSelected && (index == correctIndex);
     final isWrong = isSelected && (index != correctIndex);
     final isHidden = _isCorrect && (index != correctIndex);
+    final isHinted = isAdaptivelyHighlighted(index);
 
     // Unified sizing: all boxes are the same width/height so fonts don't scale unevenly.
     double tileWidth = 135.0;
@@ -503,6 +526,10 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
           spreadRadius: 2,
         ),
       ];
+    } else if (isHinted) {
+      tileColor = AppColors.warmAmberLight.withValues(alpha: 0.42);
+      borderColor = AppColors.warmAmber;
+      borderWidth = 4.0;
     }
 
     return GestureDetector(
