@@ -1,6 +1,8 @@
 import re
 from typing import Dict, Any, Optional, Tuple
 
+from services.equivalent_task_policy import equivalent_task_policy
+
 def get_activity_latency_baseline(activity_id: str) -> int:
     """Provisional baselines in ms"""
     baselines = {
@@ -192,6 +194,14 @@ class PolicyEngine:
             })
             reason_codes.append("DISTRACTOR_REMOVED_DETERMINISTICALLY")
             decision = "SCAFFOLD_REMOVE_DISTRACTOR"
+        elif "REVEAL_FIRST_TOKEN" in capabilities and correct_ids:
+            commands.append({
+                "type": "REVEAL_FIRST_TOKEN",
+                "target_option_ids": correct_ids[:1],
+                "reason_code": "SEQUENCE_START_SUPPORT",
+            })
+            reason_codes.append("NEXT_REQUIRED_TOKEN_REVEALED")
+            decision = "SCAFFOLD_REVEAL_FIRST_TOKEN"
         elif ("HIGHLIGHT_OPTION" in capabilities or
               "HIGHLIGHT_OPTIONS" in capabilities) and correct_ids:
             commands.append({
@@ -210,15 +220,6 @@ class PolicyEngine:
             })
             reason_codes.append("INSTRUCTION_REPLAY_REQUESTED")
             decision = "SCAFFOLD_REPLAY_INSTRUCTION"
-        elif "REVEAL_FIRST_TOKEN" in capabilities:
-            commands.append({
-                "type": "REVEAL_FIRST_TOKEN",
-                "target_option_ids": correct_ids[:1],
-                "reason_code": "SEQUENCE_START_SUPPORT",
-            })
-            reason_codes.append("FIRST_TOKEN_REVEALED")
-            decision = "SCAFFOLD_REVEAL_FIRST_TOKEN"
-
         state["removed_option_ids"] = sorted(already_removed)
         adaptive_state["generic_scaffold_state"] = state
         adaptive_state["highest_scaffold_level_used"] = max(
@@ -402,7 +403,8 @@ class PolicyEngine:
         struggle_band: str,
         current_difficulty_b: float,
         adaptive_state: Optional[Dict[str, Any]] = None,
-        learner_profile: Optional[Dict[str, Any]] = None
+        learner_profile: Optional[Dict[str, Any]] = None,
+        current_item_id: str = "",
     ) -> Dict[str, Any]:
         """
         Main progression policy engine.
@@ -423,6 +425,22 @@ class PolicyEngine:
                 "policy_reason": policy_reason,
                 "confirmation_required": False
             }
+
+        # Skills 1-4 share one bounded research protocol. Content and scaffold
+        # rendering remain activity-specific, while remediation always uses an
+        # unseen same-difficulty equivalent item followed by an unseen
+        # confirmation item.
+        if re.fullmatch(r"[1-4]\.\d+", current_activity or ""):
+            equivalent_action = equivalent_task_policy.get_next_action(
+                activity_id=current_activity,
+                current_item_id=current_item_id,
+                response_quality=response_quality,
+                current_b=current_difficulty_b,
+                state=adaptive_state,
+                policy_reason=policy_reason,
+            )
+            if equivalent_action is not None:
+                return equivalent_action
 
         # Skill 1 Activity 1 uses the same explicit instructional phases as
         # the Skill 2 pilots. A learner who needed answer-revealing support

@@ -58,3 +58,23 @@ def test_policy_uses_only_capabilities_advertised_by_the_activity():
     assert action["policy_version"] == "C4_CAPABILITY_POLICY_V2"
     assert action["action_id"].startswith("c4-")
 
+
+def test_sequence_policy_never_removes_a_future_required_token():
+    engine = PolicyEngine()
+    state = {}
+    action = engine.get_support_action(
+        telemetry(
+            supported_actions=["REVEAL_FIRST_TOKEN", "HIGHLIGHT_OPTION"],
+            correct_option_ids=["ITEM_O2"],
+        ),
+        4,
+        0,
+        [],
+        state,
+        "2.5",
+        3,
+    )
+
+    assert action["commands"][0]["type"] == "REVEAL_FIRST_TOKEN"
+    assert action["commands"][0]["target_option_ids"] == ["ITEM_O2"]
+    assert action["remove_option_ids"] == []
