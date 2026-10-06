@@ -157,11 +157,14 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
     _isRoundComplete = false;
   }
 
-  String _canonicalItemId() => CanonicalItemResolver.canonicalItemId(
-    skillId: widget.activityNode?.skillId ?? 'skill_2',
-    activityId: widget.activityNode?.id ?? 'act_1',
-    roundNumber: _currentRoundIndex + 1,
-  );
+  String _canonicalItemId() {
+    final core = CanonicalItemResolver.canonicalItemId(
+      skillId: widget.activityNode?.skillId ?? 'skill_2',
+      activityId: widget.activityNode?.id ?? 'act_1',
+      roundNumber: _currentRoundIndex + 1,
+    );
+    return _currentVariantId == null ? core : '$core$_currentVariantId';
+  }
 
   String _optionId(int index) =>
       _shuffledItems[index]['option_id']?.toString() ??
@@ -270,7 +273,11 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
 
         final c4Result = await context
             .findAncestorStateOfType<TelemetryWrapperState>()
-            ?.completeAdaptiveRound(100, currentRoundIndex: _currentRoundIndex);
+            ?.completeAdaptiveRound(
+              100,
+              currentRoundIndex: _currentRoundIndex,
+              itemId: _canonicalItemId(),
+            );
 
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (!mounted) return;
