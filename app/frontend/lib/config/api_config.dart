@@ -10,6 +10,10 @@ class ApiConfig {
 
   /// Get the base local host dynamically based on platform
   static String get _localHost {
+    const configuredHost = String.fromEnvironment('API_HOST');
+    if (configuredHost.isNotEmpty) {
+      return configuredHost;
+    }
     if (kIsWeb) {
       return 'localhost';
     }
@@ -17,8 +21,10 @@ class ApiConfig {
     if (Platform.isAndroid) {
       return '10.0.2.2';
     }
-    // Return Mac's local IP for physical iOS devices
-    return '172.20.10.4';
+    // iOS simulator can reach services running on the same Mac directly.
+    // Physical iOS devices must pass the Mac's LAN address with
+    // --dart-define=API_HOST=192.168.x.x.
+    return '127.0.0.1';
   }
 
   // --- Base URLs for specific backend microservices ---
@@ -94,10 +100,11 @@ class ApiConfig {
 
   /// Resolves the absolute URL for a profile picture
   static String getProfileImageUrl(String profilePicPath) {
-    if (profilePicPath.startsWith('http://') || profilePicPath.startsWith('https://')) {
+    if (profilePicPath.startsWith('http://') ||
+        profilePicPath.startsWith('https://')) {
       return profilePicPath;
     }
-    
+
     // In production or development, the Auth API serves the profile images.
     // Ensure we correctly map to the domain name.
     if (isDevelopment) {
