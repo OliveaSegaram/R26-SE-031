@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
 import sys
 import os
@@ -18,7 +19,7 @@ database.db = mock_db
 database.knowledge_states_collection = mock_db["knowledge_states"]
 database.adaptive_decisions_collection = mock_db["adaptive_decisions"]
 
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def reset_db():
     # Clear collections between tests
     await mock_db["knowledge_states"].delete_many({})
