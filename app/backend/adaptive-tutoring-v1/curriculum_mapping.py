@@ -51,6 +51,22 @@ ACTIVITY_TO_KC = {
     "skill_4_act_2": "KC_SENTENCE_COMPLETION",
     "skill_4_act_3": "KC_AUDITORY_SENTENCE_RECOGNITION",
     "skill_4_act_4": "KC_SENTENCE_SEQUENCING",
+
+    # Skill 5
+    "5.1": "KC_READING_COMPREHENSION",
+    "5.2": "KC_READING_COMPREHENSION",
+    "5.3": "KC_READING_COMPREHENSION",
+    "5.4": "KC_READING_COMPREHENSION",
+    "skill_5_act_1": "KC_READING_COMPREHENSION",
+    "skill_5_act_2": "KC_READING_COMPREHENSION",
+    "skill_5_act_3": "KC_READING_COMPREHENSION",
+    "skill_5_act_4": "KC_READING_COMPREHENSION",
+
+    # Skill 6
+    "6.1": "KC_ORAL_READING_FLUENCY",
+    "6.2": "KC_ORAL_READING_FLUENCY",
+    "skill_6_act_1": "KC_ORAL_READING_FLUENCY",
+    "skill_6_act_2": "KC_ORAL_READING_FLUENCY",
 }
 
 KC_METADATA = {
@@ -76,6 +92,8 @@ KC_METADATA = {
     "KC_SENTENCE_COMPLETION": {"kc_id": "KC_SENTENCE_COMPLETION", "skill_id": "skill_4", "activity_id": "4.2", "description": "Fill missing word"},
     "KC_AUDITORY_SENTENCE_RECOGNITION": {"kc_id": "KC_AUDITORY_SENTENCE_RECOGNITION", "skill_id": "skill_4", "activity_id": "4.3", "description": "Listen and identify sentence"},
     "KC_SENTENCE_SEQUENCING": {"kc_id": "KC_SENTENCE_SEQUENCING", "skill_id": "skill_4", "activity_id": "4.4", "description": "Arrange words into sentence"},
+    "KC_READING_COMPREHENSION": {"kc_id": "KC_READING_COMPREHENSION", "skill_id": "skill_5", "activity_id": "5.1-5.4", "description": "Understand short Grade 1 Sinhala texts"},
+    "KC_ORAL_READING_FLUENCY": {"kc_id": "KC_ORAL_READING_FLUENCY", "skill_id": "skill_6", "activity_id": "6.1-6.2", "description": "Read Grade 1 Sinhala aloud"},
 }
 
 import re
@@ -134,7 +152,9 @@ CURRICULUM_SEQUENCE = [
     "1.1", "1.2", "1.3", "1.4", "1.5",
     "2.1", "2.2", "2.3", "2.4", "2.5",
     "3.1", "3.2", "3.3", "3.4", "3.5",
-    "4.1", "4.2", "4.3", "4.4"
+    "4.1", "4.2", "4.3", "4.4",
+    "5.1", "5.2", "5.3", "5.4",
+    "6.1", "6.2"
 ]
 
 def get_next_curriculum_activity(current_canonical_activity: str) -> Optional[str]:
