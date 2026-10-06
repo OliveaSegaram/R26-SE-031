@@ -1,5 +1,9 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
 import '../config/api_config.dart';
-import 'dashboard_client.dart';
+import 'auth_service.dart';
 
 class ParentDashboardService {
   final String _baseUrl = ApiConfig.authBaseUrl.replaceFirst('/auth', '/parent/students');

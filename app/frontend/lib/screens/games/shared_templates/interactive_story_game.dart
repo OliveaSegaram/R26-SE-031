@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../../models/curriculum_models.dart';
 import '../../../theme/app_theme.dart';
@@ -11,24 +13,22 @@ import '../../../services/telemetry_service.dart';
 class InteractiveStoryGame extends StatefulWidget {
   final ActivityNode activityNode;
 
-  const InteractiveStoryGame({
-    super.key,
-    required this.activityNode,
-  });
+  const InteractiveStoryGame({super.key, required this.activityNode});
 
   @override
   State<InteractiveStoryGame> createState() => _InteractiveStoryGameState();
 }
 
-class _InteractiveStoryGameState extends State<InteractiveStoryGame> with SingleTickerProviderStateMixin {
+class _InteractiveStoryGameState extends State<InteractiveStoryGame>
+    with SingleTickerProviderStateMixin {
   late PageController _pageController;
   late AnimationController _pulseController;
-  
+
   double _currentPage = 0.0;
   bool _readingStarted = false;
   bool _isRecording = false;
   bool _isAnalyzing = false;
-  
+
   Map<String, dynamic>? _analysisResults;
 
   @override
@@ -42,7 +42,7 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
         });
       }
     });
-    
+
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -61,9 +61,9 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
             TextButton(
               onPressed: () => Navigator.pop(c),
               child: const Text('OK'),
-            )
+            ),
           ],
-        )
+        ),
       );
     }
   }
@@ -78,7 +78,7 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
   void _completeActivity() {
     Navigator.of(context).pop();
   }
-  
+
   int _tStimulus = 0;
   int _tRecordStart = 0;
   int _lastStimulusPageIndex = -1;
@@ -105,13 +105,22 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
       String? studentId;
       String sessionId = TelemetryService().sessionId;
       String activityId = widget.activityNode.id;
-      final index = _currentPage.round().clamp(0, widget.activityNode.rounds.length - 1);
+      final index = _currentPage.round().clamp(
+        0,
+        widget.activityNode.rounds.length - 1,
+      );
       final round = widget.activityNode.rounds[index];
-      String itemId = CanonicalItemResolver.resolve(widget.activityNode, round, index).itemId;
-      
+      String itemId = CanonicalItemResolver.resolve(
+        widget.activityNode,
+        round,
+        index,
+      ).itemId;
+
       final telemetry = TelemetryWrapper.of(context);
       if (telemetry != null) {
-        studentId = telemetry.widget.studentData?['id'] ?? telemetry.widget.studentData?['_id'] ;
+        studentId =
+            telemetry.widget.studentData?['id'] ??
+            telemetry.widget.studentData?['_id'];
       }
 
       final results = await VoiceAnalysisService().analyzeAudio(
@@ -131,11 +140,13 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
         _isAnalyzing = false;
         _analysisResults = results;
       });
-      
+
       // Log the acoustic metrics to telemetry
       final telemetryAfter = TelemetryWrapper.of(context);
       if (telemetryAfter != null) {
-        debugPrint('TELEMETRY (Acoustic): Latency=${results['Acoustic_Latency_ms']}, PeakDelta=${results['Peak_Count_Delta']}, Jitter=${results['Local_Jitter']}, Shimmer=${results['Local_Shimmer']}');
+        debugPrint(
+          'TELEMETRY (Acoustic): Latency=${results['Acoustic_Latency_ms']}, PeakDelta=${results['Peak_Count_Delta']}, Jitter=${results['Local_Jitter']}, Shimmer=${results['Local_Shimmer']}',
+        );
         // Currently, TelemetryWrapper doesn't have a specific method for these yet, but we log it to console as requested.
         // If there was a logCustomMetric method we could use it: telemetry.logCustomMetric(results);
       }
@@ -144,8 +155,20 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
       // We check word error rate as a fallback just in case STT ran, but primarily we proceed.
       final double? wer = (results['word_error_rate'] as num?)?.toDouble();
 
-      if (wer != null && wer < 0.5 && results['persistence_status'] != 'failed' && results['measurement_status'] == 'available') {
+      if (wer != null &&
+          wer < 0.5 &&
+          results['persistence_status'] != 'failed' &&
+          results['measurement_status'] == 'available') {
         // Success
+        unawaited(
+          telemetryAfter?.completeAdaptiveRound(
+            100,
+            currentRoundIndex: index,
+            itemId: itemId,
+            isCorrect: true,
+            selectedAnswers: <String>['spoken_response'],
+          ),
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('හොඳයි! (Great job!)'),
@@ -154,11 +177,14 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
         );
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted && _pageController.hasClients) {
-            _pageController.nextPage(duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+            _pageController.nextPage(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
           }
         });
       } else {
-        // Still allow progression if the WER is high since we are transitioning to Acoustic, 
+        // Still allow progression if the WER is high since we are transitioning to Acoustic,
         // but let's prompt them to try again if it completely failed.
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -166,6 +192,23 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
             backgroundColor: AppColors.warmAmber,
           ),
         );
+        if (telemetryAfter != null) {
+          unawaited(
+            telemetryAfter.requestSemanticScaffold(
+              itemId: itemId,
+              visibleOptionIds: const <String>['spoken_response'],
+              selectedOptionIds: const <String>['spoken_response'],
+              correctOptionIds: const <String>['target_sentence'],
+              supportedActions: const <String>[
+                'REPLAY_INSTRUCTION',
+                'SLOW_AUDIO',
+                'SHOW_WORKED_EXAMPLE',
+              ],
+              errorType: 'oral_reading_retry',
+              minimumVisibleOptions: 1,
+            ),
+          );
+        }
       }
     } else {
       setState(() {
@@ -174,7 +217,9 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
       final errorStr = VoiceAnalysisService().lastError ?? "Unknown error";
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to record audio. Check permissions.\nError: $errorStr'),
+          content: Text(
+            'Failed to record audio. Check permissions.\nError: $errorStr',
+          ),
           backgroundColor: AppColors.softCoral,
           duration: const Duration(seconds: 10),
         ),
@@ -207,7 +252,7 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
               return _buildStoryPage(index, round);
             },
           ),
-          
+
           // Close Button
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
@@ -240,7 +285,11 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.menu_book_rounded, size: 80, color: AppColors.calmBlue),
+            const Icon(
+              Icons.menu_book_rounded,
+              size: 80,
+              color: AppColors.calmBlue,
+            ),
             const SizedBox(height: 24),
             Text(
               widget.activityNode.title,
@@ -250,7 +299,10 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
             const SizedBox(height: 12),
             Text(
               widget.activityNode.description,
-              style: AppTypography.body(fontSize: 18, color: AppColors.textSecondary),
+              style: AppTypography.body(
+                fontSize: 18,
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
@@ -260,7 +312,10 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.calmBlue,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -282,8 +337,9 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
     final String baseImgPath = 'assets/images/story/page ${index + 1}';
     final String fgPath = '${baseImgPath}_fg.png';
     final String bgPath = '${baseImgPath}_bg.jpg';
-    final String originalPath = '$baseImgPath.png'; // Make sure this matches the copied pngs
-    
+    final String originalPath =
+        '$baseImgPath.png'; // Make sure this matches the copied pngs
+
     final targetSentence = round['prompt'] as String? ?? '';
     final overlays = round['overlays'] as List<dynamic>?;
     final expectedSyllables = round['expected_syllables'] as int? ?? 0;
@@ -304,24 +360,37 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
         // Background Image (Parallax)
         Positioned.fill(
           child: Transform.translate(
-            offset: Offset(0, offset * MediaQuery.of(context).size.height * 0.2),
-            child: _buildImage(bgPath, originalPath, BoxFit.contain, fallbackParallax: true, offset: offset),
+            offset: Offset(
+              0,
+              offset * MediaQuery.of(context).size.height * 0.2,
+            ),
+            child: _buildImage(
+              bgPath,
+              originalPath,
+              BoxFit.contain,
+              fallbackParallax: true,
+              offset: offset,
+            ),
           ),
         ),
 
         // Foreground Image (Parallax)
         Positioned.fill(
           child: Transform.translate(
-            offset: Offset(0, offset * MediaQuery.of(context).size.height * -0.1),
-            child: _buildImage(fgPath, null, BoxFit.contain), 
+            offset: Offset(
+              0,
+              offset * MediaQuery.of(context).size.height * -0.1,
+            ),
+            child: _buildImage(fgPath, null, BoxFit.contain),
           ),
         ),
 
         // Dynamic Text Overlays
         if (overlays != null)
           ...overlays.map((o) {
-            final double fontSize = (o['font_size'] as num?)?.toDouble() ?? 48.0;
-            
+            final double fontSize =
+                (o['font_size'] as num?)?.toDouble() ?? 48.0;
+
             Color textColor = Colors.black87;
             if (o['color'] != null) {
               final hexCode = (o['color'] as String).replaceAll('#', '');
@@ -331,22 +400,26 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
             }
 
             return Align(
-              alignment: Alignment(o['align_x'] as double? ?? 0.0, o['align_y'] as double? ?? 0.0),
+              alignment: Alignment(
+                o['align_x'] as double? ?? 0.0,
+                o['align_y'] as double? ?? 0.0,
+              ),
               child: Text(
                 o['text'] as String,
-                style: AppTypography.sinhala(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w800,
-                  color: textColor,
-                ).copyWith(
-                    shadows: [
-                      Shadow(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        offset: const Offset(1, 1),
-                        blurRadius: 4,
-                      )
-                    ],
-                  ),
+                style:
+                    AppTypography.sinhala(
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w800,
+                      color: textColor,
+                    ).copyWith(
+                      shadows: [
+                        Shadow(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          offset: const Offset(1, 1),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
                 textAlign: TextAlign.center,
               ),
             );
@@ -369,16 +442,16 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
                     Text(
                       targetSentence,
                       style: AppTypography.sinhala(
-                        fontSize: 48, 
+                        fontSize: 48,
                         fontWeight: FontWeight.w800,
                         color: Colors.black87,
                         height: 1.4,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                  
+
                   if (overlays == null) const SizedBox(height: 32),
-                  
+
                   // Analysis Loading
                   if (_isAnalyzing)
                     const Column(
@@ -387,15 +460,17 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
                         SizedBox(height: 8),
                       ],
                     ),
-                    
+
                   // Mic Button
                   if (!_isAnalyzing)
                     Center(
                       child: GestureDetector(
                         onTapDown: (_) => _startRecording(),
-                        onTapUp: (_) => _stopRecording(targetSentence, expectedSyllables),
+                        onTapUp: (_) =>
+                            _stopRecording(targetSentence, expectedSyllables),
                         onTapCancel: () {
-                          if (_isRecording) _stopRecording(targetSentence, expectedSyllables);
+                          if (_isRecording)
+                            _stopRecording(targetSentence, expectedSyllables);
                         },
                         child: AnimatedBuilder(
                           animation: _pulseController,
@@ -405,18 +480,25 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
                               height: 80,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: _isRecording ? AppColors.softCoral : AppColors.calmBlue,
+                                color: _isRecording
+                                    ? AppColors.softCoral
+                                    : AppColors.calmBlue,
                                 boxShadow: _isRecording
                                     ? [
                                         BoxShadow(
-                                          color: AppColors.softCoral.withValues(alpha: 0.6),
-                                          blurRadius: 15 * _pulseController.value,
-                                          spreadRadius: 8 * _pulseController.value,
+                                          color: AppColors.softCoral.withValues(
+                                            alpha: 0.6,
+                                          ),
+                                          blurRadius:
+                                              15 * _pulseController.value,
+                                          spreadRadius:
+                                              8 * _pulseController.value,
                                         ),
                                       ]
                                     : [
                                         BoxShadow(
-                                          color: AppColors.calmBlueDark.withValues(alpha: 0.3),
+                                          color: AppColors.calmBlueDark
+                                              .withValues(alpha: 0.3),
                                           blurRadius: 8,
                                           offset: const Offset(0, 4),
                                         ),
@@ -432,19 +514,21 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
                         ),
                       ),
                     ),
-                    
+
                   const SizedBox(height: 12),
-                  
+
                   // Instruction / Hint
                   Text(
                     _isRecording ? 'Release to Check' : 'Hold & Read',
                     style: AppTypography.caption(
-                      color: _isRecording ? AppColors.softCoral : AppColors.textSecondary,
+                      color: _isRecording
+                          ? AppColors.softCoral
+                          : AppColors.textSecondary,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  
+
                   const SizedBox(height: 8),
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
@@ -460,11 +544,18 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
     );
   }
 
-  Widget _buildImage(String path, String? fallbackPath, BoxFit fit, {bool fallbackParallax = false, double offset = 0}) {
+  Widget _buildImage(
+    String path,
+    String? fallbackPath,
+    BoxFit fit, {
+    bool fallbackParallax = false,
+    double offset = 0,
+  }) {
     return Image.asset(
       path,
       fit: fit,
-      alignment: Alignment.topCenter, // Align images to top to preserve white space at bottom
+      alignment: Alignment
+          .topCenter, // Align images to top to preserve white space at bottom
       errorBuilder: (context, error, stackTrace) {
         if (fallbackPath != null) {
           Widget img = Image.asset(
@@ -473,17 +564,20 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
             alignment: Alignment.topCenter,
             errorBuilder: (_, __, ___) => Container(color: Colors.white),
           );
-          
+
           if (fallbackParallax) {
             return Transform.translate(
               // Gentle vertical scroll effect for the fallback
-              offset: Offset(0, offset * MediaQuery.of(context).size.height * -0.2), 
+              offset: Offset(
+                0,
+                offset * MediaQuery.of(context).size.height * -0.2,
+              ),
               child: img,
             );
           }
           return img;
         }
-        return const SizedBox.shrink(); 
+        return const SizedBox.shrink();
       },
     );
   }
@@ -495,31 +589,42 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame> with Single
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle_outline_rounded, size: 100, color: AppColors.gentleGreen),
+            const Icon(
+              Icons.check_circle_outline_rounded,
+              size: 100,
+              color: AppColors.gentleGreen,
+            ),
             const SizedBox(height: 24),
             Text(
-              'හොඳයි!', 
-              style: AppTypography.sinhala(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.gentleGreenDark),
+              'හොඳයි!',
+              style: AppTypography.sinhala(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: AppColors.gentleGreenDark,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
               'ඔබ කතාව කියවා අවසන් කළා.',
-              style: AppTypography.sinhala(fontSize: 20, color: AppColors.textPrimary),
+              style: AppTypography.sinhala(
+                fontSize: 20,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 40),
             ElevatedButton(
               onPressed: _completeActivity,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.gentleGreen,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              child: Text(
-                'Finish',
-                style: AppTypography.button(fontSize: 20),
-              ),
+              child: Text('Finish', style: AppTypography.button(fontSize: 20)),
             ),
           ],
         ),

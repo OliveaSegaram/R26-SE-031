@@ -28,9 +28,21 @@ class TelemetryModel(BaseModel):
     original_options_count: Optional[int] = None
     current_pair_id: Optional[str] = None
     incorrect_option_ids: Optional[List[str]] = None
-    touch_stream: List[Any] = []
+    visible_option_ids: Optional[List[str]] = None
+    selected_option_ids: Optional[List[str]] = None
+    correct_option_ids: Optional[List[str]] = None
+    supported_actions: Optional[List[str]] = None
+    minimum_visible_options: Optional[int] = 2
+    scaffold_applications: Optional[List[Dict[str, Any]]] = None
+    attempt_count: Optional[int] = 0
+    incorrect_attempt_count: Optional[int] = 0
+    first_attempt_correct: Optional[bool] = None
+    correction_count: Optional[int] = 0
+    hint_count: Optional[int] = 0
+    touch_stream: List[Any] = Field(default_factory=list)
 
 class InteractionPayload(BaseModel):
+    event_id: Optional[str] = None
     student_id: str
     session_id: str
     skill_id: Optional[str] = None
@@ -42,14 +54,18 @@ class InteractionPayload(BaseModel):
     telemetry: TelemetryModel
     speech: Optional[Any] = None
     phase: str = "COMPLETE"
+    difficulty_b: float = 0.0
+    is_anchor: bool = False
 
 async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, event_id: str):
     db = get_db()
+    ingestion_key = f"{payload.student_id}:{event_id}"
     
     # 1. Save Telemetry
     telemetry_doc = {
         "schema_version": "2.0",
         "event_id": event_id,
+        "ingestion_key": ingestion_key,
         "student_id": payload.student_id,
         "session_id": payload.session_id,
         "activity_id": payload.activity_id,
@@ -60,12 +76,31 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
         "total_round_latency_ms": payload.telemetry.total_round_latency_ms,
         "hesitation_count": payload.telemetry.hesitation_count,
         "misclick_count": payload.telemetry.misclick_count,
-        "audio_replay_count": getattr(payload.telemetry, "audio_replay_count", 0)
+        "audio_replay_count": getattr(payload.telemetry, "audio_replay_count", 0),
+        "scaffold_level_used": getattr(payload.telemetry, "scaffold_level_used", 0),
+        "scaffold_applications": getattr(payload.telemetry, "scaffold_applications", None) or [],
+        "attempt_count": getattr(payload.telemetry, "attempt_count", 0),
+        "incorrect_attempt_count": getattr(payload.telemetry, "incorrect_attempt_count", 0),
+        "first_attempt_correct": getattr(payload.telemetry, "first_attempt_correct", None),
+        "correction_count": getattr(payload.telemetry, "correction_count", 0),
+        "hint_count": getattr(payload.telemetry, "hint_count", 0),
+    }
+    # Prefer the v2 key, while reconciling one pre-v2 record in place when it
+    # exists. This keeps retries idempotent without deleting legacy records.
+    existing = await db.telemetry_events.find_one(
+        {"ingestion_key": ingestion_key}, {"_id": 1}
+    )
+    if not existing:
+        existing = await db.telemetry_events.find_one(
+            {"event_id": event_id}, {"_id": 1}
+        )
+    event_filter = {"_id": existing["_id"]} if existing else {
+        "ingestion_key": ingestion_key
     }
     await db.telemetry_events.update_one(
-        {"event_id": event_id},
-        {"$setOnInsert": telemetry_doc},
-        upsert=True
+        event_filter,
+        {"$set": telemetry_doc},
+        upsert=existing is None,
     )
 
     # C1 descriptive processing is performed by authenticated end-of-session ingestion.
@@ -86,7 +121,10 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
         "selected_activity": c4_result.get("next_action", {}).get("next_activity", "Skill_2"),
         "scaffold_level": c4_result.get("next_action", {}).get("scaffold_level", 0),
         "decision_reason": c4_result.get("next_action", {}).get("decision", "CONTINUE"),
-        "policy_version": "Policy-v1.0"
+        "policy_version": c4_result.get("next_action", {}).get(
+            "policy_version", "C4_POLICY_V2"
+        ),
+        "reason_codes": c4_result.get("next_action", {}).get("reason_codes", []),
     }
     if c4_result.get("updated_knowledge_state"):
         c4_doc["data_origin"] = "observed"
@@ -180,6 +218,8 @@ async def process_interaction(payload: InteractionPayload, background_tasks: Bac
                 "knowledge_component_id": payload.knowledge_component_id,
                 "item_id": canonical_item_id,
                 "is_correct": payload.response.is_correct,
+                "difficulty_b": payload.difficulty_b,
+                "is_anchor": payload.is_anchor,
                 "current_session_duration_sec": payload.telemetry.total_round_latency_ms // 1000,
                 "fatigue_score": fatigue_score,
                 "learner_profile": learner_profile_dict,

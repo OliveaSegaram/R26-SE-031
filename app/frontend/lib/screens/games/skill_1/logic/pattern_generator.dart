@@ -51,12 +51,12 @@ class PatternGenerator {
     'vehicles/bicycle.png',
   ];
 
-  static List<PatternRound> generateRounds() {
-    final rng = Random();
-    
+  static List<PatternRound> generateRounds({int seed = 20261006}) {
+    final rng = Random(seed);
+
     // We shuffle the allAssets list and pick distinct items for each round
     // to ensure variety across rounds.
-    
+
     return [
       _generateRound1(rng),
       _generateRound2(rng),
@@ -71,13 +71,13 @@ class PatternGenerator {
     final assets = List<String>.from(allAssets);
     final A = assets[0];
     final B = assets[1];
-    
+
     List<String?> sequence = [A, B, A, null]; // length 4
     final correctAnswer = B;
-    
+
     final distractors = [assets[2]]; // Only 1 distractor for 2 total choices
     List<String> options = [correctAnswer, ...distractors]..shuffle(rng);
-    
+
     return PatternRound(
       sequence: sequence,
       missingIndex: 3,
@@ -92,13 +92,13 @@ class PatternGenerator {
     final assets = List<String>.from(allAssets);
     final A = assets[0];
     final B = assets[1];
-    
+
     List<String?> sequence = [A, A, B, null]; // length 4
     final correctAnswer = B; // Pattern: A A B B
-    
+
     final distractors = [assets[2], assets[3]];
     List<String> options = [correctAnswer, ...distractors]..shuffle(rng);
-    
+
     return PatternRound(
       sequence: sequence,
       missingIndex: 3,
@@ -114,13 +114,13 @@ class PatternGenerator {
     final A = assets[0];
     final B = assets[1];
     final C = assets[2];
-    
+
     List<String?> sequence = [A, B, C, A, null]; // Length 5
     final correctAnswer = B;
-    
+
     final distractors = [assets[3], assets[4]];
     List<String> options = [correctAnswer, ...distractors]..shuffle(rng);
-    
+
     return PatternRound(
       sequence: sequence,
       missingIndex: 4,
@@ -137,13 +137,13 @@ class PatternGenerator {
     final B = assets[1];
     final C = assets[2];
     final D = assets[3];
-    
+
     List<String?> sequence = [A, B, C, D, A, null]; // Length 6
     final correctAnswer = B; // since A B C D A B
-    
+
     final distractors = [assets[4], assets[5], assets[6]];
     List<String> options = [correctAnswer, ...distractors]..shuffle(rng);
-    
+
     return PatternRound(
       sequence: sequence,
       missingIndex: 5,
@@ -159,14 +159,14 @@ class PatternGenerator {
     final A = assets[0];
     final B = assets[1];
     final C = assets[2];
-    
+
     // Pattern: A B B C | A B B C
     List<String?> sequence = [A, B, B, C, A, B, null]; // Length 7
     final correctAnswer = B;
-    
+
     final distractors = [assets[3], assets[4], assets[5]];
     List<String> options = [correctAnswer, ...distractors]..shuffle(rng);
-    
+
     return PatternRound(
       sequence: sequence,
       missingIndex: 6,

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../widgets/telemetry_wrapper.dart';
-import '../../../../models/curriculum_models.dart';
-import '../../../../services/tts_service.dart';
+import '../../../theme/app_theme.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../models/curriculum_models.dart';
+import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
-import '../../../../services/progress_service.dart';
+import '../../../services/progress_service.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
+import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
 
 /// Skill 5 Activity 3
 /// Premium redesign with interactive animations and world-class UI
@@ -15,14 +16,19 @@ class Skill5Act3Mcq extends StatefulWidget {
   final ActivityNode? activityNode;
   final Map<String, dynamic>? studentData;
   final bool isRemedial;
-  const Skill5Act3Mcq({super.key, this.activityNode, this.isRemedial = false, this.studentData});
+  const Skill5Act3Mcq({
+    super.key,
+    this.activityNode,
+    this.isRemedial = false,
+    this.studentData,
+  });
 
   @override
   State<Skill5Act3Mcq> createState() => _Skill5Act3McqState();
 }
 
 class _Skill5Act3McqState extends State<Skill5Act3Mcq>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, ChoiceScaffoldAdapter<Skill5Act3Mcq> {
   String _lastSpokenInstruction = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   int? _selectedIndex;
@@ -44,7 +50,10 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
     final skillId = widget.activityNode?.skillId ?? '';
     final activityId = widget.activityNode?.id ?? '';
     if (skillId.isNotEmpty && activityId.isNotEmpty) {
-      _currentRoundIndex = ProgressService().getActivityState(skillId, activityId);
+      _currentRoundIndex = ProgressService().getActivityState(
+        skillId,
+        activityId,
+      );
     }
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
@@ -66,7 +75,10 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
       duration: const Duration(milliseconds: 400),
     );
     _speakerBounceAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _speakerBounceController, curve: Curves.elasticOut),
+      CurvedAnimation(
+        parent: _speakerBounceController,
+        curve: Curves.elasticOut,
+      ),
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -79,6 +91,7 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
     _pulseController.dispose();
     _speakerBounceController.dispose();
     _audioPlayer.dispose();
+    disposeChoiceScaffoldAdapter();
     super.dispose();
   }
 
@@ -87,8 +100,11 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
     if (rounds.isEmpty) return;
 
     final currentRound = rounds[_currentRoundIndex];
-    final audioText = currentRound['audio_text']?.toString() ?? currentRound['prompt']?.toString() ?? 'වෘත්තය';
-    
+    final audioText =
+        currentRound['audio_text']?.toString() ??
+        currentRound['prompt']?.toString() ??
+        'වෘත්තය';
+
     if (autoPlay && _lastSpokenInstruction == audioText) {
       return;
     }
@@ -104,6 +120,7 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
   void _checkAnswer(int index, int correctIndex, int totalRounds) async {
     if (_isCorrect) return;
     if (_selectedIndex != null) return;
+    if (isAdaptivelyRemoved(index)) return;
 
     _attemptCount++;
     setState(() {
@@ -114,7 +131,10 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
     int score = isRight ? 100 : 0;
 
     if (isRight) {
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(score);
+      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+        score,
+        itemId: adaptiveItemId,
+      );
       setState(() {
         _isCorrect = true;
       });
@@ -123,9 +143,20 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
       _advanceRoundAfterDelay(totalRounds);
     } else {
       SoundUtils.playFeedback('audio/wrong.mp3');
+      await requestChoiceScaffold(
+        selectedIndex: index,
+        options: adaptiveOptionLabels,
+        correctIndex: correctIndex,
+        errorType: 'visual_vocabulary_error',
+      );
+      if (mounted) setState(() {});
 
-      if (_attemptCount >= 2) {
-        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(0);
+      if (_attemptCount >= 3) {
+        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+          0,
+          itemId: adaptiveItemId,
+          attemptAlreadyLogged: true,
+        );
         setState(() {
           _selectedIndex = correctIndex;
           _isCorrect = true;
@@ -152,7 +183,11 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
           final sId = widget.activityNode?.skillId ?? '';
           final aId = widget.activityNode?.id ?? '';
           if (sId.isNotEmpty && aId.isNotEmpty) {
-            int progress = ((_currentRoundIndex / (widget.activityNode?.rounds.length ?? 1)) * 100).toInt();
+            int progress =
+                ((_currentRoundIndex /
+                            (widget.activityNode?.rounds.length ?? 1)) *
+                        100)
+                    .toInt();
             ProgressService().saveActivityScore(sId, aId, progress);
             ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
           }
@@ -189,8 +224,11 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
     }
 
     final currentRound = rounds[_currentRoundIndex];
-    final titleText = widget.activityNode?.title ?? 'ශබ්දයට සවන් දී වාක්‍ය තෝරන්න';
-    var options = (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ?? ['🔵', '🟥', '🔺', '⭐'];
+    final titleText =
+        widget.activityNode?.title ?? 'ශබ්දයට සවන් දී වාක්‍ය තෝරන්න';
+    var options =
+        (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ??
+        ['🔵', '🟥', '🔺', '⭐'];
     var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
 
     if (widget.isRemedial && options.length > 2) {
@@ -198,9 +236,14 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
       var distractors = options.where((item) => item != correctItem).toList();
       if (distractors.isNotEmpty) distractors = distractors.sublist(0, 1);
       options = [correctItem, ...distractors];
-      options.shuffle();
       correctIndex = options.indexOf(correctItem);
     }
+    configureAdaptiveChoices(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+      options: options,
+      correctIndex: correctIndex,
+    );
 
     return SharedGameLayout(
       studentData: widget.studentData,
@@ -211,7 +254,8 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
       isRoundComplete: _isCorrect,
       isActivityComplete: _activityComplete,
       onNext: () {
-        final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+        final wrapper = context
+            .findAncestorStateOfType<TelemetryWrapperState>();
         if (wrapper != null) {
           wrapper.completeActivity(context);
         } else {
@@ -246,7 +290,9 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
   Widget _buildSpeakerCard() {
     return GestureDetector(
       onTap: () {
-        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        context
+            .findAncestorStateOfType<TelemetryWrapperState>()
+            ?.logAudioReplay();
         _playAudioPrompt();
       },
       child: Container(
@@ -275,18 +321,18 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
             ScaleTransition(
               scale: _speakerBounceAnimation,
               child: Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.warmAmber,
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.warmAmber,
+                ),
+                child: const Icon(
+                  Icons.volume_up_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
-              child: const Icon(
-                Icons.volume_up_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
             ),
           ],
         ),
@@ -295,7 +341,11 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
   }
 
   /// Premium answer pool container with frosted glass effect
-  Widget _buildAnswerPool(List<String> options, int correctIndex, int totalRounds) {
+  Widget _buildAnswerPool(
+    List<String> options,
+    int correctIndex,
+    int totalRounds,
+  ) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -310,7 +360,10 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
           end: Alignment.bottomCenter,
         ),
         borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 3),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.9),
+          width: 3,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -322,21 +375,35 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
       child: Column(
         key: ValueKey(_currentRoundIndex),
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: List.generate(options.length, (index) {
-          return _buildOptionTile(index, options[index], correctIndex, totalRounds, options.length);
-        }),
+        children: <Widget>[
+          for (int index = 0; index < options.length; index++)
+            if (!isAdaptivelyRemoved(index))
+              _buildOptionTile(
+                index,
+                options[index],
+                correctIndex,
+                totalRounds,
+                adaptiveChoices.visibleOptions.length,
+              ),
+        ],
       ),
     );
   }
 
-  Widget _buildOptionTile(int index, String optionText, int correctIndex, int totalRounds, int totalOptions) {
+  Widget _buildOptionTile(
+    int index,
+    String optionText,
+    int correctIndex,
+    int totalRounds,
+    int totalOptions,
+  ) {
     final isSelected = (_selectedIndex == index);
     final isRight = isSelected && (index == correctIndex);
     final isWrong = isSelected && (index != correctIndex);
     final isHidden = _isCorrect && (index != correctIndex);
+    final isHinted = isAdaptivelyHighlighted(index);
 
     // Detect if the word is complex (has pillam or is multi-character)
-    
 
     double tileHeight;
     double fontSize;
@@ -374,9 +441,8 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
           color: const Color(0xFF6DBE6D).withValues(alpha: 0.3),
           blurRadius: 16,
           spreadRadius: 2,
-        )
+        ),
       ];
-      
     } else if (isWrong) {
       tileColor = const Color(0xFFE87C6D).withValues(alpha: 0.15);
       borderColor = const Color(0xFFE87C6D);
@@ -386,9 +452,12 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
           color: const Color(0xFFE87C6D).withValues(alpha: 0.3),
           blurRadius: 16,
           spreadRadius: 2,
-        )
+        ),
       ];
-      
+    } else if (isHinted) {
+      tileColor = AppColors.warmAmberLight.withValues(alpha: 0.42);
+      borderColor = AppColors.warmAmber;
+      borderWidth = 4.0;
     }
 
     return GestureDetector(
@@ -405,10 +474,7 @@ class _Skill5Act3McqState extends State<Skill5Act3Mcq>
           decoration: BoxDecoration(
             color: tileColor,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: borderColor,
-              width: borderWidth,
-            ),
+            border: Border.all(color: borderColor, width: borderWidth),
             boxShadow: shadows,
           ),
           child: Center(

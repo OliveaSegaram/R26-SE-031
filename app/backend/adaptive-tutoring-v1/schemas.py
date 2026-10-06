@@ -11,6 +11,17 @@ class TelemetryData(BaseModel):
     original_options_count: Optional[int] = None
     current_pair_id: Optional[str] = None
     incorrect_option_ids: Optional[List[str]] = None
+    visible_option_ids: Optional[List[str]] = None
+    selected_option_ids: Optional[List[str]] = None
+    correct_option_ids: Optional[List[str]] = None
+    supported_actions: Optional[List[str]] = None
+    minimum_visible_options: int = 2
+    scaffold_applications: Optional[List[Dict[str, Any]]] = None
+    attempt_count: int = 0
+    incorrect_attempt_count: int = 0
+    first_attempt_correct: Optional[bool] = None
+    correction_count: int = 0
+    hint_count: int = 0
 
 class InteractionRequest(BaseModel):
     student_id: str
@@ -32,6 +43,7 @@ class NextAction(BaseModel):
     next_activity: str
     next_item: str
     difficulty: float
+    difficulty_b: Optional[float] = None
     scaffold_level: int = Field(default=0)
     decision: str
     remove_option_ids: Optional[List[str]] = None
@@ -39,6 +51,10 @@ class NextAction(BaseModel):
     next_phase: Optional[str] = "CORE"
     progress_core: Optional[int] = 0
     progress_total: Optional[int] = 5
+    action_id: Optional[str] = None
+    commands: List[Dict[str, Any]] = Field(default_factory=list)
+    reason_codes: List[str] = Field(default_factory=list)
+    policy_version: str = "C4_POLICY_V2"
     
 class TutoringResponse(BaseModel):
     student_id: str

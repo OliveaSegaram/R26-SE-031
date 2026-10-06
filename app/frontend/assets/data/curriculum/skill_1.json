@@ -46,7 +46,7 @@
               "animals/snail.png",
               "animals/fish.png"
             ],
-            "distractor_count": 6,
+            "distractor_count": 5,
             "instruction": "අලියන් දෙදෙනා සොයන්න!",
             "item_id": "S1_A1_R02",
             "item_version": 1,
@@ -67,12 +67,62 @@
               "animals/turtle.png",
               "animals/rabbit.png"
             ],
-            "distractor_count": 9,
+            "distractor_count": 6,
             "instruction": "සමනලුන් තුන්දෙනා සොයන්න!",
             "item_id": "S1_A1_R03",
             "item_version": 1,
             "difficulty_label": "hard",
             "difficulty_b": 1.0,
+            "is_anchor": false
+          },
+          {
+            "targets": [
+              "everyday_objects/bell.png"
+            ],
+            "target_count": 3,
+            "distractors": [
+              "everyday_objects/book.png",
+              "everyday_objects/clock.png",
+              "everyday_objects/key.png",
+              "everyday_objects/shoe.png",
+              "vehicles/bicycle.png",
+              "vehicles/boat.png",
+              "vehicles/train.png",
+              "animals/bird.png",
+              "animals/fish.png"
+            ],
+            "distractor_count": 9,
+            "instruction": "සීනු තුන සොයන්න!",
+            "item_id": "S1_A1_R04",
+            "item_version": 1,
+            "difficulty_label": "hard",
+            "difficulty_b": 1.25,
+            "is_anchor": true
+          },
+          {
+            "targets": [
+              "vehicles/van.png"
+            ],
+            "target_count": 4,
+            "distractors": [
+              "vehicles/airplane.png",
+              "vehicles/bicycle.png",
+              "vehicles/boat.png",
+              "vehicles/train.png",
+              "everyday_objects/balloon.png",
+              "everyday_objects/book.png",
+              "everyday_objects/clock.png",
+              "everyday_objects/key.png",
+              "everyday_objects/shoe.png",
+              "animals/cow.png",
+              "animals/rabbit.png"
+            ],
+            "distractor_count": 11,
+            "instruction": "වෑන් රථ හතර සොයන්න!",
+            "item_id": "S1_A1_R05",
+            "item_version": 1,
+            "difficulty_label": "hard",
+            "difficulty_b": 1.5,
             "is_anchor": false
           }
         ],

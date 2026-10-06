@@ -1,3 +1,4 @@
+import re
 from typing import Dict, Any, Optional, Tuple
 
 def get_activity_latency_baseline(activity_id: str) -> int:
@@ -60,6 +61,14 @@ class PolicyEngine:
         Calculates the scaffold escalation based sequentially on the current pair/target attempt count.
         Called when phase = "ATTEMPT".
         """
+        supported_actions = set(getattr(telemetry, "supported_actions", None) or [])
+        if supported_actions:
+            return self._get_capability_support_action(
+                telemetry=telemetry,
+                options_count=options_count,
+                available_incorrect_ids=available_incorrect_ids,
+                adaptive_state=adaptive_state,
+            )
         if activity_id == "2.1":
             return self._s2a1_get_support_action(telemetry, options_count, struggle_score, available_incorrect_ids, adaptive_state, round_idx)
         elif activity_id == "2.3":
@@ -115,8 +124,7 @@ class PolicyEngine:
         if step in [1, 2]:
             decision = "SCAFFOLD_REMOVE_DISTRACTOR"
             if available_incorrect_ids:
-                import random
-                remove_option_ids = [random.choice(available_incorrect_ids)]
+                remove_option_ids = [sorted(map(str, available_incorrect_ids))[0]]
         elif step == 3:
             decision = "SCAFFOLD_HIGHLIGHT_CORRECT"
             highlight = True
@@ -126,6 +134,120 @@ class PolicyEngine:
             "scaffold_level": step,
             "remove_option_ids": remove_option_ids,
             "highlight_correct": highlight
+        }
+
+    def _get_capability_support_action(
+        self,
+        telemetry: Any,
+        options_count: int,
+        available_incorrect_ids: list,
+        adaptive_state: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Common Grade-1 scaffold policy used by every activity family.
+
+        The policy selects semantic commands only. Stable option IDs and their
+        order are supplied by the item adapter, making decisions deterministic
+        and auditable instead of using random.choice.
+        """
+        capabilities = set(getattr(telemetry, "supported_actions", None) or [])
+        visible_ids = list(getattr(telemetry, "visible_option_ids", None) or [])
+        correct_ids = list(getattr(telemetry, "correct_option_ids", None) or [])
+        minimum_visible = max(2, int(getattr(telemetry, "minimum_visible_options", 2) or 2))
+
+        state = adaptive_state.get("generic_scaffold_state", {
+            "wrong_count": 0,
+            "removed_option_ids": [],
+        })
+        state["wrong_count"] = int(state.get("wrong_count", 0)) + 1
+        already_removed = set(state.get("removed_option_ids", []))
+
+        # Preserve the adapter's ordered distractor priority. If it provides no
+        # priority, stable lexical order guarantees repeatable research runs.
+        candidates = [
+            str(option_id) for option_id in available_incorrect_ids
+            if str(option_id) not in already_removed
+        ]
+        if not candidates:
+            candidates = sorted([
+                str(option_id) for option_id in visible_ids
+                if str(option_id) not in set(correct_ids) | already_removed
+            ])
+
+        commands = []
+        reason_codes = [f"INCORRECT_ATTEMPT_{state['wrong_count']}"]
+        scaffold_level = min(state["wrong_count"], 3)
+        decision = "RETRY_CURRENT"
+
+        can_remove = (
+            "REMOVE_OPTION" in capabilities or "REMOVE_OPTIONS" in capabilities
+        ) and options_count - len(already_removed) > minimum_visible
+
+        if state["wrong_count"] <= 2 and can_remove and candidates:
+            selected = candidates[0]
+            already_removed.add(selected)
+            commands.append({
+                "type": "REMOVE_OPTIONS",
+                "target_option_ids": [selected],
+                "reason_code": "REDUCE_DISTRACTOR_LOAD",
+            })
+            reason_codes.append("DISTRACTOR_REMOVED_DETERMINISTICALLY")
+            decision = "SCAFFOLD_REMOVE_DISTRACTOR"
+        elif ("HIGHLIGHT_OPTION" in capabilities or
+              "HIGHLIGHT_OPTIONS" in capabilities) and correct_ids:
+            commands.append({
+                "type": "HIGHLIGHT_OPTIONS",
+                "target_option_ids": correct_ids,
+                "style": "hint",
+                "reason_code": "GUIDED_ATTENTION",
+            })
+            reason_codes.append("CORRECT_TARGET_GUIDED_WITH_HINT")
+            decision = "SCAFFOLD_HIGHLIGHT_CORRECT"
+        elif "REPLAY_INSTRUCTION" in capabilities:
+            commands.append({
+                "type": "REPLAY_INSTRUCTION",
+                "target_option_ids": [],
+                "reason_code": "REPEAT_PROMPT",
+            })
+            reason_codes.append("INSTRUCTION_REPLAY_REQUESTED")
+            decision = "SCAFFOLD_REPLAY_INSTRUCTION"
+        elif "REVEAL_FIRST_TOKEN" in capabilities:
+            commands.append({
+                "type": "REVEAL_FIRST_TOKEN",
+                "target_option_ids": correct_ids[:1],
+                "reason_code": "SEQUENCE_START_SUPPORT",
+            })
+            reason_codes.append("FIRST_TOKEN_REVEALED")
+            decision = "SCAFFOLD_REVEAL_FIRST_TOKEN"
+
+        state["removed_option_ids"] = sorted(already_removed)
+        adaptive_state["generic_scaffold_state"] = state
+        adaptive_state["highest_scaffold_level_used"] = max(
+            adaptive_state.get("highest_scaffold_level_used", 0),
+            scaffold_level,
+        )
+
+        action_id = f"c4-{state['wrong_count']}-{len(already_removed)}"
+        for index, command in enumerate(commands):
+            command["action_id"] = f"{action_id}-{index}"
+
+        remove_ids = []
+        highlight = False
+        for command in commands:
+            if command["type"] == "REMOVE_OPTIONS":
+                remove_ids.extend(command["target_option_ids"])
+            elif command["type"] == "HIGHLIGHT_OPTIONS":
+                highlight = True
+
+        return {
+            "action_id": action_id,
+            "decision": decision,
+            "scaffold_level": scaffold_level,
+            "commands": commands,
+            "reason_codes": reason_codes,
+            "policy_version": "C4_CAPABILITY_POLICY_V2",
+            # Temporary compatibility fields for old app builds.
+            "remove_option_ids": remove_ids,
+            "highlight_correct": highlight,
         }
 
     def _s2a1_get_support_action(
@@ -180,8 +302,7 @@ class PolicyEngine:
         if step in [1, 2]:
             decision = "SCAFFOLD_REMOVE_DISTRACTOR"
             if available_incorrect_ids:
-                import random
-                remove_option_ids = [random.choice(available_incorrect_ids)]
+                remove_option_ids = [sorted(map(str, available_incorrect_ids))[0]]
         elif step >= 3:
             decision = "SCAFFOLD_HIGHLIGHT_CORRECT"
             highlight = True
@@ -302,6 +423,20 @@ class PolicyEngine:
                 "policy_reason": policy_reason,
                 "confirmation_required": False
             }
+
+        # Skill 1 Activity 1 uses the same explicit instructional phases as
+        # the Skill 2 pilots. A learner who needed answer-revealing support
+        # receives one easier visual-search task, then repeats the original
+        # task without carried-over scaffolds before normal IRT selection can
+        # continue.
+        if current_activity == "1.1" and adaptive_state is not None:
+            return self._s1a1_state_machine(
+                response_quality,
+                adaptive_state,
+                current_difficulty_b,
+                theta,
+                policy_reason,
+            )
             
         # S2A2 PILOT STATE MACHINE OVERRIDE
         if current_activity == "2.2" and adaptive_state is not None:
@@ -369,6 +504,144 @@ class PolicyEngine:
             "decision": decision,
             "policy_reason": policy_reason,
             "confirmation_required": confirmation_required
+        }
+
+    def _s1a1_state_machine(
+        self,
+        response_quality: str,
+        state: Dict[str, Any],
+        current_b: float,
+        theta: float,
+        policy_reason: list,
+    ) -> Dict[str, Any]:
+        """Bounded remediation flow for the five hidden-search core tasks."""
+        phase = state.get("next_phase", "CORE")
+        current_item = state.get("expected_item_id", "S1A1R01")
+        match = re.fullmatch(r"S1A1R(\d+)", current_item or "")
+        current_round = int(match.group(1)) if match else 1
+        original_item = state.get("remediation_origin_item_id")
+        next_item = ""
+        next_phase = "CORE"
+        decision = "CONTINUE"
+        target_b = current_b
+
+        independent_success = response_quality in {
+            "MASTERED", "INDEPENDENT_SUCCESS", "CLEAN_SUCCESS",
+            "STRUGGLED_SUCCESS",
+        }
+
+        def next_unseen_core() -> str:
+            administered = set(state.get("administered_item_ids", []))
+            administered.add(current_item)
+            for round_number in range(1, 6):
+                candidate = f"S1A1R{round_number:02d}"
+                if candidate not in administered:
+                    return candidate
+            return ""
+
+        if phase == "CORE":
+            if response_quality in {"ASSISTED_SUCCESS", "FAILED"}:
+                original_item = current_item
+                state["remediation_origin_item_id"] = original_item
+                if current_round > 1:
+                    next_item = f"S1A1R{current_round - 1:02d}"
+                    next_phase = "REMEDIATION"
+                    decision = "REMEDIATION"
+                    target_b = current_b - 0.5
+                    policy_reason.extend([
+                        "S1A1_CORE_COMPLETED_WITH_SUPPORT",
+                        "EASIER_REMEDIATION_SELECTED",
+                    ])
+                else:
+                    next_item = original_item
+                    next_phase = "CONFIRMATION"
+                    decision = "CONFIRMATION"
+                    policy_reason.extend([
+                        "S1A1_EASIEST_CORE_COMPLETED_WITH_SUPPORT",
+                        "EASIEST_ITEM_SKIPS_REMEDIATION",
+                    ])
+            else:
+                if response_quality == "CLEAN_SUCCESS":
+                    target_b = theta + 0.5
+                    policy_reason.append(
+                        "S1A1_CLEAN_SUCCESS_ALLOWS_HARDER"
+                    )
+                else:
+                    target_b = current_b
+                    policy_reason.append(
+                        "S1A1_STRUGGLED_BUT_INDEPENDENT_MAINTAINS_DIFFICULTY"
+                    )
+                next_item = next_unseen_core()
+                if next_item:
+                    decision = "NEXT_CORE"
+                    policy_reason.append("S1A1_SEQUENTIAL_CORE_ORDER")
+
+        elif phase == "REMEDIATION":
+            next_item = original_item or f"S1A1R{min(current_round + 1, 5):02d}"
+            next_phase = "CONFIRMATION"
+            decision = "CONFIRMATION"
+            target_b = current_b + 0.5
+            policy_reason.append(
+                "S1A1_REMEDIATION_COMPLETE_REQUIRES_ORIGINAL_CONFIRMATION"
+            )
+
+        elif phase == "CONFIRMATION":
+            if independent_success:
+                state.pop("remediation_origin_item_id", None)
+                state["remediation_cycle_count"] = 0
+                policy_reason.append("S1A1_UNASSISTED_CONFIRMATION_PASSED")
+                next_item = next_unseen_core()
+                if next_item:
+                    decision = "NEXT_CORE"
+                    policy_reason.append("S1A1_SEQUENTIAL_CORE_ORDER")
+            else:
+                cycles = int(state.get("remediation_cycle_count", 0)) + 1
+                state["remediation_cycle_count"] = cycles
+                origin = original_item or current_item
+                origin_match = re.fullmatch(r"S1A1R(\d+)", origin or "")
+                origin_round = int(origin_match.group(1)) if origin_match else 1
+                if cycles <= 1 and origin_round > 1:
+                    next_item = f"S1A1R{origin_round - 1:02d}"
+                    next_phase = "REMEDIATION"
+                    decision = "REMEDIATION"
+                    target_b = current_b - 0.5
+                    policy_reason.append(
+                        "S1A1_CONFIRMATION_NEEDS_ONE_MORE_REMEDIATION"
+                    )
+                else:
+                    # Bound the loop for a Grade 1 learner. The item remains
+                    # recorded as assisted evidence, but the child is not
+                    # trapped indefinitely in the same two tasks.
+                    state.pop("remediation_origin_item_id", None)
+                    state["remediation_cycle_count"] = 0
+                    policy_reason.append(
+                        "S1A1_REMEDIATION_LOOP_LIMIT_REACHED"
+                    )
+                    next_item = next_unseen_core()
+                    if next_item:
+                        decision = "NEXT_CORE"
+                        policy_reason.append("S1A1_SEQUENTIAL_CORE_ORDER")
+
+        state["next_phase"] = next_phase
+        if next_item:
+            state["expected_item_id"] = next_item
+
+        return {
+            "next_activity": "1.1",
+            "next_item": next_item,
+            "difficulty": 0.0,
+            "target_difficulty": target_b,
+            "difficulty_direction": (
+                "EASIER" if next_phase == "REMEDIATION" else "MAINTAIN"
+            ),
+            "scaffold_level": 0,
+            "decision": decision,
+            "policy_reason": policy_reason,
+            "confirmation_required": next_phase == "CONFIRMATION",
+            "next_phase": next_phase,
+            "progress_core": 0,
+            "progress_total": 5,
+            "state_updates": state,
         }
         
     def _s2a2_state_machine(self, response_quality: str, state: Dict[str, Any], diff_b: float, policy_reason: list) -> Dict[str, Any]:
@@ -603,8 +876,7 @@ class PolicyEngine:
         if step in [1, 2]:
             decision = "SCAFFOLD_REMOVE_DISTRACTOR"
             if available_incorrect_ids:
-                import random
-                remove_option_ids = [random.choice(available_incorrect_ids)]
+                remove_option_ids = [sorted(map(str, available_incorrect_ids))[0]]
         elif step >= 3:
             decision = "SCAFFOLD_HIGHLIGHT_CORRECT"
             highlight = True

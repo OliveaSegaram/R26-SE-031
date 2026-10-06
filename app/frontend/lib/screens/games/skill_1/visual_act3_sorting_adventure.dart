@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:sipsara_app/utils/sound_utils.dart';
 import '../../../widgets/app_loading_indicator.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../../../../models/curriculum_models.dart';
-import '../../../../widgets/telemetry_wrapper.dart';
-import '../../../../theme/app_theme.dart';
-import '../../../../services/tts_service.dart';
-import '../../../../services/progress_service.dart';
+import '../../../models/curriculum_models.dart';
+import '../../../widgets/telemetry_wrapper.dart';
+import '../../../theme/app_theme.dart';
+import '../../../services/tts_service.dart';
+import '../../../services/progress_service.dart';
 import 'logic/sorting_generator.dart';
 import 'models/sorting_round.dart';
 import 'widgets/pattern_background.dart';
@@ -24,8 +24,11 @@ class VisualAct3SortingAdventure extends StatefulWidget {
   final ActivityNode activityNode;
   final Map<String, dynamic>? studentData;
 
-  const VisualAct3SortingAdventure({Key? key, required this.activityNode, this.studentData})
-      : super(key: key);
+  const VisualAct3SortingAdventure({
+    Key? key,
+    required this.activityNode,
+    this.studentData,
+  }) : super(key: key);
 
   @override
   _VisualAct3SortingAdventureState createState() =>
@@ -38,34 +41,35 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   // ── Game state ──
   int _currentRoundIndex = 0;
   late List<SortingRound> _rounds;
-  
+
   // Track items dynamically
   List<String> _objectQueue = [];
   List<String> _visibleObjects = [];
   final int _maxVisible = 3;
   Map<String, List<String>> _sortedObjects = {}; // category -> list of objects
-  
+
   bool _roundComplete = false;
   bool _activityComplete = false;
 
   String? _hoveredCategory;
   bool _isDragging = false;
-  
+
   // Feedback state
   String? _lastCorrectCategory;
   String? _lastWrongCategory;
   String? _lastWrongObject;
+  String? _hintedCategory;
 
   // ── Audio ──
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   // ── Category accent colors ──
   static const Map<String, Color> _categoryColors = {
-    'animals': Color(0xFF82C98B),   // Gentle green
-    'fruits': Color(0xFFE8A07C),    // Warm coral
-    'vehicles': Color(0xFF7CB8E8),  // Calm blue
-    'everyday': Color(0xFFF9C623),  // Yellow
-    'nature': Color(0xFFDDA0DD),    // Plum
+    'animals': Color(0xFF82C98B), // Gentle green
+    'fruits': Color(0xFFE8A07C), // Warm coral
+    'vehicles': Color(0xFF7CB8E8), // Calm blue
+    'everyday': Color(0xFFF9C623), // Yellow
+    'nature': Color(0xFFDDA0DD), // Plum
   };
 
   // ── Animation controllers ──
@@ -73,11 +77,11 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   late Animation<double> _celebrationScale;
   late AnimationController _roundTransitionController;
   late Animation<double> _roundFadeAnimation;
-  
+
   // Individual float controllers for objects
   final Map<String, AnimationController> _floatControllers = {};
   final Map<String, AnimationController> _entranceControllers = {};
-  
+
   // Drop feedback controllers
   final Map<String, AnimationController> _categoryGlowControllers = {};
   late AnimationController _wrongShakeController;
@@ -105,9 +109,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   late String _currentEncouragement;
 
   // ── Sinhala instructions ──
-  static const List<String> _instructions = [
-    'පින්තූර නිවැරදි කූඩයට දමන්න!',
-  ];
+  static const List<String> _instructions = ['පින්තූර නිවැරදි කූඩයට දමන්න!'];
   late String _currentInstruction;
 
   // ── Speaker animation ──
@@ -122,7 +124,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       widget.activityNode.id,
     );
     if (_currentRoundIndex >= _rounds.length) _currentRoundIndex = 0;
-    
+
     final rng = Random();
     _currentMascot = _mascots[rng.nextInt(_mascots.length)];
     _currentEncouragement =
@@ -135,8 +137,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       duration: const Duration(milliseconds: 800),
     );
     _celebrationScale = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-          parent: _celebrationController, curve: Curves.elasticOut),
+      CurvedAnimation(parent: _celebrationController, curve: Curves.elasticOut),
     );
 
     // Round transition fade
@@ -146,7 +147,9 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     );
     _roundFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-          parent: _roundTransitionController, curve: Curves.easeOut),
+        parent: _roundTransitionController,
+        curve: Curves.easeOut,
+      ),
     );
 
     // Wrong answer shake
@@ -154,16 +157,19 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    _wrongShakeAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0, end: 8), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 8, end: -8), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -8, end: 6), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: 6, end: -4), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -4, end: 0), weight: 1),
-    ]).animate(CurvedAnimation(
-      parent: _wrongShakeController,
-      curve: Curves.easeInOut,
-    ));
+    _wrongShakeAnimation =
+        TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 0, end: 8), weight: 1),
+          TweenSequenceItem(tween: Tween(begin: 8, end: -8), weight: 1),
+          TweenSequenceItem(tween: Tween(begin: -8, end: 6), weight: 1),
+          TweenSequenceItem(tween: Tween(begin: 6, end: -4), weight: 1),
+          TweenSequenceItem(tween: Tween(begin: -4, end: 0), weight: 1),
+        ]).animate(
+          CurvedAnimation(
+            parent: _wrongShakeController,
+            curve: Curves.easeInOut,
+          ),
+        );
 
     // Speaker bounce
     _speakerBounceController = AnimationController(
@@ -171,7 +177,10 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       duration: const Duration(milliseconds: 400),
     );
     _speakerBounceAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _speakerBounceController, curve: Curves.elasticOut),
+      CurvedAnimation(
+        parent: _speakerBounceController,
+        curve: Curves.elasticOut,
+      ),
     );
 
     _initRoundState();
@@ -183,7 +192,6 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   }
 
   void _playInstruction({bool autoPlay = false}) {
-    
     if (autoPlay && _lastSpokenInstruction == _currentInstruction) {
       return;
     }
@@ -195,6 +203,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   }
 
   void _initRoundState() {
+    _hintedCategory = null;
     _objectQueue = List.from(_currentRound.objects);
     _visibleObjects = [];
     _sortedObjects.clear();
@@ -205,10 +214,14 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         duration: const Duration(milliseconds: 300),
       );
     }
-    
+
     // Clear old controllers
-    for (var c in _floatControllers.values) { c.dispose(); }
-    for (var c in _entranceControllers.values) { c.dispose(); }
+    for (var c in _floatControllers.values) {
+      c.dispose();
+    }
+    for (var c in _entranceControllers.values) {
+      c.dispose();
+    }
     _floatControllers.clear();
     _entranceControllers.clear();
 
@@ -221,13 +234,13 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         vsync: this,
         duration: Duration(milliseconds: 1800 + rng.nextInt(600)),
       )..repeat(reverse: true);
-      
+
       _entranceControllers[obj] = AnimationController(
         vsync: this,
         duration: const Duration(milliseconds: 600),
       );
     }
-    
+
     _fillVisibleObjects();
   }
 
@@ -236,7 +249,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     while (_visibleObjects.length < _maxVisible && _objectQueue.isNotEmpty) {
       final obj = _objectQueue.removeAt(0);
       _visibleObjects.add(obj);
-      
+
       Future.delayed(Duration(milliseconds: 100 * delay), () {
         if (mounted && _entranceControllers.containsKey(obj)) {
           _entranceControllers[obj]?.forward(from: 0);
@@ -252,19 +265,25 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     _roundTransitionController.dispose();
     _wrongShakeController.dispose();
     _speakerBounceController.dispose();
-    for (var c in _floatControllers.values) { c.dispose(); }
-    for (var c in _entranceControllers.values) { c.dispose(); }
-    for (var c in _categoryGlowControllers.values) { c.dispose(); }
+    for (var c in _floatControllers.values) {
+      c.dispose();
+    }
+    for (var c in _entranceControllers.values) {
+      c.dispose();
+    }
+    for (var c in _categoryGlowControllers.values) {
+      c.dispose();
+    }
     _audioPlayer.dispose();
     super.dispose();
   }
-
 
   // ── Game logic ──
 
   SortingRound get _currentRound => _rounds[_currentRoundIndex];
   int get _totalObjects => _currentRound.objects.length;
-  int get _sortedCount => _totalObjects - (_objectQueue.length + _visibleObjects.length);
+  int get _sortedCount =>
+      _totalObjects - (_objectQueue.length + _visibleObjects.length);
 
   void _onAcceptDrop(String object, String categoryKey) {
     setState(() {
@@ -273,22 +292,23 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     });
 
     final correctCategory = _currentRound.objectToCategory[object];
-    
+
     if (correctCategory == categoryKey) {
       // Correct!
       SoundUtils.playFeedback('audio/correct.mp3');
-      
+
       setState(() {
         _visibleObjects.remove(object);
         _sortedObjects[categoryKey]!.add(object);
         _lastCorrectCategory = categoryKey;
-        
+        _hintedCategory = null;
+
         // Only refill when the shelf is completely empty, creating a "magical batch" effect
         if (_visibleObjects.isEmpty && _objectQueue.isNotEmpty) {
           _fillVisibleObjects();
         }
       });
-      
+
       // Flash category glow
       _categoryGlowControllers[categoryKey]?.forward(from: 0).then((_) {
         _categoryGlowControllers[categoryKey]?.reverse();
@@ -298,30 +318,70 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       final rng = Random();
       _currentEncouragement =
           _encourageMessages[rng.nextInt(_encourageMessages.length)];
-          
+
       // Check win
       if (_objectQueue.isEmpty && _visibleObjects.isEmpty) {
         _onRoundComplete();
       } else {
         Future.delayed(const Duration(milliseconds: 800), () {
           if (mounted) {
-            setState(() { _lastCorrectCategory = null; });
+            setState(() {
+              _lastCorrectCategory = null;
+            });
           }
         });
       }
     } else {
       // Wrong!
       SoundUtils.playFeedback('audio/wrong.mp3');
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.recordMisclick();
-      
+      final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+      final categories = _currentRound.categories.keys.toList();
+      if (wrapper != null && correctCategory != null) {
+        final itemId = CanonicalItemResolver.canonicalItemId(
+          skillId: widget.activityNode.skillId,
+          activityId: widget.activityNode.id,
+          roundNumber: _currentRoundIndex + 1,
+        );
+        final selectedIndex = categories.indexOf(categoryKey);
+        final correctIndex = categories.indexOf(correctCategory);
+        unawaited(
+          wrapper
+              .requestSemanticScaffold(
+                itemId: itemId,
+                visibleOptionIds: List<String>.generate(
+                  categories.length,
+                  (index) => '${itemId}_DEST${index + 1}',
+                ),
+                selectedOptionIds: <String>[
+                  '${itemId}_DEST${selectedIndex + 1}',
+                ],
+                correctOptionIds: <String>['${itemId}_DEST${correctIndex + 1}'],
+                incorrectOptionIds: <String>[
+                  '${itemId}_DEST${selectedIndex + 1}',
+                ],
+                supportedActions: const <String>[
+                  'HIGHLIGHT_OPTION',
+                  'SHOW_WORKED_EXAMPLE',
+                  'REPLAY_INSTRUCTION',
+                ],
+                errorType: 'categorization_error',
+              )
+              .then((plan) {
+                if (mounted && plan != null) {
+                  setState(() => _hintedCategory = correctCategory);
+                }
+              }),
+        );
+      }
+
       setState(() {
         _lastWrongObject = object;
         _lastWrongCategory = categoryKey;
       });
       _wrongShakeController.forward(from: 0).then((_) {
         if (mounted) {
-          setState(() { 
-            _lastWrongObject = null; 
+          setState(() {
+            _lastWrongObject = null;
             _lastWrongCategory = null;
           });
         }
@@ -333,7 +393,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     setState(() {
       _roundComplete = true;
     });
-    
+
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (!mounted) return;
       _nextRound();
@@ -341,7 +401,9 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   }
 
   void _nextRound() {
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(100);
+    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+      100,
+    );
 
     if (_currentRoundIndex < _rounds.length - 1) {
       _roundTransitionController.reverse().then((_) {
@@ -351,7 +413,8 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
           _roundComplete = false;
           _lastCorrectCategory = null;
           final rng = Random();
-          _currentInstruction = _instructions[rng.nextInt(_instructions.length)];
+          _currentInstruction =
+              _instructions[rng.nextInt(_instructions.length)];
         });
         ProgressService().saveActivityState(
           widget.activityNode.skillId,
@@ -378,14 +441,14 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         100,
       );
       setState(() {
-          _activityComplete = true;
-          final sId = widget.activityNode?.skillId ?? '';
-          final aId = widget.activityNode?.id ?? '';
-          if (sId.isNotEmpty && aId.isNotEmpty) {
-            ProgressService().saveActivityScore(sId, aId, 100);
-            ProgressService().clearActivityState(sId, aId);
-          }
-        });
+        _activityComplete = true;
+        final sId = widget.activityNode?.skillId ?? '';
+        final aId = widget.activityNode?.id ?? '';
+        if (sId.isNotEmpty && aId.isNotEmpty) {
+          ProgressService().saveActivityScore(sId, aId, 100);
+          ProgressService().clearActivityState(sId, aId);
+        }
+      });
       _celebrationController.forward();
     }
   }
@@ -406,8 +469,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   @override
   Widget build(BuildContext context) {
     if (_rounds.isEmpty) {
-      return const Scaffold(
-          body: Center(child: AppLoadingIndicator()));
+      return const Scaffold(body: Center(child: AppLoadingIndicator()));
     }
 
     return Scaffold(
@@ -416,7 +478,8 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
           // ── Beautiful Blurred Garden Background ──
           const Positioned.fill(
             child: PatternBackground(
-                imagePath: 'assets/images/backgrounds/act3_bg.jpg'),
+              imagePath: 'assets/images/backgrounds/act3_bg.jpg',
+            ),
           ),
 
           // ── Main Content ──
@@ -433,7 +496,6 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                   const SizedBox(height: 16),
                   _buildCategoryZones(),
                   const SizedBox(height: 16),
-
                 ],
               ),
             ),
@@ -473,8 +535,11 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 color: const Color(0xFFF0F4FF),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.arrow_back_rounded,
-                  color: Color(0xFF4A90D9), size: 24),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Color(0xFF4A90D9),
+                size: 24,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -485,7 +550,6 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-
                     Text(
                       widget.activityNode.title,
                       style: AppTypography.heading(
@@ -534,7 +598,9 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
             height: 3,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(2),
-              color: isCompleted ? const Color(0xFF6DBE6D) : const Color(0xFFE0E0E0),
+              color: isCompleted
+                  ? const Color(0xFF6DBE6D)
+                  : const Color(0xFFE0E0E0),
             ),
           );
         } else {
@@ -549,10 +615,13 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
               color: isCompleted
                   ? const Color(0xFF6DBE6D)
                   : isCurrent
-                      ? const Color(0xFFF9C623)
-                      : const Color(0xFFE0E0E0),
+                  ? const Color(0xFFF9C623)
+                  : const Color(0xFFE0E0E0),
               border: isCurrent
-                  ? Border.all(color: const Color(0xFFF9C623).withValues(alpha: 0.3), width: 2)
+                  ? Border.all(
+                      color: const Color(0xFFF9C623).withValues(alpha: 0.3),
+                      width: 2,
+                    )
                   : null,
             ),
           );
@@ -565,7 +634,9 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   Widget _buildInstructionCard() {
     return GestureDetector(
       onTap: () {
-        context.findAncestorStateOfType<TelemetryWrapperState>()?.logAudioReplay();
+        context
+            .findAncestorStateOfType<TelemetryWrapperState>()
+            ?.logAudioReplay();
         _playInstruction();
       },
       child: Container(
@@ -580,15 +651,38 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
           mainAxisSize: MainAxisSize.min,
           children: [
             Flexible(
-              child: Text(_currentInstruction, style: AppTypography.sinhala(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary), textAlign: TextAlign.center),
+              child: Text(
+                _currentInstruction,
+                style: AppTypography.sinhala(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
             const SizedBox(width: 12),
             ScaleTransition(
               scale: _speakerBounceAnimation,
               child: Container(
-                width: 48, height: 48,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.warmAmber, boxShadow: [BoxShadow(color: AppColors.warmAmber.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))]),
-                child: const Icon(Icons.volume_up_rounded, color: Colors.white, size: 26),
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.warmAmber,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.warmAmber.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.volume_up_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
               ),
             ),
           ],
@@ -630,7 +724,10 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 duration: const Duration(milliseconds: 600),
                 curve: Curves.easeOutCubic,
                 height: 12,
-                width: (progress * constraints.maxWidth).clamp(0.0, constraints.maxWidth),
+                width: (progress * constraints.maxWidth).clamp(
+                  0.0,
+                  constraints.maxWidth,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(24),
@@ -640,7 +737,10 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                   gradient: const LinearGradient(
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
-                    colors: [Color(0xFF6DBE6D), Color(0xFF86D286)], // Beautiful soft green
+                    colors: [
+                      Color(0xFF6DBE6D),
+                      Color(0xFF86D286),
+                    ], // Beautiful soft green
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -667,40 +767,47 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         child: Row(
           children: [
             Expanded(
-              child: _roundComplete 
-                ? const SizedBox() // Disappear entirely when round is complete
-                : Container(
-                    clipBehavior: Clip.hardEdge,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.5), 
-                        width: 2.0,
+              child: _roundComplete
+                  ? const SizedBox() // Disappear entirely when round is complete
+                  : Container(
+                      clipBehavior: Clip.hardEdge,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          width: 2.0,
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildHorizontalProgressBar(),
-                        Expanded(
-                          child: Center(
-                            child: SingleChildScrollView(
-                              physics: const BouncingScrollPhysics(),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
-                                child: Wrap(
-                                  spacing: 16,
-                                  runSpacing: 16,
-                                  alignment: WrapAlignment.center,
-                                  children: _visibleObjects.map((obj) => _buildDraggableObject(obj)).toList(),
+                      child: Column(
+                        children: [
+                          _buildHorizontalProgressBar(),
+                          Expanded(
+                            child: Center(
+                              child: SingleChildScrollView(
+                                physics: const BouncingScrollPhysics(),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                    vertical: 16.0,
+                                  ),
+                                  child: Wrap(
+                                    spacing: 16,
+                                    runSpacing: 16,
+                                    alignment: WrapAlignment.center,
+                                    children: _visibleObjects
+                                        .map(
+                                          (obj) => _buildDraggableObject(obj),
+                                        )
+                                        .toList(),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
             ),
           ],
         ),
@@ -711,17 +818,25 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   Widget _buildDraggableObject(String object) {
     final entryController = _entranceControllers[object];
     final floatController = _floatControllers[object];
-    
-    if (entryController == null || floatController == null) return const SizedBox();
+
+    if (entryController == null || floatController == null)
+      return const SizedBox();
 
     bool isWrong = _lastWrongObject == object;
 
     return AnimatedBuilder(
-      animation: Listenable.merge([entryController, floatController, _wrongShakeController]),
+      animation: Listenable.merge([
+        entryController,
+        floatController,
+        _wrongShakeController,
+      ]),
       builder: (context, child) {
-        final scale = CurvedAnimation(parent: entryController, curve: Curves.elasticOut).value;
+        final scale = CurvedAnimation(
+          parent: entryController,
+          curve: Curves.elasticOut,
+        ).value;
         final floatY = sin(floatController.value * 2 * pi) * 4.0;
-        
+
         double shakeX = 0;
         if (isWrong && _wrongShakeController.isAnimating) {
           shakeX = _wrongShakeAnimation.value;
@@ -729,20 +844,22 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
 
         return Transform.translate(
           offset: Offset(shakeX, floatY),
-          child: Transform.scale(
-            scale: scale,
-            child: child,
-          ),
+          child: Transform.scale(scale: scale, child: child),
         );
       },
       child: Draggable<String>(
         data: object,
         maxSimultaneousDrags: 1,
         onDragStarted: () {
-          setState(() { _isDragging = true; });
+          setState(() {
+            _isDragging = true;
+          });
         },
         onDragEnd: (_) {
-          setState(() { _isDragging = false; _hoveredCategory = null; });
+          setState(() {
+            _isDragging = false;
+            _hoveredCategory = null;
+          });
         },
         feedback: _buildDragFeedback(object),
         childWhenDragging: _buildDragGhost(),
@@ -758,7 +875,9 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
       height: 120,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isWrong ? const Color(0xFFE87C6D).withValues(alpha: 0.15) : Colors.white,
+        color: isWrong
+            ? const Color(0xFFE87C6D).withValues(alpha: 0.15)
+            : Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           if (isWrong)
@@ -775,7 +894,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
             ),
         ],
         border: Border.all(
-          color: isWrong 
+          color: isWrong
               ? const Color(0xFFE87C6D)
               : const Color(0xFF4A90D9).withValues(alpha: 0.15),
           width: isWrong ? 4.0 : 2.0,
@@ -853,7 +972,8 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
 
   // ── Category Zones (Drag Targets) ──
   Widget _buildCategoryZones({List<String>? customCategories, int flex = 4}) {
-    final categories = customCategories ?? _currentRound.categories.keys.toList();
+    final categories =
+        customCategories ?? _currentRound.categories.keys.toList();
     if (categories.isEmpty) return const SizedBox();
     return Expanded(
       flex: flex,
@@ -878,7 +998,9 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     return Expanded(
       child: DragTarget<String>(
         onWillAcceptWithDetails: (details) {
-          setState(() { _hoveredCategory = categoryKey; });
+          setState(() {
+            _hoveredCategory = categoryKey;
+          });
           return true;
         },
         onLeave: (_) {
@@ -892,7 +1014,8 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         builder: (context, candidateData, rejectedData) {
           final isHovered = _hoveredCategory == categoryKey;
           final isLastCorrect = _lastCorrectCategory == categoryKey;
-          
+          final isHinted = _hintedCategory == categoryKey;
+
           return AnimatedBuilder(
             animation: _categoryGlowControllers[categoryKey]!,
             builder: (context, child) {
@@ -900,7 +1023,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
               double scale = 1.0;
               if (isHovered) scale = 1.05;
               if (isLastCorrect) scale = 1.0 + (sin(glowValue * pi) * 0.1);
-              
+
               return Transform.scale(
                 scale: scale,
                 child: Container(
@@ -919,7 +1042,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                               alignment: Alignment.center,
                               children: [
                                 // Glow behind basket if hovered
-                                if (isHovered || isLastCorrect)
+                                if (isHovered || isLastCorrect || isHinted)
                                   Container(
                                     width: 80,
                                     height: 60,
@@ -927,25 +1050,31 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                                       shape: BoxShape.circle,
                                       boxShadow: [
                                         BoxShadow(
-                                          color: accentColor.withValues(alpha: 0.6),
+                                          color:
+                                              (isHinted
+                                                      ? AppColors.warmAmber
+                                                      : accentColor)
+                                                  .withValues(alpha: 0.6),
                                           blurRadius: 24,
                                           spreadRadius: 8,
-                                        )
+                                        ),
                                       ],
                                     ),
                                   ),
-                                
+
                                 // The New Custom 3D UI Basket
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                  child: _buildCustomBasket(categoryKey, accentColor),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4.0,
+                                  ),
+                                  child: _buildCustomBasket(
+                                    categoryKey,
+                                    accentColor,
+                                  ),
                                 ),
-                                
                               ],
                             ),
                           ),
-                          
-
                         ],
                       ),
 
@@ -1008,6 +1137,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
 
     bool isCorrect = _lastCorrectCategory == categoryKey;
     bool isWrong = _lastWrongCategory == categoryKey;
+    bool isHinted = _hintedCategory == categoryKey;
 
     return SizedBox(
       width: 180,
@@ -1019,8 +1149,14 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
           duration: const Duration(milliseconds: 300),
           decoration: BoxDecoration(
             border: Border.all(
-              color: isCorrect ? Colors.green : (isWrong ? Colors.red : Colors.transparent),
-              width: (isCorrect || isWrong) ? 3 : 0,
+              color: isCorrect
+                  ? Colors.green
+                  : isWrong
+                  ? Colors.red
+                  : isHinted
+                  ? AppColors.warmAmber
+                  : Colors.transparent,
+              width: (isCorrect || isWrong || isHinted) ? 4 : 0,
             ),
             borderRadius: BorderRadius.circular(20),
           ),
@@ -1076,8 +1212,8 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 _roundComplete
                     ? 'හොඳයි! 🎉'
                     : _lastCorrectCategory != null
-                        ? 'සුපිරියි! ✨'
-                        : _currentEncouragement,
+                    ? 'සුපිරියි! ✨'
+                    : _currentEncouragement,
                 style: AppTypography.sinhala(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -1104,11 +1240,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   }
 
   Widget _buildStar(double size) {
-    return Icon(
-      Icons.star_rounded,
-      size: size,
-      color: const Color(0xFFF9C623),
-    );
+    return Icon(Icons.star_rounded, size: size, color: const Color(0xFFF9C623));
   }
 }
 
@@ -1130,7 +1262,7 @@ class _StarBurstPainter extends CustomPainter {
     for (int i = 0; i < numStars; i++) {
       final angle = (i * 2 * pi / numStars) + (progress * pi / 4);
       final currentRadius = progress * maxRadius;
-      
+
       final starCenter = Offset(
         center.dx + cos(angle) * currentRadius,
         center.dy + sin(angle) * currentRadius,

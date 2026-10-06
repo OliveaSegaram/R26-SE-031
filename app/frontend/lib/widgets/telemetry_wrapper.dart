@@ -8,6 +8,8 @@ import '../screens/games/game_factory.dart';
 import '../services/tts_service.dart';
 import '../services/student_service.dart';
 import '../services/progress_service.dart';
+import '../adaptive/controllers/adaptive_choice_controller.dart';
+import '../adaptive/models/adaptive_scaffold_models.dart';
 
 /// A wrapper widget that tracks all touch events, latency, and coordinates
 /// before they reach the underlying game template.
@@ -47,7 +49,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
   // ---- Rich metric accumulators ----
   final List<TouchPoint> _currentTouchPath = [];
-  int _firstTouchLatencyMs = -1;    // -1 = no touch received yet this round
+  int _firstTouchLatencyMs = -1; // -1 = no touch received yet this round
   int _misclickCount = 0;
   int _hesitationCount = 0;
   int _audioReplayCount = 0;
@@ -61,6 +63,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   bool? _firstAttemptCorrect;
   final List<String> _accumulatedAnswers = [];
   String? _firstErrorType;
+  final List<Map<String, dynamic>> _scaffoldApplications = [];
 
   // ---- Session accumulators ----
   int _totalScore = 0;
@@ -71,7 +74,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
   @visibleForTesting
   int get currentRound => _currentRound;
-  
+
   @visibleForTesting
   set currentRound(int value) => _currentRound = value;
 
@@ -97,16 +100,17 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
   @override
   void dispose() {
-    if (_roundStopwatch.isRunning && _roundsCompletedTotal < widget.activityNode.rounds.length) {
+    if (_roundStopwatch.isRunning &&
+        _roundsCompletedTotal < widget.activityNode.rounds.length) {
       // The wrapper was disposed before the game finished natively -> Abandonment
       _logAbandonment();
     }
     _roundStopwatch.stop();
     _hesitationStopwatch.stop();
-    
+
     // Stop any ongoing TTS audio when navigating away from the activity
     TtsService().stop();
-    
+
     super.dispose();
   }
 
@@ -114,7 +118,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     if (_activityCompleted) return;
     _roundStopwatch.stop();
     final totalRoundLatency = _roundStopwatch.elapsedMilliseconds;
-    
+
     final event = TelemetryEvent(
       activityName: widget.activityNode.templateType,
       roundNumber: _currentRound,
@@ -174,11 +178,13 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   /// Called by the transparent Listener widget on every pointer event.
   void _recordTouch(PointerEvent details, Size screenSize) {
     if (_isSubmittingRound) return;
-    
+
     // Check for hesitation since last touch
     if (_hesitationStopwatch.elapsedMilliseconds > _hesitationThresholdMs) {
       _hesitationCount++;
-      debugPrint('TELEMETRY: Hesitation detected (${_hesitationStopwatch.elapsedMilliseconds} ms).');
+      debugPrint(
+        'TELEMETRY: Hesitation detected (${_hesitationStopwatch.elapsedMilliseconds} ms).',
+      );
     }
     _hesitationStopwatch.reset();
     _hesitationStopwatch.start();
@@ -192,8 +198,10 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
     // Determine touch type
     String type = 'move';
-    if (details is PointerDownEvent) type = 'down';
-    else if (details is PointerUpEvent) type = 'up';
+    if (details is PointerDownEvent)
+      type = 'down';
+    else if (details is PointerUpEvent)
+      type = 'up';
 
     // Record normalized touch point
     final xRatio = screenSize.width > 0
@@ -203,12 +211,14 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
         ? (details.position.dy / screenSize.height).clamp(0.0, 1.0)
         : 0.0;
 
-    _currentTouchPath.add(TouchPoint(
-      xRatio: double.parse(xRatio.toStringAsFixed(3)),
-      yRatio: double.parse(yRatio.toStringAsFixed(3)),
-      timestampMs: _roundStopwatch.elapsedMilliseconds,
-      type: type,
-    ));
+    _currentTouchPath.add(
+      TouchPoint(
+        xRatio: double.parse(xRatio.toStringAsFixed(3)),
+        yRatio: double.parse(yRatio.toStringAsFixed(3)),
+        timestampMs: _roundStopwatch.elapsedMilliseconds,
+        type: type,
+      ),
+    );
 
     TelemetryService().broadcastPointerEvent(details);
   }
@@ -220,66 +230,225 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   }
 
   /// Called by games when the child selects a wrong answer but hasn't failed the round yet.
-  Future<int?> registerWrongAttempt({int? currentRoundIndex, int maxAttempts = 3}) async {
-    final result = await registerAdaptiveWrongAttempt(currentRoundIndex: currentRoundIndex, maxAttempts: maxAttempts);
+  Future<int?> registerWrongAttempt({
+    int? currentRoundIndex,
+    int maxAttempts = 3,
+  }) async {
+    final result = await registerAdaptiveWrongAttempt(
+      currentRoundIndex: currentRoundIndex,
+      maxAttempts: maxAttempts,
+    );
     if (result != null && result.containsKey('next_action')) {
       final nextAction = result['next_action'];
       if (nextAction['decision'] == 'TERMINATE') {
-         return currentRoundIndex ?? _currentRound;
+        return currentRoundIndex ?? _currentRound;
       }
     }
     return null; // Return null to indicate no forceful jump yet
   }
 
-  Future<Map<String, dynamic>?> registerAdaptiveWrongAttempt({int? currentRoundIndex, int maxAttempts = 3, Map<String, dynamic>? extraTelemetry, String? itemId}) async {
+  Future<Map<String, dynamic>?> registerAdaptiveWrongAttempt({
+    int? currentRoundIndex,
+    int maxAttempts = 3,
+    Map<String, dynamic>? extraTelemetry,
+    String? itemId,
+  }) async {
     _misclickCount++;
-    
-    final payloadItemId = itemId ?? "${widget.activityNode.id}_round${currentRoundIndex != null ? currentRoundIndex + 1 : _currentRound}";
-    
+    logAttempt(
+      isCorrect: false,
+      selectedAnswers: _extractSelectedAnswers(extraTelemetry),
+      errorType: extraTelemetry?['error_type']?.toString(),
+    );
+
+    final roundNumber = currentRoundIndex != null
+        ? currentRoundIndex + 1
+        : _currentRound;
+    final payloadItemId = CanonicalItemResolver.normalizeItemId(
+      itemId ??
+          CanonicalItemResolver.canonicalItemId(
+            skillId: widget.activityNode.skillId,
+            activityId: widget.activityNode.id,
+            roundNumber: roundNumber,
+          ),
+    );
+
     // Build attempt payload
-    final studentId = widget.studentData?['id'] ?? widget.studentData?['_id'] ?? 'STU001';
-    final sessionId = TelemetryService().sessionStartTime?.toIso8601String() ?? DateTime.now().toIso8601String();
-    
+    final studentId = _studentId;
+    if (studentId == null) {
+      debugPrint('C4 submission skipped: no authenticated student identifier.');
+      return null;
+    }
+    final sessionId = TelemetryService().sessionId;
+
     final payload = {
       "student_id": studentId,
       "session_id": sessionId,
+      "event_id": '$sessionId:$payloadItemId:attempt:$_attemptCount',
       "skill_id": widget.activityNode.skillId,
       "activity_id": widget.activityNode.id,
-      "round_number": _currentRound,
+      "round_number": roundNumber,
       "item_id": payloadItemId,
+      "knowledge_component_id":
+          widget.activityNode.researchMetadata?.knowledgeComponentId ??
+          'KC_UNKNOWN',
       "phase": "ATTEMPT",
-      "response": {
-        "selected_character": "item", 
-        "is_correct": false
-      },
+      "response": {"selected_character": "item", "is_correct": false},
       "telemetry": {
-        "first_touch_latency_ms": _firstTouchLatencyMs >= 0 ? _firstTouchLatencyMs : 0,
+        "first_touch_latency_ms": _firstTouchLatencyMs >= 0
+            ? _firstTouchLatencyMs
+            : 0,
         "total_round_latency_ms": _roundStopwatch.elapsedMilliseconds,
         "hesitation_count": _hesitationCount,
         "misclick_count": _misclickCount,
         "audio_replay_count": _audioReplayCount,
-        "scaffold_level_used": 0,
+        "scaffold_level_used": _highestScaffoldUsed,
         "touch_stream": _currentTouchPath.map((p) => p.toJson()).toList(),
-        if (extraTelemetry != null) ...extraTelemetry
-      }
+        if (extraTelemetry != null) ...extraTelemetry,
+      },
     };
-    
+
     final result = await StudentService().submitInteraction(payload);
-    
+
     if (result != null && result['next_action'] != null) {
       final level = result['next_action']['scaffold_level'];
       if (level is num && level.toInt() > _highestScaffoldUsed) {
         _highestScaffoldUsed = level.toInt();
       }
     }
-    
+
     debugPrint('\n===== TASK ATTEMPT =====');
     debugPrint('item=$payloadItemId');
     debugPrint('attempt=$_misclickCount');
     debugPrint('result=$result');
     debugPrint('======================\n');
-    
+
     return result;
+  }
+
+  String? get _studentId {
+    final value =
+        widget.studentData?['id'] ??
+        widget.studentData?['_id'] ??
+        widget.studentData?['student_id'];
+    final id = value?.toString().trim();
+    return id == null || id.isEmpty ? null : id;
+  }
+
+  List<String> _extractSelectedAnswers(Map<String, dynamic>? telemetry) {
+    if (telemetry == null) return const <String>[];
+    final raw =
+        telemetry['selected_option_ids'] ??
+        telemetry['selected_answers'] ??
+        telemetry['selected_option_id'];
+    if (raw is Iterable) return raw.map((value) => value.toString()).toList();
+    return raw == null ? const <String>[] : <String>[raw.toString()];
+  }
+
+  /// Applies either the V2 command protocol or the legacy C4 response through
+  /// the shared reducer and records treatment fidelity for research analysis.
+  ScaffoldApplicationReport? applyScaffoldResult<T>({
+    required AdaptiveChoiceController<T> controller,
+    required Map<String, dynamic>? result,
+    Iterable<String> correctOptionIds = const <String>[],
+  }) {
+    final raw = result?['next_action'];
+    if (raw is! Map) return null;
+    final nextAction = Map<String, dynamic>.from(raw);
+    final plan = ScaffoldPlan.fromNextAction(
+      nextAction,
+      correctOptionIds: correctOptionIds,
+    );
+    if (plan.scaffoldLevel > _highestScaffoldUsed) {
+      _highestScaffoldUsed = plan.scaffoldLevel;
+    }
+    if (plan.isEmpty) return null;
+    final report = controller.applyPlan(plan);
+    _hintCount += plan.commands
+        .where(
+          (command) =>
+              command.type == ScaffoldActionType.highlightOptions ||
+              command.type == ScaffoldActionType.removeOptions,
+        )
+        .length;
+    _scaffoldApplications.add(<String, dynamic>{
+      ...report.toJson(),
+      'scaffold_level': plan.scaffoldLevel,
+      'policy_version': plan.policyVersion,
+      'reason_codes': plan.reasonCodes,
+    });
+    debugPrint('C4 scaffold applied: ${_scaffoldApplications.last}');
+    return report;
+  }
+
+  /// Applies non-choice commands (sequence, sorting, listening) without
+  /// coupling the policy service to an activity's widget tree.
+  ScaffoldPlan? semanticScaffoldPlanFromResult({
+    required Map<String, dynamic>? result,
+    Iterable<String> correctOptionIds = const <String>[],
+    int visibleOptionCount = 0,
+  }) {
+    final raw = result?['next_action'];
+    if (raw is! Map) return null;
+    final plan = ScaffoldPlan.fromNextAction(
+      Map<String, dynamic>.from(raw),
+      correctOptionIds: correctOptionIds,
+    );
+    if (plan.isEmpty) return null;
+    if (plan.scaffoldLevel > _highestScaffoldUsed) {
+      _highestScaffoldUsed = plan.scaffoldLevel;
+    }
+    _hintCount += plan.commands.length;
+    _scaffoldApplications.add(<String, dynamic>{
+      'action_id': plan.actionId,
+      'command_types': plan.commands
+          .map((command) => command.type.name)
+          .toList(),
+      'requested_option_ids': plan.commands
+          .expand((command) => command.targetOptionIds)
+          .toSet()
+          .toList(),
+      'applied_option_ids': plan.commands
+          .expand((command) => command.targetOptionIds)
+          .toSet()
+          .toList(),
+      'visible_before': visibleOptionCount,
+      'visible_after': visibleOptionCount,
+      'rejected_reasons': const <String>[],
+      'scaffold_level': plan.scaffoldLevel,
+      'policy_version': plan.policyVersion,
+      'reason_codes': plan.reasonCodes,
+    });
+    return plan;
+  }
+
+  Future<ScaffoldPlan?> requestSemanticScaffold({
+    required String itemId,
+    required List<String> visibleOptionIds,
+    required List<String> selectedOptionIds,
+    required List<String> correctOptionIds,
+    required List<String> supportedActions,
+    required String errorType,
+    List<String> incorrectOptionIds = const <String>[],
+    int minimumVisibleOptions = 2,
+  }) async {
+    final result = await registerAdaptiveWrongAttempt(
+      itemId: itemId,
+      extraTelemetry: <String, dynamic>{
+        'original_options_count': visibleOptionIds.length,
+        'visible_option_ids': visibleOptionIds,
+        'selected_option_ids': selectedOptionIds,
+        'correct_option_ids': correctOptionIds,
+        'incorrect_option_ids': incorrectOptionIds,
+        'supported_actions': supportedActions,
+        'minimum_visible_options': minimumVisibleOptions,
+        'error_type': errorType,
+      },
+    );
+    return semanticScaffoldPlanFromResult(
+      result: result,
+      correctOptionIds: correctOptionIds,
+      visibleOptionCount: visibleOptionIds.length,
+    );
   }
 
   /// Game activities should call this when the child replays an audio instruction.
@@ -320,12 +489,42 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   }
 
   /// Called by individual game activities when a round is completed.
-  Future<int?> completeRound(int baseScore, {int? currentRoundIndex}) async {
-    await completeAdaptiveRound(baseScore, currentRoundIndex: currentRoundIndex);
+  Future<int?> completeRound(
+    int baseScore, {
+    int? currentRoundIndex,
+    String? itemId,
+    bool? isCorrect,
+    List<String> selectedAnswers = const <String>[],
+    String? errorType,
+    int correctionCount = 0,
+    int hintCount = 0,
+    bool attemptAlreadyLogged = false,
+  }) async {
+    await completeAdaptiveRound(
+      baseScore,
+      currentRoundIndex: currentRoundIndex,
+      itemId: itemId,
+      isCorrect: isCorrect,
+      selectedAnswers: selectedAnswers,
+      errorType: errorType,
+      correctionCount: correctionCount,
+      hintCount: hintCount,
+      attemptAlreadyLogged: attemptAlreadyLogged,
+    );
     return _currentRound - 1;
   }
 
-  Future<Map<String, dynamic>?> completeAdaptiveRound(int baseScore, {int? currentRoundIndex, String? itemId}) async {
+  Future<Map<String, dynamic>?> completeAdaptiveRound(
+    int baseScore, {
+    int? currentRoundIndex,
+    String? itemId,
+    bool? isCorrect,
+    List<String> selectedAnswers = const <String>[],
+    String? errorType,
+    int correctionCount = 0,
+    int hintCount = 0,
+    bool attemptAlreadyLogged = false,
+  }) async {
     if (currentRoundIndex != null) {
       _currentRound = currentRoundIndex + 1;
     }
@@ -334,9 +533,19 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
     _roundStopwatch.stop();
     final totalRoundLatency = _roundStopwatch.elapsedMilliseconds;
-    
-    int timeToFirstResponseMs = _firstTouchLatencyMs >= 0 ? _firstTouchLatencyMs : 0;
-    int timeToCorrectMs = isCorrect ? totalRoundLatency : 0;
+
+    final finalIsCorrect = isCorrect ?? baseScore > 0;
+    if (!attemptAlreadyLogged) {
+      logAttempt(
+        isCorrect: finalIsCorrect,
+        selectedAnswers: selectedAnswers,
+        errorType: errorType,
+      );
+    }
+    int timeToFirstResponseMs = _firstTouchLatencyMs >= 0
+        ? _firstTouchLatencyMs
+        : 0;
+    int timeToCorrectMs = finalIsCorrect ? totalRoundLatency : 0;
 
     // Nuanced Scoring: Apply penalties for cognitive effort struggles
     int penalty = (_misclickCount * 5) + (_hesitationCount * 2);
@@ -347,16 +556,22 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
     // Resolve Canonical Metadata
     var rounds = widget.activityNode.rounds;
-    Map<String, dynamic> roundData = _currentRound <= rounds.length ? rounds[_currentRound - 1] : {};
-    
-    final canonical = CanonicalItemResolver.resolve(widget.activityNode, roundData, _currentRound - 1);
+    Map<String, dynamic> roundData = _currentRound <= rounds.length
+        ? rounds[_currentRound - 1]
+        : {};
+
+    final canonical = CanonicalItemResolver.resolve(
+      widget.activityNode,
+      roundData,
+      _currentRound - 1,
+    );
     final researchMeta = widget.activityNode.researchMetadata;
 
     // Build and log the rich telemetry event
     final event = TelemetryEvent(
       activityName: widget.activityNode.templateType,
       roundNumber: _currentRound,
-      isCorrect: isCorrect,
+      isCorrect: finalIsCorrect,
       score: finalRoundScore,
       timestamp: DateTime.now(),
       firstTouchLatencyMs: timeToFirstResponseMs,
@@ -371,7 +586,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       attemptCount: _attemptCount,
       incorrectAttemptCount: _incorrectAttemptCount,
       firstAttemptCorrect: _firstAttemptCorrect,
-      finalCorrect: isCorrect,
+      finalCorrect: finalIsCorrect,
       timeToFirstResponseMs: timeToFirstResponseMs,
       timeToCorrectMs: timeToCorrectMs,
       skillId: widget.activityNode.skillId,
@@ -387,44 +602,65 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       isAnchor: canonical.isAnchor,
       targets: canonical.targets,
       selectedAnswers: List.unmodifiable(_accumulatedAnswers),
-      errorType: _firstErrorType ?? errorType,
+      errorType: _firstErrorType ?? errorType ?? 'none',
     );
 
-    TelemetryService().broadcastRoundComplete(finalRoundScore, totalRoundLatency);
+    TelemetryService().broadcastRoundComplete(
+      finalRoundScore,
+      totalRoundLatency,
+    );
     TelemetryService().logInteraction(event);
 
     // --- NEW: Real-time Orchestrator Submission (C1-C4) ---
-    final studentId = widget.studentData?['id'] ?? widget.studentData?['_id'] ?? 'STU001';
-    final sessionId = TelemetryService().sessionStartTime?.toIso8601String() ?? DateTime.now().toIso8601String();
-    
-    final payloadItemId = itemId ?? "${widget.activityNode.id}_round$_currentRound";
+    final studentId = _studentId;
+    final sessionId = TelemetryService().sessionId;
+
+    final payloadItemId = CanonicalItemResolver.normalizeItemId(
+      itemId ?? canonical.itemId,
+    );
 
     final payload = {
       "schema_version": "2.0",
       "student_id": studentId,
       "session_id": sessionId,
+      "event_id": '$sessionId:$payloadItemId:complete',
       "skill_id": widget.activityNode.skillId,
       "activity_id": widget.activityNode.id,
       "round_number": _currentRound,
       "item_id": payloadItemId,
-      "response": {
-        "selected_character": "item", 
-        "is_correct": event.firstAttemptCorrect ?? event.isCorrect
-      },
+      "knowledge_component_id": event.knowledgeComponentId,
+      "difficulty_b": event.difficultyB,
+      "is_anchor": event.isAnchor,
+      "response": {"selected_character": "item", "is_correct": event.isCorrect},
       "telemetry": {
-        "first_touch_latency_ms": event.firstTouchLatencyMs >= 0 ? event.firstTouchLatencyMs : 0,
+        "first_touch_latency_ms": event.firstTouchLatencyMs >= 0
+            ? event.firstTouchLatencyMs
+            : 0,
         "total_round_latency_ms": event.totalRoundLatencyMs,
         "hesitation_count": event.hesitationCount,
         "misclick_count": event.misclickCount,
         "audio_replay_count": event.audioReplayCount,
         "scaffold_level_used": _highestScaffoldUsed,
-        "touch_stream": event.touchPath.map((p) => p.toJson()).toList()
-      }
+        "touch_stream": event.touchPath.map((p) => p.toJson()).toList(),
+        "attempt_count": event.attemptCount,
+        "incorrect_attempt_count": event.incorrectAttemptCount,
+        "first_attempt_correct": event.firstAttemptCorrect,
+        "correction_count": event.correctionCount,
+        "hint_count": event.hintCount,
+        "scaffold_applications": List<Map<String, dynamic>>.from(
+          _scaffoldApplications,
+        ),
+      },
     };
-    
+
     // Await response
-    final result = await StudentService().submitInteraction(payload);
-    
+    final result = studentId == null
+        ? null
+        : await StudentService().submitInteraction(payload);
+    if (studentId == null) {
+      debugPrint('C4 submission skipped: no authenticated student identifier.');
+    }
+
     _applyAdaptiveNextAction(result, itemId: payloadItemId);
 
     if (finalRoundScore > 0) {
@@ -463,6 +699,14 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     _hesitationCount = 0;
     _audioReplayCount = 0;
     _highestScaffoldUsed = 0;
+    _attemptCount = 0;
+    _incorrectAttemptCount = 0;
+    _firstAttemptCorrect = null;
+    _accumulatedAnswers.clear();
+    _firstErrorType = null;
+    _correctionCount = 0;
+    _hintCount = 0;
+    _scaffoldApplications.clear();
     _roundStopwatch.reset();
     _roundStopwatch.start();
     _hesitationStopwatch.reset();
@@ -479,14 +723,15 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   }
 
   @visibleForTesting
-  void applyAdaptiveNextAction(Map<String, dynamic>? result, {String? itemId}) => _applyAdaptiveNextAction(result, itemId: itemId);
+  void applyAdaptiveNextAction(
+    Map<String, dynamic>? result, {
+    String? itemId,
+  }) => _applyAdaptiveNextAction(result, itemId: itemId);
 
-  void _applyAdaptiveNextAction(Map<String, dynamic>? result, {String? itemId}) {
-    if (widget.activityNode.skillId != 'skill_2') {
-      debugPrint('[C4 ADAPTIVE GATE] skill=${widget.activityNode.skillId} adaptive=false reason=SKILL_2_ONLY_PILOT');
-      return;
-    }
-
+  void _applyAdaptiveNextAction(
+    Map<String, dynamic>? result, {
+    String? itemId,
+  }) {
     bool fallback = true;
     try {
       if (result != null && result.containsKey('next_action')) {
@@ -495,15 +740,18 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
           final decision = nextAction['decision']?.toString();
           final nextActivity = nextAction['next_activity']?.toString();
           final nextItem = nextAction['next_item']?.toString();
-          
-          final completionResult = result['response_quality'] ?? (_misclickCount == 0 ? "CLEAN_SUCCESS" : "STRUGGLED_SUCCESS");
+
+          final completionResult =
+              result['response_quality'] ??
+              (_misclickCount == 0 ? "CLEAN_SUCCESS" : "STRUGGLED_SUCCESS");
           debugPrint('\n===== C4 FRONTEND ADAPTATION =====');
           debugPrint('COMPLETED_ITEM=$itemId');
           debugPrint('COMPLETION_RESULT=$completionResult');
           debugPrint('NEXT_DECISION=${nextAction["decision"]}');
           debugPrint('SELECTED_NEXT_ITEM=$nextItem');
 
-          if (decision == 'CURRICULUM_COMPLETE' || decision == 'ACTIVITY_COMPLETE') {
+          if (decision == 'CURRICULUM_COMPLETE' ||
+              decision == 'ACTIVITY_COMPLETE') {
             debugPrint('\nAction:\nC4_ACTIVITY_OR_CURRICULUM_COMPLETE');
             _activityCompleted = true;
             // Do NOT pop here. Let the game handle showing the completion UI
@@ -512,20 +760,32 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
 
           if (nextItem != null && nextActivity != null) {
             // Parse canonical S(\d+)A(\d+)R(\d+) and optional (V\d+)
-            final regex = RegExp(r'^S(\d+)A(\d+)R(\d+)(V\d+)?$', caseSensitive: false);
-            final match = regex.firstMatch(nextItem);
-            
+            final normalizedNextItem = CanonicalItemResolver.normalizeItemId(
+              nextItem,
+            );
+            final regex = RegExp(
+              r'^S(\d+)A(\d+)R(\d+)(V\d+)?$',
+              caseSensitive: false,
+            );
+            final match = regex.firstMatch(normalizedNextItem);
+
             if (match != null) {
               final pSkill = int.tryParse(match.group(1) ?? '');
               final pAct = int.tryParse(match.group(2) ?? '');
               final pRound = int.tryParse(match.group(3) ?? '');
-              
-              debugPrint('\nParsed:\nskill=$pSkill\nactivity=$pAct\nround=$pRound');
-              
+
+              debugPrint(
+                '\nParsed:\nskill=$pSkill\nactivity=$pAct\nround=$pRound',
+              );
+
               // Determine current canonical activity
               String currentCanonical = "";
-              final sMatch = RegExp(r'skill_(\d+)').firstMatch(widget.activityNode.skillId ?? '');
-              final aMatch = RegExp(r'act_(\d+)').firstMatch(widget.activityNode.id);
+              final sMatch = RegExp(
+                r'skill_(\d+)',
+              ).firstMatch(widget.activityNode.skillId ?? '');
+              final aMatch = RegExp(
+                r'act_(\d+)',
+              ).firstMatch(widget.activityNode.id);
               if (sMatch != null && aMatch != null) {
                 currentCanonical = "${sMatch.group(1)}.${aMatch.group(1)}";
               }
@@ -533,8 +793,11 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
               if (currentCanonical == nextActivity) {
                 if (pRound != null) {
                   int nextIndex = pRound - 1;
-                  if (nextIndex >= 0 && nextIndex < widget.activityNode.rounds.length) {
-                    debugPrint('\nAction:\nADAPTIVE SAME-ACTIVITY JUMP\n\nFlutter next round index:\n$nextIndex');
+                  if (nextIndex >= 0 &&
+                      nextIndex < widget.activityNode.rounds.length) {
+                    debugPrint(
+                      '\nAction:\nADAPTIVE SAME-ACTIVITY JUMP\n\nFlutter next round index:\n$nextIndex',
+                    );
                     _currentRound = pRound;
                     fallback = false;
                   } else {
@@ -556,12 +819,14 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
           debugPrint('C4_RESPONSE_MISSING_FALLBACK (null next_action)');
         }
       } else {
-        debugPrint('BACKEND_ERROR_SEQUENTIAL_FALLBACK (no result or missing next_action)');
+        debugPrint(
+          'BACKEND_ERROR_SEQUENTIAL_FALLBACK (no result or missing next_action)',
+        );
       }
     } catch (e) {
       debugPrint('Error parsing adaptive result: $e');
     }
-    
+
     if (fallback) {
       _currentRound++;
     }
@@ -593,7 +858,10 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => GameFactory.buildGame(widget.activityNode, studentData: widget.studentData),
+              builder: (context) => GameFactory.buildGame(
+                widget.activityNode,
+                studentData: widget.studentData,
+              ),
             ),
           );
         } else {
@@ -613,13 +881,14 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       child: widget.child,
     );
   }
+
   Future<void> _navigateToC4Activity(String nextActivity, int? pRound) async {
     final sMatch = RegExp(r'^(\d+)\.(\d+)$').firstMatch(nextActivity);
     if (sMatch == null) {
       debugPrint('\nAction:\nC4_NEXT_ACTIVITY_UNAVAILABLE (parse failed)');
       return;
     }
-    
+
     final sNum = sMatch.group(1);
     final aNum = sMatch.group(2);
     final skillId = 'skill_$sNum';
@@ -627,7 +896,9 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     final targetRoundIndex = (pRound ?? 1) - 1;
 
     debugPrint('\n===== C4 ACTIVITY PROGRESSION =====');
-    debugPrint('Destination:\nskill=$skillId\nactivity=$activityId\nround=${targetRoundIndex + 1}');
+    debugPrint(
+      'Destination:\nskill=$skillId\nactivity=$activityId\nround=${targetRoundIndex + 1}',
+    );
 
     try {
       final skillDetail = await SkillDetail.load('$skillId.json');
@@ -640,11 +911,17 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       }
 
       if (targetNode != null) {
-        debugPrint('\nActivity node:\nFOUND\n\nAction:\nNAVIGATING TO C4 ACTIVITY');
+        debugPrint(
+          '\nActivity node:\nFOUND\n\nAction:\nNAVIGATING TO C4 ACTIVITY',
+        );
         debugPrint('===================================\n');
 
         TelemetryService().startActivity(targetNode.title);
-        await ProgressService().saveActivityState(skillId, activityId, targetRoundIndex);
+        await ProgressService().saveActivityState(
+          skillId,
+          activityId,
+          targetRoundIndex,
+        );
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -664,5 +941,4 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       debugPrint('\nAction:\nC4_NEXT_ACTIVITY_UNAVAILABLE ($e)');
     }
   }
-
 }

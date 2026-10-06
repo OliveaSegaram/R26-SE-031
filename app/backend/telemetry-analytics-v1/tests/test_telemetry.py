@@ -60,6 +60,25 @@ async def test_submit_telemetry(client, mock_db, mock_user):
     data = response.json()
     assert "message" in data
 
+
+@pytest.mark.asyncio
+async def test_retried_session_is_idempotent(client, mock_db, mock_user):
+    student_id = MOCK_TELEMETRY_PAYLOAD["student_id"]
+    await mock_db.students.insert_one(
+        {"_id": ObjectId(student_id), "parent_id": mock_user["_id"]}
+    )
+
+    first = client.post("/api/v1/auth/telemetry", json=MOCK_TELEMETRY_PAYLOAD)
+    second = client.post("/api/v1/auth/telemetry", json=MOCK_TELEMETRY_PAYLOAD)
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+    assert await mock_db.telemetry_events.count_documents(
+        {"event_id": "test_evt_1"}
+    ) == 1
+    stored = await mock_db.telemetry_events.find_one({"event_id": "test_evt_1"})
+    assert stored["ingestion_key"] == f"{student_id}:test_evt_1"
+
 @pytest.mark.asyncio
 async def test_get_comp2_analytics(client, mock_db, mock_user):
     student_id = MOCK_TELEMETRY_PAYLOAD["student_id"]

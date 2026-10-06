@@ -39,10 +39,10 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
 
   Future<void> _loadAllData() async {
     if (mounted) setState(() => _isLoading = true);
-    final studentId = widget.studentData['student_id']?.toString() ?? widget.studentData['id']?.toString() ?? widget.studentData['_id']?.toString();
-    Future<Map<String, dynamic>> capture(Future<Map<String, dynamic>> request) async {
-      try { return await request; } catch (e) { return {'_error': e.toString()}; }
-    }
+    final studentId = widget.studentData['student_id']?.toString() ??
+        widget.studentData['id']?.toString() ??
+        widget.studentData['_id']?.toString() ??
+        '';
 
     final responses = await Future.wait([
       _dashboardService.getOverview(studentId),
@@ -161,9 +161,15 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
                   _buildReportsTab(),
                 ],
               ),
-            ),
       ),
     );
+  }
+
+  String metricText(dynamic value, {String suffix = '', int decimals = 1}) {
+    if (value == null) return '—';
+    final number = value is num ? value : num.tryParse(value.toString());
+    if (number == null) return value.toString();
+    return '${number.toStringAsFixed(decimals)}$suffix';
   }
 
   Widget _buildOverviewTab() {
