@@ -310,8 +310,8 @@ async def test_11_assisted_final_success_uses_first_attempt_for_mastery(client):
     assert body["bkt_evidence"]["first_attempt_correct"] is False
     assert body["bkt_evidence"]["final_correct"] is True
     assert body["bkt_evidence"]["mastery_after"] < body["bkt_evidence"]["mastery_before"]
-    assert body["next_action"]["decision"] == "CONFIRMATION_FALLBACK"
-    assert body["next_action"]["next_item"] == "S2A1R01"
+    assert body["next_action"]["decision"] == "REMEDIATION"
+    assert body["next_action"]["next_item"] == "S2A1R01V1"
 
 
 @pytest.mark.asyncio
@@ -408,17 +408,92 @@ async def test_13_skill1_assisted_core_runs_remediation_then_confirmation(client
     assert assisted["response_quality"] == "ASSISTED_SUCCESS"
     assert assisted["next_action"]["decision"] == "REMEDIATION"
     assert assisted["next_action"]["next_phase"] == "REMEDIATION"
-    assert assisted["next_action"]["next_item"] == "S1A1R02"
+    assert assisted["next_action"]["next_item"] == "S1A1R03V1"
     assert assisted["next_action"]["progress_total"] == 5
 
-    remediation = await complete("S1A1R02", True)
+    remediation = await complete("S1A1R03V1", True)
     assert remediation["next_action"]["decision"] == "CONFIRMATION"
     assert remediation["next_action"]["next_phase"] == "CONFIRMATION"
-    assert remediation["next_action"]["next_item"] == "S1A1R03"
+    assert remediation["next_action"]["next_item"] == "S1A1R03V2"
 
-    confirmation = await complete("S1A1R03", True)
+    confirmation = await complete("S1A1R03V2", True)
     assert confirmation["next_action"]["next_phase"] == "CORE"
     assert confirmation["next_action"]["next_item"] == "S1A1R04"
-    assert "S1A1_UNASSISTED_CONFIRMATION_PASSED" in (
+    assert "UNASSISTED_EQUIVALENT_CONFIRMATION_PASSED" in (
         confirmation["selection_evidence"]["policy_reason"]
     )
+
+
+@pytest.mark.asyncio
+async def test_14_irt_ability_is_scoped_to_the_current_knowledge_component(client):
+    await mock_db["knowledge_states"].update_one(
+        {"student_id": "domain_theta_student"},
+        {"$set": {
+            "knowledge_state": {"KC_LETTER_IDENTIFICATION": 0.5},
+            "theta_estimate": 2.0,
+            "theta_by_kc": {
+                "KC_VISUAL_IDENTIFICATION": 1.5,
+                "KC_LETTER_IDENTIFICATION": -1.0,
+            },
+            "adaptive_states": {
+                "2.1": {
+                    "expected_item_id": "S2A1R01",
+                    "next_phase": "CORE",
+                },
+            },
+        }},
+        upsert=True,
+    )
+    payload = dict(MOCK_PAYLOAD)
+    payload["student_id"] = "domain_theta_student"
+
+    response = client.post("/update_interaction", json=payload)
+    assert response.status_code == 200
+    evidence = response.json()["irt_evidence"]
+    assert evidence["theta_before"] == -1.0
+    assert evidence["ability_scope"] == "KC_LETTER_IDENTIFICATION"
+    assert evidence["observation_count"] == 1
+    assert evidence["standard_error_after"] > 0
+    assert evidence["test_information_after"] > 0
+
+
+@pytest.mark.asyncio
+async def test_15_stale_core_completion_cannot_bypass_equivalent_remediation(client):
+    student_id = "stale_completion_student"
+    await mock_db["knowledge_states"].update_one(
+        {"student_id": student_id},
+        {"$set": {
+            "knowledge_state": {"KC_VISUAL_IDENTIFICATION": 0.5},
+            "adaptive_states": {
+                "1.1": {
+                    "expected_item_id": "S1A1R03V1",
+                    "next_phase": "REMEDIATION",
+                    "administered_item_ids": ["S1A1R01", "S1A1R02", "S1A1R03"],
+                },
+            },
+        }},
+        upsert=True,
+    )
+    payload = {
+        "student_id": student_id,
+        "session_id": "stale-session",
+        "skill_id": "skill_1",
+        "activity_id": "1.1",
+        "knowledge_component_id": "KC_VISUAL_IDENTIFICATION",
+        "item_id": "S1A1R03",
+        "is_correct": True,
+        "phase": "COMPLETE",
+        "current_session_duration_sec": 10,
+        "telemetry": {"first_attempt_correct": True},
+    }
+
+    response = client.post("/update_interaction", json=payload)
+    assert response.status_code == 200
+    action = response.json()["next_action"]
+    assert action["decision"] == "RETRY_CURRENT"
+    assert action["next_item"] == "S1A1R03V1"
+    assert action["next_phase"] == "REMEDIATION"
+    assert "STALE_OR_DUPLICATE_COMPLETION_IGNORED" in action["reason_codes"]
+    assert await mock_db["adaptive_decisions"].count_documents({
+        "student_id": student_id,
+    }) == 0
