@@ -68,8 +68,13 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
         "ingestion_key": ingestion_key,
         "student_id": payload.student_id,
         "session_id": payload.session_id,
+        "skill_id": payload.skill_id,
         "activity_id": payload.activity_id,
         "item_id": payload.item_id,
+        "knowledge_component_id": payload.knowledge_component_id,
+        "difficulty_b": payload.difficulty_b,
+        "is_anchor": payload.is_anchor,
+        "phase": payload.phase,
         "timestamp": datetime.utcnow().isoformat(),
         "is_correct": payload.response.is_correct,
         "first_touch_latency_ms": payload.telemetry.first_touch_latency_ms,
@@ -106,30 +111,9 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
     # C1 descriptive processing is performed by authenticated end-of-session ingestion.
     # No duplicate call to the incompatible legacy /api/v1/c1/session route is made.
 
-    # Save C4 Decision
-    c4_doc = {
-        "event_id": event_id,
-        "student_id": payload.student_id,
-        "session_id": payload.session_id,
-        "timestamp": datetime.utcnow().isoformat(),
-        "mastery_before": c4_result.get("previous_knowledge_state", {}).get(payload.knowledge_component_id),
-        "previous_difficulty": payload.difficulty_b,
-        "item_id": payload.item_id,
-        "decision": c4_result.get("next_action", {}).get("decision", "Unavailable"),
-        "mastery_after": c4_result.get("updated_knowledge_state", {}).get(payload.knowledge_component_id),
-        "selected_difficulty": c4_result.get("next_action", {}).get("difficulty"),
-        "selected_activity": c4_result.get("next_action", {}).get("next_activity", "Skill_2"),
-        "scaffold_level": c4_result.get("next_action", {}).get("scaffold_level", 0),
-        "decision_reason": c4_result.get("next_action", {}).get("decision", "CONTINUE"),
-        "policy_version": c4_result.get("next_action", {}).get(
-            "policy_version", "C4_POLICY_V2"
-        ),
-        "reason_codes": c4_result.get("next_action", {}).get("reason_codes", []),
-    }
-    if c4_result.get("updated_knowledge_state"):
-        c4_doc["data_origin"] = "observed"
-        c4_doc["validation_status"] = "not_clinically_validated"
-        await db.adaptive_decisions.insert_one(c4_doc)
+    # C4 owns adaptive-decision persistence.  The gateway stores the raw
+    # telemetry event only; writing the decision here as well previously
+    # produced two research rows for one child interaction.
     
     # Save Speech Features and Transcriptions separately as requested
     if payload.speech:
