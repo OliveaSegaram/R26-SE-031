@@ -113,27 +113,35 @@ async def submit_telemetry(
     session_key = {"student_id": req.student_id, "session_id": req.session_id}
     await db.telemetry_sessions.update_one(session_key, {"$set": session_doc}, upsert=True)
     
-    # Store individual events idempotently
-    from pymongo import UpdateOne
+    # Store individual events idempotently. Legacy databases may contain
+    # repeated event_id values, so reconcile one old record and then use a
+    # unique v2 ingestion key for all later retries.
     events_list = session_doc.get("events", [])
     if events_list:
-        operations = []
         for event in events_list:
             event["schema_version"] = "2.0"
             event["session_id"] = req.session_id
             event["student_id"] = req.student_id
-            if "event_id" in event:
-                operations.append(UpdateOne(
-                    {"event_id": event["event_id"]},
-                    {"$set": event},
-                    upsert=True
-                ))
-        try:
-            await db.telemetry_events.bulk_write(operations, ordered=False)
-        except TypeError:
-            # Fallback for mongomock compatibility in tests
-            for op in operations:
-                await db.telemetry_events.update_one(op._filter, op._doc, upsert=op._upsert)
+            event_id = event.get("event_id")
+            if not event_id:
+                continue
+            ingestion_key = f"{req.student_id}:{event_id}"
+            event["ingestion_key"] = ingestion_key
+            existing = await db.telemetry_events.find_one(
+                {"ingestion_key": ingestion_key}, {"_id": 1}
+            )
+            if not existing:
+                existing = await db.telemetry_events.find_one(
+                    {"event_id": event_id}, {"_id": 1}
+                )
+            event_filter = {"_id": existing["_id"]} if existing else {
+                "ingestion_key": ingestion_key
+            }
+            await db.telemetry_events.update_one(
+                event_filter,
+                {"$set": event},
+                upsert=existing is None,
+            )
 
     summary = extract_session_features(req).model_dump()
     await db.session_summaries.update_one(
@@ -561,5 +569,4 @@ async def get_assessment_report_pdf(student_id: str, current_user: dict = Depend
         media_type="application/pdf", 
         headers={"Content-Disposition": f"attachment; filename=Assessment_Report_{student_id}.pdf"}
     )
-
 
