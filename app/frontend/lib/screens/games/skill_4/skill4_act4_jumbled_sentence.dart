@@ -91,7 +91,10 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence>
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
-    final currentRound = rounds[_currentRoundIndex];
+    final currentRound = adaptiveSequenceRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    );
     final scrambledList =
         (currentRound['scrambled_words'] as List?)
             ?.map((e) => e.toString())
@@ -122,7 +125,10 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence>
   void _playCurrentInstruction({bool autoPlay = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
-    final currentRound = rounds[_currentRoundIndex];
+    final currentRound = adaptiveSequenceRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    );
     final instructionText =
         currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වාක්‍යය සාදන්න';
 
@@ -172,7 +178,10 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence>
     });
 
     final rounds = widget.activityNode?.rounds ?? [];
-    final currentRound = rounds[_currentRoundIndex];
+    final currentRound = adaptiveSequenceRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    );
     final correctSentence = currentRound['correct_sentence']?.toString() ?? "";
 
     // Join words with a space and append full stop
@@ -184,15 +193,17 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence>
       setState(() {
         _isCorrect = true;
       });
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+      final transition = await completeAdaptiveSequenceTask(
         100,
+        roundIndex: _currentRoundIndex,
+        selectedAnswers: _filledSlots.map((e) => e!.word).toList(),
       );
       SoundUtils.playFeedback('audio/correct.mp3');
 
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (!mounted) return;
-        if (_currentRoundIndex < rounds.length - 1) {
-          _currentRoundIndex++;
+        if (transition != null && !transition.isComplete) {
+          _currentRoundIndex = transition.roundIndex;
           final sId = widget.activityNode?.skillId ?? '';
           final aId = widget.activityNode?.id ?? '';
           if (sId.isNotEmpty && aId.isNotEmpty) {
@@ -267,7 +278,10 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence>
       rounds = rounds.sublist(0, 5);
     }
 
-    final currentRound = rounds[_currentRoundIndex];
+    final currentRound = adaptiveSequenceRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    );
     final titleText = widget.activityNode?.title ?? 'වාක්‍යය සකසමු';
     final promptText =
         currentRound['prompt']?.toString() ?? 'පින්තූරයට අදාළ වාක්‍යය සාදන්න';
