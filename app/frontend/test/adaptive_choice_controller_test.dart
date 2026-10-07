@@ -80,6 +80,96 @@ void main() {
     expect(choices.visibleOptions, hasLength(2));
   });
 
+  test('two-card memory preserves both cards and can highlight the target', () {
+    final choices = AdaptiveChoiceController<int>(
+      minimumVisibleOptions: 2,
+      options: const <AdaptiveOption<int>>[
+        AdaptiveOption<int>(
+          id: 'S1A5R01_O1',
+          value: 0,
+          role: AdaptiveOptionRole.target,
+        ),
+        AdaptiveOption<int>(
+          id: 'S1A5R01_O2',
+          value: 1,
+          role: AdaptiveOptionRole.visualDistractor,
+        ),
+      ],
+    );
+
+    final removal = choices.applyPlan(
+      const ScaffoldPlan(
+        actionId: 'memory-remove-plan',
+        commands: <ScaffoldCommand>[
+          ScaffoldCommand(
+            actionId: 'memory-remove-wrong',
+            type: ScaffoldActionType.removeOptions,
+            targetOptionIds: <String>{'S1A5R01_O2'},
+          ),
+        ],
+      ),
+    );
+
+    expect(choices.visibleOptions, hasLength(2));
+    expect(
+      removal.rejectedReasons,
+      contains('MINIMUM_VISIBLE_OPTIONS_REACHED'),
+    );
+
+    choices.applyPlan(
+      const ScaffoldPlan(
+        actionId: 'memory-highlight-plan',
+        commands: <ScaffoldCommand>[
+          ScaffoldCommand(
+            actionId: 'memory-highlight-target',
+            type: ScaffoldActionType.highlightOptions,
+            targetOptionIds: <String>{'S1A5R01_O1'},
+          ),
+        ],
+      ),
+    );
+    expect(
+      choices.visualStateFor('S1A5R01_O1'),
+      AdaptiveOptionVisualState.hint,
+    );
+  });
+
+  test(
+    'disabled memory card stays visible but becomes non-interactive state',
+    () {
+      final choices = AdaptiveChoiceController<int>(
+        options: const <AdaptiveOption<int>>[
+          AdaptiveOption<int>(
+            id: 'S1A5R02_O1',
+            value: 0,
+            role: AdaptiveOptionRole.target,
+          ),
+          AdaptiveOption<int>(id: 'S1A5R02_O2', value: 1),
+          AdaptiveOption<int>(id: 'S1A5R02_O3', value: 2),
+        ],
+      );
+
+      choices.applyPlan(
+        const ScaffoldPlan(
+          actionId: 'memory-lock-plan',
+          commands: <ScaffoldCommand>[
+            ScaffoldCommand(
+              actionId: 'memory-lock-wrong',
+              type: ScaffoldActionType.disableOptions,
+              targetOptionIds: <String>{'S1A5R02_O2'},
+            ),
+          ],
+        ),
+      );
+
+      expect(choices.visibleOptions, hasLength(3));
+      expect(
+        choices.visualStateFor('S1A5R02_O2'),
+        AdaptiveOptionVisualState.disabled,
+      );
+    },
+  );
+
   test('the same action is idempotent', () {
     final choices = controller();
     const plan = ScaffoldPlan(
