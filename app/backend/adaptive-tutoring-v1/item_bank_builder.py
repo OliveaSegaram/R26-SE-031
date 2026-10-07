@@ -173,6 +173,13 @@ def _item_document(
         "is_core": item_role == "CORE",
         "item_role": item_role,
         "equivalent_group_id": equivalent_group_id,
+        "has_reduced_remediation": bool(
+            round_data.get("has_reduced_remediation", False)
+        ),
+        "response_load_relation": round_data.get(
+            "response_load_relation",
+            "core" if item_role == "CORE" else "equivalent",
+        ),
         "allowed_scaffolds": _capabilities(activity.get("template_type", "")),
         "minimum_visible_options": 2,
         "options": options,

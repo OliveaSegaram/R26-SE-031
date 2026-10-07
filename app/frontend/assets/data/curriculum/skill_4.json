@@ -38,6 +38,7 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
                   "image_url": "assets/images/games/boy_drawing.png",
@@ -56,6 +57,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
                   "image_url": "assets/images/games/boy_flying_kite.png",
@@ -67,7 +69,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": false
           },
           {
             "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
@@ -92,6 +95,7 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
                   "image_url": "assets/images/games/boy_feeding_dog.jpg",
@@ -110,6 +114,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
                   "image_url": "assets/images/games/children_playing_ball.jpg",
@@ -121,7 +126,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": false
           },
           {
             "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
@@ -145,15 +151,15 @@
                 "item_id": "S4A1R03V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
                   "image_url": "assets/images/games/girl_reading_tree.jpg",
                   "options": [
                     "නංගි පොතක් කියවනවා.",
-                    "නංගි පාසල් යනවා.",
-                    "මල් පිපෙනවා."
+                    "නංගි පාසල් යනවා."
                   ],
                   "correctOption": "නංගි පොතක් කියවනවා.",
                   "correct_index": 0
@@ -166,6 +172,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
                   "image_url": "assets/images/games/girl_going_to_school.png",
@@ -178,7 +185,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
@@ -202,15 +210,15 @@
                 "item_id": "S4A1R04V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
                   "image_url": "assets/images/games/flower_blooming.png",
                   "options": [
                     "මල් පිපෙනවා.",
-                    "හඳ පායනවා.",
-                    "අම්මා කෑම උයනවා."
+                    "හඳ පායනවා."
                   ],
                   "correctOption": "මල් පිපෙනවා.",
                   "correct_index": 0
@@ -223,6 +231,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
                   "image_url": "assets/images/games/moon_shining.png",
@@ -235,7 +244,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
@@ -260,16 +270,16 @@
                 "item_id": "S4A1R05V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 1.0,
-                "difficulty_label": "hard",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
                   "image_url": "assets/images/games/mother_cooking.png",
                   "options": [
                     "අම්මා කෑම උයනවා.",
                     "තාත්තා ඔරුව පදිනවා.",
-                    "මල්ලි චිත්‍රයක් අඳිනවා.",
-                    "මල්ලි සරුංගලයක් යවනවා."
+                    "මල්ලි චිත්‍රයක් අඳිනවා."
                   ],
                   "correctOption": "අම්මා කෑම උයනවා.",
                   "correct_index": 0
@@ -282,6 +292,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
                   "image_url": "assets/images/games/rowing_boat.png",
@@ -295,7 +306,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           }
         ],
         "research_metadata": {
@@ -342,6 +354,7 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
                   "sequence": [
@@ -365,6 +378,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
                   "sequence": [
@@ -381,7 +395,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": false
           },
           {
             "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
@@ -410,6 +425,7 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
                   "sequence": [
@@ -434,6 +450,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
                   "sequence": [
@@ -451,7 +468,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": false
           },
           {
             "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
@@ -480,8 +498,9 @@
                 "item_id": "S4A2R03V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
                   "sequence": [
@@ -492,8 +511,7 @@
                   "image_url": "assets/images/games/girl_reading_tree.jpg",
                   "options": [
                     "පොතක්",
-                    "බෝලය",
-                    "හඳ"
+                    "බෝලය"
                   ],
                   "correctOption": "පොතක්",
                   "correct_index": 0
@@ -506,6 +524,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
                   "sequence": [
@@ -523,7 +542,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
@@ -553,8 +573,9 @@
                 "item_id": "S4A2R04V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
                   "sequence": [
@@ -565,8 +586,7 @@
                   "options": [
                     "පිපෙනවා",
                     "පොත",
-                    "මල්",
-                    "කෑම"
+                    "මල්"
                   ],
                   "correctOption": "පිපෙනවා",
                   "correct_index": 0
@@ -579,6 +599,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
                   "sequence": [
@@ -596,7 +617,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
@@ -626,8 +648,9 @@
                 "item_id": "S4A2R05V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 1.0,
-                "difficulty_label": "hard",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
                   "sequence": [
@@ -639,8 +662,7 @@
                   "options": [
                     "කෑම",
                     "පාසල්",
-                    "බෝලය",
-                    "හඳ"
+                    "බෝලය"
                   ],
                   "correctOption": "කෑම",
                   "correct_index": 0
@@ -653,6 +675,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
                   "sequence": [
@@ -671,7 +694,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           }
         ],
         "research_metadata": {
@@ -714,6 +738,7 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
                   "audio_text": "මල්ලි චිත්‍රයක් අඳිනවා.",
@@ -732,6 +757,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
                   "audio_text": "මල්ලි සරුංගලයක් යවනවා.",
@@ -743,7 +769,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": false
           },
           {
             "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
@@ -768,6 +795,7 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
                   "audio_text": "මල්ලි බල්ලාට කෑම දෙනවා.",
@@ -786,6 +814,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
                   "audio_text": "ළමයි බෝල සෙල්ලම් කරනවා.",
@@ -797,7 +826,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": false
           },
           {
             "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
@@ -821,15 +851,15 @@
                 "item_id": "S4A3R03V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
                   "audio_text": "නංගි පොතක් කියවනවා.",
                   "options": [
                     "නංගි පොතක් කියවනවා.",
-                    "කියවනවා පොතක් නංගි.",
-                    "පොතක් නංගි කියවනවා."
+                    "කියවනවා පොතක් නංගි."
                   ],
                   "correctOption": "නංගි පොතක් කියවනවා.",
                   "correct_index": 0
@@ -842,6 +872,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
                   "audio_text": "නංගි පාසල් යනවා.",
@@ -854,7 +885,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
@@ -879,16 +911,16 @@
                 "item_id": "S4A3R04V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
                   "audio_text": "මල් පිපෙනවා.",
                   "options": [
                     "මල් පිපෙනවා.",
                     "පිපෙනවා මල්.",
-                    "අම්මා කෑම උයනවා.",
-                    "තාත්තා ඔරුව පදිනවා."
+                    "අම්මා කෑම උයනවා."
                   ],
                   "correctOption": "මල් පිපෙනවා.",
                   "correct_index": 0
@@ -901,6 +933,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
                   "audio_text": "හඳ පායනවා.",
@@ -914,7 +947,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
@@ -939,16 +973,16 @@
                 "item_id": "S4A3R05V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 1.0,
-                "difficulty_label": "hard",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
                   "audio_text": "අම්මා කෑම උයනවා.",
                   "options": [
                     "අම්මා කෑම උයනවා.",
                     "උයනවා කෑම අම්මා.",
-                    "කෑම අම්මා උයනවා.",
-                    "අම්මා උයනවා කෑම."
+                    "කෑම අම්මා උයනවා."
                   ],
                   "correctOption": "අම්මා කෑම උයනවා.",
                   "correct_index": 0
@@ -961,6 +995,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
                   "audio_text": "තාත්තා ඔරුව පදිනවා.",
@@ -974,7 +1009,8 @@
                   "correct_index": 0
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           }
         ],
         "research_metadata": {
@@ -1017,13 +1053,14 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
-                  "image_url": "assets/images/games/boy_drawing.png",
-                  "correct_sentence": "මල්ලි චිත්‍රයක් අඳිනවා.",
+                  "image_url": "assets/images/games/flower_blooming.png",
+                  "correct_sentence": "මල් පිපෙනවා.",
                   "scrambled_words": [
-                    "චිත්‍රයක් අඳිනවා",
-                    "මල්ලි"
+                    "පිපෙනවා",
+                    "මල්"
                   ]
                 }
               },
@@ -1034,17 +1071,19 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
-                  "image_url": "assets/images/games/boy_flying_kite.png",
-                  "correct_sentence": "මල්ලි සරුංගලයක් යවනවා.",
+                  "image_url": "assets/images/games/moon_shining.png",
+                  "correct_sentence": "හඳ පායනවා.",
                   "scrambled_words": [
-                    "සරුංගලයක් යවනවා",
-                    "මල්ලි"
+                    "පායනවා",
+                    "හඳ"
                   ]
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": false
           },
           {
             "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
@@ -1068,13 +1107,14 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
-                  "image_url": "assets/images/games/boy_feeding_dog.jpg",
-                  "correct_sentence": "මල්ලි බල්ලාට කෑම දෙනවා.",
+                  "image_url": "assets/images/games/flower_blooming.png",
+                  "correct_sentence": "මල් පිපෙනවා.",
                   "scrambled_words": [
-                    "බල්ලාට කෑම දෙනවා",
-                    "මල්ලි"
+                    "පිපෙනවා",
+                    "මල්"
                   ]
                 }
               },
@@ -1085,17 +1125,19 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
-                  "image_url": "assets/images/games/children_playing_ball.jpg",
-                  "correct_sentence": "ළමයි බෝල සෙල්ලම් කරනවා.",
+                  "image_url": "assets/images/games/moon_shining.png",
+                  "correct_sentence": "හඳ පායනවා.",
                   "scrambled_words": [
-                    "බෝල සෙල්ලම් කරනවා",
-                    "ළමයි"
+                    "පායනවා",
+                    "හඳ"
                   ]
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": false
           },
           {
             "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
@@ -1118,16 +1160,16 @@
                 "item_id": "S4A4R03V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
-                  "image_url": "assets/images/games/girl_reading_tree.jpg",
-                  "correct_sentence": "නංගි පොතක් කියවනවා.",
+                  "image_url": "assets/images/games/flower_blooming.png",
+                  "correct_sentence": "මල් පිපෙනවා.",
                   "scrambled_words": [
-                    "කියවනවා",
-                    "පොතක්",
-                    "නංගි"
+                    "පිපෙනවා",
+                    "මල්"
                   ]
                 }
               },
@@ -1138,18 +1180,20 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
-                  "image_url": "assets/images/games/girl_going_to_school.png",
-                  "correct_sentence": "නංගි පාසල් යනවා.",
+                  "image_url": "assets/images/games/rowing_boat.png",
+                  "correct_sentence": "තාත්තා ඔරුව පදිනවා.",
                   "scrambled_words": [
-                    "යනවා",
-                    "පාසල්",
-                    "නංගි"
+                    "පදිනවා",
+                    "ඔරුව",
+                    "තාත්තා"
                   ]
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
@@ -1172,16 +1216,16 @@
                 "item_id": "S4A4R04V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
-                  "image_url": "assets/images/games/mother_cooking.png",
-                  "correct_sentence": "අම්මා කෑම උයනවා.",
+                  "image_url": "assets/images/games/flower_blooming.png",
+                  "correct_sentence": "මල් පිපෙනවා.",
                   "scrambled_words": [
-                    "උයනවා",
-                    "කෑම",
-                    "අම්මා"
+                    "පිපෙනවා",
+                    "මල්"
                   ]
                 }
               },
@@ -1192,18 +1236,20 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
-                  "image_url": "assets/images/games/rowing_boat.png",
-                  "correct_sentence": "තාත්තා ඔරුව පදිනවා.",
+                  "image_url": "assets/images/games/boy_flying_kite.png",
+                  "correct_sentence": "මල්ලි සරුංගලයක් යවනවා.",
                   "scrambled_words": [
-                    "පදිනවා",
-                    "ඔරුව",
-                    "තාත්තා"
+                    "යවනවා",
+                    "සරුංගලයක්",
+                    "මල්ලි"
                   ]
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
@@ -1227,17 +1273,17 @@
                 "item_id": "S4A4R05V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 1.0,
-                "difficulty_label": "hard",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
-                  "image_url": "assets/images/games/boy_feeding_dog.jpg",
-                  "correct_sentence": "මල්ලි බල්ලාට කෑම දෙනවා.",
+                  "image_url": "assets/images/games/girl_reading_tree.jpg",
+                  "correct_sentence": "නංගි පොතක් කියවනවා.",
                   "scrambled_words": [
-                    "දෙනවා",
-                    "කෑම",
-                    "බල්ලාට",
-                    "මල්ලි"
+                    "කියවනවා",
+                    "පොතක්",
+                    "නංගි"
                   ]
                 }
               },
@@ -1248,6 +1294,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
                   "image_url": "assets/images/games/children_playing_ball.jpg",
@@ -1260,7 +1307,8 @@
                   ]
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           }
         ],
         "research_metadata": {

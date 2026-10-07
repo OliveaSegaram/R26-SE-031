@@ -53,8 +53,14 @@ def test_every_skill_one_to_four_core_has_distinct_remediation_and_confirmation(
         confirmation = by_id[f'{core["item_id"]}V2']
         assert remediation["item_role"] == "REMEDIATION"
         assert confirmation["item_role"] == "CONFIRMATION"
-        assert remediation["difficulty_b"] == core["difficulty_b"]
+        if core["has_reduced_remediation"]:
+            assert remediation["difficulty_b"] < core["difficulty_b"]
+            assert remediation["response_load_relation"] == "reduced"
+        else:
+            assert remediation["difficulty_b"] == core["difficulty_b"]
+            assert remediation["response_load_relation"] == "equivalent"
         assert confirmation["difficulty_b"] == core["difficulty_b"]
+        assert confirmation["response_load_relation"] == "equivalent"
         assert len({core["content_hash"], remediation["content_hash"], confirmation["content_hash"]}) == 3
 
 
@@ -78,18 +84,54 @@ def test_pair_matching_variants_never_repeat_a_required_letter():
         assert len(values) == len(set(values)), item["item_id"]
 
 
-def test_equivalent_tasks_preserve_core_response_load():
-    items = build_items()
-    by_id = {item["item_id"]: item for item in items}
-    variants = [
-        item for item in items
-        if not item["is_core"]
-        and item["skill_id"] in {"skill_1", "skill_2", "skill_3", "skill_4"}
+def test_skill_one_sorting_never_classifies_ice_cream_as_fruit():
+    sorting_items = [
+        item for item in build_items()
+        if item["activity_id"] == "1.3"
     ]
 
-    for variant in variants:
-        core = by_id[variant["equivalent_group_id"]]
-        assert len(variant["options"]) == len(core["options"]), variant["item_id"]
+    assert sorting_items
+    for item in sorting_items:
+        fruit_assets = item["content"]["categories"].get("fruits", [])
+        assert "fruits_food/ice_cream.png" not in fruit_assets, item["item_id"]
+
+
+def _response_load(content):
+    if content.get("targets"):
+        return int(content.get("target_count", 1)) + len(content.get("distractors") or [])
+    if content.get("target_assets"):
+        return len(content["target_assets"])
+    if content.get("categories"):
+        return sum(len(values) for values in content["categories"].values())
+    for key in ("options", "items", "letters", "assets", "scrambled_letters", "scrambled_words", "pattern"):
+        if content.get(key):
+            return len(content[key])
+    return 0
+
+
+def test_remediation_reduces_load_when_valid_and_confirmation_preserves_it():
+    items = build_items()
+    by_id = {item["item_id"]: item for item in items}
+    cores = [item for item in items if item["is_core"] and item["skill_id"] in {
+        "skill_1", "skill_2", "skill_3", "skill_4"
+    }]
+
+    for core in cores:
+        remediation = by_id[f'{core["item_id"]}V1']
+        confirmation = by_id[f'{core["item_id"]}V2']
+        core_load = _response_load(core["content"])
+        remediation_load = _response_load(remediation["content"])
+        confirmation_load = _response_load(confirmation["content"])
+        assert confirmation_load == core_load, confirmation["item_id"]
+        assert remediation_load <= core_load, remediation["item_id"]
+        if core["has_reduced_remediation"]:
+            has_more_viewing_time = (
+                remediation["content"].get("show_milliseconds", 0)
+                > core["content"].get("show_milliseconds", 0)
+                or remediation["content"].get("show_seconds", 0)
+                > core["content"].get("show_seconds", 0)
+            )
+            assert remediation_load < core_load or has_more_viewing_time, remediation["item_id"]
 
 
 def test_hidden_search_items_have_stable_target_and_distractor_records():

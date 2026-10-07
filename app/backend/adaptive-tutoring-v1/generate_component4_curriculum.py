@@ -2,10 +2,11 @@
 
 This is a deterministic curriculum build step.  It snapshots the four Skill 1
 runtime generators into the canonical curriculum and gives every core item two
-unseen, same-difficulty equivalents:
+unseen instructional equivalents:
 
-* V1 - remediation content
-* V2 - independent confirmation content
+* V1 - reduced-load remediation content when the activity has a valid lower
+  task; otherwise it is retained in the bank but skipped by policy
+* V2 - independent confirmation content at the original task load/difficulty
 
 The generated JSON remains the runtime source for Flutter and the item-bank
 source for the adaptive service, preventing frontend/backend content drift.
@@ -38,6 +39,17 @@ ASSETS = [
     "everyday_objects/bell.png", "everyday_objects/clock.png",
     "everyday_objects/hat.png", "everyday_objects/kite.png",
     "everyday_objects/umbrella.png", "everyday_objects/pencil.png",
+]
+
+# Ice cream remains a valid general-purpose visual item, but it must never be
+# sampled into the semantic fruit category used by Skill 1 Activity 3.
+FRUIT_ASSETS = [
+    "fruits_food/apple.png",
+    "fruits_food/banana.png",
+    "fruits_food/grapes.png",
+    "fruits_food/mango.png",
+    "fruits_food/orange.png",
+    "fruits_food/watermelon.png",
 ]
 
 ASSET_NAMES = {
@@ -86,7 +98,7 @@ def skill1_rounds() -> Dict[str, List[Dict[str, Any]]]:
 
     category_assets = {
         "animals": ASSETS[0:11],
-        "fruits": ASSETS[11:18],
+        "fruits": FRUIT_ASSETS,
         "flowers": ASSETS[18:23],
         "vehicles": ASSETS[23:28],
     }
@@ -200,6 +212,141 @@ def rotate(values: List[Any], start: int, count: int) -> List[Any]:
     return [copy.deepcopy(values[(start + offset) % len(values)]) for offset in range(count)]
 
 
+def difficulty_label(difficulty: float) -> str:
+    return "easy" if difficulty < -0.25 else "hard" if difficulty > 0.75 else "medium"
+
+
+def _reduce_choice_options(content: Dict[str, Any]) -> bool:
+    options = list(content.get("options") or [])
+    if len(options) <= 2:
+        return False
+
+    correct_values: List[Any] = []
+    if content.get("correctOption") is not None:
+        correct_values.append(content["correctOption"])
+    for index in content.get("correct_indices") or []:
+        if 0 <= index < len(options):
+            correct_values.append(options[index])
+    if not correct_values and isinstance(content.get("correct_index"), int):
+        index = content["correct_index"]
+        if 0 <= index < len(options):
+            correct_values.append(options[index])
+
+    minimum = max(2, len(correct_values) + (1 if correct_values else 0))
+    desired = max(minimum, len(options) - 1)
+    kept: List[Any] = []
+    for value in [*correct_values, *options]:
+        if value not in kept:
+            kept.append(value)
+        if len(kept) == desired:
+            break
+    content["options"] = kept
+    if content.get("correctOption") is not None:
+        content["correct_index"] = kept.index(content["correctOption"])
+    if content.get("correct_indices") is not None:
+        content["correct_indices"] = [kept.index(value) for value in correct_values]
+    return len(kept) < len(options)
+
+
+def reduce_remediation_load(
+    skill: int,
+    activity: int,
+    content: Dict[str, Any],
+    core: Dict[str, Any],
+) -> tuple[Dict[str, Any], bool]:
+    """Reduce one valid cognitive-load dimension without making a task invalid."""
+    easier = copy.deepcopy(content)
+
+    if skill == 1 and activity == 1:
+        old_targets = int(easier.get("target_count", 1))
+        old_distractors = int(easier.get("distractor_count", 0))
+        easier["target_count"] = max(1, old_targets - 1)
+        easier["distractors"] = list(easier.get("distractors") or [])[:max(1, old_distractors - 2)]
+        easier["distractor_count"] = len(easier["distractors"])
+        return easier, (
+            easier["target_count"] < old_targets
+            or easier["distractor_count"] < old_distractors
+        )
+
+    if skill == 1 and activity == 2:
+        assets = list(easier.get("target_assets") or [])
+        if len(assets) <= 2:
+            return easier, False
+        easier["target_assets"] = assets[:-1]
+        return easier, True
+
+    if skill == 1 and activity == 3:
+        categories = easier.get("categories") or {}
+        candidates = [
+            key for key, values in categories.items() if len(values) > 1
+        ]
+        if not candidates:
+            return easier, False
+        largest = max(candidates, key=lambda key: len(categories[key]))
+        categories[largest] = list(categories[largest])[:-1]
+        return easier, True
+
+    if skill == 1 and activity == 5:
+        assets = list(easier.get("assets") or [])
+        reduced = len(assets) > 2
+        if reduced:
+            easier["assets"] = assets[:-1]
+            if easier.get("target_asset") not in easier["assets"]:
+                easier["target_asset"] = easier["assets"][0]
+        easier["show_milliseconds"] = int(
+            easier.get("show_milliseconds", 4000)
+        ) + 2000
+        return easier, True
+
+    if skill == 2 and activity == 1:
+        items = list(easier.get("items") or [])
+        targets = [item for item in items if item.get("is_target")]
+        distractors = [item for item in items if not item.get("is_target")]
+        if len(items) <= 3 or not targets or not distractors:
+            return easier, False
+        desired = max(3, len(items) - 2)
+        easier["items"] = [*distractors[:desired - 1], targets[0]]
+        return easier, True
+
+    if skill == 2 and activity == 2:
+        letters = list(easier.get("letters") or [])
+        if len(letters) <= 2:
+            return easier, False
+        easier["letters"] = letters[:-1]
+        return easier, True
+
+    if skill == 2 and activity == 5:
+        pattern = list(easier.get("pattern") or [])
+        if len(pattern) > 2:
+            pattern = pattern[:-1]
+            easier["pattern"] = pattern
+            distractor = next(
+                (value for value in easier.get("options", []) if value not in pattern),
+                "ස",
+            )
+            easier["options"] = [*pattern, distractor]
+        easier["show_seconds"] = int(easier.get("show_seconds", 5)) + 2
+        return easier, True
+
+    if (skill, activity) in {
+        (1, 4), (2, 3), (2, 4),
+        (3, 1), (3, 2), (3, 3), (3, 4),
+        (4, 1), (4, 2), (4, 3),
+    }:
+        return easier, _reduce_choice_options(easier)
+
+    # Jumbled-word and jumbled-sentence V1 content is generated at a shorter
+    # valid length directly in variant_content.
+    if skill == 3 and activity == 5:
+        core_length = len(core.get("scrambled_letters") or [])
+        return easier, core_length > 2
+    if skill == 4 and activity == 4:
+        core_length = len(core.get("scrambled_words") or [])
+        return easier, core_length > 2
+
+    return easier, False
+
+
 def variant_content(skill: int, activity: int, round_index: int, variant: int, core: Dict[str, Any]) -> Dict[str, Any]:
     slot = (round_index - 1) * 2 + (variant - 1)
     option_count = len((core.get("content") or core).get("options") or [])
@@ -220,7 +367,7 @@ def variant_content(skill: int, activity: int, round_index: int, variant: int, c
     if skill == 1 and activity == 3:
         categories = list(core["categories"])
         shifted = {}
-        source = {"animals": ASSETS[0:11], "fruits": ASSETS[11:18], "flowers": ASSETS[18:23], "vehicles": ASSETS[23:28]}
+        source = {"animals": ASSETS[0:11], "fruits": FRUIT_ASSETS, "flowers": ASSETS[18:23], "vehicles": ASSETS[23:28]}
         for pos, category in enumerate(categories):
             count = len(core["categories"][category])
             shifted[category] = rotate(source[category], slot + pos + 2, count)
@@ -342,7 +489,10 @@ def variant_content(skill: int, activity: int, round_index: int, variant: int, c
                 "options": options, "correctOption": target, "correct_index": options.index(target)}
 
     if skill == 3 and activity == 5:
-        parts, word = WORD_PARTS[slot % len(WORD_PARTS)]
+        core_length = len(core.get("scrambled_letters") or [])
+        desired = max(2, core_length - 1) if variant == 1 else core_length
+        eligible = [entry for entry in WORD_PARTS if len(entry[0]) == desired]
+        parts, word = eligible[slot % len(eligible)]
         return {"prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න", "correct_word": word,
                 "scrambled_letters": list(reversed(parts))}
 
@@ -383,15 +533,11 @@ def variant_content(skill: int, activity: int, round_index: int, variant: int, c
                 "options": options, "correctOption": sentence, "correct_index": options.index(sentence)}
 
     if skill == 4 and activity == 4:
-        desired = len((core.get("scrambled_words") or []))
-        eligible = [
-            entry for entry in SENTENCES
-            if len(entry[1].rstrip(".").split()) >= desired
-        ]
+        core_length = len((core.get("scrambled_words") or []))
+        desired = max(2, core_length - 1) if variant == 1 else core_length
+        eligible = [entry for entry in SENTENCES if len(entry[1].rstrip(".").split()) == desired]
         image, sentence = eligible[slot % len(eligible)]
         words = sentence.rstrip(".").split()
-        if desired and len(words) > desired:
-            words = words[:desired - 1] + [" ".join(words[desired - 1:])]
         return {"prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න", "image_url": image,
                 "correct_sentence": " ".join(words) + ".", "scrambled_words": list(reversed(words))}
 
@@ -428,17 +574,29 @@ def build() -> None:
                     )
                 round_data.setdefault("is_anchor", round_index == 4)
                 variants = []
+                has_reduced_remediation = False
                 for variant_number, role in ((1, "REMEDIATION"), (2, "CONFIRMATION")):
                     content = variant_content(skill, activity_number, round_index, variant_number, round_data)
+                    reduced = False
+                    if variant_number == 1:
+                        content, reduced = reduce_remediation_load(
+                            skill, activity_number, content, round_data
+                        )
+                        has_reduced_remediation = reduced
+                    variant_difficulty = float(round_data.get("difficulty_b", 0.0))
+                    if variant_number == 1 and reduced:
+                        variant_difficulty = max(-3.0, round(variant_difficulty - 0.5, 2))
                     variants.append({
                         "variant_id": f"V{variant_number}",
                         "item_id": f"{item_id}V{variant_number}",
                         "item_version": 2,
                         "item_role": role,
-                        "difficulty_b": round_data.get("difficulty_b"),
-                        "difficulty_label": round_data.get("difficulty_label"),
+                        "difficulty_b": variant_difficulty,
+                        "difficulty_label": difficulty_label(variant_difficulty),
+                        "response_load_relation": "reduced" if reduced else "equivalent",
                         "content": content,
                     })
+                round_data["has_reduced_remediation"] = has_reduced_remediation
                 round_data["adaptive_variants"] = variants
         path.write_text(json.dumps(decoded, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 

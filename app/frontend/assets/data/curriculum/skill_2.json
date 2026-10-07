@@ -48,16 +48,12 @@
                 "item_id": "S2A1R01V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -1.0,
+                "difficulty_b": -1.5,
                 "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'ක' අකුර සොයන්න.",
                   "items": [
-                    {
-                      "type": "letter",
-                      "value": "ත",
-                      "is_target": false
-                    },
                     {
                       "type": "letter",
                       "value": "ත",
@@ -83,6 +79,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'ග' අකුර සොයන්න.",
                   "items": [
@@ -115,7 +112,8 @@
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
-            "equivalent_group_id": "S2A1R01"
+            "equivalent_group_id": "S2A1R01",
+            "has_reduced_remediation": true
           },
           {
             "core_round": 2,
@@ -150,16 +148,12 @@
                 "item_id": "S2A1R02V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -1.0,
+                "difficulty_b": -1.5,
                 "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'ප' අකුර සොයන්න.",
                   "items": [
-                    {
-                      "type": "letter",
-                      "value": "බ",
-                      "is_target": false
-                    },
                     {
                       "type": "letter",
                       "value": "බ",
@@ -185,6 +179,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'ල' අකුර සොයන්න.",
                   "items": [
@@ -217,7 +212,8 @@
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
-            "equivalent_group_id": "S2A1R02"
+            "equivalent_group_id": "S2A1R02",
+            "has_reduced_remediation": true
           },
           {
             "core_round": 3,
@@ -252,16 +248,12 @@
                 "item_id": "S2A1R03V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -1.0,
+                "difficulty_b": -1.5,
                 "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'න' අකුර සොයන්න.",
                   "items": [
-                    {
-                      "type": "letter",
-                      "value": "ම",
-                      "is_target": false
-                    },
                     {
                       "type": "letter",
                       "value": "ම",
@@ -287,6 +279,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'ස' අකුර සොයන්න.",
                   "items": [
@@ -319,7 +312,8 @@
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
-            "equivalent_group_id": "S2A1R03"
+            "equivalent_group_id": "S2A1R03",
+            "has_reduced_remediation": true
           },
           {
             "core_round": 4,
@@ -354,16 +348,12 @@
                 "item_id": "S2A1R04V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'ට' අකුර සොයන්න.",
                   "items": [
-                    {
-                      "type": "letter",
-                      "value": "ඩ",
-                      "is_target": false
-                    },
                     {
                       "type": "letter",
                       "value": "ඩ",
@@ -389,6 +379,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'බ' අකුර සොයන්න.",
                   "items": [
@@ -421,7 +412,8 @@
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": true,
-            "equivalent_group_id": "S2A1R04"
+            "equivalent_group_id": "S2A1R04",
+            "has_reduced_remediation": true
           },
           {
             "core_round": 5,
@@ -466,21 +458,12 @@
                 "item_id": "S2A1R05V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'ඉ' අකුර සොයන්න.",
                   "items": [
-                    {
-                      "type": "letter",
-                      "value": "ඊ",
-                      "is_target": false
-                    },
-                    {
-                      "type": "letter",
-                      "value": "ඊ",
-                      "is_target": false
-                    },
                     {
                       "type": "letter",
                       "value": "ඊ",
@@ -511,6 +494,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'උ' අකුර සොයන්න.",
                   "items": [
@@ -553,7 +537,8 @@
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": false,
-            "equivalent_group_id": "S2A1R05"
+            "equivalent_group_id": "S2A1R05",
+            "has_reduced_remediation": true
           },
           {
             "core_round": 6,
@@ -598,8 +583,9 @@
                 "item_id": "S2A1R06V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 1.0,
-                "difficulty_label": "hard",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'එ' අකුර සොයන්න.",
                   "items": [
@@ -620,16 +606,6 @@
                     },
                     {
                       "type": "letter",
-                      "value": "ඒ",
-                      "is_target": false
-                    },
-                    {
-                      "type": "letter",
-                      "value": "එ",
-                      "is_target": true
-                    },
-                    {
-                      "type": "letter",
                       "value": "එ",
                       "is_target": true
                     }
@@ -643,6 +619,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'හ' අකුර සොයන්න.",
                   "items": [
@@ -685,7 +662,8 @@
             "difficulty_label": "hard",
             "difficulty_b": 1.0,
             "is_anchor": false,
-            "equivalent_group_id": "S2A1R06"
+            "equivalent_group_id": "S2A1R06",
+            "has_reduced_remediation": true
           },
           {
             "core_round": 7,
@@ -730,8 +708,9 @@
                 "item_id": "S2A1R07V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 1.0,
-                "difficulty_label": "hard",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'ච' අකුර සොයන්න.",
                   "items": [
@@ -752,16 +731,6 @@
                     },
                     {
                       "type": "letter",
-                      "value": "ජ",
-                      "is_target": false
-                    },
-                    {
-                      "type": "letter",
-                      "value": "ච",
-                      "is_target": true
-                    },
-                    {
-                      "type": "letter",
                       "value": "ච",
                       "is_target": true
                     }
@@ -775,6 +744,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'ද' අකුර සොයන්න.",
                   "items": [
@@ -817,7 +787,8 @@
             "difficulty_label": "hard",
             "difficulty_b": 1.0,
             "is_anchor": false,
-            "equivalent_group_id": "S2A1R07"
+            "equivalent_group_id": "S2A1R07",
+            "has_reduced_remediation": true
           }
         ],
         "research_metadata": {
@@ -853,6 +824,7 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "letters": [
                     "ත",
@@ -867,6 +839,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "letters": [
                     "ය",
@@ -880,7 +853,8 @@
             "equivalent_group_id": "S2A2R01",
             "difficulty_b": -1.0,
             "difficulty_label": "easy",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": false
           },
           {
             "core_round": 2,
@@ -898,6 +872,7 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -0.5,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "letters": [
                     "ප",
@@ -912,6 +887,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -0.5,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "letters": [
                     "අ",
@@ -925,7 +901,8 @@
             "equivalent_group_id": "S2A2R02",
             "difficulty_b": -0.5,
             "difficulty_label": "easy",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": false
           },
           {
             "core_round": 3,
@@ -942,13 +919,13 @@
                 "item_id": "S2A2R03V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "letters": [
                     "ක",
-                    "ග",
-                    "ම"
+                    "ග"
                   ]
                 }
               },
@@ -959,6 +936,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "letters": [
                     "ට",
@@ -973,7 +951,8 @@
             "equivalent_group_id": "S2A2R03",
             "difficulty_b": 0.0,
             "difficulty_label": "medium",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": true
           },
           {
             "core_round": 4,
@@ -991,14 +970,14 @@
                 "item_id": "S2A2R04V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.5,
+                "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "letters": [
                     "ක",
                     "ග",
-                    "ත",
-                    "ද"
+                    "ත"
                   ]
                 }
               },
@@ -1009,6 +988,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.5,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "letters": [
                     "ප",
@@ -1024,7 +1004,8 @@
             "equivalent_group_id": "S2A2R04",
             "difficulty_b": 0.5,
             "difficulty_label": "medium",
-            "is_anchor": true
+            "is_anchor": true,
+            "has_reduced_remediation": true
           },
           {
             "core_round": 5,
@@ -1043,15 +1024,15 @@
                 "item_id": "S2A2R05V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 1.0,
-                "difficulty_label": "hard",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "letters": [
                     "ක",
                     "ග",
                     "ට",
-                    "ඩ",
-                    "ත"
+                    "ඩ"
                   ]
                 }
               },
@@ -1062,6 +1043,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
+                "response_load_relation": "equivalent",
                 "content": {
                   "letters": [
                     "ද",
@@ -1078,7 +1060,8 @@
             "equivalent_group_id": "S2A2R05",
             "difficulty_b": 1.0,
             "difficulty_label": "hard",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": true
           }
         ],
         "research_metadata": {
@@ -1114,6 +1097,7 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
                   "audio_text": "ක",
@@ -1132,6 +1116,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
                   "audio_text": "ග",
@@ -1149,7 +1134,8 @@
             "equivalent_group_id": "S2A3R01",
             "difficulty_b": -1.0,
             "difficulty_label": "easy",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": false
           },
           {
             "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
@@ -1166,18 +1152,18 @@
                 "item_id": "S2A3R02V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
                   "audio_text": "ප",
                   "options": [
-                    "ම",
-                    "ය",
-                    "ප"
+                    "ප",
+                    "ම"
                   ],
                   "correctOption": "ප",
-                  "correct_index": 2
+                  "correct_index": 0
                 }
               },
               {
@@ -1187,6 +1173,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -0.5,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
                   "audio_text": "ල",
@@ -1205,7 +1192,8 @@
             "equivalent_group_id": "S2A3R02",
             "difficulty_b": -0.5,
             "difficulty_label": "easy",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": true
           },
           {
             "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
@@ -1222,15 +1210,15 @@
                 "item_id": "S2A3R03V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
                   "audio_text": "න",
                   "options": [
                     "න",
-                    "ත",
-                    "ද"
+                    "ත"
                   ],
                   "correctOption": "න",
                   "correct_index": 0
@@ -1243,6 +1231,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
                   "audio_text": "ස",
@@ -1261,7 +1250,8 @@
             "equivalent_group_id": "S2A3R03",
             "difficulty_b": 0.0,
             "difficulty_label": "medium",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": true
           },
           {
             "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
@@ -1279,19 +1269,19 @@
                 "item_id": "S2A3R04V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.5,
+                "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
                   "audio_text": "ට",
                   "options": [
-                    "ත",
                     "ට",
-                    "ප",
-                    "ඩ"
+                    "ත",
+                    "ප"
                   ],
                   "correctOption": "ට",
-                  "correct_index": 1
+                  "correct_index": 0
                 }
               },
               {
@@ -1301,6 +1291,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.5,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
                   "audio_text": "බ",
@@ -1320,7 +1311,8 @@
             "equivalent_group_id": "S2A3R04",
             "difficulty_b": 0.5,
             "difficulty_label": "medium",
-            "is_anchor": true
+            "is_anchor": true,
+            "has_reduced_remediation": true
           },
           {
             "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
@@ -1339,20 +1331,20 @@
                 "item_id": "S2A3R05V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 1.0,
-                "difficulty_label": "hard",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
                   "audio_text": "ඉ",
                   "options": [
-                    "උ",
                     "ඉ",
+                    "උ",
                     "එ",
-                    "ඊ",
-                    "උ"
+                    "ඊ"
                   ],
                   "correctOption": "ඉ",
-                  "correct_index": 1
+                  "correct_index": 0
                 }
               },
               {
@@ -1362,6 +1354,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
                   "audio_text": "උ",
@@ -1382,7 +1375,8 @@
             "equivalent_group_id": "S2A3R05",
             "difficulty_b": 1.0,
             "difficulty_label": "hard",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": true
           }
         ],
         "research_metadata": {
@@ -1419,6 +1413,7 @@
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'අත' යන වචනයේ මුල් අකුර කුමක්ද?",
                   "options": [
@@ -1436,6 +1431,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'ගස' යන වචනයේ මුල් අකුර කුමක්ද?",
                   "options": [
@@ -1451,7 +1447,8 @@
             "equivalent_group_id": "S2A4R01",
             "difficulty_b": -1.0,
             "difficulty_label": "easy",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": false
           },
           {
             "item_id": "S2A4R02",
@@ -1469,17 +1466,17 @@
                 "item_id": "S2A4R02V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'ඉර' යන වචනයේ මුල් අකුර කුමක්ද?",
                   "options": [
-                    "ම",
-                    "ය",
-                    "ඉ"
+                    "ඉ",
+                    "ම"
                   ],
                   "correctOption": "ඉ",
-                  "correct_index": 2
+                  "correct_index": 0
                 }
               },
               {
@@ -1489,6 +1486,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -0.5,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'මල' යන වචනයේ මුල් අකුර කුමක්ද?",
                   "options": [
@@ -1505,7 +1503,8 @@
             "equivalent_group_id": "S2A4R02",
             "difficulty_b": -0.5,
             "difficulty_label": "easy",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": true
           },
           {
             "item_id": "S2A4R03",
@@ -1523,17 +1522,17 @@
                 "item_id": "S2A4R03V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'කුඩය' යන වචනයේ අග අකුර කුමක්ද?",
                   "options": [
-                    "ම",
                     "ය",
-                    "ව"
+                    "ම"
                   ],
                   "correctOption": "ය",
-                  "correct_index": 1
+                  "correct_index": 0
                 }
               },
               {
@@ -1543,6 +1542,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'කඩය' යන වචනයේ අග අකුර කුමක්ද?",
                   "options": [
@@ -1559,7 +1559,8 @@
             "equivalent_group_id": "S2A4R03",
             "difficulty_b": 0.0,
             "difficulty_label": "medium",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": true
           },
           {
             "item_id": "S2A4R04",
@@ -1578,18 +1579,18 @@
                 "item_id": "S2A4R04V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.5,
+                "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'තරුව' යන වචනයේ අග අකුර කුමක්ද?",
                   "options": [
-                    "ම",
-                    "ය",
                     "ව",
-                    "ස"
+                    "ම",
+                    "ය"
                   ],
                   "correctOption": "ව",
-                  "correct_index": 2
+                  "correct_index": 0
                 }
               },
               {
@@ -1599,6 +1600,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.5,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'පුටුව' යන වචනයේ අග අකුර කුමක්ද?",
                   "options": [
@@ -1616,7 +1618,8 @@
             "equivalent_group_id": "S2A4R04",
             "difficulty_b": 0.5,
             "difficulty_label": "medium",
-            "is_anchor": true
+            "is_anchor": true,
+            "has_reduced_remediation": true
           },
           {
             "item_id": "S2A4R05",
@@ -1639,20 +1642,20 @@
                 "item_id": "S2A4R05V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 1.0,
-                "difficulty_label": "hard",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'පහන' යන වචනයේ මුල් සහ අග අකුරු තෝරන්න",
                   "options": [
-                    "හ",
+                    "ප",
                     "න",
+                    "හ",
                     "ම",
-                    "ය",
-                    "ව",
-                    "ප"
+                    "ය"
                   ],
                   "correct_indices": [
-                    5,
+                    0,
                     1
                   ]
                 }
@@ -1664,6 +1667,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
+                "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "'පනාව' යන වචනයේ මුල් සහ අග අකුරු තෝරන්න",
                   "options": [
@@ -1685,7 +1689,8 @@
             "equivalent_group_id": "S2A4R05",
             "difficulty_b": 1.0,
             "difficulty_label": "hard",
-            "is_anchor": false
+            "is_anchor": false,
+            "has_reduced_remediation": true
           }
         ],
         "research_metadata": {
@@ -1728,10 +1733,11 @@
                 "item_id": "S2A5R01V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -1.0,
+                "difficulty_b": -1.5,
                 "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
-                  "show_seconds": 6,
+                  "show_seconds": 8,
                   "pattern": [
                     "අ",
                     "ත"
@@ -1750,6 +1756,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "show_seconds": 6,
                   "pattern": [
@@ -1763,7 +1770,8 @@
                   ]
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "show_seconds": 5,
@@ -1788,10 +1796,11 @@
                 "item_id": "S2A5R02V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -1.0,
+                "difficulty_b": -1.5,
                 "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
-                  "show_seconds": 5,
+                  "show_seconds": 7,
                   "pattern": [
                     "ඉ",
                     "ර"
@@ -1810,6 +1819,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
                 "content": {
                   "show_seconds": 5,
                   "pattern": [
@@ -1823,7 +1833,8 @@
                   ]
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "show_seconds": 5,
@@ -1850,20 +1861,19 @@
                 "item_id": "S2A5R03V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
-                  "show_seconds": 5,
+                  "show_seconds": 7,
                   "pattern": [
                     "කු",
-                    "ඩ",
-                    "ය"
+                    "ඩ"
                   ],
                   "options": [
                     "කු",
                     "ඩ",
-                    "ය",
-                    "ක"
+                    "ය"
                   ]
                 }
               },
@@ -1874,6 +1884,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "show_seconds": 5,
                   "pattern": [
@@ -1889,7 +1900,8 @@
                   ]
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "show_seconds": 4,
@@ -1916,20 +1928,19 @@
                 "item_id": "S2A5R04V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "reduced",
                 "content": {
-                  "show_seconds": 4,
+                  "show_seconds": 6,
                   "pattern": [
                     "ත",
-                    "රු",
-                    "ව"
+                    "රු"
                   ],
                   "options": [
                     "ත",
                     "රු",
-                    "ව",
-                    "ක"
+                    "ව"
                   ]
                 }
               },
@@ -1940,6 +1951,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
                 "content": {
                   "show_seconds": 4,
                   "pattern": [
@@ -1955,7 +1967,8 @@
                   ]
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           },
           {
             "show_seconds": 4,
@@ -1982,20 +1995,19 @@
                 "item_id": "S2A5R05V1",
                 "item_version": 2,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 1.0,
-                "difficulty_label": "hard",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "reduced",
                 "content": {
-                  "show_seconds": 4,
+                  "show_seconds": 6,
                   "pattern": [
                     "ප",
-                    "හ",
-                    "න"
+                    "හ"
                   ],
                   "options": [
                     "ප",
                     "හ",
-                    "න",
-                    "ක"
+                    "න"
                   ]
                 }
               },
@@ -2006,6 +2018,7 @@
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
+                "response_load_relation": "equivalent",
                 "content": {
                   "show_seconds": 4,
                   "pattern": [
@@ -2021,7 +2034,8 @@
                   ]
                 }
               }
-            ]
+            ],
+            "has_reduced_remediation": true
           }
         ],
         "research_metadata": {
