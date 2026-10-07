@@ -67,7 +67,7 @@
       <div class="c4-step">1</div>
       <article class="card c4-box current"><h3>Activity content</h3><p>Rounds mainly contain prompt, options and correct answer.</p><p>Skill 2 has adaptive variants; other skills mostly do not.</p></article>
       <div class="c4-arrow">→</div>
-      <article class="card c4-box target"><h3>Validated research item bank</h3><p>157 canonical records carry Sinhala KC tags, provisional difficulty, stable option IDs, equivalent groups, validation state and allowed scaffolds.</p></article>
+      <article class="card c4-box target"><h3>Traceable research item bank</h3><p>309 active canonical records include 97 Skill 1–4 core tasks, reduced-load V1 remediation where valid, and original-level V2 confirmation, with KC tags, stable option IDs, equivalent groups and allowed scaffolds.</p></article>
     </div>
 
     <div class="c4-row">
@@ -81,7 +81,7 @@
       <div class="c4-step">3</div>
       <article class="card c4-box current"><h3>Learner estimation</h3><p>Provisional BKT values are almost identical across KCs.</p><p>One global IRT theta mixes visual, phonological and language skills.</p></article>
       <div class="c4-arrow">→</div>
-      <article class="card c4-box target"><h3>BKT + IRT/Rasch pipeline</h3><p><strong>BKT:</strong> updates mastery for each Sinhala KC.</p><p><strong>IRT/Rasch:</strong> updates ability online; the offline calibrator fits item difficulty only after enough real first-attempt data exists.</p></article>
+      <article class="card c4-box target"><h3>BKT + IRT/Rasch pipeline</h3><p><strong>BKT:</strong> updates mastery for each Sinhala KC.</p><p><strong>IRT/Rasch:</strong> updates KC-scoped ability and reports information/SE. Offline calibration fits item difficulty and BKT parameters only after real-data thresholds are met.</p></article>
     </div>
 
     <div class="c4-row">
@@ -95,14 +95,14 @@
       <div class="c4-step">5</div>
       <article class="card c4-box current"><h3>Next action in Flutter</h3><p>Adaptive navigation is explicitly accepted only for Skill 2.</p><p>Other activities continue using their local fixed sequence.</p></article>
       <div class="c4-arrow">→</div>
-      <article class="card c4-box target"><h3>Shared adaptive contract</h3><p>All six skill families use semantic commands for retry, remove, highlight, replay, reveal and worked examples; answer pools reflow automatically.</p></article>
+      <article class="card c4-box target"><h3>Shared adaptive contract</h3><p>All 19 Skill 1–4 activities use semantic commands plus exact V1/V2 navigation; answer pools reflow and the core progress dot remains stable.</p></article>
     </div>
 
     <div class="c4-row">
       <div class="c4-step">6</div>
       <article class="card c4-box current"><h3>Stopping and evidence</h3><p>SE calculation exists but is unused. Decisions may be stored more than once.</p><p>No trained-policy evaluation across all skills.</p></article>
       <div class="c4-arrow">→</div>
-      <article class="card c4-box target"><h3>Auditable validation path</h3><p>Stable event/action IDs prevent duplicate application; inactive duplicate variants cannot be selected.</p><p>Calibration status and sample count clearly separate provisional parameters from fitted results.</p></article>
+      <article class="card c4-box target"><h3>Auditable validation path</h3><p>Stable event/action IDs and expected-item checks prevent duplicate application or bypassing pending V1/V2.</p><p>Calibration status, sample counts, holdout loss, uncertainty and stop reasons separate software completion from empirical validation.</p></article>
     </div>
 
     <div class="c4-result">

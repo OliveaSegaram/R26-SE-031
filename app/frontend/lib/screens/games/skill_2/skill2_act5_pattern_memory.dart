@@ -328,7 +328,6 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
                 .map((option) => option.id)
                 .toList(),
             "supported_actions": [
-              "REMOVE_OPTION",
               "HIGHLIGHT_OPTION",
               "REVEAL_FIRST_TOKEN",
               "REPLAY_INSTRUCTION",

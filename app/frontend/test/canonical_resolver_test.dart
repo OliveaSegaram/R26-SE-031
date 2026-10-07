@@ -92,5 +92,47 @@ void main() {
         expect(resolved.allowedScaffolds, contains('REMOVE_OPTION'));
       },
     );
+
+    test('resolves exact equivalent variant metadata and content', () {
+      final activity = ActivityNode(
+        id: 'act_1',
+        skillId: 'skill_1',
+        title: 'Test',
+        telemetryTags: const [],
+        templateType: 'skill3_image_mcq',
+        rounds: [
+          {
+            'item_id': 'S1A1R01',
+            'difficulty_b': -1.0,
+            'correctOption': 'core',
+            'options': ['core', 'x'],
+            'adaptive_variants': [
+              {
+                'variant_id': 'V1',
+                'item_id': 'S1A1R01V1',
+                'item_version': 2,
+                'difficulty_b': -1.0,
+                'content': {
+                  'correctOption': 'variant',
+                  'options': ['variant', 'y'],
+                },
+              },
+            ],
+          },
+        ],
+      );
+
+      final item = CanonicalItemResolver.resolveByItemId(
+        activity,
+        'S1A1R01V1',
+        0,
+      );
+
+      expect(item.itemId, 'S1A1R01V1');
+      expect(item.itemVersion, 2);
+      expect(item.difficultyB, -1.0);
+      expect(item.targets, ['variant']);
+      expect(item.distractors, ['y']);
+    });
   });
 }

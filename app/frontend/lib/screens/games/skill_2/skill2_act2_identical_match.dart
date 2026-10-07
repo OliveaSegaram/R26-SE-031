@@ -123,11 +123,14 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
     }
   }
 
-  String get _currentItemId => CanonicalItemResolver.canonicalItemId(
-    skillId: widget.activityNode?.skillId ?? 'skill_2',
-    activityId: widget.activityNode?.id ?? 'act_2',
-    roundNumber: _currentRoundIndex + 1,
-  );
+  String get _currentItemId {
+    final core = CanonicalItemResolver.canonicalItemId(
+      skillId: widget.activityNode?.skillId ?? 'skill_2',
+      activityId: widget.activityNode?.id ?? 'act_2',
+      roundNumber: _currentRoundIndex + 1,
+    );
+    return _currentVariantId == null ? core : '$core$_currentVariantId';
+  }
 
   String _pairId(String letter) =>
       _pairIdByLetter[letter] ??
@@ -259,7 +262,11 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
         forceNextIdx ??
         await context
             .findAncestorStateOfType<TelemetryWrapperState>()
-            ?.completeAdaptiveRound(score);
+            ?.completeAdaptiveRound(
+              score,
+              currentRoundIndex: _currentRoundIndex,
+              itemId: _currentItemId,
+            );
 
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (!mounted) return;
@@ -320,11 +327,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             .toList(),
         "correct_option_ids": [_pairId(_selectedTopLetter!)],
         "selected_option_ids": [_pairId(letter)],
-        "supported_actions": [
-          "REMOVE_OPTION",
-          "HIGHLIGHT_OPTION",
-          "REPLAY_INSTRUCTION",
-        ],
+        "supported_actions": ["HIGHLIGHT_OPTION", "REPLAY_INSTRUCTION"],
         "minimum_visible_options": 2,
         "error_type": "visual_matching_error",
       };

@@ -60,6 +60,20 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_db_client():
     await connect_to_mongo()
+    db = database.get_db()
+    models = await db.model_registry.find({
+        "model_type": "BKT",
+        "status": "active",
+    }).to_list(length=100)
+    loaded = 0
+    for model in models:
+        if bkt_engine.apply_calibrated_parameters(
+            model.get("knowledge_component_id", ""),
+            model.get("parameters", {}),
+        ):
+            loaded += 1
+    if loaded:
+        print(f"Loaded {loaded} calibrated BKT knowledge-component models")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
@@ -119,11 +133,16 @@ async def update_interaction(request: InteractionRequest):
 
     if student_doc and "knowledge_state" in student_doc:
         knowledge_state = student_doc["knowledge_state"]
-        theta = student_doc.get("theta_estimate", 0.0)
+        theta_by_kc = dict(student_doc.get("theta_by_kc", {}))
+        # Existing learners migrate safely from the historical global theta.
+        theta = theta_by_kc.get(
+            official_kc, student_doc.get("theta_estimate", 0.0)
+        )
     else:
         knowledge_state = {
             official_kc: bkt_engine.priors.get(official_kc, bkt_engine.priors["default"])[0]
         }
+        theta_by_kc = {}
         theta = 0.0
         
     adaptive_state = get_adaptive_state(student_doc, canonical_act)
@@ -145,6 +164,7 @@ async def update_interaction(request: InteractionRequest):
         # Reset knowledge state and theta
         knowledge_state[official_kc] = bkt_engine.priors.get(official_kc, bkt_engine.priors["default"])[0]
         theta = 0.0
+        theta_by_kc[official_kc] = 0.0
         adaptive_state = _get_default_state(canonical_act)
         adaptive_state["expected_item_id"] = canonical_item
         if canonical_act == "2.2":
@@ -237,6 +257,7 @@ async def update_interaction(request: InteractionRequest):
         update_set = {
             "knowledge_state": knowledge_state,
             "theta_estimate": theta,
+            "theta_by_kc": theta_by_kc,
             "adaptive_states": adaptive_states,
             "last_updated": datetime.utcnow().isoformat()
         }
@@ -259,21 +280,31 @@ async def update_interaction(request: InteractionRequest):
     # COMPLETE Phase: check for duplicate/stale requests
     expected_item = adaptive_state.get("expected_item_id")
     # ---------------------------------------------------------
-    # STALE COMPLETION CHECK (ONLY FOR S2A2 PILOT)
+    # STALE COMPLETION CHECK
     # ---------------------------------------------------------
-    if canonical_act == "2.2" and expected_item and expected_item != canonical_item and not expected_item.startswith(canonical_item):
-        # Ignore stale completion and return the state as is
-        print(f"S2A2_STALE_COMPLETION_IGNORED: Expected {expected_item}, got {canonical_item} (raw: {request.item_id})")
+    if expected_item and expected_item != canonical_item:
+        # Ignore duplicate/out-of-order completions for every activity. This is
+        # essential when a mobile retry arrives after V1/V2 has already begun.
+        print(
+            "C4_STALE_COMPLETION_IGNORED: "
+            f"Expected {expected_item}, got {canonical_item} "
+            f"(raw: {request.item_id})"
+        )
+        is_complete = expected_item == "COMPLETE"
         next_action = NextAction(
             next_activity=canonical_act,
             next_item=expected_item,
             difficulty=difficulty_unit_interval(diff_b),
             difficulty_b=diff_b,
             scaffold_level=0,
-            decision="RETRY_CURRENT",
-            next_phase=adaptive_state.get("next_phase", "CORE"),
+            decision="ACTIVITY_COMPLETE" if is_complete else "RETRY_CURRENT",
+            next_phase="COMPLETE" if is_complete else adaptive_state.get("next_phase", "CORE"),
             progress_core=adaptive_state.get("current_core_round", 1),
-            progress_total=5
+            progress_total=activity_total,
+            reason_codes=["STALE_OR_DUPLICATE_COMPLETION_IGNORED"],
+            policy_version=adaptive_state.get(
+                "adaptive_policy_version", "C4_POLICY_V2"
+            ),
         )
         return TutoringResponse(
             student_id=request.student_id,
@@ -324,6 +355,7 @@ async def update_interaction(request: InteractionRequest):
         b_i=diff_b,
         learning_rate=0.5
     )
+    theta_by_kc[official_kc] = theta_new
 
     # Generate explicit Next Action using Policy Engine
     policy_output = policy_engine.get_next_action(
@@ -335,7 +367,12 @@ async def update_interaction(request: InteractionRequest):
         struggle_band=struggle_band,
         current_difficulty_b=diff_b,
         adaptive_state=adaptive_state,
-        learner_profile=getattr(request, "learner_profile", {})
+        learner_profile=getattr(request, "learner_profile", {}),
+        current_item_id=canonical_item,
+        has_reduced_remediation=bool(
+            item_doc.get("has_reduced_remediation", False)
+            if item_doc else False
+        ),
     )
 
     # Keep the original Component 2/3 evidence signals in the unified C4
@@ -368,9 +405,35 @@ async def update_interaction(request: InteractionRequest):
     adaptive_state = policy_output.get("state_updates", adaptive_state)
 
     administered_item_ids = list(adaptive_state.get("administered_item_ids", []))
+    administered_difficulties = dict(
+        adaptive_state.get("administered_item_difficulties", {})
+    )
+    difficulty_history_before = list(administered_difficulties.values())
     if canonical_item not in administered_item_ids:
         administered_item_ids.append(canonical_item)
+        administered_difficulties[canonical_item] = float(diff_b)
     adaptive_state["administered_item_ids"] = administered_item_ids[-100:]
+    adaptive_state["administered_item_difficulties"] = {
+        item_id: administered_difficulties[item_id]
+        for item_id in adaptive_state["administered_item_ids"]
+        if item_id in administered_difficulties
+    }
+    difficulty_history_after = list(
+        adaptive_state["administered_item_difficulties"].values()
+    )
+    standard_error_before = (
+        irt_engine.calculate_standard_error(theta, difficulty_history_before)
+        if difficulty_history_before else None
+    )
+    standard_error_after = irt_engine.calculate_standard_error(
+        theta_new, difficulty_history_after
+    )
+    adaptive_state["measurement_standard_error"] = round(
+        standard_error_after, 6
+    )
+    adaptive_state["measurement_observation_count"] = len(
+        difficulty_history_after
+    )
 
     # A high BKT score may change the difficulty/order of the next task, but it
     # must not skip curriculum evidence. Keep selection inside the current
@@ -422,6 +485,12 @@ async def update_interaction(request: InteractionRequest):
                 )
             else:
                 forced_id = ""
+        else:
+            # Forced V1/V2 selection must report its authored difficulty, not
+            # the difficulty of the item that was just completed.
+            forced_b = float(forced_document.get("difficulty_b", 0.0))
+            policy_output["difficulty"] = forced_b
+            policy_output["target_difficulty"] = forced_b
 
     if policy_output["decision"] != "TERMINATE":
         if unseen_core_ids:
@@ -473,6 +542,16 @@ async def update_interaction(request: InteractionRequest):
         "predicted_probability": irt_engine.calculate_probability(theta, diff_b),
         "theta_after": theta_new,
         "observation_correct": learning_observation_correct,
+        "standard_error_before": (
+            round(standard_error_before, 6)
+            if standard_error_before is not None else None
+        ),
+        "standard_error_after": round(standard_error_after, 6),
+        "test_information_after": round(
+            1.0 / (standard_error_after ** 2), 6
+        ),
+        "observation_count": len(difficulty_history_after),
+        "ability_scope": official_kc,
     }
     
     # Progression Evidence
@@ -520,6 +599,15 @@ async def update_interaction(request: InteractionRequest):
     # intentional repeat proceed while a new R01 after completion resets the
     # activity cleanly, including activities outside the original Skill 2 pilot.
     adaptive_state["expected_item_id"] = policy_output.get("next_item", "")
+
+    if policy_output["decision"] == "TERMINATE":
+        stop_reason = "SAFETY_FATIGUE_STOP"
+    elif policy_output["decision"] in {"ACTIVITY_COMPLETE", "CURRICULUM_COMPLETE"}:
+        stop_reason = "CORE_COVERAGE_AND_EQUIVALENT_FLOW_COMPLETE"
+    else:
+        stop_reason = "CONTINUE_COLLECTING_EVIDENCE"
+    adaptive_state["measurement_stop_reason"] = stop_reason
+    irt_evidence["stop_reason"] = stop_reason
     
     next_action = NextAction(
         next_activity=next_activity,
@@ -554,6 +642,10 @@ async def update_interaction(request: InteractionRequest):
         "mastery_after": new_prob,
         "theta_before": theta,
         "theta_after": theta_new,
+        "theta_scope": official_kc,
+        "measurement_standard_error": standard_error_after,
+        "measurement_observation_count": len(difficulty_history_after),
+        "measurement_stop_reason": stop_reason,
         "fatigue_score": request.fatigue_score,
         "learner_profile": request.learner_profile,
         "struggle_score": struggle_score,
@@ -581,6 +673,7 @@ async def update_interaction(request: InteractionRequest):
     update_set = {
         "knowledge_state": knowledge_state,
         "theta_estimate": theta_new,
+        "theta_by_kc": theta_by_kc,
         "adaptive_states": adaptive_states,
         "last_updated": datetime.utcnow().isoformat(),
     }

@@ -9,6 +9,9 @@ import '../../../widgets/telemetry_wrapper.dart';
 import '../../../theme/app_theme.dart';
 import '../../../services/tts_service.dart';
 import '../../../services/progress_service.dart';
+import '../../../adaptive/controllers/adaptive_choice_controller.dart';
+import '../../../adaptive/controllers/adaptive_task_coordinator.dart';
+import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import 'widgets/pattern_background.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
 
@@ -53,6 +56,9 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
   // ── Game state ──
   int _currentRoundIndex = 0;
   late List<MemoryRound> _rounds;
+  late AdaptiveTaskCoordinator _taskCoordinator;
+  final AdaptiveChoiceController<int> _adaptiveCards =
+      AdaptiveChoiceController<int>(minimumVisibleOptions: 2);
   bool _activityComplete = false;
   bool _isProcessingTap =
       false; // Prevents tapping other cards while one is animating
@@ -146,6 +152,10 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
       widget.activityNode.id,
     );
     if (_currentRoundIndex >= _rounds.length) _currentRoundIndex = 0;
+    _taskCoordinator = AdaptiveTaskCoordinator(
+      activity: widget.activityNode,
+      initialRoundIndex: _currentRoundIndex,
+    );
 
     final rng = Random(20261006);
     _currentInstruction = _instructions[rng.nextInt(_instructions.length)];
@@ -220,6 +230,9 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
   }
 
   List<MemoryRound> _generateRounds({int seed = 20261006}) {
+    if (widget.activityNode.rounds.isNotEmpty) {
+      return widget.activityNode.rounds.map(_memoryRoundFromData).toList();
+    }
     // Progressive Difficulty Levels - Tailored for Grade 1
     final config = [
       {'count': 2, 'time': 6000}, // Very easy start
@@ -252,6 +265,18 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
     return rounds;
   }
 
+  MemoryRound _memoryRoundFromData(Map<String, dynamic> data) {
+    final assets = (data['assets'] as Iterable? ?? const <dynamic>[])
+        .map((value) => value.toString())
+        .toList();
+    return MemoryRound(
+      itemCount: assets.length,
+      memoryDurationMs: (data['show_milliseconds'] as num?)?.toInt() ?? 4000,
+      assets: assets,
+      targetAsset: data['target_asset']?.toString() ?? assets.first,
+    );
+  }
+
   void _setupCardControllers() {
     for (var controller in _cardFlipControllers) {
       controller.dispose();
@@ -273,6 +298,19 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
     _celebrationController.reset();
     _timerController.reset();
     _setupCardControllers();
+    final targetIndex = _currentRound.assets.indexOf(_currentRound.targetAsset);
+    _adaptiveCards.configure(
+      List<AdaptiveOption<int>>.generate(
+        _currentRound.itemCount,
+        (index) => AdaptiveOption<int>(
+          id: _cardOptionId(index),
+          value: index,
+          role: index == targetIndex
+              ? AdaptiveOptionRole.target
+              : AdaptiveOptionRole.visualDistractor,
+        ),
+      ),
+    );
 
     setState(() {
       _currentPhase = MemoryPhase.preparing;
@@ -333,6 +371,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
     for (var controller in _cardFlipControllers) {
       controller.dispose();
     }
+    _adaptiveCards.dispose();
 
     _audioPlayer.dispose();
     super.dispose();
@@ -340,7 +379,10 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
 
   // ── Game logic ──
 
-  MemoryRound get _currentRound => _rounds[_currentRoundIndex];
+  MemoryRound get _currentRound =>
+      _memoryRoundFromData(_taskCoordinator.roundData);
+
+  String _cardOptionId(int index) => '${_taskCoordinator.itemId}_O${index + 1}';
 
   void _onCardTapped(int index) {
     if (_currentPhase != MemoryPhase.recall || _isProcessingTap) return;
@@ -372,35 +414,58 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
       SoundUtils.playFeedback('audio/wrong.mp3');
       final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
       if (wrapper != null) {
-        final itemId = CanonicalItemResolver.canonicalItemId(
-          skillId: widget.activityNode.skillId,
-          activityId: widget.activityNode.id,
-          roundNumber: _currentRoundIndex + 1,
-        );
+        final itemId = _taskCoordinator.itemId;
         final targetIndex = _currentRound.assets.indexOf(
           _currentRound.targetAsset,
         );
+        final targetId = _cardOptionId(targetIndex);
+        final selectedId = _cardOptionId(index);
+        final activeOptions = _adaptiveCards.visibleOptions.where(
+          (option) =>
+              _adaptiveCards.visualStateFor(option.id) !=
+              AdaptiveOptionVisualState.disabled,
+        );
+        final visibleIds = activeOptions.map((option) => option.id).toList();
+        final incorrectIds = <String>[
+          selectedId,
+          ...activeOptions
+              .where((option) => !option.isTarget && option.id != selectedId)
+              .map((option) => option.id),
+        ];
         unawaited(
           wrapper
-              .requestSemanticScaffold(
+              .registerAdaptiveWrongAttempt(
                 itemId: itemId,
-                visibleOptionIds: List<String>.generate(
-                  _currentRound.assets.length,
-                  (cardIndex) => '${itemId}_O${cardIndex + 1}',
-                ),
-                selectedOptionIds: <String>['${itemId}_O${index + 1}'],
-                correctOptionIds: <String>['${itemId}_O${targetIndex + 1}'],
-                incorrectOptionIds: <String>['${itemId}_O${index + 1}'],
-                supportedActions: const <String>[
-                  'HIGHLIGHT_OPTION',
-                  'REPLAY_INSTRUCTION',
-                ],
-                errorType: 'visual_memory_error',
+                currentRoundIndex: _currentRoundIndex,
+                extraTelemetry: <String, dynamic>{
+                  'original_options_count': _currentRound.itemCount,
+                  'visible_option_ids': visibleIds,
+                  'selected_option_ids': <String>[selectedId],
+                  'correct_option_ids': <String>[targetId],
+                  'incorrect_option_ids': incorrectIds,
+                  'supported_actions': const <String>[
+                    'DISABLE_OPTION',
+                    'HIGHLIGHT_OPTION',
+                    'REPLAY_INSTRUCTION',
+                  ],
+                  'minimum_visible_options': 2,
+                  'error_type': 'visual_memory_error',
+                },
               )
-              .then((plan) {
-                if (mounted && plan != null) {
-                  setState(() => _hintedCardIndex = targetIndex);
-                }
+              .then((result) {
+                if (!mounted || result == null) return;
+                wrapper.applyScaffoldResult<int>(
+                  controller: _adaptiveCards,
+                  result: result,
+                  correctOptionIds: <String>[targetId],
+                );
+                setState(() {
+                  _hintedCardIndex =
+                      _adaptiveCards.visualStateFor(targetId) ==
+                          AdaptiveOptionVisualState.hint
+                      ? targetIndex
+                      : -1;
+                });
               }),
         );
       }
@@ -432,16 +497,22 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
     }
   }
 
-  void _nextRound() {
-    context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
-      100,
-    );
+  Future<void> _nextRound() async {
+    final result = await context
+        .findAncestorStateOfType<TelemetryWrapperState>()
+        ?.completeAdaptiveRound(
+          100,
+          currentRoundIndex: _currentRoundIndex,
+          itemId: _taskCoordinator.itemId,
+        );
+    if (!mounted) return;
+    final transition = _taskCoordinator.applyResult(result);
 
-    if (_currentRoundIndex < _rounds.length - 1) {
+    if (!transition.isComplete) {
       _roundTransitionController.reverse().then((_) {
         if (!mounted) return;
         setState(() {
-          _currentRoundIndex++;
+          _currentRoundIndex = transition.roundIndex;
         });
         ProgressService().saveActivityState(
           widget.activityNode.skillId,
@@ -834,10 +905,13 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
                     spacing: 16,
                     runSpacing: 24,
                     alignment: WrapAlignment.center,
-                    children: List.generate(_currentRound.itemCount, (index) {
-                      final asset = _currentRound.assets[index];
-                      return _buildCardWidget(index, asset);
-                    }),
+                    children: _adaptiveCards.visibleOptions.map((option) {
+                      final index = option.value;
+                      return _buildCardWidget(
+                        index,
+                        _currentRound.assets[index],
+                      );
+                    }).toList(),
                   ),
                 ),
               ),
@@ -862,6 +936,9 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
     bool isWrong = _lastMistakeIndex == index;
     final isHinted =
         _hintedCardIndex == index && _currentPhase == MemoryPhase.recall;
+    final isDisabled =
+        _adaptiveCards.visualStateFor(_cardOptionId(index)) ==
+        AdaptiveOptionVisualState.disabled;
 
     Color borderColor = const Color(0xFF4A90D9).withValues(alpha: 0.3);
     Color bgColor = Colors.white;
@@ -878,7 +955,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
     }
 
     double screenWidth = MediaQuery.of(context).size.width;
-    int itemsPerRow = _currentRound.itemCount <= 4 ? 2 : 3;
+    int itemsPerRow = _adaptiveCards.visibleOptions.length <= 4 ? 2 : 3;
     double cardWidth =
         (screenWidth - 32 - (16 * (itemsPerRow + 1))) / itemsPerRow;
     cardWidth = cardWidth.clamp(80.0, 140.0);
@@ -904,49 +981,74 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
           child: Transform.scale(
             scale: scale,
             child: GestureDetector(
-              onTap: () => _onCardTapped(index),
+              onTap: isDisabled ? null : () => _onCardTapped(index),
               child: SizedBox(
                 width: cardWidth,
                 height: cardHeight,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    border: isHinted
-                        ? Border.all(color: AppColors.warmAmber, width: 4)
-                        : null,
-                    boxShadow: isHinted
-                        ? <BoxShadow>[
-                            BoxShadow(
-                              color: AppColors.warmAmber.withValues(alpha: 0.4),
-                              blurRadius: 16,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Transform(
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
-                      ..rotateY(flipValue * pi),
-                    alignment: Alignment.center,
-                    child: isFaceUp
-                        ? _buildCardFront(
-                            asset,
-                            cardWidth,
-                            cardHeight,
-                            isTarget,
-                            borderColor,
-                            borderWidth,
-                            bgColor,
-                            isCorrect,
-                            isWrong,
-                          )
-                        : Transform(
-                            transform: Matrix4.identity()..rotateY(pi),
-                            alignment: Alignment.center,
-                            child: _buildCardBack(cardWidth, cardHeight),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned.fill(
+                      child: AnimatedOpacity(
+                        opacity: isDisabled ? 0.3 : 1,
+                        duration: const Duration(milliseconds: 250),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(18),
+                            border: isHinted
+                                ? Border.all(
+                                    color: AppColors.warmAmber,
+                                    width: 4,
+                                  )
+                                : null,
+                            boxShadow: isHinted
+                                ? <BoxShadow>[
+                                    BoxShadow(
+                                      color: AppColors.warmAmber.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      blurRadius: 16,
+                                    ),
+                                  ]
+                                : null,
                           ),
-                  ),
+                          child: Transform(
+                            transform: Matrix4.identity()
+                              ..setEntry(3, 2, 0.001)
+                              ..rotateY(flipValue * pi),
+                            alignment: Alignment.center,
+                            child: isFaceUp
+                                ? _buildCardFront(
+                                    asset,
+                                    cardWidth,
+                                    cardHeight,
+                                    isTarget,
+                                    borderColor,
+                                    borderWidth,
+                                    bgColor,
+                                    isCorrect,
+                                    isWrong,
+                                  )
+                                : Transform(
+                                    transform: Matrix4.identity()..rotateY(pi),
+                                    alignment: Alignment.center,
+                                    child: _buildCardBack(
+                                      cardWidth,
+                                      cardHeight,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (isDisabled)
+                      const Icon(
+                        Icons.lock_outline_rounded,
+                        color: Color(0xFF586174),
+                        size: 34,
+                      ),
+                  ],
                 ),
               ),
             ),

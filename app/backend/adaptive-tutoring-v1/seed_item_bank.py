@@ -36,6 +36,6 @@ if __name__ == "__main__":
         if not mongo_url:
             raise RuntimeError("Set MONGODB_URI before using --apply")
         database = MongoClient(mongo_url)[
-            os.getenv("MONGODB_DB", os.getenv("MONGODB_DB_NAME", "adaptive_tutoring"))
+            os.getenv("MONGODB_DB", os.getenv("MONGODB_DB_NAME", "r26_se_031"))
         ]
         print({**seed(database), "mode": "applied"})

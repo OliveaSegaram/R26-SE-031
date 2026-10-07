@@ -339,6 +339,60 @@ class CanonicalResearchItem {
 }
 
 class CanonicalItemResolver {
+  /// Resolves the exact displayed item, including a V1/V2 equivalent nested
+  /// under its core round.
+  static CanonicalResearchItem resolveByItemId(
+    ActivityNode activity,
+    String requestedItemId,
+    int fallbackRoundIndex,
+  ) {
+    final normalized = normalizeItemId(requestedItemId);
+    final match = RegExp(
+      r'^S\d+A\d+R(\d+)(V\d+)?$',
+      caseSensitive: false,
+    ).firstMatch(normalized);
+    final parsedIndex = match == null
+        ? fallbackRoundIndex
+        : (int.tryParse(match.group(1) ?? '') ?? fallbackRoundIndex + 1) - 1;
+    final roundIndex = parsedIndex >= 0 && parsedIndex < activity.rounds.length
+        ? parsedIndex
+        : fallbackRoundIndex;
+    if (roundIndex < 0 || roundIndex >= activity.rounds.length) {
+      return resolve(activity, const <String, dynamic>{}, fallbackRoundIndex);
+    }
+
+    final core = Map<String, dynamic>.from(activity.rounds[roundIndex]);
+    if (match?.group(2) == null) {
+      return resolve(activity, core, roundIndex);
+    }
+
+    final variants = core['adaptive_variants'];
+    if (variants is Iterable) {
+      for (final rawVariant in variants) {
+        if (rawVariant is! Map) continue;
+        final variant = Map<String, dynamic>.from(rawVariant);
+        final variantId = normalizeItemId(variant['item_id']?.toString() ?? '');
+        if (variantId != normalized) continue;
+        final content = variant['content'] is Map
+            ? Map<String, dynamic>.from(variant['content'] as Map)
+            : const <String, dynamic>{};
+        return resolve(activity, <String, dynamic>{
+          ...core,
+          ...variant,
+          ...content,
+          'item_id': normalized,
+        }, roundIndex);
+      }
+    }
+
+    // Preserve the requested ID for auditability if a stale client asks for a
+    // variant that is no longer present in the bank.
+    return resolve(activity, <String, dynamic>{
+      ...core,
+      'item_id': normalized,
+    }, roundIndex);
+  }
+
   static CanonicalResearchItem resolve(
     ActivityNode activity,
     Map<String, dynamic> roundData,

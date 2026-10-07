@@ -57,6 +57,20 @@ class ShadowGenerator {
     return rounds;
   }
 
+  static ShadowRound fromCurriculum(Map<String, dynamic> data) {
+    final assets = (data['target_assets'] as Iterable? ?? const <dynamic>[])
+        .map((value) => value.toString())
+        .toList();
+    return ShadowRound(
+      targetAssets: assets,
+      difficulty: (data['difficulty'] as num?)?.toInt() ?? 1,
+    );
+  }
+
+  static List<ShadowRound> fromCurriculumRounds(
+    Iterable<Map<String, dynamic>> rounds,
+  ) => rounds.map(fromCurriculum).toList();
+
   static ShadowRound _buildRound({
     required int count,
     required int difficulty,

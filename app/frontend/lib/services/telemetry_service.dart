@@ -51,7 +51,7 @@ class TelemetryEvent {
   /// Number of taps outside interactive target boundaries (motor precision)
   final int misclickCount;
 
-  /// Number of >2s pauses with no screen touch (hesitation / reading difficulty)
+  /// Number of >8s pauses with no screen touch (Grade-1 hesitation signal)
   final int hesitationCount;
 
   /// Number of times the student replayed the audio instruction

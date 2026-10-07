@@ -99,30 +99,30 @@
         {
           short:'1 KC design', title:'Sinhala knowledge-component design', kind:'Expert-defined', kindClass:'kind-expert', owner:'Owner: Sinhala literacy researcher + Grade 1 teacher',
           sources:['Grade 1 Sinhala curriculum and textbooks','Expert analysis of the cognitive skill required by each task','Sinhala script features: graphemes, vowel signs, visually similar forms and word/sentence structure'],
-          example:`KC_GRAPHEME_VISUAL_DISCRIMINATION\nDescription: Distinguish visually similar Sinhala graphemes\nExamples: ප ↔ බ, ම ↔ ය\nDomain: visual_orthographic\nPrerequisite: KC_GRAPHEME_IDENTIFICATION`,
+          example:`KC_LETTER_MATCHING\nDescription: Match identical Sinhala letter forms\nExamples: ක ↔ ක, ම ↔ ම\nScope: knowledge component\nActivity: 2.2`,
           uses:['Stored in a versioned KC registry','Every item receives one primary KC and optional secondary KCs','BKT maintains a separate mastery probability for each KC'],
           summary:'The KC is not guessed by ML at first; specialists define what is being learned.',
           fields:[
-            ['kc_id','KC_GRAPHEME_VISUAL_DISCRIMINATION','Researcher','Expert','Item bank + BKT'],
+            ['kc_id','KC_LETTER_MATCHING','Researcher','Expert','Item bank + BKT'],
             ['description','Distinguish similar graphemes','Teacher/linguist','Expert','Reports + authoring'],
-            ['domain','visual_orthographic','Research team','Expert','Domain IRT'],
-            ['prerequisite_kc','KC_GRAPHEME_IDENTIFICATION','Curriculum expert','Expert','Progression policy']
+            ['ability_scope','KC_LETTER_MATCHING','Item/KC mapping','Expert','KC-scoped IRT'],
+            ['activity_id','2.2','Curriculum expert','Expert','Progression policy']
           ]
         },
         {
           short:'2 Item bank', title:'Research item bank', kind:'Mixed: expert + learned', kindClass:'kind-expert', owner:'Owners: content author, linguist, psychometric model',
           sources:['Curriculum JSON supplies the prompt and Sinhala content','The builder assigns stable option IDs, KC, equivalent group and scaffold capabilities','Expert difficulty is explicitly provisional','Real first-attempt data can later replace difficulty using the Rasch calibrator'],
-          example:`{\n  "item_id": "S2A2R01V1",\n  "language": "si-LK",\n  "activity_id": "2.2",\n  "response_modality": "tap",\n  "knowledge_component_id": "KC_GRAPHEME_VISUAL_DISCRIMINATION",\n  "difficulty_b": -0.35,\n  "difficulty_source": "expert_provisional",\n  "calibration_status": "not_empirically_calibrated",\n  "calibration_sample_count": 0,\n  "equivalent_group_id": "S2A2R01",\n  "allowed_scaffolds": [\n    "REMOVE_OPTION",\n    "HIGHLIGHT_OPTION",\n    "REPLAY_INSTRUCTION"\n  ]\n}`,
+          example:`{\n  "item_id": "S2A2R01V1",\n  "item_role": "REMEDIATION",\n  "activity_id": "2.2",\n  "knowledge_component_id": "KC_LETTER_MATCHING",\n  "difficulty_b": -1.0,\n  "difficulty_source": "expert_provisional",\n  "calibration_status": "not_empirically_calibrated",\n  "equivalent_group_id": "S2A2R01",\n  "content": {"letters": ["ත", "ව"]},\n  "allowed_scaffolds": [\n    "HIGHLIGHT_OPTION",\n    "REPLAY_INSTRUCTION"\n  ]\n}`,
           uses:['Flutter renders prompt/content using stable option IDs','BKT receives the item KC','IRT uses the provisional or calibrated difficulty','The deterministic policy chooses only supported scaffolds','Equivalent groups support future confirmation-item authoring'],
           summary:'The app never presents provisional difficulty as empirically calibrated.',
           fields:[
             ['item_id','S2A2R01V1','Curriculum build process','Expert','All services'],
             ['stimulus','[ප, බ]','Sinhala content author','Expert','Flutter'],
-            ['knowledge_component_id','KC_GRAPHEME_VISUAL_DISCRIMINATION','Curriculum mapping','Expert','BKT'],
-            ['difficulty_b','-0.35','Expert now; Rasch after sufficient data','Mixed','Item selector'],
+            ['knowledge_component_id','KC_LETTER_MATCHING','Curriculum mapping','Expert','BKT'],
+            ['difficulty_b','-1.0','Expert now; Rasch after sufficient data','Mixed','Item selector'],
             ['distractor_tags','visual_confusable','Sinhala linguist','Expert','C2 + scaffold policy'],
             ['equivalent_group','EQ_PA_BA_01','Teacher review','Expert','Confirmation selector'],
-            ['allowed_scaffolds','REMOVE_OPTION, HIGHLIGHT...','Task capability adapter','Safety rule','Policy action space']
+            ['allowed_scaffolds','HIGHLIGHT_OPTION, REPLAY...','Task capability adapter','Safety rule','Policy action space']
           ]
         },
         {
@@ -169,13 +169,13 @@
         {
           short:'6 Event', title:'Unified Component 4 interaction event', kind:'Runtime', kindClass:'kind-runtime', owner:'Producer: learning API event normalizer',
           sources:['Joins item-bank metadata','Adds child/session context','Adds task-adapter evidence','Adds available C1/C2/C3 outputs','Validates required fields and rejects incompatible versions'],
-          example:`{\n  "event_id": "EVT_000238",\n  "student_id": "P014",\n  "session_id": "SES_2026_0041",\n  "item_id": "S2A2R01V1",\n  "knowledge_component_id": "KC_GRAPHEME_VISUAL_DISCRIMINATION",\n  "first_attempt_correct": false,\n  "final_correct": true,\n  "attempt_count": 2,\n  "scaffold_level_used": 1,\n  "latency_ms": 4920\n}`,
+          example:`{\n  "event_id": "EVT_000238",\n  "student_id": "P014",\n  "session_id": "SES_2026_0041",\n  "item_id": "S2A2R01V1",\n  "knowledge_component_id": "KC_LETTER_MATCHING",\n  "first_attempt_correct": false,\n  "final_correct": true,\n  "attempt_count": 2,\n  "scaffold_level_used": 1,\n  "latency_ms": 4920\n}`,
           uses:['One canonical input is sent to BKT, IRT and the scaffold policy','Stable event IDs support deduplication','Research export no longer needs to reconstruct incompatible activity formats'],
           summary:'This contract is the central bridge between all Flutter activities and all Component 4 models.',
           fields:[
             ['event_id','EVT_000238','Gateway','Runtime','All models + DB'],
-            ['knowledge_component_id','KC_GRAPHEME...','Item-bank join','Expert','BKT'],
-            ['domain','visual_orthographic','KC-registry join','Expert','IRT'],
+            ['knowledge_component_id','KC_LETTER_MATCHING','Item-bank join','Expert','BKT'],
+            ['ability_scope','KC_LETTER_MATCHING','KC mapping','Expert','IRT'],
             ['first_attempt_correct','false','Task adapter','Runtime','BKT + calibration'],
             ['scaffold_level_used','1','Treatment-fidelity record','Runtime','Policy audit']
           ]
@@ -200,7 +200,7 @@
           uses:['Selects an active item near target difficulty','Stores raw logit difficulty and backward-compatible normalized difficulty','Updates calibration metadata only with --apply after review'],
           summary:'IRT item parameters require cohort data; one child cannot calibrate an item bank.',
           fields:[
-            ['difficulty_b','-0.35','Expert now; offline Rasch later','Mixed','Runtime IRT + selector'],
+            ['difficulty_b','-1.0','Expert now; offline Rasch later','Mixed','Runtime IRT + selector'],
             ['theta_before','-0.10','Knowledge-state DB','Runtime','IRT update'],
             ['theta_after','-0.34','IRT inference','Learned/runtime','Item selector'],
             ['calibration_sample_count','0','Calibration job','Runtime','Research audit']
@@ -209,7 +209,7 @@
         {
           short:'9 Signals', title:'Observed struggle and support signals', kind:'Runtime evidence', kindClass:'kind-runtime', owner:'Producer: activity adapter + telemetry wrapper',
           sources:['Current latency and attempt count','Wrong selections and visible option IDs','Scaffold use and replay requests','Optional upstream fatigue/profile values when genuinely available'],
-          example:`Policy input\n  attempt_count = 2\n  incorrect_option_ids = ["S2A2R01V1_O2"]\n  visible_option_ids = ["..._O1", "..._O2", "..._O3"]\n  supported_actions = ["REMOVE_OPTION", "HIGHLIGHT_OPTION"]\n  minimum_visible_options = 2`,
+          example:`Policy input\n  attempt_count = 2\n  correct_option_ids = ["S2A2R01V1_pair_1"]\n  visible_option_ids = ["..._pair_1", "..._pair_2"]\n  supported_actions = ["HIGHLIGHT_OPTION", "REPLAY_INSTRUCTION"]\n  minimum_visible_options = 2`,
           uses:['Repeated difficulty escalates support','The policy never removes the correct target','Unavailable modalities remain absent rather than fabricated'],
           summary:'Current decisions use measured signals and explicit rules; a fatigue classifier is a future study only after labelled data exists.',
           fields:[
@@ -222,26 +222,26 @@
         {
           short:'10 Policy', title:'Deterministic policy selects an approved scaffold', kind:'Safety/policy rule', kindClass:'kind-rule', owner:'Producer: capability-driven scaffold policy',
           sources:['Current attempt and scaffold state','Ordered incorrect option IDs from the adapter','Action list comes only from supported task capabilities','Hard minimum of two visible choices'],
-          example:`Context\n  attempts = 2\n  already_removed = []\n\nAllowed actions\n  A1 REMOVE_OPTION\n  A2 HIGHLIGHT_OPTION\n\nSelected command\n  type = REMOVE_OPTION\n  option_id = S2A2R01V1_O2\n  action_id = S2A2R01V1-remove-1\n  policy_version = C4_POLICY_V2`,
+          example:`Context\n  attempts = 2\n  required pairs = 2\n\nAllowed actions\n  A1 HIGHLIGHT_OPTION\n  A2 REPLAY_INSTRUCTION\n\nSelected command\n  type = HIGHLIGHT_OPTION\n  option_id = S2A2R01V1_pair_1\n  action_id = S2A2R01V1-highlight-1\n  policy_version = C4_POLICY_V2`,
           uses:['Returns an approved semantic scaffold','Produces repeatable decisions for research audits','Logs applied action IDs and treatment fidelity'],
           summary:'The policy is deliberately deterministic until enough ethical outcome data exists to justify learning a policy.',
           fields:[
             ['policy_version','C4_POLICY_V2','Backend config','Safety rule','Audit log'],
             ['allowed_actions','A1, A2','Item/task capabilities','Safety rule','Policy filter'],
-            ['selected_action','REMOVE_OPTION','Deterministic policy','Runtime','Flutter'],
+            ['selected_action','HIGHLIGHT_OPTION','Deterministic policy','Runtime','Flutter'],
             ['action_id','item-remove-1','Backend','Runtime','Idempotency']
           ]
         },
         {
           short:'11 Decision', title:'Flutter response, persistence and future validation', kind:'Mixed', kindClass:'kind-rule', owner:'Producers: policy + learning API + research pipeline',
           sources:['BKT mastery and IRT ability come from learner state','Active item candidates come from the validated bank','Policy commands contain stable action IDs','Decision evidence includes reason codes and policy version'],
-          example:`{\n  "next_action": {\n    "decision": "SCAFFOLD_REMOVE_DISTRACTOR",\n    "next_item": "S2A2R01V1",\n    "difficulty": 0.41,\n    "difficulty_b": -0.35,\n    "commands": [{\n      "type": "REMOVE_OPTION",\n      "option_id": "S2A2R01V1_O2"\n    }],\n    "reason_codes": ["MODERATE_MASTERY"],\n    "policy_version": "C4_POLICY_V2"\n  }\n}`,
+          example:`{\n  "next_action": {\n    "decision": "SCAFFOLD_HIGHLIGHT",\n    "next_item": "S2A2R01V1",\n    "difficulty": 0.3333,\n    "difficulty_b": -1.0,\n    "commands": [{\n      "type": "HIGHLIGHT_OPTIONS",\n      "option_ids": ["S2A2R01V1_pair_1"]\n    }],\n    "reason_codes": ["CAPABILITY_SAFE_HIGHLIGHT"],\n    "policy_version": "C4_POLICY_V2"\n  }\n}`,
           uses:['Flutter applies the semantic command and answer pool reflows','Decision evidence is persisted with inputs and version','De-identified events can later calibrate BKT/Rasch models','Child-level validation must measure learning, fairness and retention before efficacy claims'],
           summary:'Runtime events become future training data only after consent, quality checks, de-identification and dataset versioning.',
           fields:[
             ['decision','SCAFFOLD_REMOVE_DISTRACTOR','Policy orchestrator','Rule','Flutter'],
             ['next_item','S2A2R01V1','Item selector','Runtime','Flutter'],
-            ['difficulty_b','-0.35','Item bank','Mixed','Flutter + audit'],
+            ['difficulty_b','-1.0','Item bank','Mixed','Flutter + audit'],
             ['reason_codes','MODERATE_MASTERY','Policy orchestrator','Runtime','Audit/dashboard'],
             ['policy_version','C4_POLICY_V2','Backend config','Safety rule','Reproducibility']
           ]

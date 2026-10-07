@@ -66,6 +66,27 @@ class PatternGenerator {
     ];
   }
 
+  static PatternRound fromCurriculum(Map<String, dynamic> data) {
+    final sequence = (data['sequence'] as Iterable? ?? const <dynamic>[])
+        .map((value) => value?.toString())
+        .toList();
+    final options = (data['options'] as Iterable? ?? const <dynamic>[])
+        .map((value) => value.toString())
+        .toList();
+    return PatternRound(
+      sequence: sequence,
+      missingIndex:
+          (data['missing_index'] as num?)?.toInt() ?? sequence.length - 1,
+      correctAnswer: data['correct_answer']?.toString() ?? options.first,
+      options: options,
+      difficulty: (data['difficulty'] as num?)?.toInt() ?? 1,
+    );
+  }
+
+  static List<PatternRound> fromCurriculumRounds(
+    Iterable<Map<String, dynamic>> rounds,
+  ) => rounds.map(fromCurriculum).toList();
+
   static PatternRound _generateRound1(Random rng) {
     // Round 1 (Very Easy): A B A ? (2 choices)
     final assets = List<String>.from(allAssets);

@@ -40,6 +40,21 @@ class BKTEngine:
             "default": proto_priors
         }
 
+    def apply_calibrated_parameters(self, kc: str, parameters: dict) -> bool:
+        """Activate a validated registry record without changing call sites."""
+        try:
+            values = tuple(float(parameters[key]) for key in (
+                "p_initial", "p_transition", "p_guess", "p_slip"
+            ))
+        except (KeyError, TypeError, ValueError):
+            return False
+        if not all(0.0 < value < 1.0 for value in values):
+            return False
+        if values[2] + values[3] >= 0.5:
+            return False
+        self.priors[kc] = values
+        return True
+
     def update_knowledge_state(self, current_prob: float, target_kc: str, is_correct: bool) -> float:
         """
         Updates the probability that the student has mastered the knowledge component

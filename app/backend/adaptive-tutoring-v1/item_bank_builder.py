@@ -66,7 +66,14 @@ def _difficulty(round_number: int, total: int) -> float:
 
 
 def _option_records(item_id: str, content: Dict[str, Any]) -> List[Dict[str, Any]]:
-    raw_options = content.get("options") or content.get("letters") or content.get("items") or []
+    sequence_key = next(
+        (key for key in ("pattern", "scrambled_letters", "scrambled_words") if content.get(key)),
+        None,
+    )
+    raw_options = (
+        content.get("options") or content.get("letters") or
+        content.get("items") or (content.get(sequence_key) if sequence_key else []) or []
+    )
     if not raw_options and content.get("targets"):
         raw_targets = content.get("targets") or []
         raw_distractors = content.get("distractors") or []
@@ -103,10 +110,15 @@ def _option_records(item_id: str, content: Dict[str, Any]) -> List[Dict[str, Any
         value = raw.get("value") if isinstance(raw, dict) else raw
         is_target = bool(raw.get("is_target")) if isinstance(raw, dict) else False
         is_target = is_target or index == correct_index or index in correct_indices or value == correct_value
+        role = "target" if is_target else "distractor"
+        if content.get("letters") is raw_options:
+            role = "pair_target"
+        elif sequence_key is not None:
+            role = "sequence_token"
         records.append({
             "option_id": f"{item_id}_O{index + 1}",
             "value": value,
-            "role": "target" if is_target else "distractor",
+            "role": role,
             "distractor_type": (
                 raw.get("distractor_type", "unspecified")
                 if isinstance(raw, dict) and not is_target
@@ -161,6 +173,13 @@ def _item_document(
         "is_core": item_role == "CORE",
         "item_role": item_role,
         "equivalent_group_id": equivalent_group_id,
+        "has_reduced_remediation": bool(
+            round_data.get("has_reduced_remediation", False)
+        ),
+        "response_load_relation": round_data.get(
+            "response_load_relation",
+            "core" if item_role == "CORE" else "equivalent",
+        ),
         "allowed_scaffolds": _capabilities(activity.get("template_type", "")),
         "minimum_visible_options": 2,
         "options": options,
@@ -234,7 +253,9 @@ def build_items(curriculum_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
                     variant_name = str(variant.get("variant_id") or f"V{variant_index}")
                     variant_id = normalize_item_id(str(variant.get("item_id") or f"{base_id}{variant_name}"))
                     variant_content = variant.get("content") or variant
-                    role = "CONFIRMATION" if variant_index == 1 else "REMEDIATION"
+                    role = str(variant.get("item_role") or (
+                        "REMEDIATION" if variant_index == 1 else "CONFIRMATION"
+                    )).upper()
                     documents.append(_item_document(
                         skill_id=skill_id,
                         activity=activity,

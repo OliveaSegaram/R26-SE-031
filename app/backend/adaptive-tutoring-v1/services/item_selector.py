@@ -16,9 +16,18 @@ class ItemSelector:
         difficulty buckets, and confirmation preference.
         """
         if forced_item_id:
+            forced = next(
+                (candidate for candidate in candidates
+                 if candidate.get("item_id") == forced_item_id),
+                None,
+            )
+            selected_difficulty = (
+                forced.get("difficulty_b", target_difficulty)
+                if forced is not None else target_difficulty
+            )
             return {
                 "selected_item": forced_item_id,
-                "selected_difficulty": target_difficulty,
+                "selected_difficulty": selected_difficulty,
                 "target_difficulty": target_difficulty,
                 "selection_reason": "DETERMINISTIC_CORE_MACHINE_OVERRIDE"
             }

@@ -109,6 +109,47 @@ class SortingGenerator {
     return rounds;
   }
 
+  static SortingRound fromCurriculum(Map<String, dynamic> data) {
+    final rawCategories = Map<String, dynamic>.from(
+      data['categories'] as Map? ?? const <String, dynamic>{},
+    );
+    final categories = rawCategories.map(
+      (key, value) => MapEntry(
+        key,
+        (value as Iterable).map((asset) => asset.toString()).toList(),
+      ),
+    );
+    final labels = Map<String, String>.from(
+      (data['category_labels'] as Map? ?? const <String, String>{}).map(
+        (key, value) => MapEntry(key.toString(), value.toString()),
+      ),
+    );
+    final icons = Map<String, String>.from(
+      (data['category_icons'] as Map? ?? const <String, String>{}).map(
+        (key, value) => MapEntry(key.toString(), value.toString()),
+      ),
+    );
+    final objects = categories.values.expand((items) => items).toList();
+    final objectToCategory = <String, String>{};
+    for (final entry in categories.entries) {
+      for (final asset in entry.value) {
+        objectToCategory[asset] = entry.key;
+      }
+    }
+    return SortingRound(
+      categories: categories,
+      categoryIcons: icons,
+      categoryLabels: labels,
+      objects: objects,
+      objectToCategory: objectToCategory,
+      difficulty: (data['difficulty'] as num?)?.toInt() ?? 1,
+    );
+  }
+
+  static List<SortingRound> fromCurriculumRounds(
+    Iterable<Map<String, dynamic>> rounds,
+  ) => rounds.map(fromCurriculum).toList();
+
   /// Pick [count] categories, trying to exclude [exclude] for variety.
   static List<String> _pickCategories(
     List<String> pool,

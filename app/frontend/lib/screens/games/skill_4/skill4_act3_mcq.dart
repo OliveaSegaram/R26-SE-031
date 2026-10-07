@@ -99,7 +99,10 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
-    final currentRound = rounds[_currentRoundIndex];
+    final currentRound = adaptiveRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    );
     final audioText =
         currentRound['audio_text']?.toString() ??
         currentRound['prompt']?.toString() ??
@@ -131,16 +134,16 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
     int score = isRight ? 100 : 0;
 
     if (isRight) {
-      context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+      final transition = await completeAdaptiveChoiceTask(
         score,
-        itemId: adaptiveItemId,
+        roundIndex: _currentRoundIndex,
       );
       setState(() {
         _isCorrect = true;
       });
       SoundUtils.playFeedback('audio/correct.mp3');
 
-      _advanceRoundAfterDelay(totalRounds);
+      _advanceRoundAfterDelay(totalRounds, transition);
     } else {
       SoundUtils.playFeedback('audio/wrong.mp3');
       await requestChoiceScaffold(
@@ -152,16 +155,17 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
       if (mounted) setState(() {});
 
       if (_attemptCount >= 3) {
-        context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
+        final transition = await completeAdaptiveChoiceTask(
           0,
-          itemId: adaptiveItemId,
+          roundIndex: _currentRoundIndex,
+          isCorrect: true,
           attemptAlreadyLogged: true,
         );
         setState(() {
           _selectedIndex = correctIndex;
           _isCorrect = true;
         });
-        _advanceRoundAfterDelay(totalRounds);
+        _advanceRoundAfterDelay(totalRounds, transition);
       } else {
         Future.delayed(const Duration(milliseconds: 700), () {
           if (mounted && !_isCorrect) {
@@ -174,12 +178,12 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
     }
   }
 
-  void _advanceRoundAfterDelay(int totalRounds) {
+  void _advanceRoundAfterDelay(int totalRounds, dynamic transition) {
     Future.delayed(const Duration(milliseconds: 1400), () {
       if (!mounted) return;
-      if (_currentRoundIndex < totalRounds - 1) {
+      if (transition != null && !transition.isComplete) {
         setState(() {
-          _currentRoundIndex++;
+          _currentRoundIndex = transition.roundIndex;
           _attemptCount = 0;
           final sId = widget.activityNode?.skillId ?? '';
           final aId = widget.activityNode?.id ?? '';
@@ -224,7 +228,10 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
       rounds = rounds.sublist(0, 5);
     }
 
-    final currentRound = rounds[_currentRoundIndex];
+    final currentRound = adaptiveRoundData(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+    );
     final titleText =
         widget.activityNode?.title ?? 'ශබ්දයට සවන් දී වාක්‍ය තෝරන්න';
     var options =

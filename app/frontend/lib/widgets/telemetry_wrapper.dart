@@ -79,7 +79,9 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   set currentRound(int value) => _currentRound = value;
 
   // ---- Hesitation timer ----
-  static const int _hesitationThresholdMs = 3000;
+  // Grade-1 learners need time to inspect pictures, decode Sinhala prompts,
+  // and plan a drag/tap response. A normal 3-5 second pause is not struggle.
+  static const int _hesitationThresholdMs = 8000;
 
   // ---- State Blocking ----
   bool _isSubmittingRound = false;
@@ -560,9 +562,17 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
         ? rounds[_currentRound - 1]
         : {};
 
-    final canonical = CanonicalItemResolver.resolve(
+    final fallbackCanonical = CanonicalItemResolver.resolve(
       widget.activityNode,
       roundData,
+      _currentRound - 1,
+    );
+    final payloadItemId = CanonicalItemResolver.normalizeItemId(
+      itemId ?? fallbackCanonical.itemId,
+    );
+    final canonical = CanonicalItemResolver.resolveByItemId(
+      widget.activityNode,
+      payloadItemId,
       _currentRound - 1,
     );
     final researchMeta = widget.activityNode.researchMetadata;
@@ -614,10 +624,6 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     // --- NEW: Real-time Orchestrator Submission (C1-C4) ---
     final studentId = _studentId;
     final sessionId = TelemetryService().sessionId;
-
-    final payloadItemId = CanonicalItemResolver.normalizeItemId(
-      itemId ?? canonical.itemId,
-    );
 
     final payload = {
       "schema_version": "2.0",

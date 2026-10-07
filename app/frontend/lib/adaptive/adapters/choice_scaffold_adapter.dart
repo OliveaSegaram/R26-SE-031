@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/curriculum_models.dart';
 import '../../widgets/telemetry_wrapper.dart';
 import '../controllers/adaptive_choice_controller.dart';
+import '../controllers/adaptive_task_coordinator.dart';
 import '../models/adaptive_scaffold_models.dart';
 
 /// Reusable adapter for MCQ/audio/fill-blank templates. It keeps task screens
@@ -14,6 +15,49 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
   String _adaptiveSignature = '';
   String adaptiveItemId = '';
   int adaptiveCorrectIndex = 0;
+  AdaptiveTaskCoordinator? adaptiveTaskCoordinator;
+
+  void initializeAdaptiveTask({
+    required ActivityNode? activity,
+    required int roundIndex,
+  }) {
+    if (activity == null || activity.rounds.isEmpty) return;
+    adaptiveTaskCoordinator ??= AdaptiveTaskCoordinator(
+      activity: activity,
+      initialRoundIndex: roundIndex,
+    );
+  }
+
+  Map<String, dynamic> adaptiveRoundData({
+    required ActivityNode? activity,
+    required int roundIndex,
+  }) {
+    initializeAdaptiveTask(activity: activity, roundIndex: roundIndex);
+    return adaptiveTaskCoordinator?.roundData ??
+        (activity != null && roundIndex < activity.rounds.length
+            ? activity.rounds[roundIndex]
+            : const <String, dynamic>{});
+  }
+
+  Future<AdaptiveTaskTransition?> completeAdaptiveChoiceTask(
+    int score, {
+    required int roundIndex,
+    bool? isCorrect,
+    List<String> selectedAnswers = const <String>[],
+    bool attemptAlreadyLogged = false,
+  }) async {
+    final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
+    if (wrapper == null || adaptiveTaskCoordinator == null) return null;
+    final result = await wrapper.completeAdaptiveRound(
+      score,
+      currentRoundIndex: roundIndex,
+      itemId: adaptiveTaskCoordinator!.itemId,
+      isCorrect: isCorrect,
+      selectedAnswers: selectedAnswers,
+      attemptAlreadyLogged: attemptAlreadyLogged,
+    );
+    return adaptiveTaskCoordinator!.applyResult(result);
+  }
 
   void configureAdaptiveChoices({
     required ActivityNode? activity,
@@ -22,15 +66,19 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
     required int correctIndex,
     AdaptiveOptionRole distractorRole = AdaptiveOptionRole.semanticDistractor,
   }) {
+    initializeAdaptiveTask(activity: activity, roundIndex: roundIndex);
     final itemId = CanonicalItemResolver.normalizeItemId(
-      activity != null && roundIndex >= 0 && roundIndex < activity.rounds.length
-          ? activity.rounds[roundIndex]['item_id']?.toString() ??
-                CanonicalItemResolver.canonicalItemId(
-                  skillId: activity.skillId,
-                  activityId: activity.id,
-                  roundNumber: roundIndex + 1,
-                )
-          : 'UNKNOWN_ITEM',
+      adaptiveTaskCoordinator?.itemId ??
+          (activity != null &&
+                  roundIndex >= 0 &&
+                  roundIndex < activity.rounds.length
+              ? activity.rounds[roundIndex]['item_id']?.toString() ??
+                    CanonicalItemResolver.canonicalItemId(
+                      skillId: activity.skillId,
+                      activityId: activity.id,
+                      roundNumber: roundIndex + 1,
+                    )
+              : 'UNKNOWN_ITEM'),
     );
     final signature = '$itemId|$correctIndex|${options.join('\u001f')}';
     if (_adaptiveSignature == signature) return;
