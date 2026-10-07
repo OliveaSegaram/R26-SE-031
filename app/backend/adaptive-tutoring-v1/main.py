@@ -369,6 +369,10 @@ async def update_interaction(request: InteractionRequest):
         adaptive_state=adaptive_state,
         learner_profile=getattr(request, "learner_profile", {}),
         current_item_id=canonical_item,
+        has_reduced_remediation=bool(
+            item_doc.get("has_reduced_remediation", False)
+            if item_doc else False
+        ),
     )
 
     # Keep the original Component 2/3 evidence signals in the unified C4
@@ -481,6 +485,12 @@ async def update_interaction(request: InteractionRequest):
                 )
             else:
                 forced_id = ""
+        else:
+            # Forced V1/V2 selection must report its authored difficulty, not
+            # the difficulty of the item that was just completed.
+            forced_b = float(forced_document.get("difficulty_b", 0.0))
+            policy_output["difficulty"] = forced_b
+            policy_output["target_difficulty"] = forced_b
 
     if policy_output["decision"] != "TERMINATE":
         if unseen_core_ids:

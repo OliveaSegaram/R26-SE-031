@@ -2,7 +2,8 @@
 
 The policy intentionally separates instructional help from mastery evidence:
 
-* ``V1`` is an unseen, same-difficulty remediation item.
+* ``V1`` is an unseen, reduced-load remediation item when a valid easier task
+  exists.
 * ``V2`` is an unseen, same-difficulty independent confirmation item.
 
 No previously administered core item is reused as remediation.  The policy is
@@ -20,7 +21,8 @@ ITEM_RE = re.compile(r"^(S\d+A\d+R\d{2})(?:V(\d+))?$", re.IGNORECASE)
 
 
 class EquivalentTaskPolicy:
-    version = "C4_EQUIVALENT_TASK_V1"
+    version = "C4_EQUIVALENT_TASK_V2"
+    remediation_step = 0.5
 
     @staticmethod
     def _result(
@@ -33,6 +35,8 @@ class EquivalentTaskPolicy:
         state: Dict[str, Any],
         reasons: list[str],
         confirmation_required: bool,
+        target_b: Optional[float] = None,
+        difficulty_direction: str = "MAINTAIN",
     ) -> Dict[str, Any]:
         state["next_phase"] = next_phase
         if next_item:
@@ -41,9 +45,9 @@ class EquivalentTaskPolicy:
         return {
             "next_activity": activity_id,
             "next_item": next_item,
-            "difficulty": current_b,
-            "target_difficulty": current_b,
-            "difficulty_direction": "MAINTAIN",
+            "difficulty": current_b if target_b is None else target_b,
+            "target_difficulty": current_b if target_b is None else target_b,
+            "difficulty_direction": difficulty_direction,
             "scaffold_level": 0,
             "decision": decision,
             "policy_reason": reasons,
@@ -61,6 +65,7 @@ class EquivalentTaskPolicy:
         current_b: float,
         state: Optional[Dict[str, Any]],
         policy_reason: list[str],
+        has_reduced_remediation: bool = True,
     ) -> Optional[Dict[str, Any]]:
         """Return a forced equivalent item, or ``None`` for normal selection."""
         match = ITEM_RE.fullmatch(current_item_id or "")
@@ -83,6 +88,7 @@ class EquivalentTaskPolicy:
             if independent:
                 state["next_phase"] = "CORE"
                 state.pop("remediation_origin_item_id", None)
+                state.pop("remediation_origin_difficulty_b", None)
                 policy_reason.append("CORE_INDEPENDENT_SUCCESS")
                 return self._result(
                     activity_id=activity_id,
@@ -112,9 +118,29 @@ class EquivalentTaskPolicy:
                     confirmation_required=True,
                 )
 
+            if not has_reduced_remediation:
+                policy_reason.extend([
+                    "CORE_ASSISTED_OR_FAILED",
+                    "NO_VALID_LOWER_LOAD_ITEM",
+                    "ONE_UNSEEN_SAME_LEVEL_RETRY_REQUIRED",
+                ])
+                state["remediation_origin_difficulty_b"] = current_b
+                return self._result(
+                    activity_id=activity_id,
+                    next_item=f"{core_item}V2",
+                    next_phase="CONFIRMATION",
+                    decision="CONFIRMATION",
+                    current_b=current_b,
+                    state=state,
+                    reasons=policy_reason,
+                    confirmation_required=True,
+                )
+
+            remediation_b = max(-3.0, current_b - self.remediation_step)
+            state["remediation_origin_difficulty_b"] = current_b
             policy_reason.extend([
                 "CORE_ASSISTED_OR_FAILED",
-                "UNSEEN_EQUIVALENT_REMEDIATION_REQUIRED",
+                "UNSEEN_REDUCED_LOAD_REMEDIATION_REQUIRED",
             ])
             return self._result(
                 activity_id=activity_id,
@@ -125,9 +151,14 @@ class EquivalentTaskPolicy:
                 state=state,
                 reasons=policy_reason,
                 confirmation_required=False,
+                target_b=remediation_b,
+                difficulty_direction="EASIER",
             )
 
         if variant_number == 1:
+            origin_b = float(
+                state.get("remediation_origin_difficulty_b", current_b)
+            )
             policy_reason.extend([
                 "REMEDIATION_ITEM_COMPLETED",
                 "UNSEEN_EQUIVALENT_CONFIRMATION_REQUIRED",
@@ -137,7 +168,7 @@ class EquivalentTaskPolicy:
                 next_item=f"{core_item}V2",
                 next_phase="CONFIRMATION",
                 decision="CONFIRMATION",
-                current_b=current_b,
+                current_b=origin_b,
                 state=state,
                 reasons=policy_reason,
                 confirmation_required=True,
@@ -146,6 +177,7 @@ class EquivalentTaskPolicy:
         if variant_number == 2:
             state["next_phase"] = "CORE"
             state.pop("remediation_origin_item_id", None)
+            state.pop("remediation_origin_difficulty_b", None)
             if independent:
                 policy_reason.append("UNASSISTED_EQUIVALENT_CONFIRMATION_PASSED")
             else:
