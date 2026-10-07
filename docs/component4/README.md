@@ -26,21 +26,30 @@ pending remediation or confirmation item.
 
 ## Equivalent-task protocol
 
-Every Skill 1–4 core item has two unseen equivalents in the same KC,
-equivalent group, and difficulty:
+Every Skill 1–4 core item has two unseen equivalents in the same KC and
+equivalent group. V1 is reduced in task load when a valid easier task can be
+authored; V2 preserves the core load and difficulty for independent evidence.
 
 | Result on displayed item | Next item | Purpose |
 |---|---|---|
 | Clean independent core success | Next unseen core | Continue measurement |
-| Slow/struggled independent core success | Exact `V2` | Independent confirmation |
-| Assisted or failed core result | Exact `V1` | Same-difficulty remediation |
+| Correct on the first attempt with normal Grade 1 thinking time | Next unseen core | Do not create an unnecessary repeat |
+| Strong, multi-signal independent struggle | Exact `V2` | Independent confirmation |
+| Assisted or failed core with a valid lower-load task | Exact `V1` | Easier remediation |
+| Assisted or failed floor task | Exact `V2` only | One different same-level retry; do not invent an invalid easier task |
 | `V1` completed | Exact `V2` | Remove assistance and confirm |
 | `V2` completed | Next unseen core | Bounded exit; no loop/reuse |
 
 If V2 still requires help, the child continues without an endless loop and the
 state records a teacher-review recommendation. V1/V2 use different task
-content—not the failed task and not an earlier easier task. The progress dot
-stays attached to the source core task throughout the sequence.
+content—not the failed task and not a previously completed task. The progress
+dot stays attached to the source core task throughout the sequence.
+
+A 3–5 second pause is normal for this age group. The app records latency for
+research, but uses an 8-second hesitation event threshold and requires strong,
+combined evidence before labelling an independently correct response as
+struggled. A high fatigue proxy is recorded with a recommendation to offer a
+break after the activity; it cannot masquerade as successful completion.
 
 ## Task-family scaffolds
 
@@ -139,7 +148,8 @@ The stopping rule is explicit:
 
 - complete only after all core items have evidence and any pending V1/V2 flow
   has ended;
-- terminate early only for the high-fatigue safety rule;
+- never convert fatigue into mid-activity completion; retain it as an
+  observational signal and recommend a break after the activity;
 - do not claim a psychometric precision threshold from a short Grade 1
   activity—the recorded SE is reported for analysis, not used to manufacture
   false certainty.
@@ -155,7 +165,7 @@ cd ../../frontend
 flutter test test/adaptive_choice_controller_test.dart test/canonical_resolver_test.dart test/adaptive_task_coordinator_test.dart
 ```
 
-Current Component 4 result: 43 backend tests and 19 focused Flutter tests pass.
+Current Component 4 result: 50 backend tests and 20 focused Flutter tests pass.
 The repository-wide frontend/backend suites still contain unrelated existing
 parent-dashboard PP2 assertions; they are outside Component 4 and are recorded
 separately rather than hidden.
