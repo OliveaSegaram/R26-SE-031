@@ -4,15 +4,23 @@ from typing import Dict, Any, Optional, Tuple
 from services.equivalent_task_policy import equivalent_task_policy
 
 def get_activity_latency_baseline(activity_id: str) -> int:
-    """Provisional baselines in ms"""
+    """Grade-1 task-time baselines in milliseconds.
+
+    These are deliberately generous observational baselines, not speed limits.
+    A child is not sent to extra instruction merely for taking longer to look,
+    listen, drag several objects, or formulate an answer.
+    """
     baselines = {
-        "2.1": 4000,
-        "2.2": 8000,
-        "2.3": 6000,
-        "2.4": 8000,
-        "2.5": 5000,
+        "1.1": 12000, "1.2": 15000, "1.3": 20000,
+        "1.4": 12000, "1.5": 12000,
+        "2.1": 10000, "2.2": 15000, "2.3": 10000,
+        "2.4": 12000, "2.5": 12000,
+        "3.1": 12000, "3.2": 12000, "3.3": 12000,
+        "3.4": 12000, "3.5": 18000,
+        "4.1": 15000, "4.2": 15000, "4.3": 15000,
+        "4.4": 20000,
     }
-    return baselines.get(activity_id, 5000)
+    return baselines.get(activity_id, 12000)
 
 class PolicyEngine:
     def classify_response(self, is_correct: bool, telemetry: Any, activity_id: str) -> Tuple[str, int, str, float]:
@@ -26,26 +34,56 @@ class PolicyEngine:
         if telemetry.misclick_count == 1: score += 1
         elif telemetry.misclick_count >= 2: score += 2
         
-        if telemetry.hesitation_count == 1: score += 1
-        elif telemetry.hesitation_count >= 2: score += 2
+        if telemetry.hesitation_count == 2: score += 1
+        elif telemetry.hesitation_count >= 3: score += 2
         
-        if latency_ratio > 2.0: score += 2
-        elif latency_ratio > 1.25: score += 1
+        if latency_ratio > 3.0: score += 2
+        elif latency_ratio > 1.75: score += 1
         
-        if telemetry.audio_replay_count >= 1: score += 1
+        if telemetry.audio_replay_count >= 2: score += 1
             
         if score >= 4: band = "HIGH"
         elif score >= 2: band = "MODERATE"
         else: band = "LOW"
         
+        first_attempt_correct = getattr(telemetry, "first_attempt_correct", None)
+        incorrect_attempts = int(
+            getattr(telemetry, "incorrect_attempt_count", 0) or 0
+        )
+        scaffold_level = int(
+            getattr(telemetry, "scaffold_level_used", 0) or 0
+        )
+        hint_count = int(getattr(telemetry, "hint_count", 0) or 0)
+        correction_count = int(
+            getattr(telemetry, "correction_count", 0) or 0
+        )
+
         if not is_correct:
             qual = "FAILED"
-        elif telemetry.scaffold_level_used > 0:
+        elif (
+            scaffold_level > 0
+            or incorrect_attempts > 0
+            or first_attempt_correct is False
+            or hint_count > 0
+        ):
             qual = "ASSISTED_SUCCESS"
-        elif telemetry.misclick_count == 0 and telemetry.hesitation_count <= 1 and latency_ratio <= 1.25:
-            qual = "CLEAN_SUCCESS"
-        else:
+        elif (
+            correction_count > 0
+            or telemetry.misclick_count >= 2
+            or (
+                telemetry.hesitation_count >= 3
+                and latency_ratio > 2.5
+            )
+            or (
+                telemetry.audio_replay_count >= 2
+                and telemetry.hesitation_count >= 2
+            )
+        ):
             qual = "STRUGGLED_SUCCESS"
+        else:
+            # Normal Grade-1 thinking time (including one hesitation event)
+            # remains independent evidence and must not create a repeat task.
+            qual = "CLEAN_SUCCESS"
             
         return qual, score, band, latency_ratio
 
@@ -154,7 +192,13 @@ class PolicyEngine:
         capabilities = set(getattr(telemetry, "supported_actions", None) or [])
         visible_ids = list(getattr(telemetry, "visible_option_ids", None) or [])
         correct_ids = list(getattr(telemetry, "correct_option_ids", None) or [])
-        minimum_visible = max(2, int(getattr(telemetry, "minimum_visible_options", 2) or 2))
+        # Preserve at least two visible choices for Grade-1 tasks. With only
+        # two choices, highlighting is less revealing than deleting the sole
+        # distractor and leaving the answer by itself.
+        minimum_visible = max(
+            2,
+            int(getattr(telemetry, "minimum_visible_options", 2) or 2),
+        )
 
         state = adaptive_state.get("generic_scaffold_state", {
             "wrong_count": 0,
@@ -180,20 +224,42 @@ class PolicyEngine:
         scaffold_level = min(state["wrong_count"], 3)
         decision = "RETRY_CURRENT"
 
-        can_remove = (
+        effective_visible_ids = [
+            str(option_id) for option_id in visible_ids
+            if str(option_id) not in already_removed
+        ]
+        supports_remove = (
             "REMOVE_OPTION" in capabilities or "REMOVE_OPTIONS" in capabilities
-        ) and options_count - len(already_removed) > minimum_visible
+        )
+        supports_disable = (
+            "DISABLE_OPTION" in capabilities or "DISABLE_OPTIONS" in capabilities
+        )
+        can_reduce = (
+            supports_remove or supports_disable
+        ) and len(effective_visible_ids) > minimum_visible
 
-        if state["wrong_count"] <= 2 and can_remove and candidates:
+        # Keep the established Grade-1 escalation used by Activity 1:
+        # remove at most two distractors, then guide attention by highlighting
+        # instead of progressively deleting the entire answer pool.
+        if state["wrong_count"] <= 2 and can_reduce and candidates:
             selected = candidates[0]
             already_removed.add(selected)
+            command_type = "REMOVE_OPTIONS" if supports_remove else "DISABLE_OPTIONS"
             commands.append({
-                "type": "REMOVE_OPTIONS",
+                "type": command_type,
                 "target_option_ids": [selected],
-                "reason_code": "REDUCE_DISTRACTOR_LOAD",
+                "reason_code": (
+                    "REDUCE_DISTRACTOR_LOAD"
+                    if supports_remove
+                    else "LOCK_DISTRACTOR_PRESERVE_SPATIAL_LAYOUT"
+                ),
             })
-            reason_codes.append("DISTRACTOR_REMOVED_DETERMINISTICALLY")
-            decision = "SCAFFOLD_REMOVE_DISTRACTOR"
+            if supports_remove:
+                reason_codes.append("DISTRACTOR_REMOVED_DETERMINISTICALLY")
+                decision = "SCAFFOLD_REMOVE_DISTRACTOR"
+            else:
+                reason_codes.append("DISTRACTOR_LOCKED_DETERMINISTICALLY")
+                decision = "SCAFFOLD_DISABLE_DISTRACTOR"
         elif "REVEAL_FIRST_TOKEN" in capabilities and correct_ids:
             commands.append({
                 "type": "REVEAL_FIRST_TOKEN",
@@ -405,6 +471,7 @@ class PolicyEngine:
         adaptive_state: Optional[Dict[str, Any]] = None,
         learner_profile: Optional[Dict[str, Any]] = None,
         current_item_id: str = "",
+        has_reduced_remediation: bool = True,
     ) -> Dict[str, Any]:
         """
         Main progression policy engine.
@@ -412,7 +479,19 @@ class PolicyEngine:
         """
         policy_reason = [f"RESPONSE_QUALITY: {response_quality}"]
         
-        if fatigue_score > 0.80:
+        component4_scope = bool(
+            re.fullmatch(r"[1-4]\.\d+", current_activity or "")
+        )
+        if fatigue_score > 0.80 and component4_scope:
+            # C1 fatigue is observational evidence.  Ending a Grade-1 game in
+            # the middle of a task looked like successful activity completion
+            # in Flutter, so C4 records the signal and recommends a break only
+            # after the activity instead of terminating progression.
+            policy_reason.extend([
+                "HIGH_FATIGUE_OBSERVED",
+                "BREAK_RECOMMENDED_AFTER_ACTIVITY",
+            ])
+        elif fatigue_score > 0.80:
             policy_reason.append("HIGH_FATIGUE")
             return {
                 "next_activity": current_activity,
@@ -427,10 +506,10 @@ class PolicyEngine:
             }
 
         # Skills 1-4 share one bounded research protocol. Content and scaffold
-        # rendering remain activity-specific, while remediation always uses an
-        # unseen same-difficulty equivalent item followed by an unseen
-        # confirmation item.
-        if re.fullmatch(r"[1-4]\.\d+", current_activity or ""):
+        # rendering remain activity-specific. Assisted/failed work receives a
+        # valid reduced-load V1 before original-level V2; a floor task skips
+        # the invalid easy step and receives only one unseen V2 retry.
+        if component4_scope:
             equivalent_action = equivalent_task_policy.get_next_action(
                 activity_id=current_activity,
                 current_item_id=current_item_id,
@@ -438,6 +517,7 @@ class PolicyEngine:
                 current_b=current_difficulty_b,
                 state=adaptive_state,
                 policy_reason=policy_reason,
+                has_reduced_remediation=has_reduced_remediation,
             )
             if equivalent_action is not None:
                 return equivalent_action

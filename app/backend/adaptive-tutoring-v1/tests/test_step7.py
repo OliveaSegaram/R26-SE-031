@@ -195,8 +195,9 @@ async def test_5_high_fatigue(client):
     body = res.json()
     evidence = body.get("selection_evidence")
     
-    assert "HIGH_FATIGUE" in evidence["policy_reason"]
-    assert body["next_action"]["decision"] == "TERMINATE"
+    assert "HIGH_FATIGUE_OBSERVED" in evidence["policy_reason"]
+    assert "BREAK_RECOMMENDED_AFTER_ACTIVITY" in evidence["policy_reason"]
+    assert body["next_action"]["decision"] != "TERMINATE"
 
 @pytest.mark.asyncio
 async def test_6_visual_orthographic_profile(client):
