@@ -79,7 +79,9 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   set currentRound(int value) => _currentRound = value;
 
   // ---- Hesitation timer ----
-  static const int _hesitationThresholdMs = 3000;
+  // Grade-1 learners need time to inspect pictures, decode Sinhala prompts,
+  // and plan a drag/tap response. A normal 3-5 second pause is not struggle.
+  static const int _hesitationThresholdMs = 8000;
 
   // ---- State Blocking ----
   bool _isSubmittingRound = false;

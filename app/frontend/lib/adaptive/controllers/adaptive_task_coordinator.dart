@@ -92,8 +92,14 @@ class AdaptiveTaskCoordinator {
     final requested = action['next_item']?.toString() ?? '';
     _phase = action['next_phase']?.toString() ?? 'CORE';
 
-    if (decision == 'TERMINATE' ||
-        decision == 'ACTIVITY_COMPLETE' ||
+    if (decision == 'TERMINATE') {
+      // A safety/fatigue stop is not proof that the child completed the
+      // activity. Older backend responses used TERMINATE with an empty item;
+      // continue safely instead of showing a false completion celebration.
+      return _sequentialFallback('TERMINATE_IS_NOT_ACTIVITY_COMPLETE');
+    }
+
+    if (decision == 'ACTIVITY_COMPLETE' ||
         decision == 'CURRICULUM_COMPLETE' ||
         requested == 'COMPLETE') {
       return AdaptiveTaskTransition.complete(decision: decision, phase: _phase);

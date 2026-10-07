@@ -72,4 +72,26 @@ void main() {
     expect(next.roundIndex, 1);
     expect(next.itemId, 'S3A1R02');
   });
+
+  test(
+    'terminate without completion evidence never fakes activity completion',
+    () {
+      final coordinator = AdaptiveTaskCoordinator(activity: activity);
+      final transition = coordinator.applyResult(<String, dynamic>{
+        'next_action': <String, dynamic>{
+          'next_item': '',
+          'next_phase': 'CORE',
+          'next_activity': '3.1',
+          'decision': 'TERMINATE',
+        },
+      });
+      expect(transition.isComplete, isFalse);
+      expect(transition.roundIndex, 1);
+      expect(transition.itemId, 'S3A1R02');
+      expect(
+        transition.reasonCodes,
+        contains('TERMINATE_IS_NOT_ACTIVITY_COMPLETE'),
+      );
+    },
+  );
 }
