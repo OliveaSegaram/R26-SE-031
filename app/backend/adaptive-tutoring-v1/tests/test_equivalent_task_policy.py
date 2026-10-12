@@ -37,6 +37,33 @@ def test_floor_task_skips_invalid_easy_step_and_uses_one_equivalent_retry():
     assert "NO_VALID_LOWER_LOAD_ITEM" in action["policy_reason"]
 
 
+def test_skill_three_activity_five_floor_uses_tree_retry_only_once():
+    state = {}
+    retry = EquivalentTaskPolicy().get_next_action(
+        activity_id="3.5",
+        current_item_id="S3A5R01",
+        response_quality="ASSISTED_SUCCESS",
+        current_b=-1.0,
+        state=state,
+        policy_reason=["RESPONSE_QUALITY: ASSISTED_SUCCESS"],
+        has_reduced_remediation=False,
+    )
+    assert retry["next_item"] == "S3A5R01V2"
+    assert retry["next_phase"] == "CONFIRMATION"
+
+    after_retry = EquivalentTaskPolicy().get_next_action(
+        activity_id="3.5",
+        current_item_id="S3A5R01V2",
+        response_quality="CLEAN_SUCCESS",
+        current_b=-1.0,
+        state=state,
+        policy_reason=["RESPONSE_QUALITY: CLEAN_SUCCESS"],
+    )
+    assert after_retry["next_item"] == ""
+    assert after_retry["next_phase"] == "CORE"
+    assert after_retry["decision"] == "CONTINUE"
+
+
 def test_authored_floor_remediation_precedes_independent_confirmation():
     action = EquivalentTaskPolicy().get_next_action(
         activity_id="2.4",
