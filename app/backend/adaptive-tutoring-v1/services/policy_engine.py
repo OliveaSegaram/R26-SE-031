@@ -264,7 +264,7 @@ class PolicyEngine:
             commands.append({
                 "type": "REVEAL_FIRST_TOKEN",
                 "target_option_ids": correct_ids[:1],
-                "reason_code": "SEQUENCE_START_SUPPORT",
+                "reason_code": "SEQUENCE_NEXT_TOKEN_SUPPORT",
             })
             reason_codes.append("NEXT_REQUIRED_TOKEN_REVEALED")
             decision = "SCAFFOLD_REVEAL_FIRST_TOKEN"
