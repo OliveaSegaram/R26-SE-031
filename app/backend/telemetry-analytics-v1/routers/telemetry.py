@@ -53,8 +53,8 @@ def _normalize_item_id(value: object) -> str:
     )
 
 
-async def _validate_skill_two_research_event(db, event: dict) -> None:
-    """Validate immutable Skill 2 lineage against the canonical item bank.
+async def _validate_component_four_research_event(db, event: dict) -> None:
+    """Validate immutable Skill 2/3 lineage against the canonical item bank.
 
     Observation fields are never rewritten. Static item metadata is copied
     from the bank, while any client mismatch is retained as an explicit audit
@@ -63,19 +63,22 @@ async def _validate_skill_two_research_event(db, event: dict) -> None:
     raw_item_id = str(event.get("item_id") or "")
     normalized_item_id = _normalize_item_id(raw_item_id)
     item_match = _CANONICAL_ITEM_RE.fullmatch(normalized_item_id)
-    is_skill_two = (
-        event.get("skill_id") == "skill_2"
-        or (item_match is not None and item_match.group("skill") == "2")
+    submitted_skill = str(event.get("skill_id") or "")
+    item_skill_number = item_match.group("skill") if item_match else ""
+    skill_number = (
+        item_skill_number
+        or (submitted_skill.removeprefix("skill_") if submitted_skill else "")
     )
-    if not is_skill_two:
+    if skill_number not in {"2", "3"}:
         return
+    canonical_skill_id = f"skill_{skill_number}"
 
     errors = []
     if raw_item_id != normalized_item_id:
         errors.append("NON_CANONICAL_ITEM_ID")
     bank_item = await db.item_bank.find_one({
         "item_id": normalized_item_id,
-        "skill_id": "skill_2",
+        "skill_id": canonical_skill_id,
         "is_active": {"$ne": False},
     })
     if bank_item is None:
@@ -118,7 +121,7 @@ async def _validate_skill_two_research_event(db, event: dict) -> None:
     accepted_activity_ids = {
         canonical_activity,
         f"act_{activity_number}",
-        f"skill_2_act_{activity_number}",
+        f"{canonical_skill_id}_act_{activity_number}",
     }
     if event.get("activity_id") not in accepted_activity_ids:
         errors.append("ACTIVITY_ID_MISMATCH")
@@ -245,7 +248,7 @@ async def submit_telemetry(
         event["schema_version"] = "2.0"
         event["session_id"] = req.session_id
         event["student_id"] = req.student_id
-        await _validate_skill_two_research_event(db, event)
+        await _validate_component_four_research_event(db, event)
 
     # Retried submissions update the same complete session and summary.
     await db.telemetry_sessions.update_one(session_key, {"$set": session_doc}, upsert=True)
