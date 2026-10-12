@@ -194,6 +194,9 @@ def _item_document(
             "core" if item_role == "CORE" else "equivalent",
         ),
         "distractor_strategy": round_data.get("distractor_strategy"),
+        "single_floor_retry": bool(
+            round_data.get("single_floor_retry", False)
+        ),
         "difficulty_features": round_data.get("difficulty_features"),
         "allowed_scaffolds": _capabilities(activity.get("template_type", "")),
         "minimum_visible_options": 2,
@@ -210,7 +213,7 @@ def _item_document(
         },
         # Exact duplicate variants remain traceable but are excluded from
         # ordinary candidate selection until an educator replaces the content.
-        "is_active": not duplicate_of_core,
+        "is_active": bool(round_data.get("is_active", not duplicate_of_core)),
     }
 
 
