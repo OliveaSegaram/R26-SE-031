@@ -162,3 +162,42 @@ def test_sequence_policy_never_removes_a_future_required_token():
     assert action["commands"][0]["type"] == "REVEAL_FIRST_TOKEN"
     assert action["commands"][0]["target_option_ids"] == ["ITEM_O2"]
     assert action["remove_option_ids"] == []
+
+
+def test_sequence_policy_reveals_the_next_required_token_on_each_retry():
+    engine = PolicyEngine()
+    state = {}
+
+    first = engine.get_support_action(
+        telemetry(
+            supported_actions=["REVEAL_FIRST_TOKEN", "HIGHLIGHT_OPTION"],
+            correct_option_ids=["WORD_T3"],
+            incorrect_option_ids=[],
+        ),
+        3,
+        0,
+        [],
+        state,
+        "3.5",
+        3,
+    )
+    second = engine.get_support_action(
+        telemetry(
+            supported_actions=["REVEAL_FIRST_TOKEN", "HIGHLIGHT_OPTION"],
+            correct_option_ids=["WORD_T2"],
+            incorrect_option_ids=[],
+        ),
+        2,
+        0,
+        [],
+        state,
+        "3.5",
+        3,
+    )
+
+    assert first["commands"][0]["target_option_ids"] == ["WORD_T3"]
+    assert second["commands"][0]["target_option_ids"] == ["WORD_T2"]
+    assert all(
+        action["commands"][0]["reason_code"] == "SEQUENCE_NEXT_TOKEN_SUPPORT"
+        for action in (first, second)
+    )
