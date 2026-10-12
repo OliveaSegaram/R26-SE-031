@@ -17,6 +17,7 @@ from __future__ import annotations
 import copy
 import json
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 
@@ -400,6 +401,218 @@ PICTURE_WORDS = [
     ("assets/images/activity_icons/nature/moon.png", "හඳ"),
 ]
 
+
+def skill3_image_word(image: str, target: str, options: List[str]) -> Dict[str, Any]:
+    return {
+        "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
+        "image_url": image,
+        "options": list(options),
+        "correctOption": target,
+        "correct_index": options.index(target),
+    }
+
+
+def skill3_word_formation(
+    parts: List[str], target: str, options: List[str]
+) -> Dict[str, Any]:
+    joined = " + ".join(f"'{part}'" for part in parts)
+    return {
+        "prompt": f"{joined} එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+        "options": list(options),
+        "correctOption": target,
+        "correct_index": options.index(target),
+    }
+
+
+def skill3_audio_word(target: str, options: List[str]) -> Dict[str, Any]:
+    return {
+        "prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
+        "audio_text": target,
+        "options": list(options),
+        "correctOption": target,
+        "correct_index": options.index(target),
+    }
+
+
+def skill3_fill_blank(
+    word: str,
+    image: str,
+    sequence: List[Any],
+    options: List[str],
+    target: str,
+) -> Dict[str, Any]:
+    return {
+        "prompt": f"'{word}' වචනයේ අඩු අකුර තෝරන්න",
+        "image_url": image,
+        "sequence": list(sequence),
+        "options": list(options),
+        "correctOption": target,
+        "correct_index": options.index(target),
+    }
+
+
+def skill3_jumbled_word(
+    image: str, word: str, parts: List[str]
+) -> Dict[str, Any]:
+    return {
+        "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+        "image_url": image,
+        "correct_word": word,
+        "scrambled_letters": list(reversed(parts)),
+    }
+
+
+# Explicitly reviewed Grade 1 Skill 3 equivalents. Entries are ordered
+# R1V1, R1V2, ... R5V2. V1 follows the preceding core task structure (or the
+# floor structure at R1); V2 preserves the current core structure. Image tasks
+# always carry their own matching asset so variant rendering cannot inherit a
+# semantically incorrect core image.
+SKILL3_ACTIVITY1_VARIANTS = [
+    skill3_image_word("assets/images/activity_icons/plants/tree.png", "ගස", ["ගස", "මල"]),
+    skill3_image_word("assets/images/activity_icons/flowers/flower_05.png", "මල", ["මල", "ගස"]),
+    skill3_image_word("assets/images/activity_icons/body_parts/ear.png", "කන", ["කන", "මල"]),
+    skill3_image_word("assets/images/activity_icons/body_parts/mouth.png", "කට", ["කට", "මල", "ගස"]),
+    skill3_image_word("assets/images/activity_icons/body_parts/tooth.png", "දත", ["දත", "මල", "ගස"]),
+    skill3_image_word("assets/images/activity_icons/everyday_objects/oil_lamp.png", "පහන", ["පහන", "කඩය", "වහල", "බසය"]),
+    skill3_image_word("assets/images/activity_icons/places/shop.png", "කඩය", ["කඩය", "පහන", "වහල", "බසය"]),
+    skill3_image_word("assets/images/activity_icons/everyday_objects/umbrella.png", "කුඩය", ["කුඩය", "තරුව", "පනාව", "පාසල"]),
+    skill3_image_word("assets/images/activity_icons/places/school.png", "පාසල", ["පාසල", "කුඩය", "තරුව", "පනාව"]),
+    skill3_image_word(
+        "assets/images/activity_icons/everyday_objects/chair.png",
+        "පුටුව",
+        ["පුටුව", "සීනුව", "එළුවා", "බල්ලා", "ඉබ්බා"],
+    ),
+]
+
+SKILL3_ACTIVITY2_VARIANTS = [
+    skill3_word_formation(["අ", "ත"], "අත", ["අත", "ගස"]),
+    skill3_word_formation(["ග", "ස"], "ගස", ["ගස", "ඉර"]),
+    skill3_word_formation(["ඉ", "ර"], "ඉර", ["ඉර", "මල"]),
+    skill3_word_formation(["පා", "ට"], "පාට", ["පාට", "පෑන", "කෑම"]),
+    skill3_word_formation(["පො", "ත"], "පොත", ["පොත", "පාර", "පාට"]),
+    skill3_word_formation(["කු", "ඩ", "ය"], "කුඩය", ["කුඩය", "තරුව", "පනාව"]),
+    skill3_word_formation(["පා", "ස", "ල"], "පාසල", ["පාසල", "තරුව", "පනාව"]),
+    skill3_word_formation(["බ", "ල්", "ලා"], "බල්ලා", ["බල්ලා", "එළුවා", "සීනුව", "තරුව"]),
+    skill3_word_formation(["අ", "ක්", "කා"], "අක්කා", ["අක්කා", "බල්ලා", "ඉබ්බා", "එළුවා"]),
+    skill3_word_formation(
+        ["සී", "නු", "ව"],
+        "සීනුව",
+        ["සීනුව", "එළුවා", "ඉබ්බා", "අක්කා", "බල්ලා"],
+    ),
+]
+
+# Keep every Activity 2 answer pool orthographically comparable: the target
+# and all distractors have the same number of Sinhala letter units. Targets are
+# also unique across the five core tasks and ten adaptive equivalents.
+SKILL3_ACTIVITY2_CORE_OPTIONS = [
+    ["කට", "මල"],
+    ["පෑන", "කෑම", "පාට"],
+    ["තරුව", "කුඩය", "පනාව"],
+    ["මල්ලි", "අක්කා", "බල්ලා", "සීනුව"],
+    ["පුටුව", "සීනුව", "එළුවා", "ඉබ්බා", "අක්කා"],
+]
+
+SKILL3_ACTIVITY3_VARIANTS = [
+    skill3_audio_word("ඉර", ["ඉර", "මල"]),
+    skill3_audio_word("ගස", ["ගස", "අත"]),
+    skill3_audio_word("මල", ["මල", "අත"]),
+    skill3_audio_word("වැව", ["වැව", "පාර"]),
+    skill3_audio_word("පාට", ["පාට", "පෑන"]),
+    skill3_audio_word("කුඩය", ["කුඩය", "තරුව", "පනාව"]),
+    skill3_audio_word("පනාව", ["පනාව", "කුඩය", "තරුව"]),
+    skill3_audio_word("ඉබ්බා", ["ඉබ්බා", "බල්ලා", "එළුවා"]),
+    skill3_audio_word("මල්ලි", ["මල්ලි", "අක්කා", "අයියා"]),
+    skill3_audio_word("පුටුව", ["පුටුව", "සීනුව", "එළුවා", "ඉබ්බා"]),
+]
+
+# Activity 3 is auditory discrimination, so visible word length must not reveal
+# the answer. Every distractor has the same Sinhala letter-unit count as the
+# spoken target; later pools also preserve familiar Grade 1 vocabulary.
+SKILL3_ACTIVITY3_CORE_OPTIONS = [
+    ["අත", "පය"],
+    ["පාර", "වැව"],
+    ["පාසල", "ගෙදර", "වත්ත"],
+    ["අම්මා", "අක්කා", "අයියා"],
+    ["කපුටා", "එළුවා", "ඉබ්බා", "බල්ලා"],
+]
+
+SKILL3_ACTIVITY4_VARIANTS = [
+    skill3_fill_blank("මල", "assets/images/activity_icons/flowers/flower_05.png", [None, "ල"], ["ම", "ග"], "ම"),
+    skill3_fill_blank("කන", "assets/images/activity_icons/body_parts/ear.png", [None, "න"], ["ක", "ග"], "ක"),
+    skill3_fill_blank("ඉර", "assets/images/activity_icons/nature/sun.png", [None, "ර"], ["ඉ", "අ"], "ඉ"),
+    skill3_fill_blank("නැව", "assets/images/activity_icons/vehicles/boat.png", ["නැ", None], ["ව", "ර", "ල"], "ව"),
+    skill3_fill_blank("පාර", "assets/images/activity_icons/places/road.png", ["පා", None], ["ර", "ල", "ත"], "ර"),
+    skill3_fill_blank("කුඩය", "assets/images/activity_icons/everyday_objects/umbrella.png", ["කු", None, "ය"], ["ඩ", "ට", "ද"], "ඩ"),
+    skill3_fill_blank("පනාව", "assets/images/activity_icons/everyday_objects/comb.png", ["ප", None, "ව"], ["නා", "මා", "ලා"], "නා"),
+    skill3_fill_blank("ඉබ්බා", "assets/images/activity_icons/animals/turtle.png", ["ඉ", None, "බා"], ["ක්", "ම්", "න්", "බ්"], "බ්"),
+    skill3_fill_blank("බල්ලා", "assets/images/activity_icons/animals/dog.png", ["බ", None, "ලා"], ["ක්", "ම්", "න්", "ල්"], "ල්"),
+    skill3_fill_blank("ගෙම්බා", "assets/images/activity_icons/animals/frog.png", ["ගෙ", None, "බා"], ["ක්", "ම්", "න්", "ල්"], "ම්"),
+]
+
+SKILL3_ACTIVITY5_VARIANTS = [
+    skill3_jumbled_word("assets/images/activity_icons/plants/tree.png", "ගස", ["ග", "ස"]),
+    # The floor task uses one unseen tree item once, regardless of whether the
+    # policy reaches it through the V1 or V2 identifier.
+    skill3_jumbled_word("assets/images/activity_icons/plants/tree.png", "ගස", ["ග", "ස"]),
+    skill3_jumbled_word("assets/images/activity_icons/body_parts/ear.png", "කන", ["ක", "න"]),
+    skill3_jumbled_word("assets/images/activity_icons/places/road.png", "පාර", ["පා", "ර"]),
+    skill3_jumbled_word("assets/images/activity_icons/vehicles/boat.png", "නැව", ["නැ", "ව"]),
+    skill3_jumbled_word("assets/images/activity_icons/vehicles/bus.png", "බසය", ["බ", "ස", "ය"]),
+    skill3_jumbled_word("assets/images/activity_icons/places/shop.png", "කඩය", ["ක", "ඩ", "ය"]),
+    skill3_jumbled_word("assets/images/activity_icons/everyday_objects/umbrella.png", "කුඩය", ["කු", "ඩ", "ය"]),
+    skill3_jumbled_word("assets/images/activity_icons/places/school.png", "පාසල", ["පා", "ස", "ල"]),
+    skill3_jumbled_word("assets/images/activity_icons/everyday_objects/bell.png", "සීනුව", ["සී", "නු", "ව"]),
+]
+
+SKILL3_VARIANTS = {
+    1: SKILL3_ACTIVITY1_VARIANTS,
+    2: SKILL3_ACTIVITY2_VARIANTS,
+    3: SKILL3_ACTIVITY3_VARIANTS,
+    4: SKILL3_ACTIVITY4_VARIANTS,
+    5: SKILL3_ACTIVITY5_VARIANTS,
+}
+
+
+def skill3_difficulty_features(
+    activity: int, content: Dict[str, Any]
+) -> Dict[str, Any]:
+    if activity == 4:
+        match = re.search(r"'([^']+)'", str(content.get("prompt", "")))
+        target_word = match.group(1) if match else "".join(
+            str(content.get("correctOption", "")) if unit is None else str(unit)
+            for unit in content.get("sequence", [])
+        )
+    else:
+        target_word = str(
+            content.get("correct_word")
+            or content.get("audio_text")
+            or content.get("correctOption")
+            or ""
+        )
+    sinhala_letters = [
+        char
+        for char in target_word
+        if "\u0d80" <= char <= "\u0dff"
+        and unicodedata.category(char).startswith("L")
+    ]
+    pilla_count = sum(
+        1
+        for char in target_word
+        if "\u0d80" <= char <= "\u0dff"
+        and unicodedata.category(char).startswith("M")
+    )
+    features = {
+        "word_unit_count": len(sinhala_letters),
+        "pilla_count": pilla_count,
+    }
+    if content.get("options") is not None:
+        features["answer_pool_size"] = len(content["options"])
+    if content.get("scrambled_letters") is not None:
+        features["answer_pool_size"] = len(content["scrambled_letters"])
+    if content.get("image_url"):
+        features["has_matching_image"] = True
+    return features
+
 SENTENCES = [
     ("assets/images/games/boy_drawing.png", "මල්ලි චිත්‍රයක් අඳිනවා."),
     ("assets/images/games/boy_flying_kite.png", "මල්ලි සරුංගලයක් යවනවා."),
@@ -536,18 +749,28 @@ def reduce_remediation_load(
         # V1 is explicitly authored at the preceding memory/orthography level.
         return easier, True
 
+    if skill == 3 and activity in {1, 2, 3, 4}:
+        # Skill 3 V1 is explicitly authored at the preceding round's word-unit,
+        # pilla, and answer-pool structure. Do not shrink that reviewed pool a
+        # second time. R1 is the floor-equivalent exception.
+        match = re.search(r"R(\d+)", str(core.get("item_id", "")), re.I)
+        return easier, int(match.group(1)) > 1 if match else False
+
     if (skill, activity) in {
         (1, 4),
-        (3, 1), (3, 2), (3, 3), (3, 4),
         (4, 1), (4, 2), (4, 3),
     }:
         return easier, _reduce_choice_options(easier)
 
-    # Jumbled-word and jumbled-sentence V1 content is generated at a shorter
-    # valid length directly in variant_content.
+    # Activity 5 V1 content is educator-authored at the preceding round's
+    # difficulty. R2 remains a valid remediation even though both R1 and R2
+    # contain two word units: it deliberately returns to the simpler,
+    # no-pilla floor vocabulary before the one-pilla confirmation.
     if skill == 3 and activity == 5:
-        core_length = len(core.get("scrambled_letters") or [])
-        return easier, core_length > 2
+        match = re.search(r"R(\d+)", str(core.get("item_id", "")), re.I)
+        return easier, int(match.group(1)) > 1 if match else False
+    # Jumbled-sentence V1 content is generated at a shorter valid length
+    # directly in variant_content.
     if skill == 4 and activity == 4:
         core_length = len(core.get("scrambled_words") or [])
         return easier, core_length > 2
@@ -677,52 +900,8 @@ def variant_content(skill: int, activity: int, round_index: int, variant: int, c
     if skill == 2 and activity == 5:
         return skill2_activity5_content(SKILL2_ACTIVITY5_VARIANTS[slot])
 
-    if skill == 3 and activity == 1:
-        image, target = PICTURE_WORDS[slot % len(PICTURE_WORDS)]
-        count = option_count or 3
-        labels = [entry[1] for entry in rotate(PICTURE_WORDS, slot + 1, count - 1)]
-        options = [target, *[label for label in labels if label != target]][:count]
-        return {"prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න", "image_url": image,
-                "options": options, "correctOption": target, "correct_index": options.index(target)}
-
-    if skill == 3 and activity == 2:
-        parts, target = WORD_PARTS[slot % len(WORD_PARTS)]
-        count = option_count or 3
-        other_words = [word for _, word in rotate(WORD_PARTS, slot + 1, count) if word != target]
-        options = [target, *other_words][:count]
-        joined = " + ".join(f"'{part}'" for part in parts)
-        return {"prompt": f"{joined} එකතු වූ විට හැදෙන වචනය කුමක්ද?", "options": options,
-                "correctOption": target, "correct_index": options.index(target)}
-
-    if skill == 3 and activity == 3:
-        _, target = WORD_PARTS[slot % len(WORD_PARTS)]
-        count = option_count or 3
-        others = [word for _, word in rotate(WORD_PARTS, slot + 2, count) if word != target]
-        options = [target, *others][:count]
-        return {"prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න", "audio_text": target,
-                "options": options, "correctOption": target, "correct_index": options.index(target)}
-
-    if skill == 3 and activity == 4:
-        parts, word = WORD_PARTS[slot % len(WORD_PARTS)]
-        blank = slot % len(parts)
-        target = parts[blank]
-        sequence = list(parts)
-        sequence[blank] = None
-        count = option_count or 3
-        candidates = [target, "ක", "ම", "ය", "ව", "ස"]
-        options = rotate(candidates, variant, count)
-        if target not in options:
-            options[-1] = target
-        return {"prompt": f"'{word}' වචනයේ අඩු අකුර තෝරන්න", "sequence": sequence,
-                "options": options, "correctOption": target, "correct_index": options.index(target)}
-
-    if skill == 3 and activity == 5:
-        core_length = len(core.get("scrambled_letters") or [])
-        desired = max(2, core_length - 1) if variant == 1 else core_length
-        eligible = [entry for entry in WORD_PARTS if len(entry[0]) == desired]
-        parts, word = eligible[slot % len(eligible)]
-        return {"prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න", "correct_word": word,
-                "scrambled_letters": list(reversed(parts))}
+    if skill == 3 and activity in SKILL3_VARIANTS:
+        return copy.deepcopy(SKILL3_VARIANTS[activity][slot])
 
     if skill == 4 and activity == 1:
         image, sentence = SENTENCES[slot % len(SENTENCES)]
@@ -795,6 +974,30 @@ def build() -> None:
                 ]
             rounds = activity.get("rounds") or activity.get("core_rounds") or []
             for round_index, round_data in enumerate(rounds, start=1):
+                if skill == 3 and activity_number == 1 and round_index == 3:
+                    # Keep the reviewed bus target/image unchanged while making
+                    # all three distractors match its three-unit, no-pilla load.
+                    round_data["options"] = ["බසය", "පහන", "කඩය", "වහල"]
+                    round_data["correctOption"] = "බසය"
+                    round_data["correct_index"] = 0
+                if skill == 3 and activity_number == 1 and round_index == 5:
+                    # The final level intentionally measures discrimination
+                    # among five equally long, familiar Grade 1 words.
+                    round_data["options"] = [
+                        "සීනුව", "පුටුව", "එළුවා", "බල්ලා", "ඉබ්බා"
+                    ]
+                    round_data["correctOption"] = "සීනුව"
+                    round_data["correct_index"] = 0
+                if skill == 3 and activity_number == 2:
+                    options = SKILL3_ACTIVITY2_CORE_OPTIONS[round_index - 1]
+                    target = round_data["correctOption"]
+                    round_data["options"] = list(options)
+                    round_data["correct_index"] = options.index(target)
+                if skill == 3 and activity_number == 3:
+                    options = SKILL3_ACTIVITY3_CORE_OPTIONS[round_index - 1]
+                    target = round_data["correctOption"]
+                    round_data["options"] = list(options)
+                    round_data["correct_index"] = options.index(target)
                 if skill == 2 and activity_number == 3:
                     target, options, strategy = (
                         SKILL2_ACTIVITY3_CORE_ITEMS[round_index - 1]
@@ -856,6 +1059,10 @@ def build() -> None:
                     if skill == 2 and activity_number == 5
                     else 3
                     if skill == 2 and activity_number == 3
+                    else 10
+                    if skill == 3 and activity_number in {4, 5}
+                    else 9
+                    if skill == 3
                     else max(2, int(round_data.get("item_version", 1)))
                 )
                 round_data["equivalent_group_id"] = item_id
@@ -871,6 +1078,10 @@ def build() -> None:
                         "hard" if difficulty > 0.75 else "medium"
                     )
                 round_data.setdefault("is_anchor", round_index == 4)
+                if skill == 3:
+                    round_data["difficulty_features"] = (
+                        skill3_difficulty_features(activity_number, round_data)
+                    )
                 variants = []
                 has_reduced_remediation = False
                 for variant_number, role in ((1, "REMEDIATION"), (2, "CONFIRMATION")):
@@ -883,7 +1094,7 @@ def build() -> None:
                         has_reduced_remediation = reduced
                     variant_difficulty = float(round_data.get("difficulty_b", 0.0))
                     if variant_number == 1 and reduced:
-                        if skill == 2 and activity_number in {1, 2, 3, 4, 5}:
+                        if skill in {2, 3} and activity_number in {1, 2, 3, 4, 5}:
                             variant_difficulty = (
                                 max(-3.0, round(variant_difficulty - 0.5, 2))
                                 if round_index == 1
@@ -900,13 +1111,17 @@ def build() -> None:
                         "item_id": f"{item_id}V{variant_number}",
                         # V1 now follows the preceding round's difficulty
                         # structure; V2 retains the current round structure.
-                        # Version 5 separates this reviewed sequence from the
-                        # superseded same-level V1 content.
+                        # Skill 3 Activities 4-5 version 10 separates revised
+                        # adaptive content from previously collected test
+                        # evidence. Other Skill 3 activities retain version 9.
                         "item_version": (
                             5 if skill == 2 and activity_number == 1
                             else 6 if skill == 2 and activity_number == 4
                             else 3 if skill == 2 and activity_number == 5
                             else 3 if skill == 2 and activity_number in {2, 3}
+                            else 10
+                            if skill == 3 and activity_number in {4, 5}
+                            else 9 if skill == 3
                             else 2
                         ),
                         "item_role": role,
@@ -915,6 +1130,17 @@ def build() -> None:
                         "response_load_relation": "reduced" if reduced else "equivalent",
                         "content": content,
                     }
+                    if (
+                        skill == 3
+                        and activity_number == 5
+                        and round_index == 1
+                    ):
+                        # R1 has no valid easier level. Both identifiers retain
+                        # the educator-approved tree content, but only V2 is an
+                        # active one-shot retry so the child never sees two
+                        # separate floor tasks.
+                        variant_record["is_active"] = variant_number == 2
+                        variant_record["single_floor_retry"] = True
                     if skill == 2 and activity_number == 3:
                         variant_record["distractor_strategy"] = (
                             SKILL2_ACTIVITY3_VARIANTS[
@@ -935,8 +1161,12 @@ def build() -> None:
                             "answer_pool_size": len(content["options"]),
                             "show_seconds": content["show_seconds"],
                         }
+                    if skill == 3:
+                        variant_record["difficulty_features"] = (
+                            skill3_difficulty_features(activity_number, content)
+                        )
                     if (
-                        skill == 2
+                        skill in {2, 3}
                         and activity_number in {1, 2, 3, 4, 5}
                         and variant_number == 1
                     ):
@@ -948,9 +1178,9 @@ def build() -> None:
                             if round_index > 1
                             else (
                                 "FLOOR_REDUCED_CHOICES"
-                                if activity_number == 1
+                                if skill == 2 and activity_number == 1
                                 else "FLOOR_EXTENDED_EXPOSURE"
-                                if activity_number == 5
+                                if skill == 2 and activity_number == 5
                                 else "FLOOR_EQUIVALENT_TASK"
                             )
                         )
