@@ -208,6 +208,63 @@ async def test_canonical_skill_two_lineage_is_research_eligible(
 
 
 @pytest.mark.asyncio
+async def test_canonical_skill_three_lineage_is_research_eligible(
+    client, mock_db, mock_user
+):
+    student_id = MOCK_TELEMETRY_PAYLOAD["student_id"]
+    await mock_db.students.insert_one(
+        {"_id": ObjectId(student_id), "parent_id": mock_user["_id"]}
+    )
+    bank_item = {
+        "item_id": "S3A1R03V1",
+        "skill_id": "skill_3",
+        "activity_id": "3.1",
+        "knowledge_component_id": "KC_WORD_RECOGNITION",
+        "prompt_modality": "visual",
+        "response_modality": "tap",
+        "item_role": "REMEDIATION",
+        "equivalent_group_id": "S3A1R03",
+        "response_load_relation": "reduced",
+        "difficulty_label": "easy",
+        "difficulty_b": -1.0,
+        "is_anchor": False,
+        "item_version": 9,
+        "is_active": True,
+    }
+    await mock_db.item_bank.insert_one(bank_item)
+    payload = copy.deepcopy(MOCK_TELEMETRY_PAYLOAD)
+    payload["skill_id"] = "skill_3"
+    payload["activity_id"] = "act_1"
+    payload["session_id"] = "canonical-skill3-session"
+    event = payload["events"][0]
+    event.update({
+        "event_id": "canonical-skill3-session:S3A1R03V1:complete",
+        "skill_id": "skill_3",
+        "activity_id": "act_1",
+        "item_id": "S3A1R03V1",
+        "knowledge_component_id": "KC_WORD_RECOGNITION",
+        "item_role": "REMEDIATION",
+        "equivalent_group_id": "S3A1R03",
+        "response_load_relation": "reduced",
+        "difficulty_label": "easy",
+        "difficulty_b": -1.0,
+        "is_anchor": False,
+        "item_version": 9,
+    })
+
+    response = client.post("/api/v1/auth/telemetry", json=payload)
+    assert response.status_code == 201
+    stored = await mock_db.telemetry_events.find_one({
+        "event_id": event["event_id"],
+    })
+    assert stored["item_id"] == "S3A1R03V1"
+    assert stored["canonical_activity_id"] == "3.1"
+    assert stored["item_version"] == 9
+    assert stored["research_eligible"] is True
+    assert stored["research_validation_errors"] == []
+
+
+@pytest.mark.asyncio
 async def test_session_numbers_advance_and_retry_keeps_original_number(
     client, mock_db, mock_user
 ):
