@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sipsara_app/utils/sound_utils.dart';
-import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/telemetry_wrapper.dart';
 import '../../../models/curriculum_models.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../services/progress_service.dart';
-import '../shared_widgets/shared_celebration_popup.dart';
 import '../../../services/tts_service.dart';
 import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
 
@@ -35,8 +33,8 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
   int? _selectedOptionIndex;
   bool _isCorrect = false;
   bool _activityComplete = false;
+  Map<String, dynamic>? _completedRoundSnapshot;
   int _currentRoundIndex = 0;
-  int _attemptCount = 0;
 
   // Animations
   late AnimationController _pulseController;
@@ -122,8 +120,12 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
   ) async {
     if (_isCorrect) return;
     if (isAdaptivelyRemoved(index)) return;
-    _attemptCount++;
-
+    final completedRoundSnapshot = Map<String, dynamic>.from(
+      adaptiveRoundData(
+        activity: widget.activityNode,
+        roundIndex: _currentRoundIndex,
+      ),
+    );
     setState(() {
       _selectedOptionIndex = index;
     });
@@ -136,6 +138,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
         selectedAnswers: <String>[selectedOption],
       );
       setState(() {
+        _completedRoundSnapshot = completedRoundSnapshot;
         _isCorrect = true;
       });
       _pulseController.stop();
@@ -146,6 +149,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
         if (!mounted) return;
         if (transition != null && !transition.isComplete) {
           setState(() {
+            _completedRoundSnapshot = null;
             _currentRoundIndex = transition.roundIndex;
             final sId = widget.activityNode?.skillId ?? '';
             final aId = widget.activityNode?.id ?? '';
@@ -160,7 +164,6 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
             }
             _selectedOptionIndex = null;
             _isCorrect = false;
-            _attemptCount = 0;
           });
           _pulseController.repeat(reverse: true);
           _bounceController.reset();
@@ -210,10 +213,12 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
       rounds = rounds.sublist(0, 5);
     }
 
-    final currentRound = adaptiveRoundData(
-      activity: widget.activityNode,
-      roundIndex: _currentRoundIndex,
-    );
+    final currentRound =
+        _completedRoundSnapshot ??
+        adaptiveRoundData(
+          activity: widget.activityNode,
+          roundIndex: _currentRoundIndex,
+        );
     final titleText =
         widget.activityNode?.title ?? 'පින්තූරයට ගැලපෙන හිස්තැන සොයමු';
     final instructionText =
@@ -347,9 +352,6 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
             runSpacing: 12,
             children: sequence.map((item) {
               final isBlank = (item == null);
-              final currentText = isBlank
-                  ? (_isCorrect ? correctOption : '')
-                  : item;
               final isWide = false;
 
               if (isBlank) {
@@ -511,6 +513,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
         ],
       ),
       child: Wrap(
+        key: ValueKey('answers_$adaptiveItemId'),
         spacing: 16,
         runSpacing: 16,
         alignment: WrapAlignment.center,
@@ -539,8 +542,6 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     final isWrong = isSelected && (optionText != correctOption);
     final isHidden = _isCorrect && (optionText == correctOption);
     final isHinted = isAdaptivelyHighlighted(index);
-
-    final isPressed = isRight || isWrong;
 
     double tileWidth = 135.0;
     double tileHeight = 90.0;
@@ -587,6 +588,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
     }
 
     return GestureDetector(
+      key: ValueKey(adaptiveOptionId(index)),
       onTap: () => _checkAnswer(index, optionText, correctOption, totalRounds),
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),
@@ -613,7 +615,7 @@ class _Skill3Act4FillBlankState extends State<Skill3Act4FillBlank>
                   maxLines: 1,
                   style: AppTypography.sinhala(
                     fontSize: fontSize,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     color: textColor,
                     height: 1.3,
                   ),

@@ -7,7 +7,6 @@ import '../../../models/curriculum_models.dart';
 import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../services/progress_service.dart';
-import '../shared_widgets/shared_celebration_popup.dart';
 import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
 
 /// Skill 3 Activity 2 (Word Formation MCQ)
@@ -37,12 +36,11 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
   int? _selectedIndex;
   bool _isCorrect = false;
   bool _activityComplete = false;
+  Map<String, dynamic>? _completedRoundSnapshot;
   int _currentRoundIndex = 0;
   int _attemptCount = 0;
 
   // Animations
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
   late AnimationController _speakerBounceController;
   late Animation<double> _speakerBounceAnimation;
 
@@ -61,15 +59,6 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
       _currentRoundIndex = 0;
     }
-
-    // Pulsing glow for the speaker button
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
 
     // Speaker bounce when tapped
     _speakerBounceController = AnimationController(
@@ -90,7 +79,6 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
 
   @override
   void dispose() {
-    _pulseController.dispose();
     _speakerBounceController.dispose();
     _audioPlayer.dispose();
     disposeChoiceScaffoldAdapter();
@@ -101,10 +89,6 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
-    final currentRound = adaptiveRoundData(
-      activity: widget.activityNode,
-      roundIndex: _currentRoundIndex,
-    );
     // TTS should read the full prompt from JSON (e.g. "'ම' + 'ල' එකතු වූ විට...")
     final audioText = 'අකුරු එකතු කර සාදන වචනය තෝරන්න';
     String spokenInstruction = audioText
@@ -135,6 +119,13 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     if (_selectedIndex != null) return;
     if (isAdaptivelyRemoved(index)) return;
 
+    final completedRoundSnapshot = Map<String, dynamic>.from(
+      adaptiveRoundData(
+        activity: widget.activityNode,
+        roundIndex: _currentRoundIndex,
+      ),
+    );
+
     _attemptCount++;
     setState(() {
       _selectedIndex = index;
@@ -149,6 +140,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
         roundIndex: _currentRoundIndex,
       );
       setState(() {
+        _completedRoundSnapshot = completedRoundSnapshot;
         _isCorrect = true;
       });
       SoundUtils.playFeedback('audio/correct.mp3');
@@ -172,6 +164,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
           attemptAlreadyLogged: true,
         );
         setState(() {
+          _completedRoundSnapshot = completedRoundSnapshot;
           _selectedIndex = correctIndex;
           _isCorrect = true;
         });
@@ -192,6 +185,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
       if (!mounted) return;
       if (transition != null && !transition.isComplete) {
         setState(() {
+          _completedRoundSnapshot = null;
           _currentRoundIndex = transition.roundIndex;
           _attemptCount = 0;
           final sId = widget.activityNode?.skillId ?? '';
@@ -248,10 +242,12 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
       rounds = rounds.sublist(0, 5);
     }
 
-    final currentRound = adaptiveRoundData(
-      activity: widget.activityNode,
-      roundIndex: _currentRoundIndex,
-    );
+    final currentRound =
+        _completedRoundSnapshot ??
+        adaptiveRoundData(
+          activity: widget.activityNode,
+          roundIndex: _currentRoundIndex,
+        );
     final titleText = widget.activityNode?.title ?? 'වචනය සකසන්න';
     final promptText = currentRound['prompt']?.toString() ?? '';
 
@@ -466,6 +462,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
         ],
       ),
       child: Wrap(
+        key: ValueKey('answers_$adaptiveItemId'),
         spacing: 16,
         runSpacing: 16,
         alignment: WrapAlignment.center,
@@ -543,6 +540,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
     }
 
     return GestureDetector(
+      key: ValueKey(adaptiveOptionId(index)),
       onTap: () => _checkAnswer(index, correctIndex, totalRounds),
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),
@@ -569,7 +567,7 @@ class _Skill3Act2WordFormationState extends State<Skill3Act2WordFormation>
                   maxLines: 1,
                   style: AppTypography.sinhala(
                     fontSize: fontSize,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     color: textColor,
                     height: 1.3,
                   ),

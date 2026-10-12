@@ -25,7 +25,7 @@
             "correct_index": 1,
             "image_url": "assets/images/activity_icons/nature/sun.png",
             "item_id": "S3A1R01",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
@@ -34,43 +34,63 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A1R01V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
-                  "image_url": "assets/images/activity_icons/animals/cat.png",
+                  "image_url": "assets/images/activity_icons/plants/tree.png",
                   "options": [
-                    "පූසා",
-                    "බල්ලා"
+                    "ගස",
+                    "මල"
                   ],
-                  "correctOption": "පූසා",
+                  "correctOption": "ගස",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": null,
+                "remediation_strategy": "FLOOR_EQUIVALENT_TASK"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A1R01V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
-                  "image_url": "assets/images/activity_icons/animals/dog.png",
+                  "image_url": "assets/images/activity_icons/flowers/flower_05.png",
                   "options": [
-                    "බල්ලා",
-                    "මාළුවා"
+                    "මල",
+                    "ගස"
                   ],
-                  "correctOption": "බල්ලා",
+                  "correctOption": "මල",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": false
+            "has_reduced_remediation": false,
+            "difficulty_features": {
+              "word_unit_count": 2,
+              "pilla_count": 0,
+              "answer_pool_size": 2,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
@@ -83,7 +103,7 @@
             "correct_index": 0,
             "image_url": "assets/images/activity_icons/nature/moon.png",
             "item_id": "S3A1R02",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
@@ -92,58 +112,78 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A1R02V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -1.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "reduced",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
-                  "image_url": "assets/images/activity_icons/animals/fish.png",
+                  "image_url": "assets/images/activity_icons/body_parts/ear.png",
                   "options": [
-                    "මාළුවා",
-                    "කුරුල්ලා"
+                    "කන",
+                    "මල"
                   ],
-                  "correctOption": "මාළුවා",
+                  "correctOption": "කන",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 1,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A1R02V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
-                  "image_url": "assets/images/activity_icons/animals/bird.png",
+                  "image_url": "assets/images/activity_icons/body_parts/mouth.png",
                   "options": [
-                    "කුරුල්ලා",
-                    "ඇපල්",
-                    "කෙසෙල්"
+                    "කට",
+                    "මල",
+                    "ගස"
                   ],
-                  "correctOption": "කුරුල්ලා",
+                  "correctOption": "කට",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 2,
+              "pilla_count": 0,
+              "answer_pool_size": 3,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
             "options": [
               "බසය",
-              "මල",
-              "ගස",
-              "පොත"
+              "පහන",
+              "කඩය",
+              "වහල"
             ],
             "correctOption": "බසය",
             "correct_index": 0,
             "image_url": "assets/images/activity_icons/vehicles/bus.png",
             "item_id": "S3A1R03",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": false,
@@ -152,46 +192,66 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A1R03V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "reduced",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
-                  "image_url": "assets/images/activity_icons/fruits_food/apple.png",
+                  "image_url": "assets/images/activity_icons/body_parts/tooth.png",
                   "options": [
-                    "ඇපල්",
-                    "කෙසෙල්",
-                    "අඹ"
+                    "දත",
+                    "මල",
+                    "ගස"
                   ],
-                  "correctOption": "ඇපල්",
+                  "correctOption": "දත",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 2,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A1R03V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
-                  "image_url": "assets/images/activity_icons/fruits_food/banana.png",
+                  "image_url": "assets/images/activity_icons/everyday_objects/oil_lamp.png",
                   "options": [
-                    "කෙසෙල්",
-                    "අඹ",
-                    "පොත",
-                    "තොප්පිය"
+                    "පහන",
+                    "කඩය",
+                    "වහල",
+                    "බසය"
                   ],
-                  "correctOption": "කෙසෙල්",
+                  "correctOption": "පහන",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 4,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 0,
+              "answer_pool_size": 4,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
@@ -205,7 +265,7 @@
             "correct_index": 0,
             "image_url": "assets/images/activity_icons/everyday_objects/key.png",
             "item_id": "S3A1R04",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": true,
@@ -214,59 +274,82 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A1R04V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
-                "difficulty_label": "easy",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
                 "response_load_relation": "reduced",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
-                  "image_url": "assets/images/activity_icons/fruits_food/mango.png",
+                  "image_url": "assets/images/activity_icons/places/shop.png",
                   "options": [
-                    "අඹ",
-                    "පොත",
-                    "තොප්පිය"
+                    "කඩය",
+                    "පහන",
+                    "වහල",
+                    "බසය"
                   ],
-                  "correctOption": "අඹ",
+                  "correctOption": "කඩය",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 4,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 3,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A1R04V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
-                  "image_url": "assets/images/activity_icons/everyday_objects/book.png",
+                  "image_url": "assets/images/activity_icons/everyday_objects/umbrella.png",
                   "options": [
-                    "පොත",
-                    "තොප්පිය",
-                    "ඔරලෝසුව",
-                    "දුම්රිය"
+                    "කුඩය",
+                    "තරුව",
+                    "පනාව",
+                    "පාසල"
                   ],
-                  "correctOption": "පොත",
+                  "correctOption": "කුඩය",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 4,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 1,
+              "answer_pool_size": 4,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
             "options": [
               "සීනුව",
-              "පහන",
-              "පනාව"
+              "පුටුව",
+              "එළුවා",
+              "බල්ලා",
+              "ඉබ්බා"
             ],
             "correctOption": "සීනුව",
             "correct_index": 0,
             "image_url": "assets/images/activity_icons/everyday_objects/bell.png",
             "item_id": "S3A1R05",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "hard",
             "difficulty_b": 1.0,
             "is_anchor": false,
@@ -275,44 +358,68 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A1R05V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.5,
+                "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "reduced",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
-                  "image_url": "assets/images/activity_icons/everyday_objects/hat.png",
+                  "image_url": "assets/images/activity_icons/places/school.png",
                   "options": [
-                    "තොප්පිය",
-                    "ඔරලෝසුව"
+                    "පාසල",
+                    "කුඩය",
+                    "තරුව",
+                    "පනාව"
                   ],
-                  "correctOption": "තොප්පිය",
+                  "correctOption": "පාසල",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 4,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 4,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A1R05V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "පින්තූරයට ගැලපෙන වචනය තෝරන්න",
-                  "image_url": "assets/images/activity_icons/everyday_objects/clock.png",
+                  "image_url": "assets/images/activity_icons/everyday_objects/chair.png",
                   "options": [
-                    "ඔරලෝසුව",
-                    "දුම්රිය",
-                    "ඔරුව"
+                    "පුටුව",
+                    "සීනුව",
+                    "එළුවා",
+                    "බල්ලා",
+                    "ඉබ්බා"
                   ],
-                  "correctOption": "ඔරලෝසුව",
+                  "correctOption": "පුටුව",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 5,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 2,
+              "answer_pool_size": 5,
+              "has_matching_image": true
+            }
           }
         ],
         "research_metadata": {
@@ -341,7 +448,7 @@
             "correctOption": "මල",
             "correct_index": 1,
             "item_id": "S3A2R01",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
@@ -350,7 +457,7 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A2R01V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
@@ -363,12 +470,19 @@
                   ],
                   "correctOption": "අත",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2
+                },
+                "remediation_source_round": null,
+                "remediation_strategy": "FLOOR_EQUIVALENT_TASK"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A2R01V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
@@ -381,22 +495,32 @@
                   ],
                   "correctOption": "ගස",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2
                 }
               }
             ],
-            "has_reduced_remediation": false
+            "has_reduced_remediation": false,
+            "difficulty_features": {
+              "word_unit_count": 2,
+              "pilla_count": 0,
+              "answer_pool_size": 2
+            }
           },
           {
             "prompt": "'පෑ' + 'න' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
             "options": [
               "පෑන",
-              "පැදුර",
-              "කෑම"
+              "කෑම",
+              "පාට"
             ],
             "correctOption": "පෑන",
             "correct_index": 0,
             "item_id": "S3A2R02",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
@@ -405,9 +529,9 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A2R02V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -1.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "reduced",
                 "content": {
@@ -418,41 +542,58 @@
                   ],
                   "correctOption": "ඉර",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2
+                },
+                "remediation_source_round": 1,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A2R02V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "'ම' + 'ල' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+                  "prompt": "'පා' + 'ට' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
                   "options": [
-                    "මල",
-                    "කුඩය",
-                    "කඩය"
+                    "පාට",
+                    "පෑන",
+                    "කෑම"
                   ],
-                  "correctOption": "මල",
+                  "correctOption": "පාට",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 2,
+              "pilla_count": 1,
+              "answer_pool_size": 3
+            }
           },
           {
             "prompt": "'ත' + 'රු' + 'ව' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
             "options": [
-              "හඳ",
               "තරුව",
-              "ඉර"
+              "කුඩය",
+              "පනාව"
             ],
             "correctOption": "තරුව",
-            "correct_index": 1,
+            "correct_index": 0,
             "item_id": "S3A2R03",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": false,
@@ -461,55 +602,73 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A2R03V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "reduced",
                 "content": {
-                  "prompt": "'කු' + 'ඩ' + 'ය' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+                  "prompt": "'පො' + 'ත' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
                   "options": [
-                    "කුඩය",
-                    "කඩය"
+                    "පොත",
+                    "පාර",
+                    "පාට"
                   ],
-                  "correctOption": "කුඩය",
+                  "correctOption": "පොත",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3
+                },
+                "remediation_source_round": 2,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A2R03V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "'ක' + 'ඩ' + 'ය' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+                  "prompt": "'කු' + 'ඩ' + 'ය' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
                   "options": [
-                    "කඩය",
+                    "කුඩය",
                     "තරුව",
-                    "පුටුව"
+                    "පනාව"
                   ],
-                  "correctOption": "කඩය",
+                  "correctOption": "කුඩය",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 1,
+              "answer_pool_size": 3
+            }
           },
           {
             "prompt": "'ම' + 'ල්' + 'ලි' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
             "options": [
-              "මාමා",
-              "අයියා",
-              "නංගි",
-              "මල්ලි"
+              "මල්ලි",
+              "අක්කා",
+              "බල්ලා",
+              "සීනුව"
             ],
             "correctOption": "මල්ලි",
-            "correct_index": 3,
+            "correct_index": 0,
             "item_id": "S3A2R04",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": true,
@@ -518,56 +677,75 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A2R04V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
-                "difficulty_label": "easy",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
                 "response_load_relation": "reduced",
                 "content": {
-                  "prompt": "'ත' + 'රු' + 'ව' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+                  "prompt": "'පා' + 'ස' + 'ල' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
                   "options": [
+                    "පාසල",
                     "තරුව",
-                    "පුටුව",
-                    "පහන"
+                    "පනාව"
                   ],
-                  "correctOption": "තරුව",
+                  "correctOption": "පාසල",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3
+                },
+                "remediation_source_round": 3,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A2R04V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "'පු' + 'ටු' + 'ව' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+                  "prompt": "'බ' + 'ල්' + 'ලා' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
                   "options": [
-                    "පුටුව",
-                    "පහන",
-                    "පනාව",
-                    "බල්ලා"
+                    "බල්ලා",
+                    "එළුවා",
+                    "සීනුව",
+                    "තරුව"
                   ],
-                  "correctOption": "පුටුව",
+                  "correctOption": "බල්ලා",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 4
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 2,
+              "answer_pool_size": 4
+            }
           },
           {
             "prompt": "'පු' + 'ටු' + 'ව' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
             "options": [
-              "ඇඳ",
-              "මේසය",
-              "පුටුව"
+              "පුටුව",
+              "සීනුව",
+              "එළුවා",
+              "ඉබ්බා",
+              "අක්කා"
             ],
             "correctOption": "පුටුව",
-            "correct_index": 2,
+            "correct_index": 0,
             "item_id": "S3A2R05",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "hard",
             "difficulty_b": 1.0,
             "is_anchor": false,
@@ -576,42 +754,63 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A2R05V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.5,
+                "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "reduced",
                 "content": {
-                  "prompt": "'ප' + 'හ' + 'න' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+                  "prompt": "'අ' + 'ක්' + 'කා' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
                   "options": [
-                    "පහන",
-                    "පනාව"
+                    "අක්කා",
+                    "බල්ලා",
+                    "ඉබ්බා",
+                    "එළුවා"
                   ],
-                  "correctOption": "පහන",
+                  "correctOption": "අක්කා",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 4
+                },
+                "remediation_source_round": 4,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A2R05V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "'ප' + 'නා' + 'ව' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
+                  "prompt": "'සී' + 'නු' + 'ව' එකතු වූ විට හැදෙන වචනය කුමක්ද?",
                   "options": [
-                    "පනාව",
-                    "බල්ලා",
-                    "අක්කා"
+                    "සීනුව",
+                    "එළුවා",
+                    "ඉබ්බා",
+                    "අක්කා",
+                    "බල්ලා"
                   ],
-                  "correctOption": "පනාව",
+                  "correctOption": "සීනුව",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 5
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 2,
+              "answer_pool_size": 5
+            }
           }
         ],
         "research_metadata": {
@@ -641,7 +840,7 @@
             "correctOption": "අත",
             "correct_index": 0,
             "item_id": "S3A3R01",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
@@ -650,26 +849,33 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A3R01V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
-                  "audio_text": "අත",
+                  "audio_text": "ඉර",
                   "options": [
-                    "අත",
-                    "ඉර"
+                    "ඉර",
+                    "මල"
                   ],
-                  "correctOption": "අත",
+                  "correctOption": "ඉර",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2
+                },
+                "remediation_source_round": null,
+                "remediation_strategy": "FLOOR_EQUIVALENT_TASK"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A3R01V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
@@ -679,27 +885,36 @@
                   "audio_text": "ගස",
                   "options": [
                     "ගස",
-                    "මල"
+                    "අත"
                   ],
                   "correctOption": "ගස",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2
                 }
               }
             ],
-            "has_reduced_remediation": false
+            "has_reduced_remediation": false,
+            "difficulty_features": {
+              "word_unit_count": 2,
+              "pilla_count": 0,
+              "answer_pool_size": 2
+            }
           },
           {
             "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
             "audio_text": "පාර",
             "options": [
-              "වැව",
               "පාර",
-              "ගඟ"
+              "වැව"
             ],
             "correctOption": "පාර",
-            "correct_index": 1,
+            "correct_index": 0,
             "item_id": "S3A3R02",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
@@ -708,44 +923,60 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A3R02V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -1.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
-                  "audio_text": "ඉර",
+                  "audio_text": "මල",
                   "options": [
-                    "ඉර",
-                    "කුඩය"
+                    "මල",
+                    "අත"
                   ],
-                  "correctOption": "ඉර",
+                  "correctOption": "මල",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2
+                },
+                "remediation_source_round": 1,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A3R02V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
-                  "audio_text": "මල",
+                  "audio_text": "වැව",
                   "options": [
-                    "මල",
-                    "කඩය",
-                    "තරුව"
+                    "වැව",
+                    "පාර"
                   ],
-                  "correctOption": "මල",
+                  "correctOption": "වැව",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 2
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 2,
+              "pilla_count": 1,
+              "answer_pool_size": 2
+            }
           },
           {
             "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
@@ -758,7 +989,7 @@
             "correctOption": "ගෙදර",
             "correct_index": 1,
             "item_id": "S3A3R03",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": false,
@@ -767,58 +998,74 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A3R03V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
-                  "audio_text": "කුඩය",
+                  "audio_text": "පාට",
                   "options": [
-                    "කුඩය",
-                    "තරුව"
+                    "පාට",
+                    "පෑන"
                   ],
-                  "correctOption": "කුඩය",
+                  "correctOption": "පාට",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 2
+                },
+                "remediation_source_round": 2,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A3R03V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
-                  "audio_text": "කඩය",
+                  "audio_text": "කුඩය",
                   "options": [
-                    "කඩය",
-                    "පුටුව",
-                    "පහන"
+                    "කුඩය",
+                    "තරුව",
+                    "පනාව"
                   ],
-                  "correctOption": "කඩය",
+                  "correctOption": "කුඩය",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 1,
+              "answer_pool_size": 3
+            }
           },
           {
             "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
             "audio_text": "අක්කා",
             "options": [
-              "නංගි",
+              "අම්මා",
               "අක්කා",
-              "අයියා",
-              "මල්ලි"
+              "අයියා"
             ],
             "correctOption": "අක්කා",
             "correct_index": 1,
             "item_id": "S3A3R04",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": true,
@@ -827,60 +1074,76 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A3R04V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
-                "difficulty_label": "easy",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
                 "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
-                  "audio_text": "තරුව",
+                  "audio_text": "පනාව",
                   "options": [
-                    "තරුව",
-                    "පහන",
-                    "පනාව"
+                    "පනාව",
+                    "කුඩය",
+                    "තරුව"
                   ],
-                  "correctOption": "තරුව",
+                  "correctOption": "පනාව",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3
+                },
+                "remediation_source_round": 3,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A3R04V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
-                  "audio_text": "පුටුව",
+                  "audio_text": "ඉබ්බා",
                   "options": [
-                    "පුටුව",
-                    "පනාව",
+                    "ඉබ්බා",
                     "බල්ලා",
-                    "අක්කා"
+                    "එළුවා"
                   ],
-                  "correctOption": "පුටුව",
+                  "correctOption": "ඉබ්බා",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 3
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 2,
+              "answer_pool_size": 3
+            }
           },
           {
             "prompt": "ශබ්දයට සවන් දී වචනය තෝරන්න",
             "audio_text": "බල්ලා",
             "options": [
-              "පූසා",
+              "කපුටා",
               "එළුවා",
-              "හරකා",
+              "ඉබ්බා",
               "බල්ලා"
             ],
             "correctOption": "බල්ලා",
             "correct_index": 3,
             "item_id": "S3A3R05",
-            "item_version": 2,
+            "item_version": 9,
             "difficulty_label": "hard",
             "difficulty_b": 1.0,
             "is_anchor": false,
@@ -889,46 +1152,63 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A3R05V1",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.5,
+                "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "reduced",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
-                  "audio_text": "පහන",
+                  "audio_text": "මල්ලි",
                   "options": [
-                    "පහන",
-                    "බල්ලා",
-                    "අක්කා"
+                    "මල්ලි",
+                    "අක්කා",
+                    "අයියා"
                   ],
-                  "correctOption": "පහන",
+                  "correctOption": "මල්ලි",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 3
+                },
+                "remediation_source_round": 4,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A3R05V2",
-                "item_version": 2,
+                "item_version": 9,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
                 "response_load_relation": "equivalent",
                 "content": {
                   "prompt": "ශබ්දයට සවන් දී නිවැරදි වචනය තෝරන්න",
-                  "audio_text": "පනාව",
+                  "audio_text": "පුටුව",
                   "options": [
-                    "පනාව",
-                    "අක්කා",
-                    "කුරුල්ලා",
-                    "පාසල"
+                    "පුටුව",
+                    "සීනුව",
+                    "එළුවා",
+                    "ඉබ්බා"
                   ],
-                  "correctOption": "පනාව",
+                  "correctOption": "පුටුව",
                   "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 4
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 2,
+              "answer_pool_size": 4
+            }
           }
         ],
         "research_metadata": {
@@ -962,7 +1242,7 @@
             "correct_index": 1,
             "image_url": "assets/images/activity_icons/plants/tree.png",
             "item_id": "S3A4R01",
-            "item_version": 2,
+            "item_version": 10,
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
@@ -971,49 +1251,71 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A4R01V1",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "'අත' වචනයේ අඩු අකුර තෝරන්න",
+                  "prompt": "'මල' වචනයේ අඩු අකුර තෝරන්න",
+                  "image_url": "assets/images/activity_icons/flowers/flower_05.png",
                   "sequence": [
                     null,
-                    "ත"
+                    "ල"
                   ],
                   "options": [
-                    "ක",
-                    "අ"
+                    "ම",
+                    "ග"
                   ],
-                  "correctOption": "අ",
-                  "correct_index": 1
-                }
+                  "correctOption": "ම",
+                  "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": null,
+                "remediation_strategy": "FLOOR_EQUIVALENT_TASK"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A4R01V2",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "'ගස' වචනයේ අඩු අකුර තෝරන්න",
+                  "prompt": "'කන' වචනයේ අඩු අකුර තෝරන්න",
+                  "image_url": "assets/images/activity_icons/body_parts/ear.png",
                   "sequence": [
-                    "ග",
-                    null
+                    null,
+                    "න"
                   ],
                   "options": [
-                    "ම",
-                    "ස"
+                    "ක",
+                    "ග"
                   ],
-                  "correctOption": "ස",
-                  "correct_index": 1
+                  "correctOption": "ක",
+                  "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": false
+            "has_reduced_remediation": false,
+            "difficulty_features": {
+              "word_unit_count": 2,
+              "pilla_count": 0,
+              "answer_pool_size": 2,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
@@ -1030,7 +1332,7 @@
             "correct_index": 1,
             "image_url": "assets/images/activity_icons/everyday_objects/book.png",
             "item_id": "S3A4R02",
-            "item_version": 2,
+            "item_version": 10,
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
@@ -1039,50 +1341,72 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A4R02V1",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -1.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "reduced",
                 "content": {
                   "prompt": "'ඉර' වචනයේ අඩු අකුර තෝරන්න",
+                  "image_url": "assets/images/activity_icons/nature/sun.png",
                   "sequence": [
                     null,
                     "ර"
                   ],
                   "options": [
                     "ඉ",
-                    "ක"
+                    "අ"
                   ],
                   "correctOption": "ඉ",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 1,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A4R02V2",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "'මල' වචනයේ අඩු අකුර තෝරන්න",
+                  "prompt": "'නැව' වචනයේ අඩු අකුර තෝරන්න",
+                  "image_url": "assets/images/activity_icons/vehicles/boat.png",
                   "sequence": [
-                    "ම",
+                    "නැ",
                     null
                   ],
                   "options": [
-                    "ම",
-                    "ය",
+                    "ව",
+                    "ර",
                     "ල"
                   ],
-                  "correctOption": "ල",
-                  "correct_index": 2
+                  "correctOption": "ව",
+                  "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 2,
+              "pilla_count": 1,
+              "answer_pool_size": 3,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
@@ -1100,7 +1424,7 @@
             "correct_index": 2,
             "image_url": "assets/images/activity_icons/places/school.png",
             "item_id": "S3A4R03",
-            "item_version": 2,
+            "item_version": 10,
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": false,
@@ -1109,13 +1433,46 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A4R03V1",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "reduced",
                 "content": {
+                  "prompt": "'පාර' වචනයේ අඩු අකුර තෝරන්න",
+                  "image_url": "assets/images/activity_icons/places/road.png",
+                  "sequence": [
+                    "පා",
+                    null
+                  ],
+                  "options": [
+                    "ර",
+                    "ල",
+                    "ත"
+                  ],
+                  "correctOption": "ර",
+                  "correct_index": 0
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 2,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
+              },
+              {
+                "variant_id": "V2",
+                "item_id": "S3A4R03V2",
+                "item_version": 10,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "equivalent",
+                "content": {
                   "prompt": "'කුඩය' වචනයේ අඩු අකුර තෝරන්න",
+                  "image_url": "assets/images/activity_icons/everyday_objects/umbrella.png",
                   "sequence": [
                     "කු",
                     null,
@@ -1123,38 +1480,27 @@
                   ],
                   "options": [
                     "ඩ",
-                    "ක"
+                    "ට",
+                    "ද"
                   ],
                   "correctOption": "ඩ",
                   "correct_index": 0
-                }
-              },
-              {
-                "variant_id": "V2",
-                "item_id": "S3A4R03V2",
-                "item_version": 2,
-                "item_role": "CONFIRMATION",
-                "difficulty_b": 0.0,
-                "difficulty_label": "medium",
-                "response_load_relation": "equivalent",
-                "content": {
-                  "prompt": "'කඩය' වචනයේ අඩු අකුර තෝරන්න",
-                  "sequence": [
-                    "ක",
-                    "ඩ",
-                    null
-                  ],
-                  "options": [
-                    "ම",
-                    "ය",
-                    "ව"
-                  ],
-                  "correctOption": "ය",
-                  "correct_index": 1
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 1,
+              "answer_pool_size": 3,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
@@ -1173,7 +1519,7 @@
             "correct_index": 1,
             "image_url": "assets/images/activity_icons/people/mother.png",
             "item_id": "S3A4R04",
-            "item_version": 2,
+            "item_version": 10,
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": true,
@@ -1182,54 +1528,76 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A4R04V1",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
-                "difficulty_label": "easy",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
                 "response_load_relation": "reduced",
                 "content": {
-                  "prompt": "'තරුව' වචනයේ අඩු අකුර තෝරන්න",
+                  "prompt": "'පනාව' වචනයේ අඩු අකුර තෝරන්න",
+                  "image_url": "assets/images/activity_icons/everyday_objects/comb.png",
                   "sequence": [
+                    "ප",
                     null,
-                    "රු",
                     "ව"
                   ],
                   "options": [
-                    "ත",
-                    "ක",
-                    "ම"
+                    "නා",
+                    "මා",
+                    "ලා"
                   ],
-                  "correctOption": "ත",
+                  "correctOption": "නා",
                   "correct_index": 0
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 3,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A4R04V2",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "'පුටුව' වචනයේ අඩු අකුර තෝරන්න",
+                  "prompt": "'ඉබ්බා' වචනයේ අඩු අකුර තෝරන්න",
+                  "image_url": "assets/images/activity_icons/animals/turtle.png",
                   "sequence": [
-                    "පු",
+                    "ඉ",
                     null,
-                    "ව"
+                    "බා"
                   ],
                   "options": [
-                    "ම",
-                    "ය",
-                    "ව",
-                    "ටු"
+                    "ක්",
+                    "ම්",
+                    "න්",
+                    "බ්"
                   ],
-                  "correctOption": "ටු",
+                  "correctOption": "බ්",
                   "correct_index": 3
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 4,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 2,
+              "answer_pool_size": 4,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "හිස්තැනට සුදුසු අකුර තෝරන්න",
@@ -1248,7 +1616,7 @@
             "correct_index": 3,
             "image_url": "assets/images/activity_icons/people/father.png",
             "item_id": "S3A4R05",
-            "item_version": 2,
+            "item_version": 10,
             "difficulty_label": "hard",
             "difficulty_b": 1.0,
             "is_anchor": false,
@@ -1257,54 +1625,77 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A4R05V1",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.5,
+                "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "reduced",
                 "content": {
-                  "prompt": "'පහන' වචනයේ අඩු අකුර තෝරන්න",
+                  "prompt": "'බල්ලා' වචනයේ අඩු අකුර තෝරන්න",
+                  "image_url": "assets/images/activity_icons/animals/dog.png",
                   "sequence": [
-                    "ප",
-                    "හ",
-                    null
+                    "බ",
+                    null,
+                    "ලා"
                   ],
                   "options": [
-                    "න",
-                    "ක",
-                    "ම"
+                    "ක්",
+                    "ම්",
+                    "න්",
+                    "ල්"
                   ],
-                  "correctOption": "න",
-                  "correct_index": 0
-                }
+                  "correctOption": "ල්",
+                  "correct_index": 3
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 4,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 4,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A4R05V2",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "'පනාව' වචනයේ අඩු අකුර තෝරන්න",
+                  "prompt": "'ගෙම්බා' වචනයේ අඩු අකුර තෝරන්න",
+                  "image_url": "assets/images/activity_icons/animals/frog.png",
                   "sequence": [
+                    "ගෙ",
                     null,
-                    "නා",
-                    "ව"
+                    "බා"
                   ],
                   "options": [
-                    "ම",
-                    "ය",
-                    "ව",
-                    "ප"
+                    "ක්",
+                    "ම්",
+                    "න්",
+                    "ල්"
                   ],
-                  "correctOption": "ප",
-                  "correct_index": 3
+                  "correctOption": "ම්",
+                  "correct_index": 1
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 3,
+                  "answer_pool_size": 4,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 3,
+              "answer_pool_size": 4,
+              "has_matching_image": true
+            }
           }
         ],
         "research_metadata": {
@@ -1334,7 +1725,7 @@
             ],
             "image_url": "assets/images/activity_icons/flowers/flower_05.png",
             "item_id": "S3A5R01",
-            "item_version": 2,
+            "item_version": 10,
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
@@ -1343,39 +1734,65 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A5R01V1",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න",
-                  "correct_word": "අත",
-                  "scrambled_letters": [
-                    "ත",
-                    "අ"
-                  ]
-                }
-              },
-              {
-                "variant_id": "V2",
-                "item_id": "S3A5R01V2",
-                "item_version": 2,
-                "item_role": "CONFIRMATION",
-                "difficulty_b": -1.0,
-                "difficulty_label": "easy",
-                "response_load_relation": "equivalent",
-                "content": {
-                  "prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න",
+                  "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+                  "image_url": "assets/images/activity_icons/plants/tree.png",
                   "correct_word": "ගස",
                   "scrambled_letters": [
                     "ස",
                     "ග"
                   ]
+                },
+                "is_active": false,
+                "single_floor_retry": true,
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": null,
+                "remediation_strategy": "FLOOR_EQUIVALENT_TASK"
+              },
+              {
+                "variant_id": "V2",
+                "item_id": "S3A5R01V2",
+                "item_version": 10,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "equivalent",
+                "content": {
+                  "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+                  "image_url": "assets/images/activity_icons/plants/tree.png",
+                  "correct_word": "ගස",
+                  "scrambled_letters": [
+                    "ස",
+                    "ග"
+                  ]
+                },
+                "is_active": true,
+                "single_floor_retry": true,
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": false
+            "has_reduced_remediation": false,
+            "difficulty_features": {
+              "word_unit_count": 2,
+              "pilla_count": 0,
+              "answer_pool_size": 2,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
@@ -1386,7 +1803,7 @@
             ],
             "image_url": "assets/images/activity_icons/body_parts/eye.png",
             "item_id": "S3A5R02",
-            "item_version": 2,
+            "item_version": 10,
             "difficulty_label": "easy",
             "difficulty_b": -1.0,
             "is_anchor": false,
@@ -1395,39 +1812,61 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A5R02V1",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
-                "response_load_relation": "equivalent",
+                "response_load_relation": "reduced",
                 "content": {
-                  "prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න",
-                  "correct_word": "ඉර",
+                  "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+                  "image_url": "assets/images/activity_icons/body_parts/ear.png",
+                  "correct_word": "කන",
                   "scrambled_letters": [
-                    "ර",
-                    "ඉ"
+                    "න",
+                    "ක"
                   ]
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 1,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A5R02V2",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න",
-                  "correct_word": "මල",
+                  "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+                  "image_url": "assets/images/activity_icons/places/road.png",
+                  "correct_word": "පාර",
                   "scrambled_letters": [
-                    "ල",
-                    "ම"
+                    "ර",
+                    "පා"
                   ]
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": false
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 2,
+              "pilla_count": 0,
+              "answer_pool_size": 2,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
@@ -1439,7 +1878,7 @@
             ],
             "image_url": "assets/images/activity_icons/everyday_objects/oil_lamp.png",
             "item_id": "S3A5R03",
-            "item_version": 2,
+            "item_version": 10,
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": false,
@@ -1448,40 +1887,62 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A5R03V1",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
+                "difficulty_b": -1.0,
                 "difficulty_label": "easy",
                 "response_load_relation": "reduced",
                 "content": {
-                  "prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න",
-                  "correct_word": "අත",
+                  "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+                  "image_url": "assets/images/activity_icons/vehicles/boat.png",
+                  "correct_word": "නැව",
                   "scrambled_letters": [
-                    "ත",
-                    "අ"
+                    "ව",
+                    "නැ"
                   ]
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 2,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 2,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A5R03V2",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න",
-                  "correct_word": "පනාව",
+                  "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+                  "image_url": "assets/images/activity_icons/vehicles/bus.png",
+                  "correct_word": "බසය",
                   "scrambled_letters": [
-                    "ව",
-                    "නා",
-                    "ප"
+                    "ය",
+                    "ස",
+                    "බ"
                   ]
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 0,
+              "answer_pool_size": 3,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
@@ -1493,7 +1954,7 @@
             ],
             "image_url": "assets/images/activity_icons/everyday_objects/comb.png",
             "item_id": "S3A5R04",
-            "item_version": 2,
+            "item_version": 10,
             "difficulty_label": "medium",
             "difficulty_b": 0.0,
             "is_anchor": true,
@@ -1502,40 +1963,63 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A5R04V1",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "REMEDIATION",
-                "difficulty_b": -0.5,
-                "difficulty_label": "easy",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
                 "response_load_relation": "reduced",
                 "content": {
-                  "prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න",
-                  "correct_word": "ඉර",
+                  "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+                  "image_url": "assets/images/activity_icons/places/shop.png",
+                  "correct_word": "කඩය",
                   "scrambled_letters": [
-                    "ර",
-                    "ඉ"
+                    "ය",
+                    "ඩ",
+                    "ක"
                   ]
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 3,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A5R04V2",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න",
-                  "correct_word": "අක්කා",
+                  "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+                  "image_url": "assets/images/activity_icons/everyday_objects/umbrella.png",
+                  "correct_word": "කුඩය",
                   "scrambled_letters": [
-                    "කා",
-                    "ක්",
-                    "අ"
+                    "ය",
+                    "ඩ",
+                    "කු"
                   ]
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 1,
+              "answer_pool_size": 3,
+              "has_matching_image": true
+            }
           },
           {
             "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
@@ -1547,7 +2031,7 @@
             ],
             "image_url": "assets/images/activity_icons/everyday_objects/chair.png",
             "item_id": "S3A5R05",
-            "item_version": 2,
+            "item_version": 10,
             "difficulty_label": "hard",
             "difficulty_b": 1.0,
             "is_anchor": false,
@@ -1556,40 +2040,63 @@
               {
                 "variant_id": "V1",
                 "item_id": "S3A5R05V1",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "REMEDIATION",
-                "difficulty_b": 0.5,
+                "difficulty_b": 0.0,
                 "difficulty_label": "medium",
                 "response_load_relation": "reduced",
                 "content": {
-                  "prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න",
-                  "correct_word": "අත",
+                  "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+                  "image_url": "assets/images/activity_icons/places/school.png",
+                  "correct_word": "පාසල",
                   "scrambled_letters": [
-                    "ත",
-                    "අ"
+                    "ල",
+                    "ස",
+                    "පා"
                   ]
-                }
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
+                },
+                "remediation_source_round": 4,
+                "remediation_strategy": "PREVIOUS_DIFFICULTY_LEVEL"
               },
               {
                 "variant_id": "V2",
                 "item_id": "S3A5R05V2",
-                "item_version": 2,
+                "item_version": 10,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
                 "response_load_relation": "equivalent",
                 "content": {
-                  "prompt": "අකුරු පිළිවෙළට සකසා වචනය හදන්න",
-                  "correct_word": "කුඩය",
+                  "prompt": "පින්තූරයට අදාළ වචනය සාදන්න",
+                  "image_url": "assets/images/activity_icons/everyday_objects/bell.png",
+                  "correct_word": "සීනුව",
                   "scrambled_letters": [
-                    "ය",
-                    "ඩ",
-                    "කු"
+                    "ව",
+                    "නු",
+                    "සී"
                   ]
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 3,
+                  "has_matching_image": true
                 }
               }
             ],
-            "has_reduced_remediation": true
+            "has_reduced_remediation": true,
+            "difficulty_features": {
+              "word_unit_count": 3,
+              "pilla_count": 2,
+              "answer_pool_size": 3,
+              "has_matching_image": true
+            }
           }
         ],
         "research_metadata": {

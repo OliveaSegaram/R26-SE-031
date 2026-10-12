@@ -14,6 +14,7 @@ mixin SequenceScaffoldAdapter<T extends StatefulWidget> on State<T> {
   String _sequenceSignature = '';
   List<String> _sequenceTokens = const <String>[];
   List<String> _correctSequence = const <String>[];
+  List<int> _correctPoolIndices = const <int>[];
   AdaptiveTaskCoordinator? adaptiveTaskCoordinator;
 
   void initializeAdaptiveSequenceTask({
@@ -78,6 +79,24 @@ mixin SequenceScaffoldAdapter<T extends StatefulWidget> on State<T> {
     adaptiveSequenceItemId = itemId;
     _sequenceTokens = List<String>.unmodifiable(poolTokens);
     _correctSequence = List<String>.unmodifiable(correctSequence);
+    final usedIndices = <int>{};
+    final resolvedIndices = <int>[];
+    for (final correctToken in _correctSequence) {
+      final index = List<int>.generate(_sequenceTokens.length, (value) => value)
+          .firstWhere(
+            (candidate) =>
+                !usedIndices.contains(candidate) &&
+                _sequenceTokens[candidate] == correctToken,
+            orElse: () => -1,
+          );
+      if (index < 0) {
+        resolvedIndices.clear();
+        break;
+      }
+      usedIndices.add(index);
+      resolvedIndices.add(index);
+    }
+    _correctPoolIndices = List<int>.unmodifiable(resolvedIndices);
     adaptiveHintedTokenIndices.clear();
   }
 
@@ -89,10 +108,13 @@ mixin SequenceScaffoldAdapter<T extends StatefulWidget> on State<T> {
 
   Future<void> requestSequenceScaffold({
     required List<int> selectedPoolIndices,
+    int correctPosition = 0,
   }) async {
-    if (_sequenceTokens.isEmpty || _correctSequence.isEmpty) return;
-    final targetIndex = _sequenceTokens.indexOf(_correctSequence.first);
-    if (targetIndex < 0) return;
+    if (_sequenceTokens.isEmpty || _correctPoolIndices.isEmpty) return;
+    final safePosition = correctPosition
+        .clamp(0, _correctPoolIndices.length - 1)
+        .toInt();
+    final targetIndex = _correctPoolIndices[safePosition];
     final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
     if (wrapper == null) return;
     final result = await wrapper.registerAdaptiveWrongAttempt(
@@ -103,10 +125,9 @@ mixin SequenceScaffoldAdapter<T extends StatefulWidget> on State<T> {
           _sequenceTokens.length,
           adaptiveTokenId,
         ),
-        'incorrect_option_ids': selectedPoolIndices
-            .where((index) => index != targetIndex)
-            .map(adaptiveTokenId)
-            .toList(),
+        // Every token belongs to the answer; the error is its position, not
+        // its identity. Never label future required tokens as distractors.
+        'incorrect_option_ids': const <String>[],
         'correct_option_ids': <String>[adaptiveTokenId(targetIndex)],
         'selected_option_ids': selectedPoolIndices
             .map(adaptiveTokenId)

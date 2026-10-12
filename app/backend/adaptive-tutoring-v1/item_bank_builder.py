@@ -176,10 +176,28 @@ def _item_document(
         "has_reduced_remediation": bool(
             round_data.get("has_reduced_remediation", False)
         ),
+        **(
+            {
+                "has_floor_remediation": bool(
+                    round_data.get("has_floor_remediation", False)
+                )
+            }
+            if "has_floor_remediation" in round_data
+            else {}
+        ),
+        "remediation_source_round": round_data.get(
+            "remediation_source_round"
+        ),
+        "remediation_strategy": round_data.get("remediation_strategy"),
         "response_load_relation": round_data.get(
             "response_load_relation",
             "core" if item_role == "CORE" else "equivalent",
         ),
+        "distractor_strategy": round_data.get("distractor_strategy"),
+        "single_floor_retry": bool(
+            round_data.get("single_floor_retry", False)
+        ),
+        "difficulty_features": round_data.get("difficulty_features"),
         "allowed_scaffolds": _capabilities(activity.get("template_type", "")),
         "minimum_visible_options": 2,
         "options": options,
@@ -195,7 +213,7 @@ def _item_document(
         },
         # Exact duplicate variants remain traceable but are excluded from
         # ordinary candidate selection until an educator replaces the content.
-        "is_active": not duplicate_of_core,
+        "is_active": bool(round_data.get("is_active", not duplicate_of_core)),
     }
 
 

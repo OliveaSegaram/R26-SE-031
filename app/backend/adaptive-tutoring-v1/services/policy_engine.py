@@ -264,7 +264,7 @@ class PolicyEngine:
             commands.append({
                 "type": "REVEAL_FIRST_TOKEN",
                 "target_option_ids": correct_ids[:1],
-                "reason_code": "SEQUENCE_START_SUPPORT",
+                "reason_code": "SEQUENCE_NEXT_TOKEN_SUPPORT",
             })
             reason_codes.append("NEXT_REQUIRED_TOKEN_REVEALED")
             decision = "SCAFFOLD_REVEAL_FIRST_TOKEN"
@@ -472,6 +472,7 @@ class PolicyEngine:
         learner_profile: Optional[Dict[str, Any]] = None,
         current_item_id: str = "",
         has_reduced_remediation: bool = True,
+        has_floor_remediation: bool = False,
     ) -> Dict[str, Any]:
         """
         Main progression policy engine.
@@ -518,6 +519,7 @@ class PolicyEngine:
                 state=adaptive_state,
                 policy_reason=policy_reason,
                 has_reduced_remediation=has_reduced_remediation,
+                has_floor_remediation=has_floor_remediation,
             )
             if equivalent_action is not None:
                 return equivalent_action

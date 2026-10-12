@@ -7,7 +7,6 @@ import '../../../models/curriculum_models.dart';
 import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../services/progress_service.dart';
-import '../shared_widgets/shared_celebration_popup.dart';
 import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
 
 /// Skill 3 Activity 1 (Image MCQ)
@@ -34,12 +33,11 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
   int? _selectedIndex;
   bool _isCorrect = false;
   bool _activityComplete = false;
+  Map<String, dynamic>? _completedRoundSnapshot;
   int _currentRoundIndex = 0;
   int _attemptCount = 0;
 
   // Animations
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
   late AnimationController _speakerBounceController;
   late Animation<double> _speakerBounceAnimation;
   late AnimationController _imageBounceController;
@@ -59,15 +57,6 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     if (rounds.isNotEmpty && _currentRoundIndex >= rounds.length) {
       _currentRoundIndex = 0;
     }
-
-    // Pulsing glow for the speaker button
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
 
     // Speaker bounce when tapped
     _speakerBounceController = AnimationController(
@@ -95,7 +84,6 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
 
   @override
   void dispose() {
-    _pulseController.dispose();
     _speakerBounceController.dispose();
     _imageBounceController.dispose();
     _audioPlayer.dispose();
@@ -142,6 +130,17 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     if (_selectedIndex != null) return;
     if (isAdaptivelyRemoved(index)) return;
 
+    // The coordinator applies the backend transition as soon as completion
+    // returns. Keep rendering the completed item during its feedback delay;
+    // otherwise the next item appears while `_isCorrect` still hides all of
+    // its distractors, briefly showing only its correct answer.
+    final completedRoundSnapshot = Map<String, dynamic>.from(
+      adaptiveRoundData(
+        activity: widget.activityNode,
+        roundIndex: _currentRoundIndex,
+      ),
+    );
+
     _attemptCount++;
     setState(() {
       _selectedIndex = index;
@@ -156,6 +155,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
         roundIndex: _currentRoundIndex,
       );
       setState(() {
+        _completedRoundSnapshot = completedRoundSnapshot;
         _isCorrect = true;
       });
       SoundUtils.playFeedback('audio/correct.mp3');
@@ -182,6 +182,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
           attemptAlreadyLogged: true,
         );
         setState(() {
+          _completedRoundSnapshot = completedRoundSnapshot;
           _selectedIndex = correctIndex;
           _isCorrect = true;
         });
@@ -202,6 +203,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
       if (!mounted) return;
       if (transition != null && !transition.isComplete) {
         setState(() {
+          _completedRoundSnapshot = null;
           _currentRoundIndex = transition.roundIndex;
           _attemptCount = 0;
           final sId = widget.activityNode?.skillId ?? '';
@@ -249,10 +251,12 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
       rounds = rounds.sublist(0, 5);
     }
 
-    final currentRound = adaptiveRoundData(
-      activity: widget.activityNode,
-      roundIndex: _currentRoundIndex,
-    );
+    final currentRound =
+        _completedRoundSnapshot ??
+        adaptiveRoundData(
+          activity: widget.activityNode,
+          roundIndex: _currentRoundIndex,
+        );
     final titleText =
         widget.activityNode?.title ?? 'පින්තූරයට ගැලපෙන වචනය තෝරන්න';
     final promptText =
@@ -314,7 +318,12 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
             // ── Answer Pool Container ──
             Flexible(
               fit: FlexFit.loose,
-              child: _buildAnswerPool(options, correctIndex, rounds.length),
+              child: _buildAnswerPool(
+                options,
+                correctIndex,
+                rounds.length,
+                currentRound['item_id']?.toString() ?? adaptiveItemId,
+              ),
             ),
 
             const SizedBox(height: 12),
@@ -382,6 +391,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     List<String> options,
     int correctIndex,
     int totalRounds,
+    String displayItemId,
   ) {
     return Container(
       width: double.infinity,
@@ -409,7 +419,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
         ],
       ),
       child: Wrap(
-        key: ValueKey('round_$_currentRoundIndex'),
+        key: ValueKey('answers_$displayItemId'),
         spacing: 12,
         runSpacing: 12,
         alignment: WrapAlignment.center,
@@ -422,6 +432,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
                 correctIndex,
                 totalRounds,
                 options.length,
+                displayItemId,
               ),
         ],
       ),
@@ -487,6 +498,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     int correctIndex,
     int totalRounds,
     int totalOptions,
+    String displayItemId,
   ) {
     final isSelected = (_selectedIndex == index);
     final isRight = isSelected && (index == correctIndex);
@@ -540,6 +552,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
     }
 
     return GestureDetector(
+      key: ValueKey('${displayItemId}_O${index + 1}'),
       onTap: () => _checkAnswer(index, correctIndex, totalRounds),
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),
@@ -566,7 +579,7 @@ class _Skill3Act1ImageMcqState extends State<Skill3Act1ImageMcq>
                   maxLines: 1,
                   style: AppTypography.sinhala(
                     fontSize: fontSize,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
                     color: textColor,
                     height: 1.3,
                   ),
