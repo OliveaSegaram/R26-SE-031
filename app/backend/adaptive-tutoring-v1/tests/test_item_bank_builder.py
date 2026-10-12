@@ -1,4 +1,5 @@
 import json
+import unicodedata
 
 from item_bank_builder import (
     DEFAULT_CURRICULUM_DIR,
@@ -10,6 +11,8 @@ from seed_item_bank import (
     remove_legacy_skill_two_activities_one_to_three_fields,
     remove_legacy_skill_two_activity_four_fields,
     remove_legacy_skill_two_activity_five_fields,
+    remove_legacy_skill_three_fields,
+    quarantine_superseded_skill_three_evidence,
     quarantine_superseded_skill_two_activity_one_evidence,
     quarantine_superseded_skill_two_activity_two_evidence,
     quarantine_superseded_skill_two_activity_three_evidence,
@@ -52,7 +55,9 @@ def test_variants_are_grouped_and_exact_duplicates_are_not_served():
     assert variants
     assert all(item["equivalent_group_id"] for item in variants)
     assert not exact_duplicates
-    assert all(item["is_active"] for item in variants)
+    inactive = [item for item in variants if not item["is_active"]]
+    assert [item["item_id"] for item in inactive] == ["S3A5R01V1"]
+    assert inactive[0]["single_floor_retry"] is True
 
 
 def test_every_skill_one_to_four_core_has_distinct_remediation_and_confirmation():
@@ -71,7 +76,12 @@ def test_every_skill_one_to_four_core_has_distinct_remediation_and_confirmation(
         assert remediation["item_role"] == "REMEDIATION"
         assert confirmation["item_role"] == "CONFIRMATION"
         if core["has_reduced_remediation"]:
-            if core["activity_id"] == "2.1":
+            if core["skill_id"] == "skill_3":
+                assert remediation["difficulty_b"] <= core["difficulty_b"]
+                assert remediation["remediation_strategy"] == (
+                    "PREVIOUS_DIFFICULTY_LEVEL"
+                )
+            elif core["activity_id"] == "2.1":
                 assert remediation["difficulty_b"] <= core["difficulty_b"]
                 assert remediation["remediation_strategy"] in {
                     "FLOOR_REDUCED_CHOICES",
@@ -85,7 +95,20 @@ def test_every_skill_one_to_four_core_has_distinct_remediation_and_confirmation(
             assert remediation["response_load_relation"] == "equivalent"
         assert confirmation["difficulty_b"] == core["difficulty_b"]
         assert confirmation["response_load_relation"] == "equivalent"
-        assert len({core["content_hash"], remediation["content_hash"], confirmation["content_hash"]}) == 3
+        hashes = {
+            core["content_hash"],
+            remediation["content_hash"],
+            confirmation["content_hash"],
+        }
+        if core["item_id"] == "S3A5R01":
+            assert len(hashes) == 2
+            assert remediation["content_hash"] == confirmation["content_hash"]
+            assert remediation["is_active"] is False
+            assert confirmation["is_active"] is True
+            assert remediation["single_floor_retry"] is True
+            assert confirmation["single_floor_retry"] is True
+        else:
+            assert len(hashes) == 3
 
 
 def test_historical_item_ids_normalize_to_one_stable_format():
@@ -782,6 +805,53 @@ def test_item_bank_sync_quarantines_all_superseded_activity_five_items():
     assert decision_filter["item_version"] == {"$ne": 3}
 
 
+def test_item_bank_sync_quarantines_all_superseded_skill_three_items():
+    class Result:
+        modified_count = 2
+
+    class Collection:
+        def __init__(self):
+            self.calls = []
+
+        def update_many(self, query, update, **kwargs):
+            self.calls.append((query, update, kwargs))
+            return Result()
+
+    class Database:
+        adaptive_decisions = Collection()
+        telemetry_events = Collection()
+        telemetry_sessions = Collection()
+
+    database = Database()
+    result = quarantine_superseded_skill_three_evidence(
+        database,
+        build_items(),
+    )
+
+    assert result == {
+        "superseded_s3_adaptive_decisions": 12,
+        "superseded_s3_telemetry_events": 12,
+        "superseded_s3_telemetry_sessions": 12,
+    }
+    assert len(database.adaptive_decisions.calls) == 6
+    for activity_number, call in enumerate(
+        database.adaptive_decisions.calls[:5], start=1
+    ):
+        expected_version = 10 if activity_number in {4, 5} else 9
+        assert len(call[0]["current_item"]["$in"]) == 15
+        assert call[0]["item_version"] == {"$ne": expected_version}
+    canonical_skill_three_ids = [
+        item["item_id"]
+        for item in build_items()
+        if item["skill_id"] == "skill_3"
+    ]
+    assert database.telemetry_events.calls[-1][0] == {
+        "skill_id": "skill_3",
+        "item_id": {"$nin": canonical_skill_three_ids},
+        "research_eligible": {"$ne": False},
+    }
+
+
 def test_item_bank_sync_removes_legacy_activity_four_aliases():
     class Result:
         modified_count = 5
@@ -873,6 +943,30 @@ def test_item_bank_sync_removes_legacy_activity_five_fields():
     }
 
 
+def test_item_bank_sync_removes_legacy_skill_three_aliases():
+    class Result:
+        modified_count = 25
+
+    class Collection:
+        def __init__(self):
+            self.calls = []
+
+        def update_many(self, query, update):
+            self.calls.append((query, update))
+            return Result()
+
+    class Database:
+        item_bank = Collection()
+
+    database = Database()
+    result = remove_legacy_skill_three_fields(database, build_items())
+
+    assert result == {"cleaned_s3_legacy_item_records": 25}
+    query, update = database.item_bank.calls[0]
+    assert len(query["item_id"]["$in"]) == 75
+    assert update == {"$unset": {"frontend_item_alias": ""}}
+
+
 def _response_load(content):
     if content.get("targets"):
         return int(content.get("target_count", 1)) + len(content.get("distractors") or [])
@@ -900,7 +994,8 @@ def test_remediation_reduces_load_when_valid_and_confirmation_preserves_it():
         remediation_load = _response_load(remediation["content"])
         confirmation_load = _response_load(confirmation["content"])
         assert confirmation_load == core_load, confirmation["item_id"]
-        assert remediation_load <= core_load, remediation["item_id"]
+        if core["skill_id"] != "skill_3":
+            assert remediation_load <= core_load, remediation["item_id"]
         if core["has_reduced_remediation"]:
             if core["activity_id"] == "2.1":
                 assert remediation["remediation_strategy"] in {
@@ -953,12 +1048,18 @@ def test_remediation_reduces_load_when_valid_and_confirmation_preserves_it():
                         core["difficulty_features"]["target_position"],
                     ))
                 )
+                lower_skill_three_structure = (
+                    core["skill_id"] == "skill_3"
+                    and remediation["remediation_source_round"] == core["round"] - 1
+                    and remediation["difficulty_b"] <= core["difficulty_b"]
+                )
                 assert (
                     remediation_load < core_load
                     or has_more_viewing_time
                     or lower_orthographic_load
                     or lower_distractor_complexity
                     or lower_word_boundary_complexity
+                    or lower_skill_three_structure
                 ), remediation["item_id"]
 
 
@@ -975,3 +1076,237 @@ def test_hidden_search_items_have_stable_target_and_distractor_records():
     assert first[0]["option_id"] == "S1A1R01_T1"
     assert first[0]["role"] == "target"
     assert {option["role"] for option in first[1:]} == {"distractor"}
+
+
+def test_skill_three_has_reviewed_previous_level_remediation_and_equivalent_confirmation():
+    skill_three = [
+        item for item in build_items() if item["skill_id"] == "skill_3"
+    ]
+    by_id = {item["item_id"]: item for item in skill_three}
+    frontend_root = DEFAULT_CURRICULUM_DIR.parents[2]
+
+    assert len(skill_three) == 75
+    assert len(by_id) == 75
+
+    expected_core_signatures = {
+        "3.1": [(2, 0, 2), (2, 0, 3), (3, 0, 4), (3, 1, 4), (3, 2, 5)],
+        "3.2": [(2, 0, 2), (2, 1, 3), (3, 1, 3), (3, 2, 4), (3, 2, 5)],
+        "3.3": [(2, 0, 2), (2, 1, 2), (3, 1, 3), (3, 2, 3), (3, 2, 4)],
+        "3.4": [(2, 0, 2), (2, 1, 3), (3, 1, 3), (3, 2, 4), (3, 3, 4)],
+        "3.5": [(2, 0, 2), (2, 0, 2), (3, 0, 3), (3, 1, 3), (3, 2, 3)],
+    }
+
+    def signature(item):
+        features = item["difficulty_features"]
+        return (
+            features["word_unit_count"],
+            features["pilla_count"],
+            features["answer_pool_size"],
+        )
+
+    for activity_id, expected in expected_core_signatures.items():
+        activity_number = int(activity_id.split(".")[1])
+        for round_number, core_signature in enumerate(expected, start=1):
+            base_id = f"S3A{activity_number}R{round_number:02d}"
+            core = by_id[base_id]
+            remediation = by_id[f"{base_id}V1"]
+            confirmation = by_id[f"{base_id}V2"]
+
+            expected_version = 10 if activity_id in {"3.4", "3.5"} else 9
+            assert core["item_version"] == expected_version
+            assert remediation["item_version"] == expected_version
+            assert confirmation["item_version"] == expected_version
+            assert signature(core) == core_signature, base_id
+            expected_confirmation = core_signature
+            if confirmation["item_id"] == "S3A5R02V2":
+                expected_confirmation = (2, 1, 2)
+            assert signature(confirmation) == expected_confirmation, (
+                confirmation["item_id"]
+            )
+            expected_remediation = expected[max(0, round_number - 2)]
+            if remediation["item_id"] == "S3A5R03V1":
+                expected_remediation = (2, 1, 2)
+            assert signature(remediation) == expected_remediation, remediation["item_id"]
+            assert confirmation["difficulty_b"] == core["difficulty_b"]
+
+            if round_number == 1:
+                assert remediation["response_load_relation"] == "equivalent"
+                assert remediation["remediation_source_round"] is None
+                assert remediation["remediation_strategy"] == "FLOOR_EQUIVALENT_TASK"
+            else:
+                assert remediation["response_load_relation"] == "reduced"
+                assert remediation["difficulty_b"] <= core["difficulty_b"]
+                assert remediation["remediation_source_round"] == round_number - 1
+                assert remediation["remediation_strategy"] == "PREVIOUS_DIFFICULTY_LEVEL"
+
+            for item in (core, remediation, confirmation):
+                image_url = item["content"].get("image_url")
+                if activity_id in {"3.1", "3.4", "3.5"}:
+                    assert image_url, item["item_id"]
+                    assert (frontend_root / image_url).is_file(), item["item_id"]
+
+    assert by_id["S3A1R03V1"]["content"]["correctOption"] == "දත"
+    assert by_id["S3A1R03V1"]["content"]["image_url"].endswith("tooth.png")
+    assert len(by_id["S3A1R05"]["content"]["options"]) == 5
+    assert len(by_id["S3A1R05V2"]["content"]["options"]) == 5
+
+    activity_four_r1_confirmation = by_id["S3A4R01V2"]
+    assert activity_four_r1_confirmation["content"] == {
+        "prompt": "'කන' වචනයේ අඩු අකුර තෝරන්න",
+        "image_url": "assets/images/activity_icons/body_parts/ear.png",
+        "sequence": [None, "න"],
+        "options": ["ක", "ග"],
+        "correctOption": "ක",
+        "correct_index": 0,
+    }
+    assert activity_four_r1_confirmation["difficulty_features"] == {
+        "word_unit_count": 2,
+        "pilla_count": 0,
+        "answer_pool_size": 2,
+        "has_matching_image": True,
+    }
+
+    activity_four_r2_confirmation = by_id["S3A4R02V2"]
+    assert activity_four_r2_confirmation["content"] == {
+        "prompt": "'නැව' වචනයේ අඩු අකුර තෝරන්න",
+        "image_url": "assets/images/activity_icons/vehicles/boat.png",
+        "sequence": ["නැ", None],
+        "options": ["ව", "ර", "ල"],
+        "correctOption": "ව",
+        "correct_index": 0,
+    }
+    assert activity_four_r2_confirmation["difficulty_features"] == {
+        "word_unit_count": 2,
+        "pilla_count": 1,
+        "answer_pool_size": 3,
+        "has_matching_image": True,
+    }
+
+    assert by_id["S3A5R01V1"]["content"] == by_id["S3A5R01V2"]["content"]
+    assert by_id["S3A5R01V2"]["content"]["correct_word"] == "ගස"
+    assert by_id["S3A5R02V1"]["content"]["correct_word"] == "කන"
+    assert by_id["S3A5R02V1"]["content"]["image_url"].endswith("ear.png")
+    assert by_id["S3A5R02V1"]["difficulty_features"] == {
+        "word_unit_count": 2,
+        "pilla_count": 0,
+        "answer_pool_size": 2,
+        "has_matching_image": True,
+    }
+    assert by_id["S3A5R02"]["has_reduced_remediation"] is True
+    assert by_id["S3A5R02V1"]["response_load_relation"] == "reduced"
+    assert (
+        by_id["S3A5R02V1"]["difficulty_b"]
+        == by_id["S3A5R01"]["difficulty_b"]
+    )
+    assert by_id["S3A5R02V2"]["content"]["correct_word"] == "පාර"
+    assert by_id["S3A5R02V2"]["content"]["image_url"].endswith("road.png")
+    assert by_id["S3A5R02V2"]["difficulty_features"] == {
+        "word_unit_count": 2,
+        "pilla_count": 1,
+        "answer_pool_size": 2,
+        "has_matching_image": True,
+    }
+    assert by_id["S3A5R03V1"]["content"]["correct_word"] == "නැව"
+    assert by_id["S3A5R03V1"]["difficulty_features"] == {
+        "word_unit_count": 2,
+        "pilla_count": 1,
+        "answer_pool_size": 2,
+        "has_matching_image": True,
+    }
+
+
+def test_skill_three_image_word_pools_use_consistent_word_lengths():
+    items = [
+        item for item in build_items()
+        if item["activity_id"] == "3.1"
+    ]
+
+    for item in items:
+        options = item["content"]["options"]
+        # The item-bank feature is the authoritative normalized Sinhala unit
+        # count; every answer in one pool must occupy the same number of units.
+        expected_length = item["difficulty_features"]["word_unit_count"]
+        normalized_lengths = {
+            sum(1 for character in option if unicodedata.category(character) == "Lo")
+            for option in options
+        }
+        assert normalized_lengths == {expected_length}, (item["item_id"], options)
+
+
+def test_skill_three_word_formation_uses_unique_targets_and_equal_length_pools():
+    items = [
+        item for item in build_items()
+        if item["activity_id"] == "3.2"
+    ]
+
+    assert len(items) == 15
+    targets = [item["content"]["correctOption"] for item in items]
+    assert len(set(targets)) == len(targets)
+    assert targets.count("පුටුව") == 1
+    assert sum(
+        option == "පුටුව"
+        for item in items
+        for option in item["content"]["options"]
+    ) == 1
+
+    for item in items:
+        options = item["content"]["options"]
+        expected_length = item["difficulty_features"]["word_unit_count"]
+        normalized_lengths = {
+            sum(
+                1
+                for character in option
+                if unicodedata.category(character) == "Lo"
+            )
+            for option in options
+        }
+        assert normalized_lengths == {expected_length}, (
+            item["item_id"],
+            options,
+        )
+
+
+def test_skill_three_audio_word_pools_match_the_spoken_target_length():
+    items = [
+        item for item in build_items()
+        if item["activity_id"] == "3.3"
+    ]
+
+    assert len(items) == 15
+    targets = [item["content"]["correctOption"] for item in items]
+    assert len(set(targets)) == len(targets)
+    for item in items:
+        content = item["content"]
+        target = content["correctOption"]
+        assert content["audio_text"] == target
+        expected_length = item["difficulty_features"]["word_unit_count"]
+        normalized_lengths = {
+            sum(
+                1
+                for character in option
+                if unicodedata.category(character) == "Lo"
+            )
+            for option in content["options"]
+        }
+        assert normalized_lengths == {expected_length}, (
+            item["item_id"],
+            content["options"],
+        )
+
+
+def test_skill_three_activity_one_first_three_levels_have_no_pillam():
+    items = [
+        item for item in build_items()
+        if item["activity_id"] == "3.1" and item["round"] <= 3
+    ]
+
+    assert len(items) == 9
+    for item in items:
+        content = item["content"]
+        words = [content["correctOption"], *content["options"]]
+        assert item["difficulty_features"]["pilla_count"] == 0, item["item_id"]
+        assert all(
+            not unicodedata.category(character).startswith("M")
+            for word in words
+            for character in word
+        ), (item["item_id"], words)
