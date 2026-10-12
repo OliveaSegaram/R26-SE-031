@@ -140,6 +140,86 @@ def quarantine_superseded_skill_two_activity_five_evidence(db, items) -> dict:
     }
 
 
+def quarantine_superseded_skill_three_evidence(db, items) -> dict:
+    """Exclude Skill 3 evidence collected against superseded item content."""
+    skill_three_items = [
+        item for item in items if item["skill_id"] == "skill_3"
+    ]
+    canonical_item_ids = [item["item_id"] for item in skill_three_items]
+    totals = [0, 0, 0]
+    for activity_id in ("3.1", "3.2", "3.3", "3.4", "3.5"):
+        activity_totals = _quarantine_superseded_activity_evidence(
+            db,
+            items,
+            activity_id=activity_id,
+            include_core=True,
+        )
+        totals = [
+            current + activity
+            for current, activity in zip(totals, activity_totals)
+        ]
+
+    # Prototype clients used IDs such as S3_A1_R01, which are intentionally
+    # absent from the canonical bank. Mark only those non-canonical rows
+    # ineligible. Version checks for canonical IDs are handled activity by
+    # activity above, allowing independently versioned Skill 3 activities.
+    reason = "ITEM_CONTENT_VERSION_SUPERSEDED"
+    legacy_decisions = db.adaptive_decisions.update_many(
+        {
+            "current_item": {
+                "$regex": r"^S3",
+                "$nin": canonical_item_ids,
+            },
+            "research_eligible": {"$ne": False},
+        },
+        {
+            "$set": {"research_eligible": False},
+            "$addToSet": {"research_validation_errors": reason},
+        },
+    )
+    legacy_events = db.telemetry_events.update_many(
+        {
+            "skill_id": "skill_3",
+            "item_id": {"$nin": canonical_item_ids},
+            "research_eligible": {"$ne": False},
+        },
+        {
+            "$set": {"research_eligible": False},
+            "$addToSet": {"research_validation_errors": reason},
+        },
+    )
+    legacy_sessions = db.telemetry_sessions.update_many(
+        {
+            "events": {"$elemMatch": {
+                "skill_id": "skill_3",
+                "item_id": {"$nin": canonical_item_ids},
+                "research_eligible": {"$ne": False},
+            }},
+        },
+        {
+            "$set": {"events.$[event].research_eligible": False},
+            "$addToSet": {
+                "events.$[event].research_validation_errors": reason
+            },
+        },
+        array_filters=[{
+            "event.skill_id": "skill_3",
+            "event.item_id": {"$nin": canonical_item_ids},
+            "event.research_eligible": {"$ne": False},
+        }],
+    )
+    totals = [
+        totals[0] + legacy_decisions.modified_count,
+        totals[1] + legacy_events.modified_count,
+        totals[2] + legacy_sessions.modified_count,
+    ]
+    return {
+        "superseded_s3_adaptive_decisions": totals[0],
+        "superseded_s3_telemetry_events": totals[1],
+        "superseded_s3_telemetry_sessions": totals[2],
+    }
+
+
 def remove_legacy_skill_two_activity_four_fields(db, items) -> dict:
     """Remove metadata that is not part of the canonical Activity 4 schema."""
     item_ids = [
@@ -189,6 +269,18 @@ def remove_legacy_skill_two_activity_five_fields(db, items) -> dict:
     return {"cleaned_s2a5_legacy_item_records": result.modified_count}
 
 
+def remove_legacy_skill_three_fields(db, items) -> dict:
+    """Remove aliases from the retired Skill 3 prototype item schema."""
+    item_ids = [
+        item["item_id"] for item in items if item["skill_id"] == "skill_3"
+    ]
+    result = db.item_bank.update_many(
+        {"item_id": {"$in": item_ids}},
+        {"$unset": {"frontend_item_alias": ""}},
+    )
+    return {"cleaned_s3_legacy_item_records": result.modified_count}
+
+
 def seed(db) -> dict:
     items = build_items()
     for item in items:
@@ -205,11 +297,13 @@ def seed(db) -> dict:
         **remove_legacy_skill_two_activities_one_to_three_fields(db, items),
         **remove_legacy_skill_two_activity_four_fields(db, items),
         **remove_legacy_skill_two_activity_five_fields(db, items),
+        **remove_legacy_skill_three_fields(db, items),
         **quarantine_superseded_skill_two_activity_one_evidence(db, items),
         **quarantine_superseded_skill_two_activity_two_evidence(db, items),
         **quarantine_superseded_skill_two_activity_three_evidence(db, items),
         **quarantine_superseded_skill_two_activity_four_evidence(db, items),
         **quarantine_superseded_skill_two_activity_five_evidence(db, items),
+        **quarantine_superseded_skill_three_evidence(db, items),
     }
 
 
