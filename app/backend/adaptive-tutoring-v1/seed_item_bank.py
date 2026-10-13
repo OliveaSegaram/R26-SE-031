@@ -220,6 +220,238 @@ def quarantine_superseded_skill_three_evidence(db, items) -> dict:
     }
 
 
+def quarantine_superseded_skill_four_activity_one_evidence(db, items) -> dict:
+    """Exclude Activity 4.1 evidence collected against pre-version-5 items."""
+    decisions, events, sessions = _quarantine_superseded_activity_evidence(
+        db,
+        items,
+        activity_id="4.1",
+        include_core=True,
+    )
+    return {
+        "superseded_s4a1_adaptive_decisions": decisions,
+        "superseded_s4a1_telemetry_events": events,
+        "superseded_s4a1_telemetry_sessions": sessions,
+    }
+
+
+def quarantine_superseded_skill_four_activity_two_evidence(db, items) -> dict:
+    """Exclude Activity 4.2 evidence collected against pre-version-4 items."""
+    decisions, events, sessions = _quarantine_superseded_activity_evidence(
+        db,
+        items,
+        activity_id="4.2",
+        include_core=True,
+    )
+    return {
+        "superseded_s4a2_adaptive_decisions": decisions,
+        "superseded_s4a2_telemetry_events": events,
+        "superseded_s4a2_telemetry_sessions": sessions,
+    }
+
+
+def quarantine_superseded_skill_four_activity_three_evidence(db, items) -> dict:
+    """Exclude Activity 4.3 evidence collected against pre-version-5 items."""
+    decisions, events, sessions = _quarantine_superseded_activity_evidence(
+        db,
+        items,
+        activity_id="4.3",
+        include_core=True,
+    )
+    return {
+        "superseded_s4a3_adaptive_decisions": decisions,
+        "superseded_s4a3_telemetry_events": events,
+        "superseded_s4a3_telemetry_sessions": sessions,
+    }
+
+
+def quarantine_superseded_skill_four_activity_four_evidence(db, items) -> dict:
+    """Exclude Activity 4.4 evidence collected against pre-version-4 items."""
+    decisions, events, sessions = _quarantine_superseded_activity_evidence(
+        db,
+        items,
+        activity_id="4.4",
+        include_core=True,
+    )
+    return {
+        "superseded_s4a4_adaptive_decisions": decisions,
+        "superseded_s4a4_telemetry_events": events,
+        "superseded_s4a4_telemetry_sessions": sessions,
+    }
+
+
+def retire_removed_skill_four_activity_one_task(db) -> dict:
+    """Retain Task 5 history while preventing the retired task being served."""
+    retired_ids = ["S4A1R05", "S4A1R05V1", "S4A1R05V2"]
+    item_result = db.item_bank.update_many(
+        {"item_id": {"$in": retired_ids}},
+        {"$set": {
+            "is_active": False,
+            "research_eligible": False,
+            "retired_reason": "REMOVED_FROM_CURRICULUM",
+        }},
+    )
+    decision_result = db.adaptive_decisions.update_many(
+        {"current_item": {"$in": retired_ids}},
+        {"$set": {"research_eligible": False}, "$addToSet": {
+            "research_validation_errors": "ITEM_RETIRED_FROM_CURRICULUM"
+        }},
+    )
+    event_result = db.telemetry_events.update_many(
+        {"item_id": {"$in": retired_ids}},
+        {"$set": {"research_eligible": False}, "$addToSet": {
+            "research_validation_errors": "ITEM_RETIRED_FROM_CURRICULUM"
+        }},
+    )
+    session_result = db.telemetry_sessions.update_many(
+        {"events": {"$elemMatch": {"item_id": {"$in": retired_ids}}}},
+        {
+            "$set": {"events.$[event].research_eligible": False},
+            "$addToSet": {
+                "events.$[event].research_validation_errors": (
+                    "ITEM_RETIRED_FROM_CURRICULUM"
+                )
+            },
+        },
+        array_filters=[{"event.item_id": {"$in": retired_ids}}],
+    )
+    return {
+        "retired_s4a1_item_bank_records": item_result.modified_count,
+        "retired_s4a1_adaptive_decisions": decision_result.modified_count,
+        "retired_s4a1_telemetry_events": event_result.modified_count,
+        "retired_s4a1_telemetry_sessions": session_result.modified_count,
+    }
+
+
+def retire_removed_skill_four_activity_two_task(db) -> dict:
+    """Retain Activity 4.2 Task 5 history while preventing it being served."""
+    retired_ids = ["S4A2R05", "S4A2R05V1", "S4A2R05V2"]
+    item_result = db.item_bank.update_many(
+        {"item_id": {"$in": retired_ids}},
+        {"$set": {
+            "is_active": False,
+            "research_eligible": False,
+            "retired_reason": "REMOVED_FROM_CURRICULUM",
+        }},
+    )
+    decision_result = db.adaptive_decisions.update_many(
+        {"current_item": {"$in": retired_ids}},
+        {"$set": {"research_eligible": False}, "$addToSet": {
+            "research_validation_errors": "ITEM_RETIRED_FROM_CURRICULUM"
+        }},
+    )
+    event_result = db.telemetry_events.update_many(
+        {"item_id": {"$in": retired_ids}},
+        {"$set": {"research_eligible": False}, "$addToSet": {
+            "research_validation_errors": "ITEM_RETIRED_FROM_CURRICULUM"
+        }},
+    )
+    session_result = db.telemetry_sessions.update_many(
+        {"events": {"$elemMatch": {"item_id": {"$in": retired_ids}}}},
+        {
+            "$set": {"events.$[event].research_eligible": False},
+            "$addToSet": {
+                "events.$[event].research_validation_errors": (
+                    "ITEM_RETIRED_FROM_CURRICULUM"
+                )
+            },
+        },
+        array_filters=[{"event.item_id": {"$in": retired_ids}}],
+    )
+    return {
+        "retired_s4a2_item_bank_records": item_result.modified_count,
+        "retired_s4a2_adaptive_decisions": decision_result.modified_count,
+        "retired_s4a2_telemetry_events": event_result.modified_count,
+        "retired_s4a2_telemetry_sessions": session_result.modified_count,
+    }
+
+
+def retire_removed_skill_four_activity_three_task(db) -> dict:
+    """Retain Activity 4.3 Task 5 history while preventing it being served."""
+    retired_ids = ["S4A3R05", "S4A3R05V1", "S4A3R05V2"]
+    item_result = db.item_bank.update_many(
+        {"item_id": {"$in": retired_ids}},
+        {"$set": {
+            "is_active": False,
+            "research_eligible": False,
+            "retired_reason": "REMOVED_FROM_CURRICULUM",
+        }},
+    )
+    decision_result = db.adaptive_decisions.update_many(
+        {"current_item": {"$in": retired_ids}},
+        {"$set": {"research_eligible": False}, "$addToSet": {
+            "research_validation_errors": "ITEM_RETIRED_FROM_CURRICULUM"
+        }},
+    )
+    event_result = db.telemetry_events.update_many(
+        {"item_id": {"$in": retired_ids}},
+        {"$set": {"research_eligible": False}, "$addToSet": {
+            "research_validation_errors": "ITEM_RETIRED_FROM_CURRICULUM"
+        }},
+    )
+    session_result = db.telemetry_sessions.update_many(
+        {"events": {"$elemMatch": {"item_id": {"$in": retired_ids}}}},
+        {
+            "$set": {"events.$[event].research_eligible": False},
+            "$addToSet": {
+                "events.$[event].research_validation_errors": (
+                    "ITEM_RETIRED_FROM_CURRICULUM"
+                )
+            },
+        },
+        array_filters=[{"event.item_id": {"$in": retired_ids}}],
+    )
+    return {
+        "retired_s4a3_item_bank_records": item_result.modified_count,
+        "retired_s4a3_adaptive_decisions": decision_result.modified_count,
+        "retired_s4a3_telemetry_events": event_result.modified_count,
+        "retired_s4a3_telemetry_sessions": session_result.modified_count,
+    }
+
+
+def retire_removed_skill_four_activity_four_task(db) -> dict:
+    """Retain Activity 4.4 Task 5 history while preventing it being served."""
+    retired_ids = ["S4A4R05", "S4A4R05V1", "S4A4R05V2"]
+    item_result = db.item_bank.update_many(
+        {"item_id": {"$in": retired_ids}},
+        {"$set": {
+            "is_active": False,
+            "research_eligible": False,
+            "retired_reason": "REMOVED_FROM_CURRICULUM",
+        }},
+    )
+    decision_result = db.adaptive_decisions.update_many(
+        {"current_item": {"$in": retired_ids}},
+        {"$set": {"research_eligible": False}, "$addToSet": {
+            "research_validation_errors": "ITEM_RETIRED_FROM_CURRICULUM"
+        }},
+    )
+    event_result = db.telemetry_events.update_many(
+        {"item_id": {"$in": retired_ids}},
+        {"$set": {"research_eligible": False}, "$addToSet": {
+            "research_validation_errors": "ITEM_RETIRED_FROM_CURRICULUM"
+        }},
+    )
+    session_result = db.telemetry_sessions.update_many(
+        {"events": {"$elemMatch": {"item_id": {"$in": retired_ids}}}},
+        {
+            "$set": {"events.$[event].research_eligible": False},
+            "$addToSet": {
+                "events.$[event].research_validation_errors": (
+                    "ITEM_RETIRED_FROM_CURRICULUM"
+                )
+            },
+        },
+        array_filters=[{"event.item_id": {"$in": retired_ids}}],
+    )
+    return {
+        "retired_s4a4_item_bank_records": item_result.modified_count,
+        "retired_s4a4_adaptive_decisions": decision_result.modified_count,
+        "retired_s4a4_telemetry_events": event_result.modified_count,
+        "retired_s4a4_telemetry_sessions": session_result.modified_count,
+    }
+
+
 def remove_legacy_skill_two_activity_four_fields(db, items) -> dict:
     """Remove metadata that is not part of the canonical Activity 4 schema."""
     item_ids = [
@@ -281,15 +513,20 @@ def remove_legacy_skill_three_fields(db, items) -> dict:
     return {"cleaned_s3_legacy_item_records": result.modified_count}
 
 
+def item_upsert_update(item: dict) -> dict:
+    """Build a conflict-free update while clearing obsolete floor metadata."""
+    update = {"$set": item}
+    if "has_floor_remediation" not in item:
+        update["$unset"] = {"has_floor_remediation": ""}
+    return update
+
+
 def seed(db) -> dict:
     items = build_items()
     for item in items:
-        update = {"$set": item}
-        if item["activity_id"] != "2.4":
-            update["$unset"] = {"has_floor_remediation": ""}
         db.item_bank.update_one(
             {"item_id": item["item_id"]},
-            update,
+            item_upsert_update(item),
             upsert=True,
         )
     return {
@@ -304,6 +541,14 @@ def seed(db) -> dict:
         **quarantine_superseded_skill_two_activity_four_evidence(db, items),
         **quarantine_superseded_skill_two_activity_five_evidence(db, items),
         **quarantine_superseded_skill_three_evidence(db, items),
+        **quarantine_superseded_skill_four_activity_one_evidence(db, items),
+        **quarantine_superseded_skill_four_activity_two_evidence(db, items),
+        **quarantine_superseded_skill_four_activity_three_evidence(db, items),
+        **quarantine_superseded_skill_four_activity_four_evidence(db, items),
+        **retire_removed_skill_four_activity_one_task(db),
+        **retire_removed_skill_four_activity_two_task(db),
+        **retire_removed_skill_four_activity_three_task(db),
+        **retire_removed_skill_four_activity_four_task(db),
     }
 
 
