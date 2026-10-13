@@ -151,7 +151,7 @@ def test_calibration_accepts_one_legacy_batch_only_completion():
     ]
 
 
-def test_skill_two_calibration_requires_exact_canonical_item_lineage():
+def test_calibration_requires_exact_canonical_item_lineage():
     canonical = {
         "item_id": "S2A1R01",
         "knowledge_component_id": "KC_LETTER_IDENTIFICATION",
@@ -222,3 +222,78 @@ def test_skill_two_calibration_requires_exact_canonical_item_lineage():
         "item_id": "S2A1R01",
         "is_correct": True,
     }]
+
+
+def test_calibration_validates_lineage_for_every_component4_skill():
+    canonical = [
+        {
+            "item_id": f"S{skill}A1R01",
+            "knowledge_component_id": f"KC_SKILL_{skill}",
+            "item_role": "CORE",
+            "equivalent_group_id": f"S{skill}A1R01",
+            "item_version": skill,
+            "difficulty_b": -1.0,
+        }
+        for skill in range(1, 5)
+    ]
+
+    class Collection:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def find(self, _query, _projection):
+            return self.rows
+
+    events = []
+    for item in canonical:
+        events.extend([
+            {
+                "event_id": f'{item["item_id"]}:valid:complete',
+                "student_id": f'{item["item_id"]}:valid',
+                "session_id": f'{item["item_id"]}:session',
+                "item_id": item["item_id"],
+                "phase": "COMPLETE",
+                "first_attempt_correct": True,
+                **{
+                    key: value
+                    for key, value in item.items()
+                    if key != "item_id"
+                },
+            },
+            {
+                "event_id": f'{item["item_id"]}:stale:complete',
+                "student_id": f'{item["item_id"]}:stale',
+                "session_id": f'{item["item_id"]}:stale-session',
+                "item_id": item["item_id"],
+                "phase": "COMPLETE",
+                "first_attempt_correct": True,
+                **{
+                    key: (
+                        value + 10 if key == "item_version" else value
+                    )
+                    for key, value in item.items()
+                    if key != "item_id"
+                },
+            },
+        ])
+    events.append({
+        "event_id": "S5A1R01:complete",
+        "student_id": "outside-component-4",
+        "session_id": "outside-component-4-session",
+        "item_id": "S5A1R01",
+        "phase": "COMPLETE",
+        "first_attempt_correct": True,
+    })
+
+    class Database:
+        item_bank = Collection(canonical)
+        telemetry_events = Collection(events)
+
+    assert _independent_responses(Database()) == [
+        {
+            "student_id": f"S{skill}A1R01:valid",
+            "item_id": f"S{skill}A1R01",
+            "is_correct": True,
+        }
+        for skill in range(1, 5)
+    ]

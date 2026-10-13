@@ -9,6 +9,7 @@ from item_bank_builder import (
 )
 from seed_item_bank import (
     item_upsert_update,
+    quarantine_invalid_component4_evidence,
     remove_legacy_skill_two_activities_one_to_three_fields,
     remove_legacy_skill_two_activity_four_fields,
     remove_legacy_skill_two_activity_five_fields,
@@ -28,6 +29,65 @@ from seed_item_bank import (
     quarantine_superseded_skill_two_activity_four_evidence,
     quarantine_superseded_skill_two_activity_five_evidence,
 )
+
+
+def test_global_component4_quarantine_requires_exact_lineage_without_deleting():
+    class Result:
+        modified_count = 7
+
+    class Collection:
+        def __init__(self):
+            self.calls = []
+
+        def update_many(self, query, update, **kwargs):
+            self.calls.append((query, update, kwargs))
+            return Result()
+
+    class Database:
+        adaptive_decisions = Collection()
+        telemetry_events = Collection()
+        telemetry_sessions = Collection()
+
+    database = Database()
+    result = quarantine_invalid_component4_evidence(database, build_items())
+
+    assert result == {
+        "invalid_c4_adaptive_decisions": 7,
+        "invalid_c4_telemetry_events": 7,
+        "invalid_c4_telemetry_sessions": 7,
+    }
+    decision_query, decision_update, _ = database.adaptive_decisions.calls[0]
+    assert decision_query["research_eligible"] == {"$ne": False}
+    assert decision_query["current_item"] == {"$regex": r"^[sS][1-4]"}
+    skill_one = next(
+        condition
+        for condition in decision_query["$nor"]
+        if condition["current_item"] == "S1A1R01"
+    )
+    assert skill_one["item_version"] == 2
+    assert skill_one["kc_id"] == "KC_VISUAL_IDENTIFICATION"
+    assert skill_one["item_role"] == "CORE"
+    assert skill_one["equivalent_group_id"] == "S1A1R01"
+    assert skill_one["difficulty_b"] == -1.0
+    assert not any(
+        condition["current_item"] == "S4A4R01V1"
+        for condition in decision_query["$nor"]
+    )
+    assert decision_update["$set"] == {"research_eligible": False}
+    assert decision_update["$addToSet"] == {
+        "research_validation_errors": "ITEM_LINEAGE_NOT_CURRENT"
+    }
+    session_query, _, session_kwargs = database.telemetry_sessions.calls[0]
+    assert session_query["events"]["$elemMatch"]["research_eligible"] == {
+        "$ne": False
+    }
+    assert session_kwargs["array_filters"][0][
+        "event.research_eligible"
+    ] == {"$ne": False}
+    assert session_kwargs["array_filters"][0]["event.item_id"] == {
+        "$regex": r"^[sS][1-4]"
+    }
+    assert session_kwargs["array_filters"][0]["$nor"]
 
 
 def test_item_bank_is_canonical_complete_and_research_ready():

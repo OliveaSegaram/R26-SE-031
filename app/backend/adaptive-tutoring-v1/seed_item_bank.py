@@ -3,6 +3,128 @@
 from item_bank_builder import build_items, validation_summary
 
 
+def _valid_lineage_conditions(
+    items,
+    *,
+    item_field: str,
+    version_field: str,
+    kc_field: str,
+    role_field: str,
+    group_field: str,
+    difficulty_field: str,
+):
+    """Describe every active, exact Component 4 item lineage."""
+    return [
+        {
+            item_field: item["item_id"],
+            version_field: item["item_version"],
+            kc_field: item["knowledge_component_id"],
+            role_field: item["item_role"],
+            group_field: item["equivalent_group_id"],
+            difficulty_field: item["difficulty_b"],
+        }
+        for item in items
+        if item["is_active"]
+        and item["skill_id"] in {
+            "skill_1", "skill_2", "skill_3", "skill_4"
+        }
+    ]
+
+
+def quarantine_invalid_component4_evidence(db, items) -> dict:
+    """Preserve, but exclude, non-current Skill 1-4 research evidence.
+
+    This final safety pass requires exact item, version, KC, role, equivalent
+    group, and difficulty lineage. It also rejects inactive shared-retry IDs
+    and non-canonical IDs without deleting a learner's historical records.
+    """
+    reason = "ITEM_LINEAGE_NOT_CURRENT"
+    decision_conditions = _valid_lineage_conditions(
+        items,
+        item_field="current_item",
+        version_field="item_version",
+        kc_field="kc_id",
+        role_field="item_role",
+        group_field="equivalent_group_id",
+        difficulty_field="difficulty_b",
+    )
+    event_conditions = _valid_lineage_conditions(
+        items,
+        item_field="item_id",
+        version_field="item_version",
+        kc_field="knowledge_component_id",
+        role_field="item_role",
+        group_field="equivalent_group_id",
+        difficulty_field="difficulty_b",
+    )
+    session_conditions = _valid_lineage_conditions(
+        items,
+        item_field="item_id",
+        version_field="item_version",
+        kc_field="knowledge_component_id",
+        role_field="item_role",
+        group_field="equivalent_group_id",
+        difficulty_field="difficulty_b",
+    )
+    array_conditions = _valid_lineage_conditions(
+        items,
+        item_field="event.item_id",
+        version_field="event.item_version",
+        kc_field="event.knowledge_component_id",
+        role_field="event.item_role",
+        group_field="event.equivalent_group_id",
+        difficulty_field="event.difficulty_b",
+    )
+
+    decision_result = db.adaptive_decisions.update_many(
+        {
+            "research_eligible": {"$ne": False},
+            "current_item": {"$regex": r"^[sS][1-4]"},
+            "$nor": decision_conditions,
+        },
+        {
+            "$set": {"research_eligible": False},
+            "$addToSet": {"research_validation_errors": reason},
+        },
+    )
+    event_result = db.telemetry_events.update_many(
+        {
+            "research_eligible": {"$ne": False},
+            "item_id": {"$regex": r"^[sS][1-4]"},
+            "$nor": event_conditions,
+        },
+        {
+            "$set": {"research_eligible": False},
+            "$addToSet": {"research_validation_errors": reason},
+        },
+    )
+    session_result = db.telemetry_sessions.update_many(
+        {
+            "events": {"$elemMatch": {
+                "research_eligible": {"$ne": False},
+                "item_id": {"$regex": r"^[sS][1-4]"},
+                "$nor": session_conditions,
+            }},
+        },
+        {
+            "$set": {"events.$[event].research_eligible": False},
+            "$addToSet": {
+                "events.$[event].research_validation_errors": reason
+            },
+        },
+        array_filters=[{
+            "event.research_eligible": {"$ne": False},
+            "event.item_id": {"$regex": r"^[sS][1-4]"},
+            "$nor": array_conditions,
+        }],
+    )
+    return {
+        "invalid_c4_adaptive_decisions": decision_result.modified_count,
+        "invalid_c4_telemetry_events": event_result.modified_count,
+        "invalid_c4_telemetry_sessions": session_result.modified_count,
+    }
+
+
 def _quarantine_superseded_activity_evidence(
     db,
     items,
@@ -545,6 +667,7 @@ def seed(db) -> dict:
         **quarantine_superseded_skill_four_activity_two_evidence(db, items),
         **quarantine_superseded_skill_four_activity_three_evidence(db, items),
         **quarantine_superseded_skill_four_activity_four_evidence(db, items),
+        **quarantine_invalid_component4_evidence(db, items),
         **retire_removed_skill_four_activity_one_task(db),
         **retire_removed_skill_four_activity_two_task(db),
         **retire_removed_skill_four_activity_three_task(db),
