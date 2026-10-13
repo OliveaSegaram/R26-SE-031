@@ -78,7 +78,7 @@ def test_every_skill_one_to_four_task_has_a_bounded_age_appropriate_flow():
     by_id = {item["item_id"]: item for item in items}
     cores = [item for item in items if item["is_core"]]
 
-    assert len(cores) == 97
+    assert len(cores) == 93
     for core in cores:
         state = {}
         clean = _decide(core, core["item_id"], "CLEAN_SUCCESS", state)
@@ -136,6 +136,87 @@ def test_clean_success_selects_the_next_core_not_an_equivalent_variant():
             assert selected["selected_item"] == cores[index + 1]["item_id"], (
                 core["item_id"], selected
             )
+
+
+def test_skill_four_activity_two_uses_shared_then_separate_floor_flows():
+    by_id = {item["item_id"]: item for item in build_items()}
+
+    first = by_id["S4A2R01"]
+    first_state = {}
+    first_retry = _decide(
+        first,
+        first["item_id"],
+        "ASSISTED_SUCCESS",
+        first_state,
+    )
+    assert first_retry["next_item"] == "S4A2R01V2"
+    assert first_retry["next_phase"] == "CONFIRMATION"
+    assert by_id["S4A2R01V1"]["is_active"] is False
+
+    second = by_id["S4A2R02"]
+    second_state = {}
+    remediation = _decide(
+        second,
+        second["item_id"],
+        "ASSISTED_SUCCESS",
+        second_state,
+    )
+    assert remediation["next_item"] == "S4A2R02V1"
+    assert remediation["next_phase"] == "REMEDIATION"
+
+    confirmation = _decide(
+        second,
+        remediation["next_item"],
+        "CLEAN_SUCCESS",
+        second_state,
+    )
+    assert confirmation["next_item"] == "S4A2R02V2"
+    assert confirmation["next_phase"] == "CONFIRMATION"
+
+
+def test_skill_four_activity_four_uses_shared_then_separate_floor_flows():
+    by_id = {item["item_id"]: item for item in build_items()}
+
+    first = by_id["S4A4R01"]
+    first_state = {}
+    first_retry = _decide(
+        first,
+        first["item_id"],
+        "ASSISTED_SUCCESS",
+        first_state,
+    )
+    assert first_retry["next_item"] == "S4A4R01V2"
+    assert first_retry["next_phase"] == "CONFIRMATION"
+    assert by_id["S4A4R01V1"]["is_active"] is False
+    assert by_id["S4A4R01V2"]["content"]["correct_sentence"] == (
+        "හඳ පායනවා."
+    )
+
+    second = by_id["S4A4R02"]
+    second_state = {}
+    remediation = _decide(
+        second,
+        second["item_id"],
+        "ASSISTED_SUCCESS",
+        second_state,
+    )
+    assert remediation["next_item"] == "S4A4R02V1"
+    assert remediation["next_phase"] == "REMEDIATION"
+    assert by_id["S4A4R02V1"]["content"]["correct_sentence"] == (
+        "මල් පිපෙනවා."
+    )
+
+    confirmation = _decide(
+        second,
+        remediation["next_item"],
+        "CLEAN_SUCCESS",
+        second_state,
+    )
+    assert confirmation["next_item"] == "S4A4R02V2"
+    assert confirmation["next_phase"] == "CONFIRMATION"
+    assert by_id["S4A4R02V2"]["content"]["correct_sentence"] == (
+        "බල්ලා දුවනවා."
+    )
 
 
 @pytest.mark.asyncio
