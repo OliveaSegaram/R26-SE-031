@@ -627,6 +627,445 @@ SENTENCES = [
 ]
 
 
+def skill4_sentence_choice(
+    image_url: str,
+    correct_option: str,
+    options: List[str],
+) -> Dict[str, Any]:
+    """Build one reviewed picture-to-sentence item for Skill 4 Activity 1."""
+    if correct_option not in options:
+        raise ValueError(f"Correct sentence missing from options: {correct_option}")
+    return {
+        "prompt": "පින්තූරයට ගැලපෙන වාක්‍යය තෝරන්න",
+        "image_url": image_url,
+        "options": list(options),
+        "correctOption": correct_option,
+        "correct_index": options.index(correct_option),
+    }
+
+
+def skill4_activity1_difficulty_features(
+    content: Dict[str, Any],
+) -> Dict[str, Any]:
+    return {
+        "sentence_word_count": len(
+            str(content.get("correctOption", "")).rstrip(".?!").split()
+        ),
+        "answer_pool_size": len(content.get("options") or []),
+        "has_matching_image": bool(content.get("image_url")),
+    }
+
+
+# Educator-reviewed four-task progression. The first task deliberately has one
+# visible floor retry: V1 and V2 retain stable research IDs, but V1 is inactive
+# and the learner sees the shared sun task only once through active V2.
+SKILL4_ACTIVITY1_CORE_ITEMS = {
+    1: skill4_sentence_choice(
+        "assets/images/games/moon_shining.png",
+        "හඳ පායනවා.",
+        ["හඳ පායනවා.", "ඉර පායනවා."],
+    ),
+    2: skill4_sentence_choice(
+        "assets/images/games/mother_cooking.png",
+        "අම්මා උයනවා.",
+        ["අම්මා උයනවා.", "අම්මා නිදියනවා.", "අම්මා කියවනවා."],
+    ),
+    3: skill4_sentence_choice(
+        "assets/images/games/girl_going_to_school.png",
+        "පවනි පාසල් යනවා.",
+        [
+            "පවනි පාසල් යනවා.",
+            "පවනි පොත කියවනවා.",
+            "කෝසල පාසල් යනවා.",
+        ],
+    ),
+    4: skill4_sentence_choice(
+        "assets/images/games/boy_flying_kite.png",
+        "කෝසල සරුංගලය යවනවා.",
+        [
+            "කෝසල සරුංගලය යවනවා.",
+            "කෝසල බෝලය ගහනවා.",
+            "පවනි පොත කියවනවා.",
+        ],
+    ),
+}
+
+
+SKILL4_ACTIVITY1_VARIANTS = {
+    (1, 1): skill4_sentence_choice(
+        "assets/images/games/sun_shining.png",
+        "ඉර පායනවා.",
+        ["ඉර පායනවා.", "හඳ පායනවා."],
+    ),
+    (1, 2): skill4_sentence_choice(
+        "assets/images/games/sun_shining.png",
+        "ඉර පායනවා.",
+        ["ඉර පායනවා.", "හඳ පායනවා."],
+    ),
+    (2, 1): skill4_sentence_choice(
+        "assets/images/games/rowing_boat.png",
+        "ඔරුව පදිනවා.",
+        ["ඔරුව පදිනවා.", "බෝලය ගහනවා."],
+    ),
+    (2, 2): skill4_sentence_choice(
+        "assets/images/games/boy_reading.png",
+        "පොත කියවනවා.",
+        ["පොත කියවනවා.", "පොත ලියනවා.", "පොත වහනවා."],
+    ),
+    (3, 1): skill4_sentence_choice(
+        "assets/images/games/flower_blooming.png",
+        "මල් පිපෙනවා.",
+        ["මල් පිපෙනවා.", "හඳ පායනවා.", "ඉර පායනවා."],
+    ),
+    (3, 2): skill4_sentence_choice(
+        "assets/images/games/girl_reading_tree.jpg",
+        "පවනි පොත කියවනවා.",
+        [
+            "පවනි පොත කියවනවා.",
+            "පවනි පාසල් යනවා.",
+            "කෝසල පොත කියවනවා.",
+        ],
+    ),
+    (4, 1): skill4_sentence_choice(
+        "assets/images/games/children_playing_ball.jpg",
+        "පවනි සෙල්ලම් කරනවා.",
+        [
+            "පවනි සෙල්ලම් කරනවා.",
+            "පවනි පාසල් යනවා.",
+            "කෝසල පොත කියවනවා.",
+        ],
+    ),
+    (4, 2): skill4_sentence_choice(
+        "assets/images/games/teacher_writing.png",
+        "ගුරුතුමී අකුරු ලියනවා.",
+        [
+            "ගුරුතුමී අකුරු ලියනවා.",
+            "ගුරුතුමී පොත බලනවා.",
+            "ගුරුතුමී කවි කියනවා.",
+        ],
+    ),
+}
+
+
+def skill4_fill_blank(
+    image_url: str,
+    sequence: List[Optional[str]],
+    correct_option: str,
+    options: List[str],
+) -> Dict[str, Any]:
+    """Build one educator-reviewed image-supported sentence-completion item."""
+    if sequence.count(None) != 1:
+        raise ValueError("Skill 4 Activity 2 requires exactly one blank")
+    if correct_option not in options:
+        raise ValueError(f"Correct completion missing from options: {correct_option}")
+    return {
+        "prompt": "හිස්තැනට සුදුසු වචනය තෝරන්න",
+        "sequence": list(sequence),
+        "image_url": image_url,
+        "options": list(options),
+        "correctOption": correct_option,
+        "correct_index": options.index(correct_option),
+    }
+
+
+def skill4_activity2_difficulty_features(
+    content: Dict[str, Any],
+) -> Dict[str, Any]:
+    sequence = list(content.get("sequence") or [])
+    return {
+        "sentence_word_count": len(sequence),
+        "answer_pool_size": len(content.get("options") or []),
+        "blank_position": sequence.index(None) if None in sequence else None,
+        "has_matching_image": bool(content.get("image_url")),
+    }
+
+
+# Educator-reviewed four-task progression for sentence completion. Task 1 is
+# already at the two-word/two-choice floor, so it exposes one shared retry:
+# V1 remains as inactive lineage and active V2 is served once. Task 2 has two
+# distinct floor-level practice items and therefore uses V1 followed by V2.
+SKILL4_ACTIVITY2_CORE_ITEMS = {
+    1: skill4_fill_blank(
+        "assets/images/games/sun_shining.png",
+        [None, "පායනවා"],
+        "ඉර",
+        ["ඉර", "හඳ"],
+    ),
+    2: skill4_fill_blank(
+        "assets/images/games/flower_blooming.png",
+        [None, "පිපෙනවා"],
+        "මල්",
+        ["මල්", "ගල්"],
+    ),
+    3: skill4_fill_blank(
+        "assets/images/games/girl_going_to_school.png",
+        ["පවනි", None, "යනවා"],
+        "පාසල්",
+        ["පාසල්", "ගෙදර", "වත්තට"],
+    ),
+    4: skill4_fill_blank(
+        "assets/images/games/mother_cooking.png",
+        ["අම්මා", None, "උයයි"],
+        "කෑම",
+        ["කෑම", "පොත", "මල්", "ගල්"],
+    ),
+}
+
+
+SKILL4_ACTIVITY2_VARIANTS = {
+    # Shared Task 1 floor retry. Both IDs intentionally carry the same content,
+    # but only V2 is active and visible to the learner.
+    (1, 1): skill4_fill_blank(
+        "assets/images/games/moon_shining.png",
+        [None, "පායනවා"],
+        "හඳ",
+        ["හඳ", "ඉර"],
+    ),
+    (1, 2): skill4_fill_blank(
+        "assets/images/games/moon_shining.png",
+        [None, "පායනවා"],
+        "හඳ",
+        ["හඳ", "ඉර"],
+    ),
+    (2, 1): skill4_fill_blank(
+        "assets/images/games/dog_running.png",
+        [None, "දුවනවා"],
+        "බල්ලා",
+        ["බල්ලා", "පූසා"],
+    ),
+    (2, 2): skill4_fill_blank(
+        "assets/images/games/cat_sleeping.png",
+        [None, "නිදියනවා"],
+        "පූසා",
+        ["පූසා", "බල්ලා"],
+    ),
+    (3, 1): skill4_fill_blank(
+        "assets/images/games/bird_flying.png",
+        [None, "පියාඹනවා"],
+        "කුරුල්ලා",
+        ["කුරුල්ලා", "බල්ලා"],
+    ),
+    (3, 2): skill4_fill_blank(
+        "assets/images/games/girl_reading_tree.jpg",
+        ["නංගි", None, "කියවනවා"],
+        "පොතක්",
+        ["පොතක්", "බෝලයක්", "මලක්"],
+    ),
+    (4, 1): skill4_fill_blank(
+        "assets/images/games/boy_drawing.png",
+        [None, "චිත්‍රයක්", "අඳිනවා"],
+        "මල්ලි",
+        ["මල්ලි", "නංගි", "අම්මා", "තාත්තා"],
+    ),
+    (4, 2): skill4_fill_blank(
+        "assets/images/games/boy_feeding_dog.jpg",
+        [None, "කෑම", "දෙනවා"],
+        "බල්ලාට",
+        ["බල්ලාට", "පූසාට", "කුරුල්ලාට", "එළුවාට"],
+    ),
+}
+
+
+def skill4_audio_sentence(
+    sentence: str,
+    options: List[str],
+) -> Dict[str, Any]:
+    """Build one reviewed listen-and-select sentence item."""
+    if sentence not in options:
+        raise ValueError(f"Spoken sentence missing from options: {sentence}")
+    if len(options) != len(set(options)):
+        raise ValueError(f"Duplicate sentence options are not allowed: {sentence}")
+    return {
+        "prompt": "ශබ්දයට සවන් දී නිවැරදි වාක්‍ය තෝරන්න",
+        "audio_text": sentence,
+        "options": list(options),
+        "correctOption": sentence,
+        "correct_index": options.index(sentence),
+    }
+
+
+def _sinhala_base_letter_count(word: str) -> int:
+    return sum(
+        1
+        for char in word.rstrip(".?!")
+        if "\u0d80" <= char <= "\u0dff"
+        and unicodedata.category(char).startswith("L")
+    )
+
+
+def skill4_activity3_difficulty_features(
+    content: Dict[str, Any],
+) -> Dict[str, Any]:
+    words = str(content.get("correctOption", "")).rstrip(".?!").split()
+    return {
+        "sentence_word_count": len(words),
+        "answer_pool_size": len(content.get("options") or []),
+        "max_word_letter_count": max(
+            (_sinhala_base_letter_count(word) for word in words),
+            default=0,
+        ),
+        "pilla_count": sum(
+            1
+            for word in words
+            for char in word
+            if "\u0d80" <= char <= "\u0dff"
+            and unicodedata.category(char).startswith("M")
+        ),
+    }
+
+
+# Four-task auditory sentence progression. The language follows the short,
+# concrete subject/action patterns used by the Sri Lankan Grade 1 Sinhala
+# reading resources (familiar family members, animals, objects, and actions).
+# Every option is a meaningful sentence rather than a deliberately broken word
+# order. V1 follows the preceding core response load; V2 returns to the current
+# core load for independent confirmation.
+SKILL4_ACTIVITY3_CORE_ITEMS = {
+    1: skill4_audio_sentence(
+        "පාසල් යනවා.",
+        ["පාසල් යනවා.", "යනවා පාසල්."],
+    ),
+    2: skill4_audio_sentence(
+        "පොත බලනවා.",
+        ["පොත බලනවා.", "බලනවා පොත.", "පොත වහනවා."],
+    ),
+    3: skill4_audio_sentence(
+        "අම්මා බත් උයයි.",
+        ["අම්මා බත් උයයි.", "තාත්තා පොත බලයි.", "නංගි මල් නෙළයි."],
+    ),
+    4: skill4_audio_sentence(
+        "සමන් පොතක් කියවයි.",
+        [
+            "සමන් පොතක් කියවයි.",
+            "නදී මලක් නෙළයි.",
+            "අම්මා බත් උයයි.",
+            "තාත්තා වතුර බොයි.",
+        ],
+    ),
+}
+
+
+SKILL4_ACTIVITY3_VARIANTS = {
+    (1, 1): skill4_audio_sentence(
+        "අම්මා උයයි.",
+        ["අම්මා උයයි.", "තාත්තා දුවයි."],
+    ),
+    (1, 2): skill4_audio_sentence(
+        "පූසා දුවයි.",
+        ["පූසා දුවයි.", "බල්ලා බුරයි."],
+    ),
+    (2, 1): skill4_audio_sentence(
+        "මල් පිපෙයි.",
+        ["මල් පිපෙයි.", "හඳ පායයි."],
+    ),
+    (2, 2): skill4_audio_sentence(
+        "හඳ පායයි.",
+        ["හඳ පායයි.", "ඉර පායයි.", "මල් පිපෙයි."],
+    ),
+    (3, 1): skill4_audio_sentence(
+        "බල්ලා දුවයි.",
+        ["බල්ලා දුවයි.", "පූසා පනියි.", "කුරුල්ලා පියාඹයි."],
+    ),
+    (3, 2): skill4_audio_sentence(
+        "මල්ලි සෙල්ලම් කරයි.",
+        ["මල්ලි සෙල්ලම් කරයි.", "නංගි පොත බලයි.", "අම්මා බත් උයයි."],
+    ),
+    (4, 1): skill4_audio_sentence(
+        "තාත්තා ඔරුව පදිනවා.",
+        ["තාත්තා ඔරුව පදිනවා.", "අම්මා බත් උයනවා.", "මල්ලි බෝලය ගසනවා."],
+    ),
+    (4, 2): skill4_audio_sentence(
+        "ගුරුතුමී පොත බලනවා.",
+        [
+            "ගුරුතුමී පොත බලනවා.",
+            "නංගි මල් නෙළනවා.",
+            "අම්මා බත් උයනවා.",
+            "තාත්තා ඔරුව පදිනවා.",
+        ],
+    ),
+}
+
+
+def skill4_jumbled_sentence(
+    image_url: str,
+    correct_sentence: str,
+    scrambled_words: List[str],
+) -> Dict[str, Any]:
+    """Build one reviewed image-supported sentence-ordering item."""
+    correct_words = correct_sentence.rstrip(".?!").split()
+    if sorted(correct_words) != sorted(scrambled_words):
+        raise ValueError(
+            f"Scrambled words do not match sentence: {correct_sentence}"
+        )
+    return {
+        "prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න",
+        "image_url": image_url,
+        "correct_sentence": correct_sentence,
+        "scrambled_words": list(scrambled_words),
+    }
+
+
+def skill4_activity4_difficulty_features(
+    content: Dict[str, Any],
+) -> Dict[str, Any]:
+    return {
+        "sentence_word_count": len(
+            str(content.get("correct_sentence", "")).rstrip(".?!").split()
+        ),
+        "answer_pool_size": len(content.get("scrambled_words") or []),
+        "has_matching_image": bool(content.get("image_url")),
+    }
+
+
+# Reviewed variants for the four-task sentence-ordering progression. Task 1 is
+# already at the learning floor, so V1 and V2 intentionally retain one shared
+# moon retry and only V2 is served. Task 2 explicitly uses a flower remediation
+# followed by a different dog confirmation. Tasks 3-4 keep separate reduced-load
+# remediation and equivalent confirmation items.
+SKILL4_ACTIVITY4_VARIANTS = {
+    (1, 1): skill4_jumbled_sentence(
+        "assets/images/games/moon_shining.png",
+        "හඳ පායනවා.",
+        ["පායනවා", "හඳ"],
+    ),
+    (1, 2): skill4_jumbled_sentence(
+        "assets/images/games/moon_shining.png",
+        "හඳ පායනවා.",
+        ["පායනවා", "හඳ"],
+    ),
+    (2, 1): skill4_jumbled_sentence(
+        "assets/images/games/flower_blooming.png",
+        "මල් පිපෙනවා.",
+        ["පිපෙනවා", "මල්"],
+    ),
+    (2, 2): skill4_jumbled_sentence(
+        "assets/images/games/dog_running.png",
+        "බල්ලා දුවනවා.",
+        ["දුවනවා", "බල්ලා"],
+    ),
+    (3, 1): skill4_jumbled_sentence(
+        "assets/images/games/bird_flying.png",
+        "කුරුල්ලා පියාඹනවා.",
+        ["පියාඹනවා", "කුරුල්ලා"],
+    ),
+    (3, 2): skill4_jumbled_sentence(
+        "assets/images/games/rowing_boat.png",
+        "තාත්තා ඔරුව පදිනවා.",
+        ["පදිනවා", "තාත්තා", "ඔරුව"],
+    ),
+    (4, 1): skill4_jumbled_sentence(
+        "assets/images/games/mother_cooking.png",
+        "අම්මා බත් උයනවා.",
+        ["උයනවා", "අම්මා", "බත්"],
+    ),
+    (4, 2): skill4_jumbled_sentence(
+        "assets/images/games/teacher_writing.png",
+        "ගුරුතුමී අකුරු ලියනවා.",
+        ["ලියනවා", "අකුරු", "ගුරුතුමී"],
+    ),
+}
+
+
 def rotate(values: List[Any], start: int, count: int) -> List[Any]:
     return [copy.deepcopy(values[(start + offset) % len(values)]) for offset in range(count)]
 
@@ -756,9 +1195,47 @@ def reduce_remediation_load(
         match = re.search(r"R(\d+)", str(core.get("item_id", "")), re.I)
         return easier, int(match.group(1)) > 1 if match else False
 
+    if skill == 4 and activity == 1:
+        match = re.search(r"R(\d+)", str(core.get("item_id", "")), re.I)
+        round_number = int(match.group(1)) if match else 1
+        if round_number == 1:
+            return easier, False
+        core_word_count = len(
+            str(core.get("correctOption", "")).rstrip(".?!").split()
+        )
+        easier_word_count = len(
+            str(easier.get("correctOption", "")).rstrip(".?!").split()
+        )
+        return easier, (
+            easier_word_count < core_word_count
+            or len(easier.get("options") or []) < len(core.get("options") or [])
+            # These V1 records are educator-reviewed previous-level tasks.
+            # Round 4 reduces semantic/vocabulary load while intentionally
+            # retaining the same three-word/three-option response structure.
+            or round_number == 4
+        )
+
+    if skill == 4 and activity == 2:
+        match = re.search(r"R(\d+)", str(core.get("item_id", "")), re.I)
+        round_number = int(match.group(1)) if match else 1
+        if round_number <= 2:
+            # R1 is a one-shot shared floor retry. R2 deliberately keeps two
+            # different same-level floor items via has_floor_remediation.
+            return easier, False
+        if round_number == 3:
+            # Reviewed V1 already reduces the three-choice core to two choices.
+            return easier, True
+        return easier, _reduce_choice_options(easier)
+
+    if skill == 4 and activity == 3:
+        match = re.search(r"R(\d+)", str(core.get("item_id", "")), re.I)
+        round_number = int(match.group(1)) if match else 1
+        # R1 is a same-load floor remediation. R2-R4 V1 records are already
+        # authored at the preceding core's answer-pool/sentence load.
+        return easier, round_number > 1
+
     if (skill, activity) in {
         (1, 4),
-        (4, 1), (4, 2), (4, 3),
     }:
         return easier, _reduce_choice_options(easier)
 
@@ -769,11 +1246,12 @@ def reduce_remediation_load(
     if skill == 3 and activity == 5:
         match = re.search(r"R(\d+)", str(core.get("item_id", "")), re.I)
         return easier, int(match.group(1)) > 1 if match else False
-    # Jumbled-sentence V1 content is generated at a shorter valid length
-    # directly in variant_content.
     if skill == 4 and activity == 4:
-        core_length = len(core.get("scrambled_words") or [])
-        return easier, core_length > 2
+        match = re.search(r"R(\d+)", str(core.get("item_id", "")), re.I)
+        round_number = int(match.group(1)) if match else 1
+        # R3 returns to the preceding two-word level. R4 retains three words
+        # but uses the previous level's familiar vocabulary and image support.
+        return easier, round_number > 2
 
     return easier, False
 
@@ -904,6 +1382,9 @@ def variant_content(skill: int, activity: int, round_index: int, variant: int, c
         return copy.deepcopy(SKILL3_VARIANTS[activity][slot])
 
     if skill == 4 and activity == 1:
+        reviewed = SKILL4_ACTIVITY1_VARIANTS.get((round_index, variant))
+        if reviewed is not None:
+            return copy.deepcopy(reviewed)
         image, sentence = SENTENCES[slot % len(SENTENCES)]
         count = option_count or 3
         others = [value for _, value in rotate(SENTENCES, slot + 1, count) if value != sentence]
@@ -912,6 +1393,9 @@ def variant_content(skill: int, activity: int, round_index: int, variant: int, c
                 "options": options, "correctOption": sentence, "correct_index": options.index(sentence)}
 
     if skill == 4 and activity == 2:
+        reviewed = SKILL4_ACTIVITY2_VARIANTS.get((round_index, variant))
+        if reviewed is not None:
+            return copy.deepcopy(reviewed)
         image, sentence = SENTENCES[slot % len(SENTENCES)]
         words = sentence.rstrip(".").split()
         blank = 0 if round_index <= 2 else min(1, len(words) - 1)
@@ -925,6 +1409,9 @@ def variant_content(skill: int, activity: int, round_index: int, variant: int, c
                 "options": options, "correctOption": target, "correct_index": options.index(target)}
 
     if skill == 4 and activity == 3:
+        reviewed = SKILL4_ACTIVITY3_VARIANTS.get((round_index, variant))
+        if reviewed is not None:
+            return copy.deepcopy(reviewed)
         _, sentence = SENTENCES[slot % len(SENTENCES)]
         words = sentence.rstrip(".").split()
         count = option_count or 3
@@ -940,13 +1427,9 @@ def variant_content(skill: int, activity: int, round_index: int, variant: int, c
                 "options": options, "correctOption": sentence, "correct_index": options.index(sentence)}
 
     if skill == 4 and activity == 4:
-        core_length = len((core.get("scrambled_words") or []))
-        desired = max(2, core_length - 1) if variant == 1 else core_length
-        eligible = [entry for entry in SENTENCES if len(entry[1].rstrip(".").split()) == desired]
-        image, sentence = eligible[slot % len(eligible)]
-        words = sentence.rstrip(".").split()
-        return {"prompt": "පින්තූරයට අදාළ වාක්‍යය සාදන්න", "image_url": image,
-                "correct_sentence": " ".join(words) + ".", "scrambled_words": list(reversed(words))}
+        reviewed = SKILL4_ACTIVITY4_VARIANTS.get((round_index, variant))
+        if reviewed is not None:
+            return copy.deepcopy(reviewed)
 
     raise ValueError(f"No variant generator for Skill {skill} Activity {activity}")
 
@@ -972,8 +1455,79 @@ def build() -> None:
                 research["knowledge_component_id"] = SKILL2_ACTIVITY_KCS[
                     activity_number
                 ]
+            if skill == 4 and activity_number in {1, 2, 3, 4}:
+                # Skill 4 Activities 1-4 intentionally use four core tasks.
+                # Trimming here keeps every deterministic rebuild from
+                # restoring the retired fifth task from an older JSON file.
+                activity["rounds"] = (activity.get("rounds") or [])[:4]
             rounds = activity.get("rounds") or activity.get("core_rounds") or []
             for round_index, round_data in enumerate(rounds, start=1):
+                if (
+                    skill == 4
+                    and activity_number == 1
+                    and round_index in SKILL4_ACTIVITY1_CORE_ITEMS
+                ):
+                    for key in (
+                        "prompt", "image_url", "options", "correctOption",
+                        "correct_index",
+                    ):
+                        round_data.pop(key, None)
+                    round_data.update(
+                        copy.deepcopy(SKILL4_ACTIVITY1_CORE_ITEMS[round_index])
+                    )
+                    if round_index == 4:
+                        round_data["difficulty_b"] = 1.0
+                        round_data["difficulty_label"] = "hard"
+                if skill == 4 and activity_number == 1:
+                    round_data["difficulty_features"] = (
+                        skill4_activity1_difficulty_features(round_data)
+                    )
+                if (
+                    skill == 4
+                    and activity_number == 2
+                    and round_index in SKILL4_ACTIVITY2_CORE_ITEMS
+                ):
+                    for key in (
+                        "prompt", "sequence", "image_url", "options",
+                        "correctOption", "correct_index",
+                    ):
+                        round_data.pop(key, None)
+                    round_data.update(
+                        copy.deepcopy(SKILL4_ACTIVITY2_CORE_ITEMS[round_index])
+                    )
+                    round_data["difficulty_features"] = (
+                        skill4_activity2_difficulty_features(round_data)
+                    )
+                if (
+                    skill == 4
+                    and activity_number == 3
+                    and round_index in SKILL4_ACTIVITY3_CORE_ITEMS
+                ):
+                    for key in (
+                        "prompt", "audio_text", "options", "correctOption",
+                        "correct_index",
+                    ):
+                        round_data.pop(key, None)
+                    round_data.update(
+                        copy.deepcopy(SKILL4_ACTIVITY3_CORE_ITEMS[round_index])
+                    )
+                    reviewed_difficulty = {
+                        1: -1.0,
+                        2: -0.5,
+                        3: 0.0,
+                        4: 0.5,
+                    }[round_index]
+                    round_data["difficulty_b"] = reviewed_difficulty
+                    round_data["difficulty_label"] = difficulty_label(
+                        reviewed_difficulty
+                    )
+                    round_data["difficulty_features"] = (
+                        skill4_activity3_difficulty_features(round_data)
+                    )
+                if skill == 4 and activity_number == 4:
+                    round_data["difficulty_features"] = (
+                        skill4_activity4_difficulty_features(round_data)
+                    )
                 if skill == 3 and activity_number == 1 and round_index == 3:
                     # Keep the reviewed bus target/image unchanged while making
                     # all three distractors match its three-unit, no-pilla load.
@@ -1063,6 +1617,14 @@ def build() -> None:
                     if skill == 3 and activity_number in {4, 5}
                     else 9
                     if skill == 3
+                    else 5
+                    if skill == 4 and activity_number == 1
+                    else 4
+                    if skill == 4 and activity_number == 2
+                    else 5
+                    if skill == 4 and activity_number == 3
+                    else 4
+                    if skill == 4 and activity_number == 4
                     else max(2, int(round_data.get("item_version", 1)))
                 )
                 round_data["equivalent_group_id"] = item_id
@@ -1094,7 +1656,10 @@ def build() -> None:
                         has_reduced_remediation = reduced
                     variant_difficulty = float(round_data.get("difficulty_b", 0.0))
                     if variant_number == 1 and reduced:
-                        if skill in {2, 3} and activity_number in {1, 2, 3, 4, 5}:
+                        if (
+                            skill in {2, 3}
+                            and activity_number in {1, 2, 3, 4, 5}
+                        ):
                             variant_difficulty = (
                                 max(-3.0, round(variant_difficulty - 0.5, 2))
                                 if round_index == 1
@@ -1122,6 +1687,14 @@ def build() -> None:
                             else 10
                             if skill == 3 and activity_number in {4, 5}
                             else 9 if skill == 3
+                            else 5
+                            if skill == 4 and activity_number == 1
+                            else 4
+                            if skill == 4 and activity_number == 2
+                            else 5
+                            if skill == 4 and activity_number == 3
+                            else 4
+                            if skill == 4 and activity_number == 4
                             else 2
                         ),
                         "item_role": role,
@@ -1139,6 +1712,37 @@ def build() -> None:
                         # the educator-approved tree content, but only V2 is an
                         # active one-shot retry so the child never sees two
                         # separate floor tasks.
+                        variant_record["is_active"] = variant_number == 2
+                        variant_record["single_floor_retry"] = True
+                    if (
+                        skill == 4
+                        and activity_number == 1
+                        and round_index == 1
+                    ):
+                        # Task 1 intentionally exposes only one sun retry. V1
+                        # remains in the bank for stable lineage but is never
+                        # served; active V2 is the single combined
+                        # remediation/confirmation opportunity.
+                        variant_record["is_active"] = variant_number == 2
+                        variant_record["single_floor_retry"] = True
+                    if (
+                        skill == 4
+                        and activity_number == 2
+                        and round_index == 1
+                    ):
+                        # Task 1 is already at the two-word/two-choice floor.
+                        # Keep one shared unseen retry instead of presenting
+                        # duplicate remediation and confirmation screens.
+                        variant_record["is_active"] = variant_number == 2
+                        variant_record["single_floor_retry"] = True
+                    if (
+                        skill == 4
+                        and activity_number == 4
+                        and round_index == 1
+                    ):
+                        # Task 1 is the two-word sentence-ordering floor. Both
+                        # stable IDs carry the approved moon content, while only
+                        # V2 is served as the single shared retry.
                         variant_record["is_active"] = variant_number == 2
                         variant_record["single_floor_retry"] = True
                     if skill == 2 and activity_number == 3:
@@ -1165,6 +1769,60 @@ def build() -> None:
                         variant_record["difficulty_features"] = (
                             skill3_difficulty_features(activity_number, content)
                         )
+                    if skill == 4 and activity_number == 1:
+                        variant_record["difficulty_features"] = (
+                            skill4_activity1_difficulty_features(content)
+                        )
+                        if variant_number == 1 and round_index <= 4:
+                            variant_record["remediation_source_round"] = (
+                                round_index - 1 if round_index > 1 else None
+                            )
+                            variant_record["remediation_strategy"] = (
+                                "PREVIOUS_DIFFICULTY_LEVEL"
+                                if round_index > 1
+                                else "SINGLE_FLOOR_RETRY_ALIAS"
+                            )
+                    if skill == 4 and activity_number == 2:
+                        variant_record["difficulty_features"] = (
+                            skill4_activity2_difficulty_features(content)
+                        )
+                        if variant_number == 1:
+                            variant_record["remediation_source_round"] = (
+                                round_index - 1 if round_index > 1 else None
+                            )
+                            variant_record["remediation_strategy"] = (
+                                "SAME_LEVEL_FLOOR_PRACTICE"
+                                if round_index == 2
+                                else "PREVIOUS_DIFFICULTY_LEVEL"
+                                if round_index > 2
+                                else "SINGLE_FLOOR_RETRY_ALIAS"
+                            )
+                    if skill == 4 and activity_number == 3:
+                        variant_record["difficulty_features"] = (
+                            skill4_activity3_difficulty_features(content)
+                        )
+                        if variant_number == 1:
+                            variant_record["remediation_source_round"] = (
+                                round_index - 1 if round_index > 1 else None
+                            )
+                            variant_record["remediation_strategy"] = (
+                                "PREVIOUS_DIFFICULTY_LEVEL"
+                                if round_index > 1
+                                else "SAME_LEVEL_FLOOR_PRACTICE"
+                            )
+                    if skill == 4 and activity_number == 4:
+                        variant_record["difficulty_features"] = (
+                            skill4_activity4_difficulty_features(content)
+                        )
+                        if variant_number == 1:
+                            variant_record["remediation_source_round"] = (
+                                round_index - 1 if round_index > 1 else None
+                            )
+                            variant_record["remediation_strategy"] = (
+                                "PREVIOUS_DIFFICULTY_LEVEL"
+                                if round_index > 2
+                                else "SAME_LEVEL_FLOOR_PRACTICE"
+                            )
                     if (
                         skill in {2, 3}
                         and activity_number in {1, 2, 3, 4, 5}
@@ -1186,8 +1844,27 @@ def build() -> None:
                         )
                     variants.append(variant_record)
                 round_data["has_reduced_remediation"] = has_reduced_remediation
-                if skill == 2 and activity_number == 4:
+                if (
+                    (skill == 2 and activity_number == 4)
+                    or (
+                        skill == 4
+                        and activity_number == 2
+                        and round_index == 2
+                    )
+                    or (
+                        skill == 4
+                        and activity_number == 3
+                        and round_index == 1
+                    )
+                    or (
+                        skill == 4
+                        and activity_number == 4
+                        and round_index == 2
+                    )
+                ):
                     round_data["has_floor_remediation"] = round_index == 1
+                    if skill == 4:
+                        round_data["has_floor_remediation"] = True
                 else:
                     round_data.pop("has_floor_remediation", None)
                 round_data.pop("has_equivalent_remediation", None)

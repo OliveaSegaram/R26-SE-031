@@ -7,7 +7,6 @@ import '../../../models/curriculum_models.dart';
 import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../services/progress_service.dart';
-import '../shared_widgets/shared_celebration_popup.dart';
 import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
 
 /// Activity 8: පින්තූරයට ගැලපෙන හිස්තැන පුරවමු (Fill Blank Slot Matching Image)
@@ -101,8 +100,8 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank>
   int? _selectedIndex;
   bool _isCorrect = false;
   bool _activityComplete = false;
+  bool _isProcessingAnswer = false;
   int _currentRoundIndex = 0;
-  int _attemptCount = 0;
 
   @override
   void dispose() {
@@ -119,60 +118,73 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank>
     String correctOption,
     int totalRounds,
   ) async {
-    if (_isCorrect) return;
+    if (_isCorrect || _isProcessingAnswer) return;
     if (isAdaptivelyRemoved(index)) return;
-    _attemptCount++;
-
     setState(() {
       _selectedIndex = index;
+      _isProcessingAnswer = true;
     });
 
     final bool isRight = (selectedOption == correctOption);
     if (isRight) {
-      final transition = await completeAdaptiveChoiceTask(
+      setState(() {
+        _isCorrect = true;
+      });
+      _pulseController.stop();
+      _bounceController.forward(from: 0.0);
+      SoundUtils.playFeedback('audio/correct.mp3');
+      final resultFuture = submitAdaptiveChoiceTask(
         100,
         roundIndex: _currentRoundIndex,
         selectedAnswers: <String>[selectedOption],
       );
-      _bounceController.forward(from: 0.0);
-      setState(() {
-        _isCorrect = true;
-      });
-      SoundUtils.playFeedback('audio/correct.mp3');
-
-      Future.delayed(const Duration(milliseconds: 1400), () {
-        if (!mounted) return;
-        if (transition != null && !transition.isComplete) {
-          setState(() {
-            _currentRoundIndex = transition.roundIndex;
-            final sId = widget.activityNode?.skillId ?? '';
-            final aId = widget.activityNode?.id ?? '';
-            if (sId.isNotEmpty && aId.isNotEmpty) {
-              int progress =
-                  ((_currentRoundIndex /
-                              (widget.activityNode?.rounds.length ?? 1)) *
-                          100)
-                      .toInt();
-              ProgressService().saveActivityScore(sId, aId, progress);
-              ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
-            }
-            _selectedIndex = null;
-            _isCorrect = false;
-            _attemptCount = 0;
-          });
-          _playCurrentInstruction(autoPlay: true);
-        } else {
-          setState(() {
-            _activityComplete = true;
-            final sId = widget.activityNode?.skillId ?? '';
-            final aId = widget.activityNode?.id ?? '';
-            if (sId.isNotEmpty && aId.isNotEmpty) {
-              ProgressService().saveActivityScore(sId, aId, 100);
-              ProgressService().clearActivityState(sId, aId);
-            }
-          });
-        }
-      });
+      await Future<void>.delayed(const Duration(milliseconds: 1400));
+      final result = await resultFuture;
+      if (!mounted) return;
+      final transition = applyAdaptiveChoiceTaskResult(result);
+      if (transition == null) {
+        setState(() {
+          _selectedIndex = null;
+          _isCorrect = false;
+          _isProcessingAnswer = false;
+        });
+        _pulseController.repeat(reverse: true);
+        _bounceController.reset();
+        return;
+      }
+      if (!transition.isComplete) {
+        setState(() {
+          _currentRoundIndex = transition.roundIndex;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            int progress =
+                ((_currentRoundIndex /
+                            (widget.activityNode?.rounds.length ?? 1)) *
+                        100)
+                    .toInt();
+            ProgressService().saveActivityScore(sId, aId, progress);
+            ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+          }
+          _selectedIndex = null;
+          _isCorrect = false;
+          _isProcessingAnswer = false;
+        });
+        _pulseController.repeat(reverse: true);
+        _bounceController.reset();
+        _playCurrentInstruction(autoPlay: true);
+      } else {
+        setState(() {
+          _activityComplete = true;
+          _isProcessingAnswer = false;
+          final sId = widget.activityNode?.skillId ?? '';
+          final aId = widget.activityNode?.id ?? '';
+          if (sId.isNotEmpty && aId.isNotEmpty) {
+            ProgressService().saveActivityScore(sId, aId, 100);
+            ProgressService().clearActivityState(sId, aId);
+          }
+        });
+      }
     } else {
       SoundUtils.playFeedback('audio/wrong.mp3');
       final correctIndex = adaptiveOptionLabels.indexOf(correctOption);
@@ -182,12 +194,11 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank>
         correctIndex: correctIndex < 0 ? 0 : correctIndex,
         errorType: 'sentence_completion_error',
       );
-      Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted) {
-          setState(() {
-            _selectedIndex = null;
-          });
-        }
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      if (!mounted) return;
+      setState(() {
+        _selectedIndex = null;
+        _isProcessingAnswer = false;
       });
     }
   }
@@ -232,6 +243,13 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank>
       if (distractors.isNotEmpty) distractors = distractors.sublist(0, 1);
       options = [correctOption, ...distractors];
     }
+    final correctIndex = options.indexOf(correctOption);
+    configureAdaptiveChoices(
+      activity: widget.activityNode,
+      roundIndex: _currentRoundIndex,
+      options: options,
+      correctIndex: correctIndex < 0 ? 0 : correctIndex,
+    );
 
     return SharedGameLayout(
       studentData: widget.studentData,
@@ -356,9 +374,6 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank>
               mainAxisAlignment: MainAxisAlignment.center,
               children: sequence.map((item) {
                 final isBlank = (item == null);
-                final currentText = isBlank
-                    ? (_isCorrect ? correctOption : '')
-                    : item;
                 final isWide = false;
 
                 if (isBlank) {
@@ -391,6 +406,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank>
         return Transform.scale(
           scale: scale,
           child: Container(
+            key: ValueKey<String>('$adaptiveItemId-blank-slot'),
             width: 140.0,
             height: 80.0,
             decoration: BoxDecoration(
@@ -505,13 +521,6 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank>
     String correctOption,
     int totalRounds,
   ) {
-    final correctIndex = options.indexOf(correctOption);
-    configureAdaptiveChoices(
-      activity: widget.activityNode,
-      roundIndex: _currentRoundIndex,
-      options: options,
-      correctIndex: correctIndex < 0 ? 0 : correctIndex,
-    );
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -572,10 +581,7 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank>
     final isSelected = (_selectedIndex == index);
     final isRight = isSelected && (optionText == correctOption);
     final isWrong = isSelected && (optionText != correctOption);
-    final isHidden = _isCorrect && (optionText == correctOption);
     final isHinted = isAdaptivelyHighlighted(index);
-
-    final isPressed = isRight || isWrong;
 
     double tileWidth = 145.0;
     double tileHeight = 90.0;
@@ -636,11 +642,11 @@ class _Skill4Act2FillBlankState extends State<Skill4Act2FillBlank>
     }
 
     return GestureDetector(
-      key: ValueKey('$_currentRoundIndex-$index'),
+      key: ValueKey<String>('$adaptiveItemId-option-$index'),
       onTap: () => _checkAnswer(index, optionText, correctOption, totalRounds),
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),
-        opacity: isHidden ? 0.0 : 1.0,
+        opacity: 1.0,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,

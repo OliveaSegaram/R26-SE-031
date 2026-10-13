@@ -7,7 +7,6 @@ import '../../../models/curriculum_models.dart';
 import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../services/progress_service.dart';
-import '../shared_widgets/shared_celebration_popup.dart';
 import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
 
 /// Skill 3 Activity 3 (Listen to Word & Select Matching Word)
@@ -34,12 +33,11 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
   int? _selectedIndex;
   bool _isCorrect = false;
   bool _activityComplete = false;
+  bool _isProcessingAnswer = false;
   int _attemptCount = 0;
   int _currentRoundIndex = 0;
 
   // Animations
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
   late AnimationController _speakerBounceController;
   late Animation<double> _speakerBounceAnimation;
 
@@ -60,15 +58,6 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
       _currentRoundIndex = 0;
     }
 
-    // Pulsing glow for the speaker button
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
     // Speaker bounce when tapped
     _speakerBounceController = AnimationController(
       vsync: this,
@@ -88,7 +77,6 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
 
   @override
   void dispose() {
-    _pulseController.dispose();
     _speakerBounceController.dispose();
     _audioPlayer.dispose();
     disposeChoiceScaffoldAdapter();
@@ -121,29 +109,28 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
   }
 
   void _checkAnswer(int index, int correctIndex, int totalRounds) async {
-    if (_isCorrect) return;
-    if (_selectedIndex != null) return;
+    if (_isCorrect || _isProcessingAnswer) return;
     if (isAdaptivelyRemoved(index)) return;
 
     _attemptCount++;
     setState(() {
       _selectedIndex = index;
+      _isProcessingAnswer = true;
     });
 
     final bool isRight = (index == correctIndex);
     int score = isRight ? 100 : 0;
 
     if (isRight) {
-      final transition = await completeAdaptiveChoiceTask(
-        score,
-        roundIndex: _currentRoundIndex,
-      );
       setState(() {
         _isCorrect = true;
       });
       SoundUtils.playFeedback('audio/correct.mp3');
-
-      _advanceRoundAfterDelay(totalRounds, transition);
+      final resultFuture = submitAdaptiveChoiceTask(
+        score,
+        roundIndex: _currentRoundIndex,
+      );
+      _advanceRoundAfterDelay(totalRounds, resultFuture);
     } else {
       SoundUtils.playFeedback('audio/wrong.mp3');
       await requestChoiceScaffold(
@@ -155,22 +142,24 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
       if (mounted) setState(() {});
 
       if (_attemptCount >= 3) {
-        final transition = await completeAdaptiveChoiceTask(
+        setState(() {
+          _selectedIndex = correctIndex;
+          _isCorrect = true;
+        });
+        SoundUtils.playFeedback('audio/correct.mp3');
+        final resultFuture = submitAdaptiveChoiceTask(
           0,
           roundIndex: _currentRoundIndex,
           isCorrect: true,
           attemptAlreadyLogged: true,
         );
-        setState(() {
-          _selectedIndex = correctIndex;
-          _isCorrect = true;
-        });
-        _advanceRoundAfterDelay(totalRounds, transition);
+        _advanceRoundAfterDelay(totalRounds, resultFuture);
       } else {
         Future.delayed(const Duration(milliseconds: 700), () {
           if (mounted && !_isCorrect) {
             setState(() {
               _selectedIndex = null;
+              _isProcessingAnswer = false;
             });
           }
         });
@@ -178,40 +167,54 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
     }
   }
 
-  void _advanceRoundAfterDelay(int totalRounds, dynamic transition) {
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (!mounted) return;
-      if (transition != null && !transition.isComplete) {
-        setState(() {
-          _currentRoundIndex = transition.roundIndex;
-          _attemptCount = 0;
-          final sId = widget.activityNode?.skillId ?? '';
-          final aId = widget.activityNode?.id ?? '';
-          if (sId.isNotEmpty && aId.isNotEmpty) {
-            int progress =
-                ((_currentRoundIndex /
-                            (widget.activityNode?.rounds.length ?? 1)) *
-                        100)
-                    .toInt();
-            ProgressService().saveActivityScore(sId, aId, progress);
-            ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
-          }
-          _selectedIndex = null;
-          _isCorrect = false;
-        });
-        _playAudioPrompt(autoPlay: true);
-      } else {
-        setState(() {
-          _activityComplete = true;
-          final sId = widget.activityNode?.skillId ?? '';
-          final aId = widget.activityNode?.id ?? '';
-          if (sId.isNotEmpty && aId.isNotEmpty) {
-            ProgressService().saveActivityScore(sId, aId, 100);
-            ProgressService().clearActivityState(sId, aId);
-          }
-        });
-      }
-    });
+  Future<void> _advanceRoundAfterDelay(
+    int totalRounds,
+    Future<Map<String, dynamic>?> resultFuture,
+  ) async {
+    await Future<void>.delayed(const Duration(milliseconds: 1400));
+    final result = await resultFuture;
+    if (!mounted) return;
+    final transition = applyAdaptiveChoiceTaskResult(result);
+    if (transition == null) {
+      setState(() {
+        _selectedIndex = null;
+        _isCorrect = false;
+        _isProcessingAnswer = false;
+      });
+      return;
+    }
+    if (!transition.isComplete) {
+      setState(() {
+        _currentRoundIndex = transition.roundIndex;
+        _attemptCount = 0;
+        final sId = widget.activityNode?.skillId ?? '';
+        final aId = widget.activityNode?.id ?? '';
+        if (sId.isNotEmpty && aId.isNotEmpty) {
+          int progress =
+              ((_currentRoundIndex /
+                          (widget.activityNode?.rounds.length ?? 1)) *
+                      100)
+                  .toInt();
+          ProgressService().saveActivityScore(sId, aId, progress);
+          ProgressService().saveActivityState(sId, aId, _currentRoundIndex);
+        }
+        _selectedIndex = null;
+        _isCorrect = false;
+        _isProcessingAnswer = false;
+      });
+      _playAudioPrompt(autoPlay: true);
+    } else {
+      setState(() {
+        _activityComplete = true;
+        _isProcessingAnswer = false;
+        final sId = widget.activityNode?.skillId ?? '';
+        final aId = widget.activityNode?.id ?? '';
+        if (sId.isNotEmpty && aId.isNotEmpty) {
+          ProgressService().saveActivityScore(sId, aId, 100);
+          ProgressService().clearActivityState(sId, aId);
+        }
+      });
+    }
   }
 
   @override
@@ -469,6 +472,7 @@ class _Skill4Act3McqState extends State<Skill4Act3Mcq>
     }
 
     return GestureDetector(
+      key: ValueKey<String>('$adaptiveItemId-option-$index'),
       onTap: () => _checkAnswer(index, correctIndex, totalRounds),
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 300),

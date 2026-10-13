@@ -44,16 +44,34 @@ mixin SequenceScaffoldAdapter<T extends StatefulWidget> on State<T> {
     required int roundIndex,
     List<String> selectedAnswers = const <String>[],
   }) async {
+    final result = await submitAdaptiveSequenceTask(
+      score,
+      roundIndex: roundIndex,
+      selectedAnswers: selectedAnswers,
+    );
+    return applyAdaptiveSequenceTaskResult(result);
+  }
+
+  /// Submit without changing the rendered item. Sequence screens use this to
+  /// keep the completed sentence visible during their success-feedback delay.
+  Future<Map<String, dynamic>?> submitAdaptiveSequenceTask(
+    int score, {
+    required int roundIndex,
+    List<String> selectedAnswers = const <String>[],
+  }) async {
     final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
     if (wrapper == null || adaptiveTaskCoordinator == null) return null;
-    final result = await wrapper.completeAdaptiveRound(
+    return wrapper.completeAdaptiveRound(
       score,
       currentRoundIndex: roundIndex,
       itemId: adaptiveTaskCoordinator!.itemId,
       selectedAnswers: selectedAnswers,
     );
-    return adaptiveTaskCoordinator!.applyResult(result);
   }
+
+  AdaptiveTaskTransition? applyAdaptiveSequenceTaskResult(
+    Map<String, dynamic>? result,
+  ) => result == null ? null : adaptiveTaskCoordinator?.applyResult(result);
 
   void configureAdaptiveSequence({
     required ActivityNode? activity,

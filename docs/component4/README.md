@@ -77,8 +77,10 @@ Do not hand-edit generated V1/V2 blocks without updating that generator.
 
 Current validation result:
 
-- Skills 1–4: 97 core tasks + 194 distinct equivalents = 291 active items;
-- whole bank: 115 core + 194 equivalents = 309 active items;
+- Skills 1–4: 93 core tasks + 186 traceable equivalents = 279 records,
+  of which 275 are active;
+- whole bank: 111 core tasks + 186 equivalents = 297 records,
+  of which 293 are active;
 - zero duplicate equivalents;
 - zero unknown KCs;
 - zero runtime-generated placeholder items.
@@ -144,6 +146,13 @@ errors, scaffold applications, mastery before/after, KC-scoped theta
 before/after, information, standard error, selection reason, policy version,
 progress, and stopping reason.
 
+Before calibration, an idempotent quarantine retains historical observations
+but marks a row research-ineligible unless its active item ID, version, KC,
+role, equivalent group, and authored difficulty exactly match the current
+Skill 1–4 bank. The calibrator independently enforces the same lineage checks,
+so stale, inactive, non-canonical, and out-of-scope Skill 5–6 rows cannot enter
+Component 4 model training.
+
 The stopping rule is explicit:
 
 - complete only after all core items have evidence and any pending V1/V2 flow
@@ -165,7 +174,7 @@ cd ../../frontend
 flutter test test/adaptive_choice_controller_test.dart test/canonical_resolver_test.dart test/adaptive_task_coordinator_test.dart
 ```
 
-Current Component 4 result: 50 backend tests and 20 focused Flutter tests pass.
+Current Component 4 result: 102 backend tests and 66 focused Flutter tests pass.
 The repository-wide frontend/backend suites still contain unrelated existing
 parent-dashboard PP2 assertions; they are outside Component 4 and are recorded
 separately rather than hidden.

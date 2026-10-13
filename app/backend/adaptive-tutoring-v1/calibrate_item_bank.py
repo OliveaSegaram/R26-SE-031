@@ -15,7 +15,7 @@ from services.rasch_calibration import fit_rasch
 from services.bkt_calibration import fit_bkt_by_kc
 
 
-SKILL_TWO_ITEM_RE = re.compile(r"^S2A\d+R\d{2}(?:V\d+)?$")
+COMPONENT4_ITEM_RE = re.compile(r"^S[1-4]A\d+R\d{2}(?:V\d+)?$")
 
 
 def _is_canonical_completion(event: dict) -> bool:
@@ -56,13 +56,13 @@ def _canonical_completion_events(db, projection: dict):
         "item_version": 1,
         "difficulty_b": 1,
     }
-    skill_two_bank = _skill_two_item_bank(db)
+    canonical_bank = _canonical_component4_item_bank(db)
     seen_event_ids = set()
     seen_observations = set()
     for event in db.telemetry_events.find({}, projection):
         if not _is_canonical_completion(event):
             continue
-        if not _is_research_eligible(event, skill_two_bank):
+        if not _is_research_eligible(event, canonical_bank):
             continue
         event_id = event.get("event_id")
         if event_id in seen_event_ids:
@@ -79,8 +79,8 @@ def _canonical_completion_events(db, projection: dict):
         yield event
 
 
-def _skill_two_item_bank(db) -> dict[str, dict]:
-    """Return the canonical Skill 2 bank when the database provides it.
+def _canonical_component4_item_bank(db) -> dict[str, dict]:
+    """Return the active canonical Skill 1-4 bank when it is available.
 
     Small unit-test doubles written before the item-bank integration have no
     ``item_bank`` attribute; those tests retain their legacy filtering path.
@@ -92,7 +92,12 @@ def _skill_two_item_bank(db) -> dict[str, dict]:
     return {
         item["item_id"]: item
         for item in collection.find(
-            {"skill_id": "skill_2", "is_active": {"$ne": False}},
+            {
+                "skill_id": {
+                    "$in": ["skill_1", "skill_2", "skill_3", "skill_4"]
+                },
+                "is_active": {"$ne": False},
+            },
             {
                 "item_id": 1,
                 "knowledge_component_id": 1,
@@ -105,17 +110,17 @@ def _skill_two_item_bank(db) -> dict[str, dict]:
     }
 
 
-def _is_research_eligible(event: dict, skill_two_bank: dict[str, dict]) -> bool:
+def _is_research_eligible(event: dict, canonical_bank: dict[str, dict]) -> bool:
     if event.get("research_eligible") is False:
         return False
     item_id = str(event.get("item_id") or "")
-    if not item_id.startswith("S2") and not item_id.startswith("s2"):
+    if not canonical_bank:
+        # Compatibility for small calibration unit-test doubles. Production
+        # always has the item bank and therefore always takes the strict path.
         return True
-    if not SKILL_TWO_ITEM_RE.fullmatch(item_id.upper()):
+    if not COMPONENT4_ITEM_RE.fullmatch(item_id.upper()):
         return False
-    if not skill_two_bank:
-        return True
-    bank_item = skill_two_bank.get(item_id.upper())
+    bank_item = canonical_bank.get(item_id.upper())
     if bank_item is None:
         return False
     if event.get("knowledge_component_id") != bank_item.get(

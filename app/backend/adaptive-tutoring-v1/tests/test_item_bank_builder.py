@@ -8,10 +8,20 @@ from item_bank_builder import (
     validation_summary,
 )
 from seed_item_bank import (
+    item_upsert_update,
+    quarantine_invalid_component4_evidence,
     remove_legacy_skill_two_activities_one_to_three_fields,
     remove_legacy_skill_two_activity_four_fields,
     remove_legacy_skill_two_activity_five_fields,
     remove_legacy_skill_three_fields,
+    retire_removed_skill_four_activity_one_task,
+    retire_removed_skill_four_activity_two_task,
+    retire_removed_skill_four_activity_three_task,
+    retire_removed_skill_four_activity_four_task,
+    quarantine_superseded_skill_four_activity_one_evidence,
+    quarantine_superseded_skill_four_activity_two_evidence,
+    quarantine_superseded_skill_four_activity_three_evidence,
+    quarantine_superseded_skill_four_activity_four_evidence,
     quarantine_superseded_skill_three_evidence,
     quarantine_superseded_skill_two_activity_one_evidence,
     quarantine_superseded_skill_two_activity_two_evidence,
@@ -19,6 +29,65 @@ from seed_item_bank import (
     quarantine_superseded_skill_two_activity_four_evidence,
     quarantine_superseded_skill_two_activity_five_evidence,
 )
+
+
+def test_global_component4_quarantine_requires_exact_lineage_without_deleting():
+    class Result:
+        modified_count = 7
+
+    class Collection:
+        def __init__(self):
+            self.calls = []
+
+        def update_many(self, query, update, **kwargs):
+            self.calls.append((query, update, kwargs))
+            return Result()
+
+    class Database:
+        adaptive_decisions = Collection()
+        telemetry_events = Collection()
+        telemetry_sessions = Collection()
+
+    database = Database()
+    result = quarantine_invalid_component4_evidence(database, build_items())
+
+    assert result == {
+        "invalid_c4_adaptive_decisions": 7,
+        "invalid_c4_telemetry_events": 7,
+        "invalid_c4_telemetry_sessions": 7,
+    }
+    decision_query, decision_update, _ = database.adaptive_decisions.calls[0]
+    assert decision_query["research_eligible"] == {"$ne": False}
+    assert decision_query["current_item"] == {"$regex": r"^[sS][1-4]"}
+    skill_one = next(
+        condition
+        for condition in decision_query["$nor"]
+        if condition["current_item"] == "S1A1R01"
+    )
+    assert skill_one["item_version"] == 2
+    assert skill_one["kc_id"] == "KC_VISUAL_IDENTIFICATION"
+    assert skill_one["item_role"] == "CORE"
+    assert skill_one["equivalent_group_id"] == "S1A1R01"
+    assert skill_one["difficulty_b"] == -1.0
+    assert not any(
+        condition["current_item"] == "S4A4R01V1"
+        for condition in decision_query["$nor"]
+    )
+    assert decision_update["$set"] == {"research_eligible": False}
+    assert decision_update["$addToSet"] == {
+        "research_validation_errors": "ITEM_LINEAGE_NOT_CURRENT"
+    }
+    session_query, _, session_kwargs = database.telemetry_sessions.calls[0]
+    assert session_query["events"]["$elemMatch"]["research_eligible"] == {
+        "$ne": False
+    }
+    assert session_kwargs["array_filters"][0][
+        "event.research_eligible"
+    ] == {"$ne": False}
+    assert session_kwargs["array_filters"][0]["event.item_id"] == {
+        "$regex": r"^[sS][1-4]"
+    }
+    assert session_kwargs["array_filters"][0]["$nor"]
 
 
 def test_item_bank_is_canonical_complete_and_research_ready():
@@ -45,6 +114,17 @@ def test_item_bank_is_canonical_complete_and_research_ready():
     assert "KC_VISUAL_MEMORY" in skill_one_kcs
 
 
+def test_item_bank_upsert_never_sets_and_unsets_floor_metadata_together():
+    items = build_items()
+    for item in items:
+        update = item_upsert_update(item)
+        assert update["$set"] is item
+        if "has_floor_remediation" in item:
+            assert "$unset" not in update
+        else:
+            assert update["$unset"] == {"has_floor_remediation": ""}
+
+
 def test_variants_are_grouped_and_exact_duplicates_are_not_served():
     items = build_items()
     variants = [item for item in items if not item["is_core"]]
@@ -56,8 +136,13 @@ def test_variants_are_grouped_and_exact_duplicates_are_not_served():
     assert all(item["equivalent_group_id"] for item in variants)
     assert not exact_duplicates
     inactive = [item for item in variants if not item["is_active"]]
-    assert [item["item_id"] for item in inactive] == ["S3A5R01V1"]
-    assert inactive[0]["single_floor_retry"] is True
+    assert [item["item_id"] for item in inactive] == [
+        "S3A5R01V1",
+        "S4A1R01V1",
+        "S4A2R01V1",
+        "S4A4R01V1",
+    ]
+    assert all(item["single_floor_retry"] is True for item in inactive)
 
 
 def test_every_skill_one_to_four_core_has_distinct_remediation_and_confirmation():
@@ -69,7 +154,7 @@ def test_every_skill_one_to_four_core_has_distinct_remediation_and_confirmation(
     by_id = {item["item_id"]: item for item in scoped}
     cores = [item for item in scoped if item["is_core"]]
 
-    assert len(cores) == 97
+    assert len(cores) == 93
     for core in cores:
         remediation = by_id[f'{core["item_id"]}V1']
         confirmation = by_id[f'{core["item_id"]}V2']
@@ -100,7 +185,12 @@ def test_every_skill_one_to_four_core_has_distinct_remediation_and_confirmation(
             remediation["content_hash"],
             confirmation["content_hash"],
         }
-        if core["item_id"] == "S3A5R01":
+        if core["item_id"] in {
+            "S3A5R01",
+            "S4A1R01",
+            "S4A2R01",
+            "S4A4R01",
+        }:
             assert len(hashes) == 2
             assert remediation["content_hash"] == confirmation["content_hash"]
             assert remediation["is_active"] is False
@@ -109,6 +199,232 @@ def test_every_skill_one_to_four_core_has_distinct_remediation_and_confirmation(
             assert confirmation["single_floor_retry"] is True
         else:
             assert len(hashes) == 3
+
+
+def test_skill_four_activity_one_uses_reviewed_opening_sentence_flow():
+    by_id = {
+        item["item_id"]: item
+        for item in build_items()
+        if item["activity_id"] == "4.1"
+    }
+
+    expected = {
+        "S4A1R01": (
+            "හඳ පායනවා.",
+            "moon_shining.png",
+            2,
+        ),
+        "S4A1R01V1": (
+            "ඉර පායනවා.",
+            "sun_shining.png",
+            2,
+        ),
+        "S4A1R01V2": (
+            "ඉර පායනවා.",
+            "sun_shining.png",
+            2,
+        ),
+        "S4A1R02": (
+            "අම්මා උයනවා.",
+            "mother_cooking.png",
+            3,
+        ),
+        "S4A1R02V1": (
+            "ඔරුව පදිනවා.",
+            "rowing_boat.png",
+            2,
+        ),
+        "S4A1R02V2": (
+            "පොත කියවනවා.",
+            "boy_reading.png",
+            3,
+        ),
+        "S4A1R03": (
+            "පවනි පාසල් යනවා.",
+            "girl_going_to_school.png",
+            3,
+        ),
+        "S4A1R04": (
+            "කෝසල සරුංගලය යවනවා.",
+            "boy_flying_kite.png",
+            3,
+        ),
+        "S4A1R04V1": (
+            "පවනි සෙල්ලම් කරනවා.",
+            "children_playing_ball.jpg",
+            3,
+        ),
+        "S4A1R04V2": (
+            "ගුරුතුමී අකුරු ලියනවා.",
+            "teacher_writing.png",
+            3,
+        ),
+    }
+
+    for item_id, (answer, image_name, pool_size) in expected.items():
+        item = by_id[item_id]
+        content = item["content"]
+        assert item["item_version"] == 5
+        assert content["correctOption"] == answer
+        assert content["image_url"].endswith(image_name)
+        assert len(content["options"]) == pool_size
+        assert content["options"][content["correct_index"]] == answer
+
+    assert by_id["S4A1R01V1"]["is_active"] is False
+    assert by_id["S4A1R01V2"]["is_active"] is True
+    assert by_id["S4A1R01V1"]["single_floor_retry"] is True
+    assert by_id["S4A1R01V2"]["single_floor_retry"] is True
+    assert by_id["S4A1R02"]["has_reduced_remediation"] is True
+    assert by_id["S4A1R03"]["has_reduced_remediation"] is True
+    assert by_id["S4A1R04"]["has_reduced_remediation"] is True
+    assert by_id["S4A1R04"]["difficulty_label"] == "hard"
+    assert not any(item_id.startswith("S4A1R05") for item_id in by_id)
+
+
+def test_skill_four_activity_two_uses_reviewed_four_task_completion_flow():
+    by_id = {
+        item["item_id"]: item
+        for item in build_items()
+        if item["activity_id"] == "4.2"
+    }
+    expected = {
+        "S4A2R01": ([None, "පායනවා"], "ඉර", "sun_shining.png", 2),
+        "S4A2R01V2": (
+            [None, "පායනවා"], "හඳ", "moon_shining.png", 2,
+        ),
+        "S4A2R02": ([None, "පිපෙනවා"], "මල්", "flower_blooming.png", 2),
+        "S4A2R02V1": ([None, "දුවනවා"], "බල්ලා", "dog_running.png", 2),
+        "S4A2R02V2": ([None, "නිදියනවා"], "පූසා", "cat_sleeping.png", 2),
+        "S4A2R03": (
+            ["පවනි", None, "යනවා"], "පාසල්", "girl_going_to_school.png", 3,
+        ),
+        "S4A2R03V1": (
+            [None, "පියාඹනවා"], "කුරුල්ලා", "bird_flying.png", 2,
+        ),
+        "S4A2R03V2": (
+            ["නංගි", None, "කියවනවා"], "පොතක්", "girl_reading_tree.jpg", 3,
+        ),
+        "S4A2R04V1": (
+            [None, "චිත්‍රයක්", "අඳිනවා"], "මල්ලි", "boy_drawing.png", 3,
+        ),
+        "S4A2R04V2": (
+            [None, "කෑම", "දෙනවා"], "බල්ලාට", "boy_feeding_dog.jpg", 4,
+        ),
+    }
+
+    for item_id, (sequence, answer, image_name, pool_size) in expected.items():
+        item = by_id[item_id]
+        content = item["content"]
+        assert item["item_version"] == 4
+        assert content["sequence"] == sequence
+        assert content["correctOption"] == answer
+        assert content["image_url"].endswith(image_name)
+        assert len(content["options"]) == pool_size
+        assert content["options"][content["correct_index"]] == answer
+
+    assert by_id["S4A2R01V1"]["is_active"] is False
+    assert by_id["S4A2R01V2"]["is_active"] is True
+    assert by_id["S4A2R01V1"]["single_floor_retry"] is True
+    assert by_id["S4A2R01V2"]["single_floor_retry"] is True
+    assert by_id["S4A2R02"]["has_floor_remediation"] is True
+    assert by_id["S4A2R03"]["has_reduced_remediation"] is True
+    assert by_id["S4A2R04"]["has_reduced_remediation"] is True
+    assert not any(item_id.startswith("S4A2R05") for item_id in by_id)
+
+
+def test_skill_four_activity_three_uses_reviewed_auditory_progression():
+    by_id = {
+        item["item_id"]: item
+        for item in build_items()
+        if item["activity_id"] == "4.3"
+    }
+    expected = {
+        "S4A3R01": ("පාසල් යනවා.", 2, 2),
+        "S4A3R01V1": ("අම්මා උයයි.", 2, 2),
+        "S4A3R01V2": ("පූසා දුවයි.", 2, 2),
+        "S4A3R02": ("පොත බලනවා.", 2, 3),
+        "S4A3R02V1": ("මල් පිපෙයි.", 2, 2),
+        "S4A3R02V2": ("හඳ පායයි.", 2, 3),
+        "S4A3R03": ("අම්මා බත් උයයි.", 3, 3),
+        "S4A3R03V1": ("බල්ලා දුවයි.", 2, 3),
+        "S4A3R03V2": ("මල්ලි සෙල්ලම් කරයි.", 3, 3),
+        "S4A3R04": ("සමන් පොතක් කියවයි.", 3, 4),
+        "S4A3R04V1": ("තාත්තා ඔරුව පදිනවා.", 3, 3),
+        "S4A3R04V2": ("ගුරුතුමී පොත බලනවා.", 3, 4),
+    }
+
+    assert len(by_id) == 12
+    for item_id, (sentence, word_count, pool_size) in expected.items():
+        item = by_id[item_id]
+        content = item["content"]
+        features = item["difficulty_features"]
+        assert item["item_version"] == 5
+        assert content["audio_text"] == sentence
+        assert content["correctOption"] == sentence
+        assert len(content["options"]) == pool_size
+        assert content["options"][content["correct_index"]] == sentence
+        assert features["sentence_word_count"] == word_count
+        assert features["answer_pool_size"] == pool_size
+        assert features["max_word_letter_count"] <= 4
+
+    assert by_id["S4A3R01"]["has_floor_remediation"] is True
+    assert by_id["S4A3R01"]["has_reduced_remediation"] is False
+    for round_number in range(2, 5):
+        assert by_id[f"S4A3R{round_number:02d}"]["has_reduced_remediation"]
+    assert not any(item_id.startswith("S4A3R05") for item_id in by_id)
+
+
+def test_skill_four_activity_four_uses_reviewed_adaptive_sentence_sequences():
+    by_id = {
+        item["item_id"]: item
+        for item in build_items()
+        if item["activity_id"] == "4.4"
+    }
+    expected = {
+        "S4A4R01": ("පාසල් යනවා.", 2, "core"),
+        "S4A4R01V1": ("හඳ පායනවා.", 2, "equivalent"),
+        "S4A4R01V2": ("හඳ පායනවා.", 2, "equivalent"),
+        "S4A4R02": ("පොතක් කියවනවා.", 2, "core"),
+        "S4A4R02V1": ("මල් පිපෙනවා.", 2, "equivalent"),
+        "S4A4R02V2": ("බල්ලා දුවනවා.", 2, "equivalent"),
+        "S4A4R03": ("මල්ලි සරුංගලයක් යවනවා.", 3, "core"),
+        "S4A4R03V1": ("කුරුල්ලා පියාඹනවා.", 2, "reduced"),
+        "S4A4R03V2": ("තාත්තා ඔරුව පදිනවා.", 3, "equivalent"),
+        "S4A4R04": ("බල්ලාට කෑම දෙනවා.", 3, "core"),
+        "S4A4R04V1": ("අම්මා බත් උයනවා.", 3, "reduced"),
+        "S4A4R04V2": ("ගුරුතුමී අකුරු ලියනවා.", 3, "equivalent"),
+    }
+
+    assert len(by_id) == 12
+    for item_id, (sentence, word_count, relation) in expected.items():
+        item = by_id[item_id]
+        content = item["content"]
+        assert item["item_version"] == 4
+        assert content["correct_sentence"] == sentence
+        assert sorted(content["scrambled_words"]) == sorted(
+            sentence.rstrip(".?!").split()
+        )
+        assert item["response_load_relation"] == relation
+        assert item["difficulty_features"] == {
+            "sentence_word_count": word_count,
+            "answer_pool_size": word_count,
+            "has_matching_image": True,
+        }
+
+    assert len({
+        item["content"]["correct_sentence"]
+        for item in by_id.values()
+        if not item["is_core"] and item["is_active"]
+    }) == 7
+    assert by_id["S4A4R01V1"]["is_active"] is False
+    assert by_id["S4A4R01V2"]["is_active"] is True
+    assert by_id["S4A4R01V1"]["single_floor_retry"] is True
+    assert by_id["S4A4R01V2"]["single_floor_retry"] is True
+    assert by_id["S4A4R02"]["has_floor_remediation"] is True
+    assert by_id["S4A4R02"]["has_reduced_remediation"] is False
+    assert by_id["S4A4R03"]["has_reduced_remediation"] is True
+    assert by_id["S4A4R04"]["has_reduced_remediation"] is True
+    assert not any(item_id.startswith("S4A4R05") for item_id in by_id)
 
 
 def test_historical_item_ids_normalize_to_one_stable_format():
@@ -852,6 +1168,216 @@ def test_item_bank_sync_quarantines_all_superseded_skill_three_items():
     }
 
 
+def test_item_bank_sync_quarantines_superseded_skill_four_activity_one():
+    class Result:
+        modified_count = 3
+
+    class Collection:
+        def __init__(self):
+            self.calls = []
+
+        def update_many(self, query, update, **kwargs):
+            self.calls.append((query, update, kwargs))
+            return Result()
+
+    class Database:
+        adaptive_decisions = Collection()
+        telemetry_events = Collection()
+        telemetry_sessions = Collection()
+
+    database = Database()
+    result = quarantine_superseded_skill_four_activity_one_evidence(
+        database,
+        build_items(),
+    )
+
+    assert result == {
+        "superseded_s4a1_adaptive_decisions": 3,
+        "superseded_s4a1_telemetry_events": 3,
+        "superseded_s4a1_telemetry_sessions": 3,
+    }
+    decision_filter = database.adaptive_decisions.calls[0][0]
+    assert len(decision_filter["current_item"]["$in"]) == 12
+    assert decision_filter["item_version"] == {"$ne": 5}
+
+
+def test_item_bank_sync_retires_removed_skill_four_activity_one_task_five():
+    class Result:
+        modified_count = 3
+
+    class Collection:
+        def __init__(self):
+            self.calls = []
+
+        def update_many(self, query, update, **kwargs):
+            self.calls.append((query, update, kwargs))
+            return Result()
+
+    class Database:
+        item_bank = Collection()
+        adaptive_decisions = Collection()
+        telemetry_events = Collection()
+        telemetry_sessions = Collection()
+
+    database = Database()
+    result = retire_removed_skill_four_activity_one_task(database)
+
+    assert result == {
+        "retired_s4a1_item_bank_records": 3,
+        "retired_s4a1_adaptive_decisions": 3,
+        "retired_s4a1_telemetry_events": 3,
+        "retired_s4a1_telemetry_sessions": 3,
+    }
+    retired_ids = ["S4A1R05", "S4A1R05V1", "S4A1R05V2"]
+    assert database.item_bank.calls[0][0]["item_id"]["$in"] == retired_ids
+    assert database.item_bank.calls[0][1]["$set"]["is_active"] is False
+    assert (
+        database.adaptive_decisions.calls[0][1]["$addToSet"]
+        ["research_validation_errors"]
+        == "ITEM_RETIRED_FROM_CURRICULUM"
+    )
+
+
+def test_item_bank_sync_quarantines_superseded_skill_four_activity_two():
+    class Result:
+        modified_count = 3
+
+    class Collection:
+        def __init__(self):
+            self.calls = []
+
+        def update_many(self, query, update, **kwargs):
+            self.calls.append((query, update, kwargs))
+            return Result()
+
+    class Database:
+        adaptive_decisions = Collection()
+        telemetry_events = Collection()
+        telemetry_sessions = Collection()
+
+    database = Database()
+    result = quarantine_superseded_skill_four_activity_two_evidence(
+        database,
+        build_items(),
+    )
+
+    assert result == {
+        "superseded_s4a2_adaptive_decisions": 3,
+        "superseded_s4a2_telemetry_events": 3,
+        "superseded_s4a2_telemetry_sessions": 3,
+    }
+    decision_filter = database.adaptive_decisions.calls[0][0]
+    assert len(decision_filter["current_item"]["$in"]) == 12
+    assert decision_filter["item_version"] == {"$ne": 4}
+
+
+def test_item_bank_sync_retires_removed_skill_four_activity_two_task_five():
+    class Result:
+        modified_count = 3
+
+    class Collection:
+        def __init__(self):
+            self.calls = []
+
+        def update_many(self, query, update, **kwargs):
+            self.calls.append((query, update, kwargs))
+            return Result()
+
+    class Database:
+        item_bank = Collection()
+        adaptive_decisions = Collection()
+        telemetry_events = Collection()
+        telemetry_sessions = Collection()
+
+    database = Database()
+    result = retire_removed_skill_four_activity_two_task(database)
+
+    assert result == {
+        "retired_s4a2_item_bank_records": 3,
+        "retired_s4a2_adaptive_decisions": 3,
+        "retired_s4a2_telemetry_events": 3,
+        "retired_s4a2_telemetry_sessions": 3,
+    }
+    retired_ids = ["S4A2R05", "S4A2R05V1", "S4A2R05V2"]
+    assert database.item_bank.calls[0][0]["item_id"]["$in"] == retired_ids
+    assert database.item_bank.calls[0][1]["$set"]["is_active"] is False
+    assert (
+        database.adaptive_decisions.calls[0][1]["$addToSet"]
+        ["research_validation_errors"]
+        == "ITEM_RETIRED_FROM_CURRICULUM"
+    )
+
+
+def test_item_bank_sync_quarantines_superseded_skill_four_activity_three():
+    class Result:
+        modified_count = 3
+
+    class Collection:
+        def __init__(self):
+            self.calls = []
+
+        def update_many(self, query, update, **kwargs):
+            self.calls.append((query, update, kwargs))
+            return Result()
+
+    class Database:
+        adaptive_decisions = Collection()
+        telemetry_events = Collection()
+        telemetry_sessions = Collection()
+
+    database = Database()
+    result = quarantine_superseded_skill_four_activity_three_evidence(
+        database,
+        build_items(),
+    )
+
+    assert result == {
+        "superseded_s4a3_adaptive_decisions": 3,
+        "superseded_s4a3_telemetry_events": 3,
+        "superseded_s4a3_telemetry_sessions": 3,
+    }
+    decision_filter = database.adaptive_decisions.calls[0][0]
+    assert len(decision_filter["current_item"]["$in"]) == 12
+    assert decision_filter["item_version"] == {"$ne": 5}
+
+
+def test_item_bank_sync_retires_removed_skill_four_activity_three_task_five():
+    class Result:
+        modified_count = 3
+
+    class Collection:
+        def __init__(self):
+            self.calls = []
+
+        def update_many(self, query, update, **kwargs):
+            self.calls.append((query, update, kwargs))
+            return Result()
+
+    class Database:
+        item_bank = Collection()
+        adaptive_decisions = Collection()
+        telemetry_events = Collection()
+        telemetry_sessions = Collection()
+
+    database = Database()
+    result = retire_removed_skill_four_activity_three_task(database)
+
+    assert result == {
+        "retired_s4a3_item_bank_records": 3,
+        "retired_s4a3_adaptive_decisions": 3,
+        "retired_s4a3_telemetry_events": 3,
+        "retired_s4a3_telemetry_sessions": 3,
+    }
+    retired_ids = ["S4A3R05", "S4A3R05V1", "S4A3R05V2"]
+    assert database.item_bank.calls[0][0]["item_id"]["$in"] == retired_ids
+    assert database.item_bank.calls[0][1]["$set"]["is_active"] is False
+    assert (
+        database.adaptive_decisions.calls[0][1]["$addToSet"]
+        ["research_validation_errors"]
+        == "ITEM_RETIRED_FROM_CURRICULUM"
+    )
+
+
 def test_item_bank_sync_removes_legacy_activity_four_aliases():
     class Result:
         modified_count = 5
@@ -1053,6 +1579,31 @@ def test_remediation_reduces_load_when_valid_and_confirmation_preserves_it():
                     and remediation["remediation_source_round"] == core["round"] - 1
                     and remediation["difficulty_b"] <= core["difficulty_b"]
                 )
+                lower_sentence_word_count = (
+                    core["activity_id"] in {"4.1", "4.3"}
+                    and len(
+                        remediation["content"]["correctOption"]
+                        .rstrip(".?!")
+                        .split()
+                    )
+                    < len(
+                        core["content"]["correctOption"]
+                        .rstrip(".?!")
+                        .split()
+                    )
+                )
+                lower_reviewed_sentence_difficulty = (
+                    core["activity_id"] == "4.1"
+                    and remediation["remediation_source_round"]
+                    == core["round"] - 1
+                    and remediation["difficulty_b"] < core["difficulty_b"]
+                )
+                lower_reviewed_jumbled_difficulty = (
+                    core["activity_id"] == "4.4"
+                    and remediation["remediation_source_round"]
+                    == core["round"] - 1
+                    and remediation["difficulty_b"] < core["difficulty_b"]
+                )
                 assert (
                     remediation_load < core_load
                     or has_more_viewing_time
@@ -1060,6 +1611,9 @@ def test_remediation_reduces_load_when_valid_and_confirmation_preserves_it():
                     or lower_distractor_complexity
                     or lower_word_boundary_complexity
                     or lower_skill_three_structure
+                    or lower_sentence_word_count
+                    or lower_reviewed_sentence_difficulty
+                    or lower_reviewed_jumbled_difficulty
                 ), remediation["item_id"]
 
 

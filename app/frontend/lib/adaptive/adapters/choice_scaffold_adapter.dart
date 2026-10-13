@@ -46,9 +46,33 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
     List<String> selectedAnswers = const <String>[],
     bool attemptAlreadyLogged = false,
   }) async {
+    final result = await submitAdaptiveChoiceTask(
+      score,
+      roundIndex: roundIndex,
+      isCorrect: isCorrect,
+      selectedAnswers: selectedAnswers,
+      attemptAlreadyLogged: attemptAlreadyLogged,
+    );
+    return applyAdaptiveChoiceTaskResult(result);
+  }
+
+  /// Submit a completed choice task without immediately changing the item
+  /// rendered by the game screen.
+  ///
+  /// Most screens can use [completeAdaptiveChoiceTask]. Screens that display
+  /// success feedback before advancing can submit first and commit the result
+  /// after their feedback delay. This prevents the previous item's selected
+  /// or correct styling from leaking onto the next item for one frame.
+  Future<Map<String, dynamic>?> submitAdaptiveChoiceTask(
+    int score, {
+    required int roundIndex,
+    bool? isCorrect,
+    List<String> selectedAnswers = const <String>[],
+    bool attemptAlreadyLogged = false,
+  }) async {
     final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
     if (wrapper == null || adaptiveTaskCoordinator == null) return null;
-    final result = await wrapper.completeAdaptiveRound(
+    return wrapper.completeAdaptiveRound(
       score,
       currentRoundIndex: roundIndex,
       itemId: adaptiveTaskCoordinator!.itemId,
@@ -56,8 +80,11 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
       selectedAnswers: selectedAnswers,
       attemptAlreadyLogged: attemptAlreadyLogged,
     );
-    return adaptiveTaskCoordinator!.applyResult(result);
   }
+
+  AdaptiveTaskTransition? applyAdaptiveChoiceTaskResult(
+    Map<String, dynamic>? result,
+  ) => result == null ? null : adaptiveTaskCoordinator?.applyResult(result);
 
   void configureAdaptiveChoices({
     required ActivityNode? activity,
