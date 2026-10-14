@@ -313,11 +313,7 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
             .map(_optionId)
             .toList(),
         "selected_option_ids": _foundIndices.map(_optionId).toList(),
-        "supported_actions": [
-          "REMOVE_OPTION",
-          "HIGHLIGHT_OPTION",
-          "REPLAY_INSTRUCTION",
-        ],
+        "supported_actions": ["REMOVE_OPTION", "HIGHLIGHT_OPTION"],
         "minimum_visible_options": 2,
       };
 

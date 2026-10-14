@@ -201,3 +201,46 @@ def test_sequence_policy_reveals_the_next_required_token_on_each_retry():
         action["commands"][0]["reason_code"] == "SEQUENCE_NEXT_TOKEN_SUPPORT"
         for action in (first, second)
     )
+
+
+def test_model_translator_preserves_minimum_visible_options():
+    engine = PolicyEngine()
+    state = {}
+    action = engine.translate_model_support_action(
+        action="SCAFFOLD_REMOVE_DISTRACTOR",
+        telemetry=telemetry(
+            visible_option_ids=["ITEM_O1", "ITEM_O2"],
+            correct_option_ids=["ITEM_O1"],
+            supported_actions=["REMOVE_OPTION", "HIGHLIGHT_OPTION"],
+        ),
+        available_incorrect_ids=["ITEM_O2"],
+        adaptive_state=state,
+    )
+    assert action["decision"] == "RETRY_CURRENT"
+    assert action["commands"] == []
+    assert state["generic_scaffold_state"]["removed_option_ids"] == []
+
+
+def test_model_translator_emits_activity_specific_semantic_commands():
+    engine = PolicyEngine()
+    worked = engine.translate_model_support_action(
+        action="SCAFFOLD_SHOW_WORKED_EXAMPLE",
+        telemetry=telemetry(
+            supported_actions=["SHOW_WORKED_EXAMPLE"],
+            correct_option_ids=["ITEM_DEST2"],
+        ),
+        available_incorrect_ids=[],
+        adaptive_state={},
+    )
+    slow = engine.translate_model_support_action(
+        action="SCAFFOLD_SLOW_AUDIO",
+        telemetry=telemetry(
+            supported_actions=["SLOW_AUDIO"],
+            correct_option_ids=[],
+        ),
+        available_incorrect_ids=[],
+        adaptive_state={},
+    )
+    assert worked["commands"][0]["type"] == "SHOW_WORKED_EXAMPLE"
+    assert worked["commands"][0]["target_option_ids"] == ["ITEM_DEST2"]
+    assert slow["commands"][0]["type"] == "SLOW_AUDIO"

@@ -164,7 +164,10 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
     }
   }
 
-  Future<void> _playAudioPrompt({bool autoPlay = false}) async {
+  Future<void> _playAudioPrompt({
+    bool autoPlay = false,
+    bool slow = false,
+  }) async {
     String spokenInstruction = _promptText;
 
     if (_promptText.contains("ශබ්දයට සවන් දී අකුර තෝරන්න")) {
@@ -209,6 +212,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
       spokenInstruction,
       folder: 'skill_2',
       waitUntilComplete: true,
+      playbackRate: slow ? 0.78 : 1.0,
     );
     if (!mounted ||
         !_promptReadiness.finish(
@@ -292,6 +296,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
               "REMOVE_OPTION",
               "HIGHLIGHT_OPTION",
               "REPLAY_INSTRUCTION",
+              "SLOW_AUDIO",
             ],
             "minimum_visible_options": 2,
             "error_type": "phoneme_grapheme_confusion",
@@ -302,6 +307,22 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
           result: result,
           correctOptionIds: <String>[_optionId(_correctIndex)],
         );
+        final rawAction = result?['next_action'];
+        if (rawAction is Map) {
+          final plan = ScaffoldPlan.fromNextAction(
+            Map<String, dynamic>.from(rawAction),
+            correctOptionIds: <String>[_optionId(_correctIndex)],
+          );
+          if (plan.commands.any(
+            (command) => command.type == ScaffoldActionType.slowAudio,
+          )) {
+            await _playAudioPrompt(slow: true);
+          } else if (plan.commands.any(
+            (command) => command.type == ScaffoldActionType.replayInstruction,
+          )) {
+            await _playAudioPrompt();
+          }
+        }
       }
 
       Future.delayed(const Duration(milliseconds: 800), () {

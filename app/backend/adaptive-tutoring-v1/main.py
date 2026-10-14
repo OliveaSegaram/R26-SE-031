@@ -6,13 +6,94 @@ import database
 from services.bkt_engine import bkt_engine
 from services.irt_engine import irt_engine
 from services.policy_engine import policy_engine
-from typing import Dict, Any
+from services.action_policy_model import action_policy_model, context_features
+from typing import Dict, Any, Optional
+import copy
 import re
 
 
 def difficulty_unit_interval(difficulty_b: float) -> float:
     """Expose a backwards-compatible 0..1 value while retaining the IRT logit."""
     return round(max(0.0, min(1.0, (float(difficulty_b) + 3.0) / 6.0)), 4)
+
+
+async def _link_proximal_policy_outcome(
+    db: Any,
+    *,
+    student_id: str,
+    session_id: str,
+    item_id: str,
+    response_event_id: Optional[str],
+    is_correct: bool,
+    phase: str,
+    response_quality: Optional[str] = None,
+) -> None:
+    """Link the latest scaffold to the response immediately following it.
+
+    A child may receive several scaffolds before completing one item. Linking
+    only the final scaffold loses the observed failures after earlier actions.
+    The proximal fields retain every action -> next response relationship.
+    """
+    query: Dict[str, Any] = {
+        "student_id": student_id,
+        "session_id": session_id,
+        "item_id": item_id,
+        "proximal_outcome_observed": {"$ne": True},
+    }
+    if response_event_id:
+        query["event_id"] = {"$ne": response_event_id}
+    latest = await db.policy_decisions.find_one(query, sort=[("_id", -1)])
+    if not latest:
+        return
+    await db.policy_decisions.update_one(
+        {"_id": latest["_id"]},
+        {"$set": {
+            "proximal_outcome_observed": True,
+            "proximal_next_response_correct": bool(is_correct),
+            "proximal_response_phase": phase,
+            "proximal_response_event_id": response_event_id,
+            "proximal_response_quality": response_quality,
+            "proximal_outcome_recorded_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+
+
+async def _link_confirmation_policy_outcomes(
+    db: Any,
+    *,
+    student_id: str,
+    session_id: str,
+    equivalent_group_id: str,
+    confirmation_item_id: str,
+    response_event_id: Optional[str],
+    first_independent_correct: bool,
+    final_correct: bool,
+    response_quality: str,
+) -> None:
+    """Attach the independent equivalent-task result to the whole support chain."""
+    now = datetime.now(timezone.utc).isoformat()
+    await db.policy_decisions.update_many(
+        {
+            "student_id": student_id,
+            "session_id": session_id,
+            "outcome_observed": {"$ne": True},
+            "$or": [
+                {"equivalent_group_id": equivalent_group_id},
+                {"item_id": equivalent_group_id},
+            ],
+        },
+        {"$set": {
+            "outcome_observed": True,
+            "outcome_definition": "equivalent_confirmation_first_attempt_success",
+            "outcome_first_attempt_correct": bool(first_independent_correct),
+            "outcome_final_correct": bool(final_correct),
+            "outcome_response_quality": response_quality,
+            "outcome_item_id": confirmation_item_id,
+            "outcome_event_id": response_event_id,
+            "outcome_phase": "CONFIRMATION",
+            "outcome_recorded_at": now,
+        }},
+    )
 
 def get_adaptive_state(student_doc: dict, activity_id: str) -> dict:
     if not student_doc:
@@ -55,6 +136,8 @@ async def startup_db_client():
     models = await db.model_registry.find({
         "model_type": "BKT",
         "status": "active",
+        "data_origin": "observed",
+        "validation_status": {"$in": ["pilot_approved", "validated_observed"]},
     }).to_list(length=100)
     loaded = 0
     for model in models:
@@ -76,7 +159,22 @@ async def shutdown_db_client():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "adaptive-tutoring-v1"}
+    return {
+        "status": "ok",
+        "service": "adaptive-tutoring-v1",
+        "default_policy_mode": os.getenv("C4_POLICY_MODE", "shadow"),
+        "action_model_version": action_policy_model.artifact.get("model_version"),
+        "action_model_validation_status": action_policy_model.artifact.get(
+            "validation_status", "unavailable"
+        ),
+        "action_model_activation_allowed": bool(
+            action_policy_model.artifact.get("activation_allowed", False)
+        ),
+        "supported_policy_modes": [
+            "baseline", "shadow", "simulation_model",
+            "simulation_experiment", "model",
+        ],
+    }
 
 @app.post("/update_interaction", response_model=TutoringResponse)
 async def update_interaction(request: InteractionRequest):
@@ -198,6 +296,15 @@ async def update_interaction(request: InteractionRequest):
         disc_a = 1.0
         guess_c = 0.2
 
+    item_role = (
+        item_doc.get("item_role") if item_doc else
+        getattr(request.telemetry, "item_role", None)
+    ) or "CORE"
+    equivalent_group_id = (
+        item_doc.get("equivalent_group_id") if item_doc else
+        getattr(request.telemetry, "equivalent_group_id", None)
+    ) or re.sub(r"V\d+$", "", canonical_item, flags=re.IGNORECASE)
+
     activity_total = await db.item_bank.count_documents({
         "activity_id": canonical_act,
         "is_core": True,
@@ -224,15 +331,52 @@ async def update_interaction(request: InteractionRequest):
         if available_incorrect_ids is None:
             available_incorrect_ids = []
         
+        # The baseline and ML policies must be compared from the same state.
+        # Evaluate the baseline on a copy so a simulation-model recommendation
+        # does not accidentally retain a distractor removed by the baseline.
+        baseline_state = copy.deepcopy(adaptive_state)
         support = policy_engine.get_support_action(
             request.telemetry, 
             options_count, 
             struggle_score, 
             available_incorrect_ids, 
-            adaptive_state,
+            baseline_state,
             canonical_act,
             round_num
         )
+        model_features = context_features(
+            telemetry=request.telemetry,
+            struggle_score=struggle_score,
+            mastery=current_prob,
+            difficulty_b=diff_b,
+            fatigue=request.fatigue_score,
+            behavioral_context=request.behavioral_context,
+            learner_profile=request.learner_profile,
+        )
+        model_evidence = action_policy_model.evaluate(
+            baseline_action=support.get("decision", "RETRY_CURRENT"),
+            telemetry=request.telemetry,
+            features=model_features,
+            requested_mode=request.policy_mode,
+            data_origin=request.data_origin,
+            assignment_key=f"{request.student_id}:{request.session_id}",
+        )
+        applied_action = model_evidence["applied_action"]
+        if applied_action == support.get("decision", "RETRY_CURRENT"):
+            adaptive_state = baseline_state
+        else:
+            support = policy_engine.translate_model_support_action(
+                action=applied_action,
+                telemetry=request.telemetry,
+                available_incorrect_ids=available_incorrect_ids,
+                adaptive_state=adaptive_state,
+            )
+            if support.get("decision") != applied_action:
+                applied_action = support.get("decision", "RETRY_CURRENT")
+                model_evidence["applied_action"] = applied_action
+                model_evidence["fallback_reason"] = (
+                    "COMMAND_TRANSLATION_SAFETY_FALLBACK"
+                )
         support_commands = []
         for command_index, command in enumerate(support.get("commands", [])):
             command_copy = dict(command)
@@ -251,7 +395,7 @@ async def update_interaction(request: InteractionRequest):
             difficulty=difficulty_unit_interval(diff_b),
             difficulty_b=diff_b,
             scaffold_level=support.get("scaffold_level", 0),
-            decision=support.get("decision", "RETRY_CURRENT"),
+            decision=applied_action,
             remove_option_ids=support.get("remove_option_ids", None),
             highlight_correct=support.get("highlight_correct", False),
             next_phase=adaptive_state.get("next_phase", "CORE"),
@@ -261,6 +405,16 @@ async def update_interaction(request: InteractionRequest):
             commands=support_commands,
             reason_codes=support.get("reason_codes", []),
             policy_version=support.get("policy_version", "C4_POLICY_V2"),
+            policy_mode=model_evidence["policy_mode"],
+            model_recommendation=model_evidence["model_recommendation"],
+            model_confidence=model_evidence["model_confidence"],
+            model_version=model_evidence["model_version"],
+            fallback_reason=model_evidence["fallback_reason"],
+            applied_action=applied_action,
+            controls_live_adaptation=model_evidence["controls_live_adaptation"],
+            execution_source=model_evidence["execution_source"],
+            experiment_arm=model_evidence["experiment_arm"],
+            assignment_mechanism=model_evidence["assignment_mechanism"],
         )
         
         # Save adaptive state
@@ -283,6 +437,56 @@ async def update_interaction(request: InteractionRequest):
             {"$set": update_set},
             upsert=True
         )
+
+        existing_policy = None
+        if request.event_id:
+            existing_policy = await db.policy_decisions.find_one({
+                "student_id": request.student_id,
+                "event_id": request.event_id,
+            })
+        if not existing_policy:
+            await _link_proximal_policy_outcome(
+                db,
+                student_id=request.student_id,
+                session_id=request.session_id,
+                item_id=canonical_item,
+                response_event_id=request.event_id,
+                is_correct=request.is_correct,
+                phase="ATTEMPT",
+                response_quality="INCORRECT_ATTEMPT",
+            )
+
+        policy_record = {
+            "schema_version": "3.0",
+            "student_id": request.student_id,
+            "session_id": request.session_id,
+            "event_id": request.event_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "activity_id": canonical_act,
+            "item_id": canonical_item,
+            "item_role": item_role,
+            "equivalent_group_id": equivalent_group_id,
+            "phase": "ATTEMPT",
+            "knowledge_component_id": official_kc,
+            "features": model_features,
+            "behavioral_context": request.behavioral_context or {},
+            "context_evidence": request.context_evidence or {},
+            "data_origin": request.data_origin,
+            "dataset_id": request.dataset_id,
+            "validation_status": request.validation_status,
+            "calibration_eligible": False,
+            **model_evidence,
+        }
+        if existing_policy:
+            pass
+        elif request.event_id:
+            await db.policy_decisions.update_one(
+                {"student_id": request.student_id, "event_id": request.event_id},
+                {"$setOnInsert": policy_record},
+                upsert=True,
+            )
+        else:
+            await db.policy_decisions.insert_one(policy_record)
         
         return TutoringResponse(
             student_id=request.student_id,
@@ -607,6 +811,12 @@ async def update_interaction(request: InteractionRequest):
         confirmation_required=policy_output.get("confirmation_required", False),
         forced_item_id=forced_id if forced_id else None,
         excluded_item_ids=adaptive_state.get("administered_item_ids", []),
+        knowledge_component_id=official_kc,
+        equivalent_group_id=equivalent_group_id,
+        exposure_counts={
+            item_id: 1
+            for item_id in adaptive_state.get("administered_item_ids", [])
+        },
     )
 
     terminal_decisions = {"TERMINATE", "CURRICULUM_COMPLETE", "ACTIVITY_COMPLETE"}
@@ -659,6 +869,12 @@ async def update_interaction(request: InteractionRequest):
     adaptive_decision_record = {
         "schema_version": "2.0",
         "research_eligible": item_doc is not None,
+        "data_origin": request.data_origin,
+        "dataset_id": request.dataset_id,
+        "validation_status": request.validation_status,
+        "calibration_eligible": bool(request.calibration_eligible),
+        "behavioral_context": request.behavioral_context or {},
+        "context_evidence": request.context_evidence or {},
         "research_validation_errors": (
             [] if item_doc is not None else ["ITEM_NOT_FOUND_IN_CANONICAL_BANK"]
         ),
@@ -669,14 +885,8 @@ async def update_interaction(request: InteractionRequest):
         "activity_id": canonical_act,
         "kc_id": official_kc,
         "current_item": canonical_item,
-        "item_role": (
-            item_doc.get("item_role") if item_doc else
-            getattr(request.telemetry, "item_role", None)
-        ),
-        "equivalent_group_id": (
-            item_doc.get("equivalent_group_id") if item_doc else
-            getattr(request.telemetry, "equivalent_group_id", None)
-        ),
+        "item_role": item_role,
+        "equivalent_group_id": equivalent_group_id,
         "response_load_relation": (
             item_doc.get("response_load_relation") if item_doc else
             getattr(request.telemetry, "response_load_relation", None)
@@ -757,6 +967,41 @@ async def update_interaction(request: InteractionRequest):
         )
     else:
         await db.adaptive_decisions.insert_one(adaptive_decision_record)
+
+    # Close the final action -> immediate-response link for this item. Earlier
+    # scaffold actions were closed by the later ATTEMPT events above.
+    await _link_proximal_policy_outcome(
+        db,
+        student_id=request.student_id,
+        session_id=request.session_id,
+        item_id=canonical_item,
+        response_event_id=request.event_id,
+        is_correct=request.is_correct,
+        phase="COMPLETE",
+        response_quality=response_quality,
+    )
+
+    # The research target is an *independent equivalent-task check*, not the
+    # supported click that merely completes the original item. When V2 is
+    # completed, attach its first-attempt result to every scaffold in the same
+    # support chain. Unfinished/abandoned chains remain honestly censored.
+    normalized_role = str(item_role or "").upper()
+    is_confirmation = (
+        normalized_role == "CONFIRMATION"
+        or bool(re.search(r"V2$", canonical_item, re.IGNORECASE))
+    )
+    if is_confirmation:
+        await _link_confirmation_policy_outcomes(
+            db,
+            student_id=request.student_id,
+            session_id=request.session_id,
+            equivalent_group_id=equivalent_group_id,
+            confirmation_item_id=canonical_item,
+            response_event_id=request.event_id,
+            first_independent_correct=learning_observation_correct,
+            final_correct=request.is_correct,
+            response_quality=response_quality,
+        )
 
     adaptive_states = student_doc.get("adaptive_states", {}) if student_doc else {}
     adaptive_states[canonical_act] = adaptive_state

@@ -104,11 +104,15 @@ async def test_retried_session_is_idempotent(client, mock_db, mock_user):
     assert session["started_at"] == "2026-08-30T09:58:00Z"
     assert session["completed_at"] == "2026-08-30T10:00:00Z"
     assert session["session_number"] == 1
+    assert session["data_origin"] == "observed"
+    assert session["calibration_eligible"] is False
     summary = await mock_db.session_summaries.find_one(
         {"session_id": "session_test_123"}
     )
     assert summary["started_at"] == "2026-08-30T09:58:00+00:00"
     assert summary["completed_at"] == "2026-08-30T10:00:00+00:00"
+    assert summary["data_origin"] == "observed"
+    assert summary["dataset_id"] == f"live:{student_id}:session_test_123"
 
 
 @pytest.mark.asyncio

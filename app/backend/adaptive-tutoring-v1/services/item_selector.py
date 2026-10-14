@@ -1,3 +1,4 @@
+import math
 from typing import List, Dict, Any, Optional
 
 class ItemSelector:
@@ -10,6 +11,9 @@ class ItemSelector:
         confirmation_required: bool = False,
         forced_item_id: Optional[str] = None,
         excluded_item_ids: Optional[List[str]] = None,
+        knowledge_component_id: Optional[str] = None,
+        equivalent_group_id: Optional[str] = None,
+        exposure_counts: Optional[Dict[str, int]] = None,
     ) -> Dict[str, Any]:
         """
         Adaptive item selection using provisional IRT difficulty parameters,
@@ -29,7 +33,15 @@ class ItemSelector:
                 "selected_item": forced_item_id,
                 "selected_difficulty": selected_difficulty,
                 "target_difficulty": target_difficulty,
-                "selection_reason": "DETERMINISTIC_CORE_MACHINE_OVERRIDE"
+                "selection_reason": "AUTHORED_EQUIVALENT_FLOW_OVERRIDE",
+                "selection_strategy": "bounded_authored_state_machine",
+                "candidate_count": 1 if forced is not None else 0,
+                "constraints": {
+                    "activity_id": current_activity,
+                    "knowledge_component_id": knowledge_component_id,
+                    "equivalent_group_id": equivalent_group_id,
+                    "unseen_required": True,
+                },
             }
             
         if not candidates:
@@ -43,7 +55,15 @@ class ItemSelector:
         # 1. Filter valid candidates. Ordinary IRT selection must not cycle
         # through items already completed in this activity. Explicit state-
         # machine overrides may still repeat an item for confirmation.
-        valid_candidates = [c for c in candidates if c.get("activity_id") == current_activity]
+        valid_candidates = [
+            c for c in candidates
+            if c.get("activity_id") == current_activity
+            and c.get("is_active", True) is not False
+            and (
+                not knowledge_component_id
+                or c.get("knowledge_component_id") == knowledge_component_id
+            )
+        ]
         excluded = set(excluded_item_ids or [])
         unseen_candidates = [
             candidate for candidate in valid_candidates
@@ -77,7 +97,15 @@ class ItemSelector:
         # If confirmation is required, prioritize items with role='CONFIRMATION' in the same bucket
         if confirmation_required:
             target_bucket = get_bucket(target_difficulty)
-            conf_candidates = [c for c in valid_candidates if c.get("item_role") == "CONFIRMATION" and get_bucket(c.get("difficulty_b", 0.0)) == target_bucket]
+            conf_candidates = [
+                c for c in valid_candidates
+                if c.get("item_role") == "CONFIRMATION"
+                and get_bucket(c.get("difficulty_b", 0.0)) == target_bucket
+                and (
+                    not equivalent_group_id
+                    or c.get("equivalent_group_id") == equivalent_group_id
+                )
+            ]
             
             if conf_candidates:
                 # Exclude current item if alternatives exist
@@ -88,7 +116,9 @@ class ItemSelector:
                     "selected_item": best.get("item_id"),
                     "selected_difficulty": best.get("difficulty_b", 0.0),
                     "target_difficulty": target_difficulty,
-                    "selection_reason": "CONFIRMATION_ITEM_SELECTED"
+                    "selection_reason": "CONSTRAINED_CONFIRMATION_ITEM_SELECTED",
+                    "selection_strategy": "same_kc_same_bucket_unseen",
+                    "candidate_count": len(conf_candidates),
                 }
 
         # Normal selection
@@ -101,13 +131,41 @@ class ItemSelector:
             if filtered_candidates:
                 valid_candidates = filtered_candidates
             
-        def sort_key(c: Dict[str, Any]):
-            diff_dist = abs(c.get("difficulty_b", 0.0) - target_difficulty)
-            seq_num = c.get("round", 0) 
-            return (diff_dist, seq_num)
+        exposure_counts = exposure_counts or {}
+
+        def candidate_evidence(c: Dict[str, Any]) -> Dict[str, Any]:
+            difficulty = float(c.get("difficulty_b", 0.0) or 0.0)
+            distance = abs(difficulty - target_difficulty)
+            # At the target ability, a Rasch item is most informative near
+            # p=.5. This metric is reported for auditability; authored round
+            # order remains the final tie-breaker for curriculum coherence.
+            probability = 1.0 / (1.0 + math.exp(
+                -max(-30.0, min(30.0, target_difficulty - difficulty))
+            ))
+            information = probability * (1.0 - probability)
+            exposure = int(exposure_counts.get(str(c.get("item_id")), 0) or 0)
+            return {
+                "item_id": c.get("item_id"),
+                "difficulty_distance": round(distance, 6),
+                "rasch_information": round(information, 6),
+                "prior_exposure_count": exposure,
+                "round": int(c.get("round", 0) or 0),
+            }
+
+        scored = [(candidate_evidence(candidate), candidate) for candidate in valid_candidates]
+
+        def sort_key(pair):
+            evidence, _ = pair
+            return (
+                evidence["difficulty_distance"],
+                evidence["prior_exposure_count"],
+                -evidence["rasch_information"],
+                evidence["round"],
+                str(evidence["item_id"]),
+            )
             
-        sorted_candidates = sorted(valid_candidates, key=sort_key)
-        best_candidate = sorted_candidates[0]
+        sorted_candidates = sorted(scored, key=sort_key)
+        best_evidence, best_candidate = sorted_candidates[0]
         
         reason = "IRT_DIFFICULTY_MATCH"
         if best_candidate.get("item_id") == current_item_id:
@@ -119,7 +177,13 @@ class ItemSelector:
             "selected_item": best_candidate.get("item_id"),
             "selected_difficulty": best_candidate.get("difficulty_b", 0.0),
             "target_difficulty": target_difficulty,
-            "selection_reason": reason
+            "selection_reason": reason,
+            "selection_strategy": "constrained_irt_information_exposure_ranking",
+            "candidate_count": len(sorted_candidates),
+            "selected_candidate_evidence": best_evidence,
+            "top_candidate_scores": [
+                evidence for evidence, _ in sorted_candidates[:5]
+            ],
         }
 
 item_selector = ItemSelector()

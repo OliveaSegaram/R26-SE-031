@@ -112,6 +112,8 @@ class AdaptiveInsightItem(BaseModel):
 
 class ParentAdaptiveInsightsDTO(APIResponseBase):
     activities: List[AdaptiveInsightItem]
+    support_summary: Dict[str, Any] = Field(default_factory=dict)
+    policy_notice: str = ""
 
 # ==========================================
 # THERAPIST DASHBOARD DTOs (C1-C4 Architecture)
@@ -223,6 +225,8 @@ class TherapistC3ProfileDTO(MLResponseBase):
     shap_explanations: List[ShapExplanation]
     llm_summary: Optional[str] = None
     llm_recommendations: Optional[str] = None
+    pipeline_status: str = "not_run"
+    missing_inputs: List[str] = Field(default_factory=list)
 
 class KnowledgeComponent(BaseModel):
     id: str
@@ -248,3 +252,7 @@ class TherapistC4AdaptiveDTO(MLResponseBase):
     updated_at: str
     updated_at_state: Optional[str] = None  # Knowledge state last updated timestamp
     history: List[AdaptiveHistoryItem]
+    policy_status: Dict[str, Any] = Field(default_factory=dict)
+    latest_policy_decision: Dict[str, Any] = Field(default_factory=dict)
+    support_effectiveness: List[Dict[str, Any]] = Field(default_factory=list)
+    data_quality: Dict[str, Any] = Field(default_factory=dict)

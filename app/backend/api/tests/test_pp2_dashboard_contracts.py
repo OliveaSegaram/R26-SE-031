@@ -65,6 +65,7 @@ class DashboardTests(unittest.TestCase):
         c2=self.call(therapist.get_therapist_c2_speech,STUDENT);c3=self.call(therapist.get_therapist_c3_profile,STUDENT)
         self.assertIsNone(c2.latest.wer);self.assertIsNone(c2.latest.jitter);self.assertIsNone(c3.confidence)
         self.assertFalse(c2.available);self.assertEqual(c3.probabilities,{})
+        self.assertFalse(c3.available);self.assertEqual(c3.pipeline_status,'not_run')
     def test_flat_nested_speech_contracts_and_no_one_minus_wer(self):
         self.assertEqual(speech({'speech_data':{'Acoustic_Latency_ms':1234,'Local_Jitter':.02}})['acoustic_latency_ms'],1234)
         self.assertEqual(speech({'local_shimmer':.03})['shimmer'],.03)
@@ -82,6 +83,105 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(dto.theta,-.2);self.assertIsNone(dto.theta_se);self.assertEqual(len(dto.history),20)
         self.assertIn('08-25',dto.history[-1].timestamp);self.assertIsNone(dto.history[-1].mastery_before)
         self.assertEqual(dto.history[-1].next_activity,'act_1')
+    def test_c4_policy_evidence_is_separated_for_parent_and_specialist(self):
+        self.db.knowledge_states.rows=[{'student_id':STUDENT,'knowledge_state':{'KC_AKSHARA_IDENTITY':.55},'data_origin':'observed'}]
+        self.db.adaptive_decisions.rows=[{
+            'student_id':STUDENT,'timestamp':'2026-08-31T00:00:00Z',
+            'response_quality':'ASSISTED_SUCCESS','decision':'CONFIRMATION',
+            'next_phase':'CONFIRMATION','is_correct':True,
+        }]
+        self.db.policy_decisions.rows=[{
+            'student_id':STUDENT,'timestamp':'2026-08-31T00:00:00Z',
+            'item_id':'S1A1R01','policy_mode':'shadow',
+            'model_version':'c4-action-outcome-synthetic-v1',
+            'model_validation_status':'synthetic_only',
+            'fallback_reason':'SYNTHETIC_OR_UNVALIDATED_MODEL_SHADOW_ONLY',
+            'candidate_actions':['RETRY_CURRENT','SCAFFOLD_HIGHLIGHT_CORRECT'],
+            'model_recommendation':'SCAFFOLD_HIGHLIGHT_CORRECT',
+            'model_confidence':.2,'applied_action':'RETRY_CURRENT',
+            'proximal_outcome_observed':True,'proximal_next_response_correct':False,
+            'outcome_observed':True,'outcome_first_attempt_correct':True,
+            'data_origin':'observed',
+        }]
+        specialist=self.call(therapist.get_therapist_c4_adaptive,STUDENT)
+        self.assertEqual(specialist.policy_status['mode'],'shadow')
+        self.assertEqual(specialist.latest_policy_decision['applied_action'],'RETRY_CURRENT')
+        self.assertFalse(specialist.policy_status['controls_live_adaptation'])
+        self.assertEqual(specialist.data_quality['recommendation_agreement_rate'],0.0)
+        self.assertEqual(specialist.support_effectiveness[0]['next_independent_success_rate'],1.0)
+        self.assertEqual(specialist.data_quality['policy_rows_with_proximal_outcomes'],1)
+        parent_dto=self.call(parent.get_adaptive_insights,STUDENT)
+        self.assertEqual(parent_dto.support_summary['completed_tasks'],1)
+        self.assertEqual(parent_dto.support_summary['supported_successes'],1)
+        self.assertIn('do not control',parent_dto.policy_notice)
+        self.db.policy_decisions.rows[0].update({
+            'policy_mode':'simulation_model',
+            'execution_source':'synthetic_model_simulation',
+            'controls_live_adaptation':True,
+            'applied_action':'SCAFFOLD_HIGHLIGHT_CORRECT',
+        })
+        simulation=self.call(therapist.get_therapist_c4_adaptive,STUDENT)
+        self.assertTrue(simulation.policy_status['controls_live_adaptation'])
+        self.assertIn('functional evidence only',simulation.policy_status['evidence_scope'])
+        simulation_parent=self.call(parent.get_adaptive_insights,STUDENT)
+        self.assertIn('Research demonstration mode',simulation_parent.policy_notice)
+        self.assertIn('not a diagnosis',simulation_parent.policy_notice)
+    def test_parent_latest_activity_sessions_cover_history_without_inflated_rounds(self):
+        self.db.adaptive_decisions.rows=[
+            {
+                '_id':'900','student_id':STUDENT,'session_id':'latest',
+                'timestamp':'2026-10-13T10:00:03Z','activity_id':'1.1',
+                'current_item':'S1A1R02','response_quality':'ASSISTED_SUCCESS',
+                'scaffold_level':1,'is_correct':True,'decision':'REMEDIATION',
+                'next_phase':'REMEDIATION',
+            },
+            {
+                '_id':'899','student_id':STUDENT,'session_id':'latest',
+                'timestamp':'2026-10-13T10:00:02Z','activity_id':'1.1',
+                'current_item':'S1A1R01','response_quality':'CLEAN_SUCCESS',
+                'scaffold_level':0,'is_correct':True,'decision':'CONTINUE',
+                'next_phase':'CORE',
+            },
+            {
+                '_id':'300','student_id':STUDENT,'session_id':'older-skill-one',
+                'timestamp':'2026-10-12T10:00:00Z','activity_id':'1.1',
+                'current_item':'S1A1R01','response_quality':'CLEAN_SUCCESS',
+                'scaffold_level':0,'is_correct':True,'decision':'CONTINUE',
+            },
+            {
+                '_id':'100','student_id':STUDENT,'session_id':'old-skill-two',
+                'timestamp':'2026-10-01T10:00:00Z','activity_id':'2.1',
+                'current_item':'S2A1R01','response_quality':'CLEAN_SUCCESS',
+                'scaffold_level':0,'is_correct':True,'decision':'CONTINUE',
+            },
+        ]
+        dto=self.call(parent.get_adaptive_insights,STUDENT)
+        self.assertIsNone(dto.support_summary['session_id'])
+        self.assertEqual(dto.support_summary['completed_tasks'],3)
+        self.assertEqual(dto.support_summary['activity_count'],2)
+        self.assertEqual(dto.support_summary['session_count'],2)
+        self.assertEqual([row.activity_id for row in dto.activities],['1.1','2.1'])
+        card=dto.activities[0]
+        self.assertEqual(card.rounds_completed,2);self.assertEqual(card.rounds_total,5)
+        self.assertEqual(card.times_played,2)
+        self.assertIn('Hidden Picture Search',card.activity_name)
+        older_activity=dto.activities[1]
+        self.assertEqual(older_activity.rounds_completed,1)
+        self.assertEqual(older_activity.times_played,1)
+    def test_c3_missing_inputs_are_visible_to_specialist_without_fabricated_profile(self):
+        self.db.model_audit_log.rows=[{
+            '_id':'900','student_id':STUDENT,'model_name':'XGBoost',
+            'timestamp':'2026-10-13T10:00:00Z','validation_status':'synthetic_only',
+            'status':'skipped_missing_inputs',
+            'missing_features':['acoustic_latency_ms','student_age_months'],
+        }]
+        c3=self.call(therapist.get_therapist_c3_profile,STUDENT)
+        self.assertFalse(c3.available)
+        self.assertEqual(c3.pipeline_status,'skipped_missing_inputs')
+        self.assertEqual(c3.missing_inputs,['acoustic_latency_ms','student_age_months'])
+        self.assertIn('safely skipped',c3.skip_reason)
+        c4=self.call(therapist.get_therapist_c4_adaptive,STUDENT)
+        self.assertEqual(c4.data_quality['c3_pipeline_status'],'skipped_missing_inputs')
     def test_parent_real_session_count_duration_and_history(self):
         self.db.session_summaries.rows=[self.session(1,activity_breakdown={'act_1':{'accuracy':.75,'trials':2}})]
         self.db.telemetry_events.rows=[dict(student_id=STUDENT,session_id='session-1',events=[{'activity_id':'act_1','total_round_latency_ms':60000}],session_duration_seconds=120),

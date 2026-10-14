@@ -446,7 +446,6 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
                   'supported_actions': const <String>[
                     'DISABLE_OPTION',
                     'HIGHLIGHT_OPTION',
-                    'REPLAY_INSTRUCTION',
                   ],
                   'minimum_visible_options': 2,
                   'error_type': 'visual_memory_error',

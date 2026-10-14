@@ -317,6 +317,148 @@ class PolicyEngine:
             "highlight_correct": highlight,
         }
 
+    def translate_model_support_action(
+        self,
+        *,
+        action: str,
+        telemetry: Any,
+        available_incorrect_ids: list,
+        adaptive_state: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Translate a model action into a safe authored command.
+
+        The model may choose only from capabilities advertised by the current
+        task. This translator resolves stable option IDs, preserves the Grade-1
+        minimum answer-pool size, and records state exactly like the baseline
+        policy. It never creates content or guesses a UI index.
+        """
+        capabilities = set(getattr(telemetry, "supported_actions", None) or [])
+        visible_ids = [
+            str(value)
+            for value in (getattr(telemetry, "visible_option_ids", None) or [])
+        ]
+        correct_ids = [
+            str(value)
+            for value in (getattr(telemetry, "correct_option_ids", None) or [])
+        ]
+        minimum_visible = max(
+            2,
+            int(getattr(telemetry, "minimum_visible_options", 2) or 2),
+        )
+        state = adaptive_state.get(
+            "generic_scaffold_state",
+            {"wrong_count": 0, "removed_option_ids": []},
+        )
+        state["wrong_count"] = int(state.get("wrong_count", 0)) + 1
+        unavailable = set(state.get("removed_option_ids", []))
+        incorrect_ids = [
+            str(value)
+            for value in available_incorrect_ids
+            if str(value) not in unavailable and str(value) not in correct_ids
+        ]
+        if not incorrect_ids:
+            incorrect_ids = [
+                value
+                for value in visible_ids
+                if value not in unavailable and value not in correct_ids
+            ]
+
+        command_type = None
+        targets: list[str] = []
+        style = "hint"
+        reason = "MODEL_SELECTED_LEAST_INTRUSIVE_SUPPORT"
+        if action == "SCAFFOLD_REMOVE_DISTRACTOR":
+            if len([value for value in visible_ids if value not in unavailable]) > minimum_visible:
+                command_type = "REMOVE_OPTIONS"
+                targets = incorrect_ids[:1]
+                reason = "MODEL_SELECTED_DISTRACTOR_REDUCTION"
+        elif action == "SCAFFOLD_DISABLE_DISTRACTOR":
+            if len([value for value in visible_ids if value not in unavailable]) > minimum_visible:
+                command_type = "DISABLE_OPTIONS"
+                targets = incorrect_ids[:1]
+                reason = "MODEL_SELECTED_SPATIAL_DISTRACTOR_LOCK"
+        elif action == "SCAFFOLD_HIGHLIGHT_CORRECT":
+            command_type = "HIGHLIGHT_OPTIONS"
+            targets = correct_ids
+            reason = "MODEL_SELECTED_GUIDED_ATTENTION"
+        elif action == "SCAFFOLD_HIGHLIGHT_DESTINATION":
+            command_type = "HIGHLIGHT_OPTIONS"
+            targets = correct_ids
+            style = "destination"
+            reason = "MODEL_SELECTED_DESTINATION_CUE"
+        elif action == "SCAFFOLD_REVEAL_FIRST_TOKEN":
+            command_type = "REVEAL_FIRST_TOKEN"
+            targets = correct_ids[:1]
+            reason = "MODEL_SELECTED_NEXT_TOKEN_REVEAL"
+        elif action == "SCAFFOLD_LOCK_CORRECT_TOKEN":
+            command_type = "LOCK_CORRECT_TOKEN"
+            targets = correct_ids[:1]
+            reason = "MODEL_SELECTED_CORRECT_TOKEN_LOCK"
+        elif action == "SCAFFOLD_REPLAY_INSTRUCTION":
+            command_type = "REPLAY_INSTRUCTION"
+            reason = "MODEL_SELECTED_PROMPT_REPLAY"
+        elif action == "SCAFFOLD_SLOW_AUDIO":
+            command_type = "SLOW_AUDIO"
+            reason = "MODEL_SELECTED_SLOW_AUDIO"
+        elif action == "SCAFFOLD_SHOW_WORKED_EXAMPLE":
+            command_type = "SHOW_WORKED_EXAMPLE"
+            targets = correct_ids[:1]
+            reason = "MODEL_SELECTED_WORKED_EXAMPLE"
+
+        # Defensive fallback: a malformed capability payload cannot make the
+        # model remove the answer or leave too few visible options.
+        if (
+            action in {
+                "SCAFFOLD_REMOVE_DISTRACTOR",
+                "SCAFFOLD_DISABLE_DISTRACTOR",
+                "SCAFFOLD_HIGHLIGHT_CORRECT",
+                "SCAFFOLD_HIGHLIGHT_DESTINATION",
+                "SCAFFOLD_REVEAL_FIRST_TOKEN",
+                "SCAFFOLD_LOCK_CORRECT_TOKEN",
+                "SCAFFOLD_SHOW_WORKED_EXAMPLE",
+            }
+            and (command_type is None or not targets)
+        ):
+            action = "RETRY_CURRENT"
+            command_type = None
+
+        commands = []
+        if command_type is not None:
+            commands.append({
+                "type": command_type,
+                "target_option_ids": targets,
+                "style": style,
+                "reason_code": reason,
+            })
+        if command_type == "REMOVE_OPTIONS":
+            unavailable.update(targets)
+
+        state["removed_option_ids"] = sorted(unavailable)
+        adaptive_state["generic_scaffold_state"] = state
+        scaffold_level = min(3, max(1, state["wrong_count"]))
+        adaptive_state["highest_scaffold_level_used"] = max(
+            int(adaptive_state.get("highest_scaffold_level_used", 0) or 0),
+            scaffold_level,
+        )
+        action_id = f"c4-model-{state['wrong_count']}-{len(unavailable)}"
+        for index, command in enumerate(commands):
+            command["action_id"] = f"{action_id}-{index}"
+        return {
+            "action_id": action_id,
+            "decision": action,
+            "scaffold_level": scaffold_level,
+            "commands": commands,
+            "reason_codes": [
+                f"INCORRECT_ATTEMPT_{state['wrong_count']}",
+                "ML_ACTION_EXECUTED_IN_SIMULATION",
+                reason,
+            ],
+            "policy_version": "C4_ML_COMMAND_TRANSLATOR_V1",
+            "remove_option_ids": targets if command_type == "REMOVE_OPTIONS" else [],
+            "highlight_correct": command_type == "HIGHLIGHT_OPTIONS",
+            "advertised_capabilities": sorted(capabilities),
+        }
+
     def _s2a1_get_support_action(
         self,
         telemetry: Any,

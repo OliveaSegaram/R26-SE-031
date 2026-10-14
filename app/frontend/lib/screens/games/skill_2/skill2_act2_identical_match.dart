@@ -308,19 +308,33 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             extraTelemetry: extraTelemetry,
           );
 
+      if (!mounted) return;
+
       if (scaffoldResult != null &&
           scaffoldResult.containsKey('next_action') &&
           scaffoldResult['next_action']['decision'] == 'TERMINATE') {
         _handleRoundComplete(0, forceNextIdx: scaffoldResult);
       } else if (scaffoldResult != null &&
           scaffoldResult.containsKey('next_action')) {
-        context
-            .findAncestorStateOfType<TelemetryWrapperState>()
-            ?.applyScaffoldResult<String>(
-              controller: _pairController,
-              result: scaffoldResult,
-              correctOptionIds: [_pairId(_selectedTopLetter!)],
-            );
+        final wrapper = context
+            .findAncestorStateOfType<TelemetryWrapperState>();
+        wrapper?.applyScaffoldResult<String>(
+          controller: _pairController,
+          result: scaffoldResult,
+          correctOptionIds: [_pairId(_selectedTopLetter!)],
+        );
+        final rawAction = scaffoldResult['next_action'];
+        if (rawAction is Map) {
+          final plan = ScaffoldPlan.fromNextAction(
+            Map<String, dynamic>.from(rawAction),
+            correctOptionIds: [_pairId(_selectedTopLetter!)],
+          );
+          if (plan.commands.any(
+            (command) => command.type == ScaffoldActionType.replayInstruction,
+          )) {
+            _playCurrentInstruction();
+          }
+        }
       }
 
       // Briefly show error state, but KEEP the top selection locked!

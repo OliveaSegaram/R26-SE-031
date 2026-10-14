@@ -85,6 +85,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   int _currentRound = 1;
   int _highestScaffoldUsed = 0;
   bool _activityCompleted = false;
+  bool _breakRecommendedAfterActivity = false;
   bool _abandonmentLogged = false;
   String? _activeItemId;
 
@@ -819,6 +820,17 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       debugPrint('C4 submission skipped: no authenticated student identifier.');
     }
 
+    final rawNextAction = result?['next_action'];
+    if (rawNextAction is Map) {
+      final rawReasons = rawNextAction['reason_codes'];
+      final reasons = rawReasons is Iterable
+          ? rawReasons.map((reason) => reason.toString()).toSet()
+          : const <String>{};
+      if (reasons.contains('BREAK_RECOMMENDED_AFTER_ACTIVITY')) {
+        _breakRecommendedAfterActivity = true;
+      }
+    }
+
     _applyAdaptiveNextAction(result, itemId: payloadItemId);
 
     if (finalRoundScore > 0) {
@@ -1011,6 +1023,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
           skillId: widget.activityNode.id,
           score: finalScore,
           isRevisiting: false,
+          recommendBreak: _breakRecommendedAfterActivity,
           onRetake: () {
             Navigator.pop(context, 'retake');
           },

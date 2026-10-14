@@ -309,11 +309,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
             "visible_option_ids": _choiceController.visibleOptions
                 .map((option) => option.id)
                 .toList(),
-            "supported_actions": [
-              "HIGHLIGHT_OPTION",
-              "REVEAL_FIRST_TOKEN",
-              "REPLAY_INSTRUCTION",
-            ],
+            "supported_actions": ["HIGHLIGHT_OPTION", "REVEAL_FIRST_TOKEN"],
             "minimum_visible_options": 2,
             "error_type": "sequence_memory_error",
           },

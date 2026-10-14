@@ -17,6 +17,14 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
   int adaptiveCorrectIndex = 0;
   AdaptiveTaskCoordinator? adaptiveTaskCoordinator;
 
+  /// Activity families opt in only to semantic commands they can really
+  /// render. This keeps the model's candidate set honest.
+  List<String> get adaptiveSemanticScaffoldCapabilities => const <String>[];
+
+  /// Override in an audio or worked-example activity to execute the semantic
+  /// command after the shared choice reducer has handled option commands.
+  Future<void> handleAdaptiveSemanticScaffold(ScaffoldCommand command) async {}
+
   void initializeAdaptiveTask({
     required ActivityNode? activity,
     required int roundIndex,
@@ -172,18 +180,34 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
         'supported_actions': <String>{
           'REMOVE_OPTION',
           'HIGHLIGHT_OPTION',
-          'REPLAY_INSTRUCTION',
+          ...adaptiveSemanticScaffoldCapabilities,
           ...additionalCapabilities,
         }.toList(),
         'minimum_visible_options': 2,
         'error_type': errorType,
       },
     );
-    return wrapper.applyScaffoldResult<int>(
+    final report = wrapper.applyScaffoldResult<int>(
       controller: adaptiveChoices,
       result: result,
       correctOptionIds: <String>[adaptiveOptionId(correctIndex)],
     );
+    final rawAction = result?['next_action'];
+    if (rawAction is Map) {
+      final plan = ScaffoldPlan.fromNextAction(
+        Map<String, dynamic>.from(rawAction),
+        correctOptionIds: <String>[adaptiveOptionId(correctIndex)],
+      );
+      for (final command in plan.commands) {
+        if (command.type == ScaffoldActionType.replayInstruction ||
+            command.type == ScaffoldActionType.slowAudio ||
+            command.type == ScaffoldActionType.showWorkedExample ||
+            command.type == ScaffoldActionType.pauseSession) {
+          await handleAdaptiveSemanticScaffold(command);
+        }
+      }
+    }
+    return report;
   }
 
   void clearAdaptiveWrongFeedback() => adaptiveChoices.clearTransientFeedback();

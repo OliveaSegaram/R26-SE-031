@@ -287,11 +287,7 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
             "correct_option_ids": _correctIndices.map(_optionId).toList(),
             "required_target_count": _correctIndices.length,
             "original_options_count": _options.length,
-            "supported_actions": [
-              "REMOVE_OPTION",
-              "HIGHLIGHT_OPTION",
-              "REPLAY_INSTRUCTION",
-            ],
+            "supported_actions": ["REMOVE_OPTION", "HIGHLIGHT_OPTION"],
             "minimum_visible_options": 2,
             "error_type": "orthographic_discrimination_error",
           },

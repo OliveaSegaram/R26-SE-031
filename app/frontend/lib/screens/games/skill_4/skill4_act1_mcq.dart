@@ -8,6 +8,7 @@ import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../services/progress_service.dart';
 import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
+import '../../../adaptive/models/adaptive_scaffold_models.dart';
 
 /// Activity 9: වචනයට සවන් දී පින්තූරය සොයමු (Listen to Word & Find Image)
 /// Template: audio_image_match_game
@@ -38,6 +39,21 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq>
   int _attemptCount = 0;
 
   @override
+  List<String> get adaptiveSemanticScaffoldCapabilities => const <String>[
+    'REPLAY_INSTRUCTION',
+    'SLOW_AUDIO',
+  ];
+
+  @override
+  Future<void> handleAdaptiveSemanticScaffold(ScaffoldCommand command) async {
+    if (command.type == ScaffoldActionType.replayInstruction) {
+      _playAudioPrompt();
+    } else if (command.type == ScaffoldActionType.slowAudio) {
+      _playAudioPrompt(slow: true);
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     _attemptCount = 0;
@@ -65,7 +81,7 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq>
     super.dispose();
   }
 
-  void _playAudioPrompt({bool autoPlay = false}) {
+  void _playAudioPrompt({bool autoPlay = false, bool slow = false}) {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
@@ -82,7 +98,11 @@ class _Skill4Act1McqState extends State<Skill4Act1Mcq>
       return;
     }
     _lastSpokenInstruction = audioText;
-    TtsService().speak(audioText, folder: 'skill_4');
+    TtsService().speak(
+      audioText,
+      folder: 'skill_4',
+      playbackRate: slow ? 0.78 : 1.0,
+    );
   }
 
   void _checkAnswer(int index, int correctIndex, int totalRounds) async {

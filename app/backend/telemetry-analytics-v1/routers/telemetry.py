@@ -28,6 +28,7 @@ from services.ml_engine import CognitiveLoadClassifier
 from services.report_generator import generate_pdf_report
 from services.assessment_report_generator import generate_assessment_report
 from services.behavioral_engine import extract_session_features
+from services.comp2_kinematics import extract_comp2_features
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Telemetry"])
 
@@ -54,7 +55,7 @@ def _normalize_item_id(value: object) -> str:
 
 
 async def _validate_component_four_research_event(db, event: dict) -> None:
-    """Validate immutable Skill 2/3 lineage against the canonical item bank.
+    """Validate immutable Skill 1-4 lineage against the canonical item bank.
 
     Observation fields are never rewritten. Static item metadata is copied
     from the bank, while any client mismatch is retained as an explicit audit
@@ -69,7 +70,7 @@ async def _validate_component_four_research_event(db, event: dict) -> None:
         item_skill_number
         or (submitted_skill.removeprefix("skill_") if submitted_skill else "")
     )
-    if skill_number not in {"2", "3"}:
+    if skill_number not in {"1", "2", "3", "4"}:
         return
     canonical_skill_id = f"skill_{skill_number}"
 
@@ -171,6 +172,34 @@ async def _trigger_c3_background(student_id: str, session_summary: dict):
     except Exception:
         await db.model_audit_log.insert_one({**audit,"status":"fusion_failed"})
 
+
+def _kinematic_events(events: list[dict]) -> list[dict]:
+    """Normalize Flutter ratio/timestamp touch points for the C2 extractor."""
+    normalized = []
+    for event in events:
+        source = event.get("touch_stream") or event.get("touch_path") or []
+        points = []
+        for point in source:
+            if not isinstance(point, dict):
+                continue
+            points.append({
+                "x": point.get("x_ratio", point.get("x", 0.0)),
+                "y": point.get("y_ratio", point.get("y", 0.0)),
+                "t": point.get("timestamp_ms", point.get("t", 0)),
+                "type": str(point.get("type") or "").upper(),
+            })
+        if len(points) < 2:
+            continue
+        targets = event.get("targets") or event.get("target_ids") or []
+        selected = event.get("selected_answers") or []
+        normalized.append({
+            **event,
+            "touch_stream": points,
+            "target_stimulus": targets[0] if targets else None,
+            "selected_stimulus": selected[0] if selected else None,
+        })
+    return normalized
+
 # ---------------------------------------------------------------------------
 # POST /telemetry  — Ingest enriched telemetry session
 # ---------------------------------------------------------------------------
@@ -210,6 +239,10 @@ async def submit_telemetry(
     session_doc["student_id"] = str(student_oid)
     session_doc["submitted_at"] = datetime.now(timezone.utc).isoformat()
     session_doc["schema_version"] = "2.0"
+    session_doc["data_origin"] = "observed"
+    session_doc["dataset_id"] = f"live:{req.student_id}:{req.session_id}"
+    session_doc["validation_status"] = "operational_observation"
+    session_doc["calibration_eligible"] = False
 
     session_key = {"student_id": req.student_id, "session_id": req.session_id}
     existing_session = await db.telemetry_sessions.find_one(
@@ -248,6 +281,10 @@ async def submit_telemetry(
         event["schema_version"] = "2.0"
         event["session_id"] = req.session_id
         event["student_id"] = req.student_id
+        event["data_origin"] = "observed"
+        event["dataset_id"] = session_doc["dataset_id"]
+        event["validation_status"] = "operational_observation"
+        event["calibration_eligible"] = False
         await _validate_component_four_research_event(db, event)
 
     # Retried submissions update the same complete session and summary.
@@ -281,10 +318,37 @@ async def submit_telemetry(
 
     validated_req = TelemetrySessionSubmit.model_validate(session_doc)
     summary = extract_session_features(validated_req).model_dump()
+    summary.update({
+        "data_origin": "observed",
+        "dataset_id": session_doc["dataset_id"],
+        "validation_status": "operational_observation",
+        "calibration_eligible": False,
+    })
     await db.session_summaries.update_one(
         {"student_id": req.student_id, "session_id": req.session_id},
         {"$set": summary}, upsert=True,
     )
+
+    normalized_motion = _kinematic_events(events_list)
+    if normalized_motion:
+        motion = extract_comp2_features(normalized_motion)
+        motion_doc = {
+            "student_id": req.student_id,
+            "session_id": req.session_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "feature_version": "kinematics-v2",
+            "measurement_status": "available",
+            "data_origin": "observed",
+            "dataset_id": session_doc["dataset_id"],
+            "validation_status": "operational_observation",
+            **motion,
+            "dwell_time_ms": motion.get("mean_dwell_time_ms", 0.0),
+        }
+        await db.kinematic_features.update_one(
+            {"student_id": req.student_id, "session_id": req.session_id},
+            {"$set": motion_doc},
+            upsert=True,
+        )
 
     # Assess real-time cognitive load
     events_list = session_doc.get("events", [])

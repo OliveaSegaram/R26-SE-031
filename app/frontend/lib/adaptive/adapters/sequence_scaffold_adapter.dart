@@ -17,6 +17,13 @@ mixin SequenceScaffoldAdapter<T extends StatefulWidget> on State<T> {
   List<int> _correctPoolIndices = const <int>[];
   AdaptiveTaskCoordinator? adaptiveTaskCoordinator;
 
+  /// Sequence screens implement semantic commands here. Keeping this hook in
+  /// the shared adapter guarantees that an advertised replay is rendered
+  /// instead of being silently accepted by the backend and discarded.
+  Future<void> handleAdaptiveSequenceSemanticScaffold(
+    ScaffoldCommand command,
+  ) async {}
+
   void initializeAdaptiveSequenceTask({
     required ActivityNode? activity,
     required int roundIndex,
@@ -165,6 +172,15 @@ mixin SequenceScaffoldAdapter<T extends StatefulWidget> on State<T> {
       visibleOptionCount: _sequenceTokens.length,
     );
     if (plan == null || !mounted) return;
+    for (final command in plan.commands) {
+      if (command.type == ScaffoldActionType.replayInstruction ||
+          command.type == ScaffoldActionType.slowAudio ||
+          command.type == ScaffoldActionType.showWorkedExample ||
+          command.type == ScaffoldActionType.pauseSession) {
+        await handleAdaptiveSequenceSemanticScaffold(command);
+      }
+    }
+    if (!mounted) return;
     final hintedIds = plan.commands
         .where(
           (command) =>
@@ -173,15 +189,17 @@ mixin SequenceScaffoldAdapter<T extends StatefulWidget> on State<T> {
         )
         .expand((command) => command.targetOptionIds)
         .toSet();
-    setState(() {
-      adaptiveHintedTokenIndices
-        ..clear()
-        ..addAll(
-          List<int>.generate(
-            _sequenceTokens.length,
-            (index) => index,
-          ).where((index) => hintedIds.contains(adaptiveTokenId(index))),
-        );
-    });
+    if (hintedIds.isNotEmpty) {
+      setState(() {
+        adaptiveHintedTokenIndices
+          ..clear()
+          ..addAll(
+            List<int>.generate(
+              _sequenceTokens.length,
+              (index) => index,
+            ).where((index) => hintedIds.contains(adaptiveTokenId(index))),
+          );
+      });
+    }
   }
 }

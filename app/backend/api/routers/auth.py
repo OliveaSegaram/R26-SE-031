@@ -478,16 +478,25 @@ async def refresh_token_endpoint(request: Request, token_req: TokenRefreshReques
             detail="Invalid or expired refresh token",
         )
 
+    # Re-read the account before rotating credentials.  Apart from preventing
+    # deleted accounts from renewing a session, this supplies the authoritative
+    # role/id instead of trusting claims from a month-long refresh token.
+    db = get_db()
+    user_doc = await db.users.find_one({"email": decoded["sub"]})
+    if not user_doc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
     token_data = {
-        "sub": decoded["sub"],
-        "role": decoded.get("role", "parent"),
-        "id": decoded.get("id"),
+        "sub": user_doc["email"],
+        "role": user_doc.get("role", "parent"),
+        "id": str(user_doc["_id"]),
     }
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
 
-
-    await _handle_login_alert(db, user_doc, request, background_tasks, None, None)
     return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 

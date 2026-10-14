@@ -11,6 +11,7 @@ import '../../../theme/app_theme.dart';
 import '../../../services/tts_service.dart';
 import '../../../services/progress_service.dart';
 import '../../../adaptive/controllers/adaptive_task_coordinator.dart';
+import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import 'logic/shadow_generator.dart';
 import 'models/shadow_round.dart';
 import 'widgets/pattern_background.dart';
@@ -325,8 +326,16 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                 errorType: 'visual_matching_error',
               )
               .then((plan) {
-                if (mounted && plan != null)
+                if (!mounted || plan == null) return;
+                final types = plan.commands
+                    .map((command) => command.type)
+                    .toSet();
+                if (types.contains(ScaffoldActionType.replayInstruction)) {
+                  _playInstruction();
+                }
+                if (types.contains(ScaffoldActionType.highlightOptions)) {
                   setState(() => _hintedShadow = object);
+                }
               }),
         );
       }

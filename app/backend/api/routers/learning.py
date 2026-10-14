@@ -74,6 +74,77 @@ class InteractionPayload(BaseModel):
     is_anchor: bool = False
 
 
+def summarize_current_session(events: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Create a bounded current-session behavioral context from observed rows."""
+    completed = [
+        event for event in events
+        if str(event.get("phase") or "").upper() == "COMPLETE"
+        and event.get("is_abandoned") is not True
+    ]
+    if not completed:
+        return {
+            "observation_count": 0,
+            "first_attempt_accuracy": None,
+            "mean_latency_ms": None,
+            "support_rate": None,
+            "behavioral_fatigue_proxy": 0.0,
+        }
+    first_attempts = [
+        bool(event["first_attempt_correct"])
+        for event in completed
+        if isinstance(event.get("first_attempt_correct"), bool)
+    ]
+    latencies = [
+        max(0, int(event.get("total_round_latency_ms") or 0))
+        for event in completed
+    ]
+    support_flags = [
+        int(event.get("scaffold_level_used") or 0) > 0
+        or int(event.get("incorrect_attempt_count") or 0) > 0
+        for event in completed
+    ]
+    mean_latency = sum(latencies) / len(latencies) if latencies else 0.0
+    support_rate = sum(support_flags) / len(support_flags)
+    first_accuracy = (
+        sum(first_attempts) / len(first_attempts) if first_attempts else None
+    )
+    # Descriptive, bounded proxy only. It is not a clinical fatigue measure.
+    slow_component = min(1.0, mean_latency / 30000.0)
+    error_component = 1.0 - first_accuracy if first_accuracy is not None else 0.0
+    fatigue_proxy = min(
+        1.0,
+        0.45 * slow_component + 0.35 * error_component + 0.20 * support_rate,
+    )
+    return {
+        "observation_count": len(completed),
+        "first_attempt_accuracy": first_accuracy,
+        "mean_latency_ms": round(mean_latency, 2),
+        "support_rate": round(support_rate, 4),
+        "behavioral_fatigue_proxy": round(fatigue_proxy, 4),
+    }
+
+
+def validated_profile_context(document: Optional[Dict[str, Any]]) -> tuple[Dict[str, float], str]:
+    """Allow only explicitly validated observed C3 evidence into live C4."""
+    if not document:
+        return {}, "NO_C3_PROFILE"
+    if document.get("data_origin") != "observed":
+        return {}, "C3_NON_OBSERVED_BLOCKED"
+    if document.get("validation_status") not in {
+        "pilot_approved", "validated_observed"
+    }:
+        return {}, "C3_UNVALIDATED_BLOCKED"
+    probabilities = (
+        (document.get("learner_profile") or {}).get("class_probabilities") or {}
+    )
+    numeric = {
+        str(key): float(value)
+        for key, value in probabilities.items()
+        if isinstance(value, (int, float)) and not isinstance(value, bool)
+    }
+    return numeric, "C3_VALIDATED_OBSERVED"
+
+
 def build_adaptive_submit(
     payload: InteractionPayload,
     *,
@@ -82,6 +153,8 @@ def build_adaptive_submit(
     canonical_item_id: str,
     fatigue_score: float,
     learner_profile: Dict[str, float],
+    behavioral_context: Optional[Dict[str, Any]] = None,
+    context_evidence: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build the lossless C4 request shared by runtime code and contract tests."""
     return {
@@ -99,6 +172,15 @@ def build_adaptive_submit(
         ),
         "fatigue_score": fatigue_score,
         "learner_profile": learner_profile,
+        "behavioral_context": behavioral_context or {},
+        "context_evidence": context_evidence or {},
+        # These fields are server-controlled. A mobile client cannot label a
+        # simulation as a real child observation or make it calibratable.
+        "data_origin": "observed",
+        "dataset_id": f"live:{payload.student_id}:{payload.session_id}",
+        "validation_status": "operational_observation",
+        "calibration_eligible": False,
+        "policy_mode": os.getenv("C4_POLICY_MODE", "shadow"),
         "phase": payload.phase,
         "telemetry": payload.telemetry.model_dump(),
     }
@@ -168,6 +250,10 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
         "touch_stream": payload.telemetry.touch_stream,
         "touch_path": payload.telemetry.touch_stream,
         "event_source": "learning_interaction",
+        "data_origin": "observed",
+        "dataset_id": f"live:{payload.student_id}:{payload.session_id}",
+        "validation_status": "operational_observation",
+        "calibration_eligible": False,
     }
     # Prefer the v2 key, while reconciling one pre-v2 record in place when it
     # exists. This keeps retries idempotent without deleting legacy records.
@@ -207,9 +293,16 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
             "wer": payload.speech.get("word_error_rate", 0.0),
             "stt_confidence": 1.0 - (payload.speech.get("word_error_rate") or 0.0),
             "model_version": "whisper-si-v1",
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "data_origin": "observed",
+            "dataset_id": f"live:{payload.student_id}:{payload.session_id}",
+            "validation_status": "operational_observation",
         }
-        await db.speech_transcriptions.insert_one(speech_trans_doc)
+        await db.speech_transcriptions.update_one(
+            {"speech_event_id": event_id},
+            {"$set": speech_trans_doc},
+            upsert=True,
+        )
         
         speech_feat_doc = {
             "speech_event_id": event_id,
@@ -225,13 +318,23 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
             "intra_word_silence_ratio": payload.speech.get("Intra_Word_Silence_Ratio", 0.0),
             "jitter": payload.speech.get("Local_Jitter", 0.0),
             "shimmer": payload.speech.get("Local_Shimmer", 0.0),
+            "local_jitter": payload.speech.get("Local_Jitter", 0.0),
+            "local_shimmer": payload.speech.get("Local_Shimmer", 0.0),
             "recording_quality": payload.speech.get("recording_quality", "good"),
             "analysis_confidence": 0.88 if payload.speech.get("recording_quality", "good") == "good" else 0.5,
             "feature_version": "speech-v1",
+            "measurement_status": "available",
+            "data_origin": "observed",
+            "dataset_id": f"live:{payload.student_id}:{payload.session_id}",
+            "validation_status": "operational_observation",
             "speech_data": payload.speech, # Kept for backward compatibility in other endpoints
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
-        await db.speech_features.insert_one(speech_feat_doc)
+        await db.speech_features.update_one(
+            {"speech_event_id": event_id},
+            {"$set": speech_feat_doc},
+            upsert=True,
+        )
 
 
 @router.post("/interaction")
@@ -266,9 +369,37 @@ async def process_interaction(payload: InteractionPayload, background_tasks: Bac
     # Fetch latest fatigue from C1 and learner profile from C3 to inform C4
     c1 = await db.session_summaries.find_one({"student_id": payload.student_id}, sort=[("_id", -1)])
     c3 = await db.learner_profiles.find_one({"student_id": payload.student_id}, sort=[("_id", -1)])
-    
-    fatigue_score = (c1.get("behavioral_fatigue_proxy") or 0.0) if c1 else 0.0
-    learner_profile_dict = c3.get("learner_profile", {}).get("class_probabilities", {}) if c3 else {}
+    c3_audit = await db.model_audit_log.find_one(
+        {"student_id": payload.student_id, "model_name": "XGBoost"},
+        sort=[("_id", -1)],
+    )
+    current_rows = await db.telemetry_events.find({
+        "student_id": payload.student_id,
+        "session_id": payload.session_id,
+    }).sort("_id", 1).to_list(length=200)
+    current_rows.append({
+        **payload.telemetry.model_dump(),
+        "phase": payload.phase,
+        "is_abandoned": payload.telemetry.is_abandoned,
+    })
+    behavioral_context = summarize_current_session(current_rows)
+    prior_fatigue = (c1.get("behavioral_fatigue_proxy") or 0.0) if c1 else 0.0
+    fatigue_score = float(
+        behavioral_context.get("behavioral_fatigue_proxy", 0.0)
+        if behavioral_context.get("observation_count", 0) > 0
+        else prior_fatigue
+    )
+    learner_profile_dict, profile_status = validated_profile_context(c3)
+    context_evidence = {
+        "behavior_source": "current_session_rolling",
+        "prior_session_available": bool(c1),
+        "c3_profile_status": profile_status,
+        "c3_pipeline_status": (
+            (c3_audit or {}).get("status")
+            or ("profile_available" if c3 else "not_run")
+        ),
+        "c3_missing_inputs": list((c3_audit or {}).get("missing_features") or []),
+    }
     
     c4_result = {}
     async with httpx.AsyncClient() as client:
@@ -281,6 +412,8 @@ async def process_interaction(payload: InteractionPayload, background_tasks: Bac
                 canonical_item_id=canonical_item_id,
                 fatigue_score=fatigue_score,
                 learner_profile=learner_profile_dict,
+                behavioral_context=behavioral_context,
+                context_evidence=context_evidence,
             )
             
             adaptive_api_url = os.getenv("ADAPTIVE_API_URL", "http://localhost:9017")

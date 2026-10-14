@@ -11,6 +11,7 @@ import '../../../theme/app_theme.dart';
 import '../../../services/tts_service.dart';
 import '../../../services/progress_service.dart';
 import '../../../adaptive/controllers/adaptive_task_coordinator.dart';
+import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import 'logic/sorting_generator.dart';
 import 'models/sorting_round.dart';
 import 'widgets/pattern_background.dart';
@@ -61,6 +62,9 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   String? _lastWrongCategory;
   String? _lastWrongObject;
   String? _hintedCategory;
+  bool _isShowingWorkedExample = false;
+  String? _workedExampleObject;
+  String? _workedExampleCategory;
 
   // ── Audio ──
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -88,6 +92,37 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   final Map<String, AnimationController> _categoryGlowControllers = {};
   late AnimationController _wrongShakeController;
   late Animation<double> _wrongShakeAnimation;
+  late AnimationController _workedExampleController;
+
+  // Authored, non-scored examples. The selected example is always different
+  // from every object in the current task, so the demonstration teaches the
+  // sorting rule without revealing the learner's current answer.
+  static const Map<String, List<String>> _workedExampleAssets = {
+    'animals': <String>[
+      'animals/turtle.png',
+      'animals/snail.png',
+      'animals/frog.png',
+      'animals/butterfly.png',
+    ],
+    'fruits': <String>[
+      'fruits_food/watermelon.png',
+      'fruits_food/grapes.png',
+      'fruits_food/orange.png',
+      'fruits_food/mango.png',
+    ],
+    'vehicles': <String>[
+      'vehicles/airplane.png',
+      'vehicles/boat.png',
+      'vehicles/train.png',
+      'vehicles/bicycle.png',
+    ],
+    'flowers': <String>[
+      'flowers/wada_mal.png',
+      'flowers/araliya.png',
+      'flowers/nil_manel.png',
+      'flowers/flower_05.png',
+    ],
+  };
 
   // ── Mascot ──
   static const List<String> _mascots = [
@@ -176,6 +211,11 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
             curve: Curves.easeInOut,
           ),
         );
+
+    _workedExampleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3200),
+    );
 
     // Speaker bounce
     _speakerBounceController = AnimationController(
@@ -270,6 +310,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     _celebrationController.dispose();
     _roundTransitionController.dispose();
     _wrongShakeController.dispose();
+    _workedExampleController.dispose();
     _speakerBounceController.dispose();
     for (var c in _floatControllers.values) {
       c.dispose();
@@ -288,6 +329,52 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
 
   SortingRound get _currentRound =>
       SortingGenerator.fromCurriculum(_taskCoordinator.roundData);
+
+  String? _workedExampleFor(String category, {required String excluding}) {
+    final candidates = _workedExampleAssets[category] ?? const <String>[];
+    final currentObjects = _currentRound.objects.toSet();
+    for (final candidate in candidates) {
+      if (candidate != excluding && !currentObjects.contains(candidate)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _showWorkedExample({
+    required String currentObject,
+    required String correctCategory,
+  }) async {
+    if (_isShowingWorkedExample) return;
+    final example = _workedExampleFor(
+      correctCategory,
+      excluding: currentObject,
+    );
+    if (example == null) {
+      setState(() => _hintedCategory = correctCategory);
+      return;
+    }
+    setState(() {
+      _workedExampleObject = example;
+      _workedExampleCategory = correctCategory;
+      _isShowingWorkedExample = true;
+      _hintedCategory = null;
+    });
+    final label = _currentRound.categoryLabels[correctCategory] ?? '';
+    TtsService().speak(
+      'අපි උදාහරණයක් බලමු. මේ පින්තූරය $label කූඩයට දමමු.',
+      folder: 'skill_1',
+    );
+    await _workedExampleController.forward(from: 0);
+    if (!mounted) return;
+    setState(() {
+      _isShowingWorkedExample = false;
+      _workedExampleObject = null;
+      _workedExampleCategory = null;
+    });
+    _workedExampleController.reset();
+  }
+
   int get _totalObjects => _currentRound.objects.length;
   int get _sortedCount =>
       _totalObjects - (_objectQueue.length + _visibleObjects.length);
@@ -362,16 +449,38 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 incorrectOptionIds: <String>[
                   '${itemId}_DEST${selectedIndex + 1}',
                 ],
-                supportedActions: const <String>[
-                  'HIGHLIGHT_OPTION',
-                  'SHOW_WORKED_EXAMPLE',
+                supportedActions: <String>[
+                  'HIGHLIGHT_DESTINATION',
+                  if (_workedExampleFor(correctCategory, excluding: object) !=
+                      null)
+                    'SHOW_WORKED_EXAMPLE',
                   'REPLAY_INSTRUCTION',
                 ],
                 errorType: 'categorization_error',
               )
-              .then((plan) {
-                if (mounted && plan != null) {
+              .then((plan) async {
+                if (!mounted || plan == null) return;
+                final types = plan.commands
+                    .map((command) => command.type)
+                    .toSet();
+                if (types.contains(ScaffoldActionType.replayInstruction)) {
+                  _playInstruction();
+                }
+                if (types.contains(ScaffoldActionType.showWorkedExample)) {
+                  await _showWorkedExample(
+                    currentObject: object,
+                    correctCategory: correctCategory,
+                  );
+                } else if (types.contains(
+                  ScaffoldActionType.highlightOptions,
+                )) {
                   setState(() => _hintedCategory = correctCategory);
+                  _categoryGlowControllers[correctCategory]
+                      ?.forward(from: 0)
+                      .then(
+                        (_) => _categoryGlowControllers[correctCategory]
+                            ?.reverse(),
+                      );
                 }
               }),
         );
@@ -511,6 +620,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
           ),
 
           // ── Celebration Overlay ──
+          if (_isShowingWorkedExample) _buildWorkedExampleOverlay(),
           if (_activityComplete) _buildCelebrationOverlay(),
         ],
       ),
@@ -1244,6 +1354,182 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
         activityTitle: widget.activityNode.title,
         scaleAnimation: _celebrationScale,
         onFinish: _finishActivity,
+      ),
+    );
+  }
+
+  Widget _buildWorkedExampleOverlay() {
+    final object = _workedExampleObject;
+    final category = _workedExampleCategory;
+    if (object == null || category == null) return const SizedBox.shrink();
+    final label = _currentRound.categoryLabels[category] ?? category;
+    final accent = _categoryColors[category] ?? AppColors.calmBlue;
+    return Positioned.fill(
+      child: Material(
+        color: const Color(0xFF24334A).withValues(alpha: 0.58),
+        child: SafeArea(
+          child: Center(
+            child: AnimatedBuilder(
+              animation: _workedExampleController,
+              builder: (context, _) {
+                final progress = Curves.easeInOutCubic.transform(
+                  _workedExampleController.value,
+                );
+                final travel = progress < 0.78 ? progress / 0.78 : 1.0;
+                final success = ((_workedExampleController.value - 0.72) / 0.28)
+                    .clamp(0.0, 1.0);
+                return Container(
+                  width: min(MediaQuery.sizeOf(context).width - 40, 390),
+                  padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
+                  decoration: BoxDecoration(
+                    color: AppColors.cream,
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: const <BoxShadow>[
+                      BoxShadow(
+                        color: Color(0x44000000),
+                        blurRadius: 28,
+                        offset: Offset(0, 14),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(Icons.auto_awesome_rounded, color: accent),
+                          const SizedBox(width: 8),
+                          Text(
+                            'අපි උදාහරණයක් බලමු!',
+                            style: AppTypography.sinhala(
+                              fontSize: 21,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'මෙය පුහුණු උදාහරණයක් — ඔබේ ප්‍රශ්නයේ පිළිතුර නොවේ.',
+                        textAlign: TextAlign.center,
+                        style: AppTypography.sinhala(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 230,
+                        child: Stack(
+                          alignment: Alignment.topCenter,
+                          children: <Widget>[
+                            Positioned(
+                              bottom: 0,
+                              child: Container(
+                                width: 170,
+                                height: 105,
+                                decoration: BoxDecoration(
+                                  color: accent.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: Color.lerp(
+                                      accent.withValues(alpha: 0.35),
+                                      AppColors.gentleGreen,
+                                      success,
+                                    )!,
+                                    width: 4,
+                                  ),
+                                  boxShadow: <BoxShadow>[
+                                    BoxShadow(
+                                      color: accent.withValues(
+                                        alpha: 0.15 + (success * 0.25),
+                                      ),
+                                      blurRadius: 12 + (success * 14),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: <Widget>[
+                                    Icon(
+                                      Icons.inventory_2_rounded,
+                                      color: accent,
+                                      size: 42,
+                                    ),
+                                    Text(
+                                      label,
+                                      style: AppTypography.sinhala(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 70 + (travel * 80),
+                              child: Transform.scale(
+                                scale: 1.0 - (travel * 0.28),
+                                child: Container(
+                                  width: 92,
+                                  height: 92,
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(22),
+                                    border: Border.all(color: accent, width: 3),
+                                    boxShadow: const <BoxShadow>[
+                                      BoxShadow(
+                                        color: Color(0x22000000),
+                                        blurRadius: 10,
+                                        offset: Offset(0, 5),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Image.asset(
+                                    'assets/images/activity_icons/$object',
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (success > 0.05)
+                              Positioned(
+                                right: 66,
+                                bottom: 72,
+                                child: Opacity(
+                                  opacity: success,
+                                  child: Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.gentleGreen,
+                                    size: 38,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '$label කූඩයට දමමු',
+                        style: AppTypography.sinhala(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: accent,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
       ),
     );
   }

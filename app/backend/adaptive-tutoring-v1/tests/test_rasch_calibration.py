@@ -52,6 +52,9 @@ def test_calibration_ignores_retried_legacy_event_ids():
                     "item_id": "ITEM-1",
                     "phase": "COMPLETE",
                     "first_attempt_correct": True,
+                    "data_origin": "observed",
+                    "calibration_eligible": True,
+                    "validation_status": "pilot_approved",
                 },
                 {
                     "event_id": "session:ITEM-1:complete",
@@ -60,6 +63,9 @@ def test_calibration_ignores_retried_legacy_event_ids():
                     "item_id": "ITEM-1",
                     "phase": "COMPLETE",
                     "first_attempt_correct": True,
+                    "data_origin": "observed",
+                    "calibration_eligible": True,
+                    "validation_status": "pilot_approved",
                 },
             ]
 
@@ -136,6 +142,9 @@ def test_calibration_accepts_one_legacy_batch_only_completion():
                     "item_id": "ITEM-2",
                     "final_correct": True,
                     "first_attempt_correct": True,
+                    "data_origin": "observed",
+                    "calibration_eligible": True,
+                    "validation_status": "pilot_approved",
                 }
             ]
 
@@ -178,6 +187,9 @@ def test_calibration_requires_exact_canonical_item_lineage():
                 "item_id": "S2A1R01",
                 "phase": "COMPLETE",
                 "first_attempt_correct": True,
+                "data_origin": "observed",
+                "calibration_eligible": True,
+                "validation_status": "pilot_approved",
                 **{key: value for key, value in canonical.items()
                    if key != "item_id"},
             },
@@ -188,6 +200,9 @@ def test_calibration_requires_exact_canonical_item_lineage():
                 "item_id": "S2A1R01",
                 "phase": "COMPLETE",
                 "first_attempt_correct": True,
+                "data_origin": "observed",
+                "calibration_eligible": True,
+                "validation_status": "pilot_approved",
                 "knowledge_component_id": "KC_AKSHARA_IDENTITY",
                 "item_role": "CORE",
                 "equivalent_group_id": "S2A1R01",
@@ -201,6 +216,9 @@ def test_calibration_requires_exact_canonical_item_lineage():
                 "item_id": "S2_A1_R01",
                 "phase": "COMPLETE",
                 "first_attempt_correct": True,
+                "data_origin": "observed",
+                "calibration_eligible": True,
+                "validation_status": "pilot_approved",
             },
             {
                 "event_id": "superseded:S2A1R01:complete",
@@ -209,6 +227,9 @@ def test_calibration_requires_exact_canonical_item_lineage():
                 "item_id": "S2A1R01",
                 "phase": "COMPLETE",
                 "first_attempt_correct": True,
+                "data_origin": "observed",
+                "calibration_eligible": True,
+                "validation_status": "pilot_approved",
                 **{
                     key: (1 if key == "item_version" else value)
                     for key, value in canonical.items()
@@ -254,6 +275,9 @@ def test_calibration_validates_lineage_for_every_component4_skill():
                 "item_id": item["item_id"],
                 "phase": "COMPLETE",
                 "first_attempt_correct": True,
+                "data_origin": "observed",
+                "calibration_eligible": True,
+                "validation_status": "pilot_approved",
                 **{
                     key: value
                     for key, value in item.items()
@@ -267,6 +291,9 @@ def test_calibration_validates_lineage_for_every_component4_skill():
                 "item_id": item["item_id"],
                 "phase": "COMPLETE",
                 "first_attempt_correct": True,
+                "data_origin": "observed",
+                "calibration_eligible": True,
+                "validation_status": "pilot_approved",
                 **{
                     key: (
                         value + 10 if key == "item_version" else value
@@ -297,3 +324,49 @@ def test_calibration_validates_lineage_for_every_component4_skill():
         }
         for skill in range(1, 5)
     ]
+
+
+def test_calibration_blocks_synthetic_and_unapproved_observed_rows():
+    canonical = {
+        "item_id": "S1A1R01",
+        "knowledge_component_id": "KC_TEST",
+        "item_role": "CORE",
+        "equivalent_group_id": "S1A1R01",
+        "item_version": 1,
+        "difficulty_b": -1.0,
+    }
+
+    class Collection:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def find(self, _query, _projection):
+            return self.rows
+
+    def event(name, origin, eligible, status):
+        return {
+            "event_id": f"{name}:complete",
+            "student_id": name,
+            "session_id": name,
+            "item_id": "S1A1R01",
+            "phase": "COMPLETE",
+            "first_attempt_correct": True,
+            "data_origin": origin,
+            "calibration_eligible": eligible,
+            "validation_status": status,
+            **{key: value for key, value in canonical.items() if key != "item_id"},
+        }
+
+    class Database:
+        item_bank = Collection([canonical])
+        telemetry_events = Collection([
+            event("synthetic", "synthetic", True, "pilot_approved"),
+            event("unreviewed", "observed", False, "operational_observation"),
+            event("approved", "observed", True, "validated_observed"),
+        ])
+
+    assert _independent_responses(Database()) == [{
+        "student_id": "approved",
+        "item_id": "S1A1R01",
+        "is_correct": True,
+    }]

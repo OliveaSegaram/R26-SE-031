@@ -26,6 +26,23 @@ async def connect_to_mongo():
     db = db_instance.client[DB_NAME]
     knowledge_states_collection = db["knowledge_states"]
     adaptive_decisions_collection = db["adaptive_decisions"]
+    import pymongo
+    await db["policy_decisions"].create_index(
+        [("student_id", pymongo.ASCENDING), ("event_id", pymongo.ASCENDING)],
+        name="policy_student_event_lookup_v1",
+    )
+    await db["policy_decisions"].create_index(
+        [
+            ("student_id", pymongo.ASCENDING),
+            ("session_id", pymongo.ASCENDING),
+            ("item_id", pymongo.ASCENDING),
+        ],
+        name="policy_action_outcome_link_v1",
+    )
+    await db["adaptive_decisions"].create_index(
+        [("student_id", pymongo.ASCENDING), ("timestamp", pymongo.DESCENDING)],
+        name="adaptive_student_timeline_v2",
+    )
     print("Connected to MongoDB Cloud (adaptive-tutoring-v1)")
 
 async def close_mongo_connection():
@@ -38,4 +55,3 @@ def get_db():
     if db is None:
         raise RuntimeError("Database not initialized. Ensure connect_to_mongo() was called on startup.")
     return db
-
