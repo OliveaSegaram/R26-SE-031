@@ -367,13 +367,25 @@ class PolicyEngine:
         targets: list[str] = []
         style = "hint"
         reason = "MODEL_SELECTED_LEAST_INTRUSIVE_SUPPORT"
+        supports_highlight = (
+            "HIGHLIGHT_OPTION" in capabilities
+            or "HIGHLIGHT_OPTIONS" in capabilities
+        )
         if action == "SCAFFOLD_REMOVE_DISTRACTOR":
-            if len([value for value in visible_ids if value not in unavailable]) > minimum_visible:
+            if (
+                state["wrong_count"] <= 2
+                and len([value for value in visible_ids if value not in unavailable])
+                > minimum_visible
+            ):
                 command_type = "REMOVE_OPTIONS"
                 targets = incorrect_ids[:1]
                 reason = "MODEL_SELECTED_DISTRACTOR_REDUCTION"
         elif action == "SCAFFOLD_DISABLE_DISTRACTOR":
-            if len([value for value in visible_ids if value not in unavailable]) > minimum_visible:
+            if (
+                state["wrong_count"] <= 2
+                and len([value for value in visible_ids if value not in unavailable])
+                > minimum_visible
+            ):
                 command_type = "DISABLE_OPTIONS"
                 targets = incorrect_ids[:1]
                 reason = "MODEL_SELECTED_SPATIAL_DISTRACTOR_LOCK"
@@ -405,6 +417,24 @@ class PolicyEngine:
             targets = correct_ids[:1]
             reason = "MODEL_SELECTED_WORKED_EXAMPLE"
 
+        # The learned model ranks support actions, but the Grade-1 safety
+        # policy owns escalation. Once distractor reduction is exhausted (or
+        # after two reductions), guide attention instead of silently falling
+        # back to unlimited unsupported retries.
+        if (
+            action in {
+                "SCAFFOLD_REMOVE_DISTRACTOR",
+                "SCAFFOLD_DISABLE_DISTRACTOR",
+            }
+            and (command_type is None or not targets)
+            and supports_highlight
+            and correct_ids
+        ):
+            action = "SCAFFOLD_HIGHLIGHT_CORRECT"
+            command_type = "HIGHLIGHT_OPTIONS"
+            targets = correct_ids
+            reason = "DISTRACTOR_SUPPORT_EXHAUSTED_GUIDED_ATTENTION"
+
         # Defensive fallback: a malformed capability payload cannot make the
         # model remove the answer or leave too few visible options.
         if (
@@ -430,7 +460,7 @@ class PolicyEngine:
                 "style": style,
                 "reason_code": reason,
             })
-        if command_type == "REMOVE_OPTIONS":
+        if command_type in {"REMOVE_OPTIONS", "DISABLE_OPTIONS"}:
             unavailable.update(targets)
 
         state["removed_option_ids"] = sorted(unavailable)

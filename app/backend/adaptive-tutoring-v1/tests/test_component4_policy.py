@@ -203,7 +203,7 @@ def test_sequence_policy_reveals_the_next_required_token_on_each_retry():
     )
 
 
-def test_model_translator_preserves_minimum_visible_options():
+def test_model_translator_highlights_when_minimum_visible_options_is_reached():
     engine = PolicyEngine()
     state = {}
     action = engine.translate_model_support_action(
@@ -216,9 +216,97 @@ def test_model_translator_preserves_minimum_visible_options():
         available_incorrect_ids=["ITEM_O2"],
         adaptive_state=state,
     )
-    assert action["decision"] == "RETRY_CURRENT"
-    assert action["commands"] == []
+    assert action["decision"] == "SCAFFOLD_HIGHLIGHT_CORRECT"
+    assert action["commands"][0]["type"] == "HIGHLIGHT_OPTIONS"
+    assert action["commands"][0]["target_option_ids"] == ["ITEM_O1"]
+    assert action["highlight_correct"] is True
     assert state["generic_scaffold_state"]["removed_option_ids"] == []
+
+
+def test_model_translator_locks_at_most_two_memory_distractors_then_highlights():
+    engine = PolicyEngine()
+    state = {}
+    memory = telemetry(
+        supported_actions=["DISABLE_OPTION", "HIGHLIGHT_OPTION"],
+        visible_option_ids=[
+            "MEMORY_O1",
+            "MEMORY_O2",
+            "MEMORY_O3",
+            "MEMORY_O4",
+            "MEMORY_O5",
+        ],
+        correct_option_ids=["MEMORY_O1"],
+        minimum_visible_options=2,
+    )
+    distractors = ["MEMORY_O2", "MEMORY_O3", "MEMORY_O4", "MEMORY_O5"]
+
+    first = engine.translate_model_support_action(
+        action="SCAFFOLD_DISABLE_DISTRACTOR",
+        telemetry=memory,
+        available_incorrect_ids=distractors,
+        adaptive_state=state,
+    )
+    second = engine.translate_model_support_action(
+        action="SCAFFOLD_DISABLE_DISTRACTOR",
+        telemetry=memory,
+        available_incorrect_ids=distractors,
+        adaptive_state=state,
+    )
+    third = engine.translate_model_support_action(
+        action="SCAFFOLD_DISABLE_DISTRACTOR",
+        telemetry=memory,
+        available_incorrect_ids=distractors,
+        adaptive_state=state,
+    )
+
+    assert first["commands"][0]["type"] == "DISABLE_OPTIONS"
+    assert first["commands"][0]["target_option_ids"] == ["MEMORY_O2"]
+    assert second["commands"][0]["type"] == "DISABLE_OPTIONS"
+    assert second["commands"][0]["target_option_ids"] == ["MEMORY_O3"]
+    assert third["decision"] == "SCAFFOLD_HIGHLIGHT_CORRECT"
+    assert third["commands"][0]["type"] == "HIGHLIGHT_OPTIONS"
+    assert third["commands"][0]["target_option_ids"] == ["MEMORY_O1"]
+    assert state["generic_scaffold_state"]["removed_option_ids"] == [
+        "MEMORY_O2",
+        "MEMORY_O3",
+    ]
+
+
+def test_model_translator_removes_at_most_two_distractors_then_highlights():
+    engine = PolicyEngine()
+    state = {}
+    choice = telemetry(
+        supported_actions=["REMOVE_OPTION", "HIGHLIGHT_OPTION"],
+        visible_option_ids=["ITEM_O1", "ITEM_O2", "ITEM_O3", "ITEM_O4"],
+        correct_option_ids=["ITEM_O1"],
+        minimum_visible_options=2,
+    )
+    distractors = ["ITEM_O2", "ITEM_O3", "ITEM_O4"]
+
+    first = engine.translate_model_support_action(
+        action="SCAFFOLD_REMOVE_DISTRACTOR",
+        telemetry=choice,
+        available_incorrect_ids=distractors,
+        adaptive_state=state,
+    )
+    second = engine.translate_model_support_action(
+        action="SCAFFOLD_REMOVE_DISTRACTOR",
+        telemetry=choice,
+        available_incorrect_ids=distractors,
+        adaptive_state=state,
+    )
+    third = engine.translate_model_support_action(
+        action="SCAFFOLD_REMOVE_DISTRACTOR",
+        telemetry=choice,
+        available_incorrect_ids=distractors,
+        adaptive_state=state,
+    )
+
+    assert first["commands"][0]["target_option_ids"] == ["ITEM_O2"]
+    assert second["commands"][0]["target_option_ids"] == ["ITEM_O3"]
+    assert third["decision"] == "SCAFFOLD_HIGHLIGHT_CORRECT"
+    assert third["commands"][0]["type"] == "HIGHLIGHT_OPTIONS"
+    assert third["commands"][0]["target_option_ids"] == ["ITEM_O1"]
 
 
 def test_model_translator_emits_activity_specific_semantic_commands():
