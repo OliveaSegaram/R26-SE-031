@@ -23,12 +23,22 @@ the authored remediation/confirmation state machine.
    authored command/option IDs and applied. The translator protects targets,
    preserves two visible options, and safely falls back to retry when a model
    command cannot be rendered.
-7. Each later response closes an **immediate (proximal) outcome** for the most
-   recent scaffold. When the independent V2 equivalent confirmation is
-   completed, its first-attempt result is linked to every scaffold in that
-   support chain. The scaffolded click itself is never labelled as proof of
-   learning; abandoned chains remain unlinked/censored.
-8. Parent and specialist dashboards read the same stored evidence. The parent
+7. Skills 1 and 2 retain the core item's authored `V1`/`V2` fallback and a
+   reviewed local exact-target pool (`V3+`). An incorrect core unit can select
+   an easier remediation and an equivalent independent confirmation for that
+   same image, letter, word, or sequence token.
+8. The practice-item ranker is restricted to the failed core item's own
+   equivalent group before model ranking. It never generates child-facing
+   Sinhala content and never injects a remembered target into a later activity.
+9. Scaffold selection, BKT/IRT updates, telemetry, and local targeted
+   remediation/confirmation remain active. The removed feature is only the
+   cross-activity target-memory/repetition experiment.
+10. Each later response closes an **immediate (proximal) outcome** for the most
+   recent scaffold. When independent confirmation is completed, its
+   first-attempt result is linked to the support chain. The scaffolded click
+   itself is never labelled as proof of learning; abandoned chains remain
+   unlinked/censored.
+11. Parent and specialist dashboards read the same stored evidence. The parent
    dashboard shows the latest session **for each attempted activity** across
    Skills 1–4 and counts distinct sessions rather than database rows. Starting
    a new activity therefore does not hide earlier completed activities. Parents get
@@ -209,7 +219,7 @@ flowchart LR
   subgraph NOW[Default shadow deployment]
     A[Observed child response] --> B[BKT and Rasch learner state]
     B --> C[Tested deterministic scaffold policy]
-    C --> D[Applied scaffold plus authored V1/V2 tasks]
+    C --> D[Applied scaffold plus reviewed local practice tasks]
     B --> E[Synthetic-trained action model]
     E --> F[Shadow recommendation only]
     D --> G[Immediate and confirmation outcomes]
@@ -218,16 +228,19 @@ flowchart LR
   end
 
   subgraph DEMO[Implemented functional ML demonstration]
-    Q[Observed app context] --> R[Synthetic-trained action ranker]
+    Q[Observed response and exact error profile] --> R[Synthetic-trained scaffold ranker]
     R --> S{Task capability and safety translator}
-    S --> T[Model-selected replay / slow audio / remove / lock / highlight / reveal / worked example]
-    T --> U[Authored V1/V2 flow unchanged]
-    U --> V[(Explicit simulation evidence)]
+    S --> T[Safe rendered scaffold]
+    Q --> U[Synthetic-trained practice-item ranker]
+    U --> W{Same activity/KC/role/unseen gate}
+    W --> X[Targeted remediation then independent confirmation]
+    T --> V[(Explicit simulation evidence)]
+    X --> V
   end
 
   subgraph TARGET[Target after an approved observed cohort]
     I[Consented Grade 1 responses] --> J[Participant-level train/validation/test]
-    J --> K[Calibrated BKT/Rasch plus validated action model]
+    J --> K[Calibrated BKT/Rasch plus validated scaffold and practice models]
     K --> L{Safety and capability gate}
     L --> M[Approved scaffold command]
     M --> N[Authored unseen remediation/confirmation item]
@@ -251,3 +264,51 @@ Synthetic data may train and test the software pipeline, but it must never be
 relabeled as observed child data. Activation requires a registered model that
 passes the observed-cohort approval gate and an educator-reviewed command
 translator for every action it may apply.
+
+## Dynamic remediation and confirmation
+
+The scaffold action model and the practice-item model solve different
+problems:
+
+| Decision | Model input | Output | Safety boundary |
+|---|---|---|---|
+| Immediate scaffold | Attempts, timing, errors, mastery, fatigue and screen capabilities | One supported UI command such as replay, remove, reveal or worked example | The Flutter screen advertises and safely renders the command |
+| Next practice item | Diagnosed target, components, error tags, difficulty, exposure, micro-mastery and fatigue | One reviewed remediation or confirmation item | Same failed-core equivalent group first, then exact target and reviewed load; same activity/KC, correct role, active, unseen and non-duplicate |
+
+The practice selector artifact is
+`models/c4_practice_selector_v1.json`. Its logistic model was trained on a
+learner-group split of explicitly synthetic data. The artifact is usable for
+the functional `simulation_model` demonstration but remains blocked from
+ordinary observed-child control.
+
+Skills 1 and 2 contain reviewed local exact-target variants in addition to the
+general `V1`/`V2` fallback. The bank currently contains 126 such variants for
+Skill 1 and 94 for Skill 2. Each target has a remediation/confirmation pair,
+both remain in the originating core item's equivalent group, and confirmation
+changes answer placement where the screen supports it.
+
+Candidate safety is explicit and auditable: selection prefers the failed core
+group plus the diagnosed target; remediation uses the nearest reviewed lower
+load and confirmation restores the core load. If precise ATTEMPT evidence is
+unavailable, the system can safely fall back to the authored `V1`/`V2` pair.
+No struggled image, letter, word, or sentence is carried into a later activity.
+
+Reproduce the practice model:
+
+```bash
+app/backend/adaptive-tutoring-v1/venv/bin/python \
+  app/backend/adaptive-tutoring-v1/research/generate_synthetic_practice_data.py \
+  --output /tmp/c4_synthetic_practice_data.csv \
+  --learners 500 --decisions 20 --seed 26031
+
+app/backend/adaptive-tutoring-v1/venv/bin/python \
+  app/backend/adaptive-tutoring-v1/research/train_practice_selector.py \
+  --input /tmp/c4_synthetic_practice_data.csv \
+  --output app/backend/adaptive-tutoring-v1/models/c4_practice_selector_v1.json \
+  --seed 26031
+```
+
+The offline verifier reports scaffold action selection and practice selection
+separately. It checks all 220 Skill 1-2 exact-target variants, same-group scope,
+remediation/confirmation availability and difficulty constraints, while also
+reporting that cross-activity target memory is disabled.
