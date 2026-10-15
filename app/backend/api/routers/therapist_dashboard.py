@@ -184,6 +184,10 @@ async def get_therapist_c4_adaptive(student_id: str):
     execution_source = latest_policy.get(
         "execution_source", "deterministic_capability_policy"
     )
+    # The Skill 1-2 cross-activity target-memory experiment is retired. Keep
+    # the response field for API compatibility, but do not surface historical
+    # experimental rows as current therapist recommendations.
+    persistent_learning_needs = []
     return TherapistC4AdaptiveDTO(**mlbase(student_id,state,"BKT + Rasch + action-outcome shadow model","c4-v3"),
         knowledge_components=[dict(id=k,name=KC_NAMES.get(k,k),mastery=v) for k,x in (state.get("knowledge_state") or {}).items() if (v:=number(x)) is not None],
         theta=number(state.get("theta_estimate")), theta_se=number(state.get("theta_se")), updated_at_state=timestamp(state), history=timeline,
@@ -209,6 +213,7 @@ async def get_therapist_c4_adaptive(student_id: str):
             "outcome_first_attempt_correct", "outcome_response_quality", "outcome_item_id",
         )},
         support_effectiveness=sorted(effectiveness, key=lambda row: row["action"]),
+        persistent_learning_needs=persistent_learning_needs,
         data_quality={
             "decision_rows": len(history),
             "policy_rows": len(policy_rows),

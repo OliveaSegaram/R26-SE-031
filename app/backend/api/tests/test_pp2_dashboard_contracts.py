@@ -83,6 +83,24 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(dto.theta,-.2);self.assertIsNone(dto.theta_se);self.assertEqual(len(dto.history),20)
         self.assertIn('08-25',dto.history[-1].timestamp);self.assertIsNone(dto.history[-1].mastery_before)
         self.assertEqual(dto.history[-1].next_activity,'act_1')
+    def test_c4_does_not_surface_retired_transfer_experiment(self):
+        self.db.knowledge_states.rows=[{
+            'student_id':STUDENT,
+            'knowledge_state':{'KC_VISUAL_DISCRIMINATION':.5},
+            'cross_activity_target_profile':{
+                'elephant':{
+                    'status':'persistent','independent_failures':4,
+                    'activities':['1.1','1.2','1.3'],
+                    'last_failed_at':'2026-10-15T10:00:00Z',
+                },
+                'cat':{
+                    'status':'resolved','independent_failures':3,
+                    'activities':['1.1','1.2','1.3'],
+                },
+            },
+        }]
+        dto=self.call(therapist.get_therapist_c4_adaptive,STUDENT)
+        self.assertEqual(dto.persistent_learning_needs,[])
     def test_c4_policy_evidence_is_separated_for_parent_and_specialist(self):
         self.db.knowledge_states.rows=[{'student_id':STUDENT,'knowledge_state':{'KC_AKSHARA_IDENTITY':.55},'data_origin':'observed'}]
         self.db.adaptive_decisions.rows=[{

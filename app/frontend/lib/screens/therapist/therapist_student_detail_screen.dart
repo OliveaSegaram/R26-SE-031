@@ -1196,6 +1196,8 @@ class _TherapistStudentDetailScreenState
         <String, dynamic>{};
     final effectiveness =
         (_c4Adaptive?['support_effectiveness'] as List<dynamic>?) ?? [];
+    final persistentNeeds =
+        (_c4Adaptive?['persistent_learning_needs'] as List<dynamic>?) ?? [];
     final dataQuality =
         (_c4Adaptive?['data_quality'] as Map<String, dynamic>?) ??
         <String, dynamic>{};
@@ -1465,6 +1467,66 @@ class _TherapistStudentDetailScreenState
               );
             }),
             const SizedBox(height: 12),
+          ],
+
+          if (persistentNeeds.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              'Persistent learning needs',
+              style: AppTypography.heading(fontSize: 18),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              'Units that remain unresolved after bounded checks in different task contexts. This is instructional evidence, not a diagnosis.',
+              style: AppTypography.caption(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ...persistentNeeds.map((raw) {
+              final row = Map<String, dynamic>.from(raw as Map);
+              final activities = (row['activities'] as List? ?? const [])
+                  .map((value) => value.toString())
+                  .join(', ');
+              return Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.warmAmber.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.warmAmber.withValues(alpha: 0.32),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Target: ${row['unit'] ?? '—'}',
+                      style: AppTypography.heading(fontSize: 15),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      '${row['independent_failures'] ?? 0} failed opportunities • ${row['independent_success_contexts'] ?? 0}/2 independent success contexts • $activities',
+                      style: AppTypography.caption(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      row['recommendation']?.toString() ?? '',
+                      style: AppTypography.body(
+                        fontSize: 12,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
 
           if (dataQuality.isNotEmpty) ...[
