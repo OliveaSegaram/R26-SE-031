@@ -18,6 +18,7 @@ import 'widgets/pattern_carriage.dart';
 import 'widgets/pattern_answer_token.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
 import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
+import '../../../adaptive/utils/adaptive_option_order.dart';
 
 // ──────────────────────────────────────────────────────────────
 // Activity 02: Pattern Adventure
@@ -322,6 +323,7 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
             currentRound.correctAnswer,
           ),
           errorType: 'visual_pattern_error',
+          struggledTargetUnits: <String>[currentRound.correctAnswer],
         ).then((_) {
           if (mounted) setState(() {});
         }),
@@ -387,12 +389,27 @@ class _VisualAct4PatternAdventureState extends State<VisualAct4PatternAdventure>
     }
   }
 
-  PatternRound get _activeRound => PatternGenerator.fromCurriculum(
-    adaptiveRoundData(
+  PatternRound get _activeRound {
+    final data = adaptiveRoundData(
       activity: widget.activityNode,
       roundIndex: _currentRoundIndex,
-    ),
-  );
+    );
+    final round = PatternGenerator.fromCurriculum(data);
+    final itemId = adaptiveTaskCoordinator?.itemId ??
+        data['item_id']?.toString() ??
+        'S1A4R${_currentRoundIndex + 1}';
+    return PatternRound(
+      sequence: round.sequence,
+      missingIndex: round.missingIndex,
+      correctAnswer: round.correctAnswer,
+      options: AdaptiveOptionOrder.withTargets<String>(
+        source: round.options,
+        itemId: itemId,
+        isTarget: (value) => value == round.correctAnswer,
+      ),
+      difficulty: round.difficulty,
+    );
+  }
 
   void _finishActivity() {
     final wrapper = context.findAncestorStateOfType<TelemetryWrapperState>();
