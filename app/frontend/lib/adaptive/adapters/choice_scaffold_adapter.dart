@@ -153,6 +153,7 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
     required List<String> options,
     required int correctIndex,
     required String errorType,
+    List<String> struggledTargetUnits = const <String>[],
     List<String> additionalCapabilities = const <String>[],
   }) async {
     adaptiveChoices.markIncorrect(adaptiveOptionId(selectedIndex));
@@ -185,6 +186,7 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
         }.toList(),
         'minimum_visible_options': 2,
         'error_type': errorType,
+        'struggled_target_units': struggledTargetUnits,
       },
     );
     final report = wrapper.applyScaffoldResult<int>(
