@@ -13,6 +13,7 @@ import '../../../adaptive/controllers/adaptive_choice_controller.dart';
 import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import '../../../adaptive/widgets/adaptive_answer_pool.dart';
 import 'skill2_round_resolver.dart';
+import '../../../adaptive/utils/adaptive_option_order.dart';
 
 class Skill2Act1OddOneOut extends StatefulWidget {
   final ActivityNode? activityNode;
@@ -107,22 +108,27 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
         return item;
       }).toList();
 
-      // Shuffle the items for this round
-      items.shuffle(Random());
-      _shuffledItems = items;
-
       final targetLetter = _activeRoundData['target_letter']?.toString();
 
+      _shuffledItems = AdaptiveOptionOrder.withTargets<Map<String, dynamic>>(
+        source: items,
+        itemId: _currentItemId,
+        isTarget: (item) =>
+            item['is_target'] == true ||
+            (item['is_target'] == null && item['value'] == targetLetter),
+      );
+      final orderedItems = _shuffledItems;
+
       // Count targets (support both new 'is_target' boolean and old 'target_letter' string)
-      _targetCount = items.where((item) {
+      _targetCount = orderedItems.where((item) {
         if (item.containsKey('is_target')) {
           return item['is_target'] == true;
         }
         return item['value'] == targetLetter;
       }).length;
       _choiceController.configure(
-        List<AdaptiveOption<int>>.generate(items.length, (index) {
-          final item = items[index];
+        List<AdaptiveOption<int>>.generate(orderedItems.length, (index) {
+          final item = orderedItems[index];
           final isTarget =
               item['is_target'] == true ||
               (item['is_target'] == null && item['value'] == targetLetter);
@@ -313,6 +319,21 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
             .map(_optionId)
             .toList(),
         "selected_option_ids": _foundIndices.map(_optionId).toList(),
+        // A multi-target round is diagnosed one still-missing target at a
+        // time. This gives remediation a real Sinhala unit instead of an
+        // opaque option ID while avoiding an unsupported guess about targets
+        // the child has already found independently.
+        "struggled_target_units": List.generate(_shuffledItems.length, (i) => i)
+            .where((i) {
+              final item = _shuffledItems[i];
+              final target = _activeRoundData['target_letter']?.toString();
+              return !_foundIndices.contains(i) &&
+                  (item['is_target'] == true ||
+                      (item['is_target'] == null && item['value'] == target));
+            })
+            .map((i) => _shuffledItems[i]['value'].toString())
+            .take(1)
+            .toList(),
         "supported_actions": ["REMOVE_OPTION", "HIGHLIGHT_OPTION"],
         "minimum_visible_options": 2,
       };
