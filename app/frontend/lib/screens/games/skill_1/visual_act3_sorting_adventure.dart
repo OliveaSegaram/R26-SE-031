@@ -384,7 +384,10 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   // ── Game logic ──
 
   SortingRound get _currentRound =>
-      SortingGenerator.fromCurriculum(_taskCoordinator.roundData);
+      SortingGenerator.fromCurriculum(
+        _taskCoordinator.roundData,
+        itemId: _taskCoordinator.itemId,
+      );
 
   String? _workedExampleFor(String category, {required String excluding}) {
     final candidates = _workedExampleAssets[category] ?? const <String>[];
@@ -627,6 +630,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                     'SHOW_WORKED_EXAMPLE',
                   'REPLAY_INSTRUCTION',
                 ],
+                struggledTargetUnits: <String>[object],
                 errorType: 'categorization_error',
               )
               .then((plan) async {
