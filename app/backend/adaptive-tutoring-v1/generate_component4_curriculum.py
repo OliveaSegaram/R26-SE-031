@@ -53,6 +53,13 @@ FRUIT_ASSETS = [
     "fruits_food/watermelon.png",
 ]
 
+SKILL1_CATEGORY_ASSETS = {
+    "animals": [asset for asset in ASSETS if asset.startswith("animals/")],
+    "fruits": list(FRUIT_ASSETS),
+    "flowers": [asset for asset in ASSETS if asset.startswith("flowers/")],
+    "vehicles": [asset for asset in ASSETS if asset.startswith("vehicles/")],
+}
+
 SKILL1_ACTIVITY_KCS = {
     1: "KC_VISUAL_IDENTIFICATION",
     2: "KC_VISUAL_MATCHING",
@@ -93,6 +100,315 @@ def canonical(value: str) -> str:
     if not match:
         return value
     return f"S{match.group(1)}A{match.group(2)}R{int(match.group(3)):02d}{match.group(4) or ''}".upper()
+
+
+def targeted_letter_variant_content(
+    activity_number: int,
+    core: Dict[str, Any],
+    authored_variant: Dict[str, Any],
+    *,
+    confirmation: bool,
+) -> Dict[str, Any]:
+    """Create a reviewed-template task that retains the exact letter target.
+
+    Only Skill 2's letter-safe templates use this helper. It never substitutes
+    a word/sentence under an unrelated image. Word and sentence activities use
+    pooled educator-authored near-transfer tasks instead.
+    """
+    content = copy.deepcopy(authored_variant)
+    if activity_number == 1:
+        core_targets = [
+            str(item.get("value"))
+            for item in core.get("items", [])
+            if isinstance(item, dict) and item.get("is_target") is True
+        ]
+        if not core_targets:
+            return content
+        target_index = 0
+        distractor_index = 0
+        distractor_letters = [
+            letter for _, pool in LETTER_SETS for letter in pool
+            if letter not in core_targets
+        ]
+        if confirmation and distractor_letters:
+            distractor_letters = distractor_letters[5:] + distractor_letters[:5]
+        for item in content.get("items", []):
+            if isinstance(item, dict) and item.get("is_target") is True:
+                item["value"] = core_targets[target_index % len(core_targets)]
+                target_index += 1
+            elif (
+                isinstance(item, dict)
+                and item.get("type") == "letter"
+                and distractor_letters
+            ):
+                item["value"] = distractor_letters[
+                    distractor_index % len(distractor_letters)
+                ]
+                distractor_index += 1
+        displayed_targets = core_targets[:max(1, target_index)]
+        content["prompt"] = skill2_activity1_prompt(displayed_targets)
+        return content
+
+    if activity_number == 2:
+        letters = list(core.get("letters") or [])
+        if not letters:
+            return content
+        if confirmation:
+            content["letters"] = list(reversed(letters))
+        else:
+            desired = max(2, min(len(letters), len(content.get("letters") or letters)))
+            content["letters"] = letters[:desired]
+        return content
+
+    if activity_number == 3:
+        target = str(core.get("correctOption") or core.get("audio_text") or "")
+        if not target:
+            return content
+        old_target = str(content.get("correctOption") or "")
+        desired_count = len(content.get("options") or [])
+        options = []
+        for option in content.get("options") or []:
+            value = target if str(option) == old_target else str(option)
+            if value not in options:
+                options.append(value)
+        fallback_letters = [
+            letter for _, pool in LETTER_SETS for letter in pool
+            if letter != target
+        ]
+        for letter in fallback_letters:
+            if letter not in options:
+                options.append(letter)
+            if len(options) >= desired_count:
+                break
+        options = options[:desired_count]
+        if target not in options:
+            options[-1 if options else 0] = target
+        content["options"] = options
+        content["correctOption"] = target
+        content["correct_index"] = options.index(target)
+        content["audio_text"] = target
+        # Keep the visible question identical to the reviewed core task. The
+        # screen derives the spoken target from audio_text, so targeted
+        # practice must not expose the answer in the question card.
+        content["prompt"] = str(
+            core.get("prompt") or "ශබ්දයට සවන් දී අකුර තෝරන්න"
+        )
+        return content
+
+    return content
+
+
+def _reviewed_asset_fill(
+    *,
+    count: int,
+    required: List[str],
+    excluded: List[str],
+    seed: int,
+    pool: List[str] | None = None,
+) -> List[str]:
+    """Return a deterministic reviewed asset set containing every requirement."""
+    result: List[str] = []
+    for asset in required:
+        if asset and asset not in result:
+            result.append(asset)
+    candidates = list(pool or ASSETS)
+    ordered = rotate(candidates, seed, len(candidates))
+    for asset in [*ordered, *candidates]:
+        if asset in result or asset in excluded:
+            continue
+        result.append(asset)
+        if len(result) >= count:
+            return result[:count]
+    for asset in candidates:
+        if asset not in result:
+            result.append(asset)
+        if len(result) >= count:
+            break
+    return result[:count]
+
+
+def _targeted_pattern_content(
+    base: Dict[str, Any],
+    target: str,
+    *,
+    seed: int,
+) -> Dict[str, Any]:
+    content = copy.deepcopy(base)
+    sequence = list(content.get("sequence") or [])
+    old_correct = str(content.get("correct_answer") or "")
+    symbols: List[str] = []
+    for value in sequence:
+        if value is not None and str(value) not in symbols:
+            symbols.append(str(value))
+    mapping = {old_correct: target}
+    fillers = _reviewed_asset_fill(
+        count=max(0, len(symbols) - 1),
+        required=[],
+        excluded=[target],
+        seed=seed,
+    )
+    filler_index = 0
+    for symbol in symbols:
+        if symbol == old_correct:
+            continue
+        mapping[symbol] = fillers[filler_index]
+        filler_index += 1
+    content["sequence"] = [
+        mapping.get(str(value), value) if value is not None else None
+        for value in sequence
+    ]
+    content["correct_answer"] = target
+    option_count = len(content.get("options") or [])
+    content["options"] = _reviewed_asset_fill(
+        count=option_count,
+        required=[target],
+        excluded=[value for value in mapping.values() if value != target],
+        seed=seed + 7,
+    )
+    content["targeted_unit"] = target
+    return content
+
+
+def targeted_skill1_variant_contents(
+    activity_number: int,
+    core: Dict[str, Any],
+    remediation_base: Dict[str, Any],
+    confirmation_base: Dict[str, Any],
+    *,
+    seed: int,
+) -> List[tuple[str, Dict[str, Any], Dict[str, Any]]]:
+    """Build exact-target Skill 1 practice from reviewed task structures.
+
+    Each returned tuple is one diagnosed visual unit plus a lower-load
+    remediation and an equivalent-load independent confirmation. No runtime
+    task generation is required and every image comes from the reviewed bank.
+    """
+    results: List[tuple[str, Dict[str, Any], Dict[str, Any]]] = []
+
+    if activity_number == 1:
+        for target_index, target in enumerate(core.get("targets") or []):
+            target = str(target)
+            pair: List[Dict[str, Any]] = []
+            for offset, base in enumerate((remediation_base, confirmation_base)):
+                content = copy.deepcopy(base)
+                distractor_count = int(content.get("distractor_count", 1))
+                content["targets"] = [target]
+                content["distractors"] = _reviewed_asset_fill(
+                    count=distractor_count,
+                    required=[],
+                    excluded=[target],
+                    seed=seed + target_index * 13 + offset * 5,
+                )
+                content["distractor_count"] = len(content["distractors"])
+                content["instruction"] = (
+                    f"{ASSET_NAMES.get(target, 'පින්තූරය')} සොයන්න!"
+                )
+                content["targeted_unit"] = target
+                pair.append(content)
+            results.append((target, pair[0], pair[1]))
+        return results
+
+    if activity_number == 2:
+        core_assets = list(core.get("target_assets") or [])
+        for target_index, raw_target in enumerate(core_assets):
+            target = str(raw_target)
+            pair = []
+            for offset, base in enumerate((remediation_base, confirmation_base)):
+                content = copy.deepcopy(base)
+                desired = len(content.get("target_assets") or [])
+                content["target_assets"] = _reviewed_asset_fill(
+                    count=desired,
+                    required=[target],
+                    excluded=[asset for asset in core_assets if asset != target],
+                    seed=seed + target_index * 17 + offset * 7,
+                )
+                content["targeted_unit"] = target
+                pair.append(content)
+            results.append((target, pair[0], pair[1]))
+        return results
+
+    if activity_number == 3:
+        core_categories = core.get("categories") or {}
+        all_core_assets = [
+            str(asset)
+            for assets in core_categories.values()
+            for asset in assets
+        ]
+        target_index = 0
+        for target_category, assets in core_categories.items():
+            for raw_target in assets:
+                target = str(raw_target)
+                pair = []
+                for offset, base in enumerate(
+                    (remediation_base, confirmation_base)
+                ):
+                    content = copy.deepcopy(base)
+                    base_categories = content.get("categories") or {}
+                    targeted_categories: Dict[str, List[str]] = {}
+                    for category, core_values in core_categories.items():
+                        desired = max(
+                            1,
+                            len(
+                                base_categories.get(category)
+                                or core_values
+                            ),
+                        )
+                        required = [target] if category == target_category else []
+                        targeted_categories[category] = _reviewed_asset_fill(
+                            count=desired,
+                            required=required,
+                            excluded=[
+                                asset for asset in all_core_assets
+                                if asset != target
+                            ],
+                            seed=(
+                                seed
+                                + target_index * 19
+                                + offset * 7
+                                + list(core_categories).index(category) * 3
+                            ),
+                            pool=SKILL1_CATEGORY_ASSETS.get(category, ASSETS),
+                        )
+                    content["categories"] = targeted_categories
+                    content["targeted_unit"] = target
+                    content["targeted_category"] = target_category
+                    pair.append(content)
+                results.append((target, pair[0], pair[1]))
+                target_index += 1
+        return results
+
+    if activity_number == 4:
+        target = str(core.get("correct_answer") or "")
+        if target:
+            results.append((
+                target,
+                _targeted_pattern_content(remediation_base, target, seed=seed),
+                _targeted_pattern_content(
+                    confirmation_base, target, seed=seed + 11
+                ),
+            ))
+        return results
+
+    if activity_number == 5:
+        target = str(core.get("target_asset") or "")
+        if not target:
+            return results
+        core_assets = list(core.get("assets") or [])
+        pair = []
+        for offset, base in enumerate((remediation_base, confirmation_base)):
+            content = copy.deepcopy(base)
+            desired = len(content.get("assets") or [])
+            content["assets"] = _reviewed_asset_fill(
+                count=desired,
+                required=[target],
+                excluded=[asset for asset in core_assets if asset != target],
+                seed=seed + offset * 13,
+            )
+            content["target_asset"] = target
+            content["targeted_unit"] = target
+            pair.append(content)
+        results.append((target, pair[0], pair[1]))
+    return results
 
 
 def skill2_activity1_prompt(targets: List[str]) -> str:
@@ -338,6 +654,99 @@ SKILL2_ACTIVITY5_VARIANTS = [
 ]
 
 
+# Exact-target near-transfer tasks for Activity 4. Remediation retains the
+# diagnosed boundary letter while reducing the word/pilla/answer-pool load;
+# confirmation retains it at the origin round's load in a different familiar
+# word. R5 is split by boundary because its UI can diagnose the next missing
+# boundary (first, then last).
+SKILL2_ACTIVITY4_TARGETED_VARIANTS = {
+    (1, "අ"): (
+        ("අඹ", ["අ", "ඹ"], 0, "first", ["අ", "ම"]),
+        ("අල", ["අ", "ල"], 0, "first", ["ය", "අ"]),
+    ),
+    (2, "ම"): (
+        ("මග", ["ම", "ග"], 0, "first", ["ම", "න"]),
+        ("මඩ", ["ම", "ඩ"], 0, "first", ["ය", "ම", "ර"]),
+    ),
+    (3, "ත"): (
+        ("තල", ["ත", "ල"], 0, "first", ["ත", "න", "ල"]),
+        ("සිත", ["සි", "ත"], 1, "last", ["සි", "ව", "ත"]),
+    ),
+    (4, "ස"): (
+        ("පස", ["ප", "ස"], 0, "last", ["ප", "ය", "ස"]),
+        ("දවස", ["ද", "ව", "ස"], 0, "last", ["ද", "ව", "ය", "ස"]),
+    ),
+    (5, "බ"): (
+        ("බලය", ["බ", "ල", "ය"], 0, "first", ["බ", "ම", "ඔ", "ය"]),
+        ("බළලා", ["බ", "ළ", "ලා"], 1, "first", ["ම", "ලා", "ඩ", "බ", "ඔ", "ය"]),
+    ),
+    (5, "ලා"): (
+        ("නටලා", ["න", "ට", "ලා"], 1, "last", ["න", "ම", "ඔ", "ලා"]),
+        ("දුවලා", ["දු", "ව", "ලා"], 2, "last", ["ම", "ලා", "ඩ", "දු", "ඔ", "ය"]),
+    ),
+}
+
+
+# Exact-token near-transfer tasks for Activity 5. Each pair contains the token
+# that was expected at the moment of the sequence error. Remediation reduces
+# surrounding complexity and/or increases exposure; confirmation restores the
+# core load with a different meaningful word.
+SKILL2_ACTIVITY5_TARGETED_VARIANTS = {
+    (1, "ර"): (
+        ("ඉර", ["ඉ", "ර"], 0, ["ඉ", "ර", "ක"], 8),
+        ("රස", ["ර", "ස"], 0, ["ර", "ස", "ප"], 6),
+    ),
+    (1, "ට"): (
+        ("අට", ["අ", "ට"], 0, ["අ", "ට", "ක"], 8),
+        ("කට", ["ක", "ට"], 0, ["ක", "ට", "ම"], 6),
+    ),
+    (2, "ම"): (
+        ("මල", ["ම", "ල"], 0, ["ම", "ල", "ක"], 7),
+        ("මගේ", ["ම", "ගේ"], 1, ["ම", "ගේ", "ත"], 5),
+    ),
+    (2, "ල්"): (
+        ("ගල්", ["ග", "ල්"], 1, ["ග", "ල්", "ත"], 7),
+        ("කල්", ["ක", "ල්"], 1, ["ක", "ල්", "ම"], 5),
+    ),
+    (3, "ග"): (
+        ("ගස", ["ග", "ස"], 0, ["ග", "ස", "ක"], 7),
+        ("ගමට", ["ග", "ම", "ට"], 0, ["ග", "ම", "ට", "ව"], 5),
+    ),
+    (3, "ම"): (
+        ("මල", ["ම", "ල"], 0, ["ම", "ල", "ක"], 7),
+        ("මමද", ["ම", "ම", "ද"], 0, ["ම", "ද", "ක", "න"], 5),
+    ),
+    (3, "න"): (
+        ("නල", ["න", "ල"], 0, ["න", "ල", "ක"], 7),
+        ("නවය", ["න", "ව", "ය"], 0, ["න", "ව", "ය", "ම"], 5),
+    ),
+    (4, "ග"): (
+        ("ගමට", ["ග", "ම", "ට"], 0, ["ග", "ම", "ට", "ව"], 6),
+        ("ගලක්", ["ග", "ල", "ක්"], 1, ["ග", "ල", "ක්", "ට්"], 4),
+    ),
+    (4, "ස"): (
+        ("සරම", ["ස", "ර", "ම"], 0, ["ස", "ර", "ම", "ක"], 6),
+        ("සතක්", ["ස", "ත", "ක්"], 1, ["ස", "ත", "ක්", "ට්"], 4),
+    ),
+    (4, "ක්"): (
+        ("අතක්", ["අ", "ත", "ක්"], 1, ["අ", "ත", "ක්", "ම"], 6),
+        ("මලක්", ["ම", "ල", "ක්"], 1, ["ම", "ල", "ක්", "ට්"], 4),
+    ),
+    (5, "මි"): (
+        ("මිල", ["මි", "ල"], 1, ["මි", "ල", "ක"], 6),
+        ("මිනිසා", ["මි", "නි", "සා"], 3, ["මි", "නි", "සා", "වි"], 4),
+    ),
+    (5, "හි"): (
+        ("හිම", ["හි", "ම"], 1, ["හි", "ම", "ක"], 6),
+        ("හිතුවා", ["හි", "තු", "වා"], 3, ["හි", "තු", "වා", "රි"], 4),
+    ),
+    (5, "රි"): (
+        ("රිය", ["රි", "ය"], 1, ["රි", "ය", "ක"], 6),
+        ("රිළවා", ["රි", "ළ", "වා"], 2, ["රි", "ළ", "වා", "මි"], 4),
+    ),
+}
+
+
 def skill2_activity5_content(spec) -> Dict[str, Any]:
     word, pattern, pilla_count, options, show_seconds = spec
     return {
@@ -373,6 +782,143 @@ def skill2_activity4_content(spec) -> Dict[str, Any]:
             "correct_index": options.index(target),
         })
     return content
+
+
+SKILL2_SIMPLE_BASE_UNITS = [
+    "අ", "ඉ", "ක", "ග", "ත", "ද", "න", "ප", "බ", "ම", "ය", "ර", "ල", "ව", "ස", "හ", "ට",
+]
+SKILL2_SIMPLE_PILLA_UNITS = [
+    "කා", "ගි", "ටු", "පා", "බි", "මු", "ලි", "දු", "නා", "සු",
+]
+
+
+def _has_pillam(value: str) -> bool:
+    return any(unicodedata.category(char).startswith("M") for char in value)
+
+
+def _sinhala_letter_bases(value: str) -> set[str]:
+    return {
+        char
+        for char in value
+        if "SINHALA LETTER" in unicodedata.name(char, "")
+    }
+
+
+def _skill2_activity2_target_content(
+    *,
+    target: str,
+    base: Dict[str, Any],
+    core: Dict[str, Any],
+    confirmation: bool,
+    seed: int,
+) -> Dict[str, Any]:
+    """Keep one failed grapheme while lowering/restoring its context load.
+
+    A pilla-bearing target is never simplified into another grapheme: the
+    remediation still contains that exact form (for example `කා`) but pairs it
+    with fewer and simpler unmodified letters. This is the distinction between
+    *target difficulty* and the *surrounding task load* requested by the study.
+    """
+    count = max(2, len(base.get("letters") or []))
+    core_letters = [str(value) for value in core.get("letters") or []]
+    desired_pilla_count = (
+        sum(1 for value in core_letters if _has_pillam(value))
+        if confirmation
+        else int(_has_pillam(target))
+    )
+    letters = [target]
+    pillam_needed = max(0, desired_pilla_count - int(_has_pillam(target)))
+    target_bases = _sinhala_letter_bases(target)
+    pilla_pool = rotate(
+        [
+            value
+            for value in SKILL2_SIMPLE_PILLA_UNITS
+            if value != target
+            and not target_bases.intersection(_sinhala_letter_bases(value))
+        ],
+        seed + 3,
+        len(SKILL2_SIMPLE_PILLA_UNITS),
+    )
+    base_pool = rotate(
+        [
+            value
+            for value in SKILL2_SIMPLE_BASE_UNITS
+            if value != target
+            and not target_bases.intersection(_sinhala_letter_bases(value))
+        ],
+        seed + 7,
+        len(SKILL2_SIMPLE_BASE_UNITS),
+    )
+    for value in [*pilla_pool[:pillam_needed], *base_pool, *pilla_pool]:
+        if value not in letters:
+            letters.append(value)
+        if len(letters) >= count:
+            break
+    # Change target position without changing content so confirmation cannot
+    # be solved by remembering where the target appeared in remediation.
+    if confirmation and len(letters) > 1:
+        letters = [*letters[1:], letters[0]]
+    return {"letters": letters[:count], "targeted_unit": target}
+
+
+def targeted_skill2_variant_contents(
+    activity_number: int,
+    round_number: int,
+    core: Dict[str, Any],
+    remediation_base: Dict[str, Any],
+    confirmation_base: Dict[str, Any],
+    *,
+    seed: int,
+) -> List[tuple[str, Dict[str, Any], Dict[str, Any]]]:
+    """Return educator-authored exact-target pairs for Skill 2 A2/A4/A5."""
+    results: List[tuple[str, Dict[str, Any], Dict[str, Any]]] = []
+    if activity_number == 2:
+        for index, raw_target in enumerate(dict.fromkeys(core.get("letters") or [])):
+            target = str(raw_target)
+            results.append((
+                target,
+                _skill2_activity2_target_content(
+                    target=target,
+                    base=remediation_base,
+                    core=core,
+                    confirmation=False,
+                    seed=seed + index * 17,
+                ),
+                _skill2_activity2_target_content(
+                    target=target,
+                    base=confirmation_base,
+                    core=core,
+                    confirmation=True,
+                    seed=seed + index * 17 + 9,
+                ),
+            ))
+        return results
+
+    if activity_number == 4:
+        for (mapped_round, target), pair in (
+            SKILL2_ACTIVITY4_TARGETED_VARIANTS.items()
+        ):
+            if mapped_round != round_number:
+                continue
+            remediation = skill2_activity4_content(pair[0])
+            confirmation = skill2_activity4_content(pair[1])
+            remediation["targeted_unit"] = target
+            confirmation["targeted_unit"] = target
+            results.append((target, remediation, confirmation))
+        return results
+
+    if activity_number == 5:
+        for (mapped_round, target), pair in (
+            SKILL2_ACTIVITY5_TARGETED_VARIANTS.items()
+        ):
+            if mapped_round != round_number:
+                continue
+            remediation = skill2_activity5_content(pair[0])
+            confirmation = skill2_activity5_content(pair[1])
+            remediation["targeted_unit"] = target
+            confirmation["targeted_unit"] = target
+            results.append((target, remediation, confirmation))
+    return results
 
 WORD_PARTS = [
     (["අ", "ත"], "අත"), (["ග", "ස"], "ගස"), (["ඉ", "ර"], "ඉර"),
@@ -1607,7 +2153,7 @@ def build() -> None:
                 item_id = canonical(round_data.get("item_id") or f"S{skill}A{activity_number}R{round_index:02d}")
                 round_data["item_id"] = item_id
                 round_data["item_version"] = (
-                    6
+                    7
                     if skill == 2 and activity_number == 4
                     else 3
                     if skill == 2 and activity_number == 5
@@ -1644,6 +2190,7 @@ def build() -> None:
                     round_data["difficulty_features"] = (
                         skill3_difficulty_features(activity_number, round_data)
                     )
+                core_content = round_data.get("content") or round_data
                 variants = []
                 has_reduced_remediation = False
                 for variant_number, role in ((1, "REMEDIATION"), (2, "CONFIRMATION")):
@@ -1681,7 +2228,7 @@ def build() -> None:
                         # evidence. Other Skill 3 activities retain version 9.
                         "item_version": (
                             5 if skill == 2 and activity_number == 1
-                            else 6 if skill == 2 and activity_number == 4
+                            else 7 if skill == 2 and activity_number == 4
                             else 3 if skill == 2 and activity_number == 5
                             else 3 if skill == 2 and activity_number in {2, 3}
                             else 10
@@ -1843,6 +2390,126 @@ def build() -> None:
                             )
                         )
                     variants.append(variant_record)
+
+                # Skills 1-2 retain two *local* exact-target items for each
+                # diagnosed core-task unit: an easier remediation item and an
+                # equivalent independent confirmation item. These variants do
+                # not carry a target into another activity; they stay inside
+                # this core item's equivalent group.
+                if skill == 1 and activity_number in {1, 2, 3, 4, 5}:
+                    targeted_pairs = targeted_skill1_variant_contents(
+                        activity_number,
+                        core_content,
+                        variants[0]["content"],
+                        variants[1]["content"],
+                        seed=skill * 10000 + activity_number * 100 + round_index,
+                    )
+                    next_variant_number = 3
+                    for targeted_unit, remediation, confirmation in targeted_pairs:
+                        for role, base_variant, targeted_content in (
+                            ("REMEDIATION", variants[0], remediation),
+                            ("CONFIRMATION", variants[1], confirmation),
+                        ):
+                            variants.append({
+                                "variant_id": f"V{next_variant_number}",
+                                "item_id": f"{item_id}V{next_variant_number}",
+                                "item_version": round_data["item_version"],
+                                "item_role": role,
+                                "difficulty_b": base_variant["difficulty_b"],
+                                "difficulty_label": base_variant["difficulty_label"],
+                                "response_load_relation": (
+                                    "targeted_reduced"
+                                    if role == "REMEDIATION"
+                                    else "targeted_equivalent"
+                                ),
+                                "targeted_practice": True,
+                                "target_source_item_id": item_id,
+                                "targeted_unit": targeted_unit,
+                                "content": targeted_content,
+                            })
+                            next_variant_number += 1
+
+                if skill == 2 and activity_number in {1, 3}:
+                    for variant_number, role, base_variant, confirmation in (
+                        (3, "REMEDIATION", variants[0], False),
+                        (4, "CONFIRMATION", variants[1], True),
+                    ):
+                        targeted_content = targeted_letter_variant_content(
+                            activity_number,
+                            core_content,
+                            base_variant["content"],
+                            confirmation=confirmation,
+                        )
+                        targeted_record = {
+                            "variant_id": f"V{variant_number}",
+                            "item_id": f"{item_id}V{variant_number}",
+                            "item_version": base_variant["item_version"],
+                            "item_role": role,
+                            "difficulty_b": base_variant["difficulty_b"],
+                            "difficulty_label": base_variant["difficulty_label"],
+                            "response_load_relation": (
+                                "targeted_reduced"
+                                if role == "REMEDIATION"
+                                else "targeted_equivalent"
+                            ),
+                            "targeted_practice": True,
+                            "target_source_item_id": item_id,
+                            "content": targeted_content,
+                        }
+                        if activity_number == 3:
+                            targeted_record["distractor_strategy"] = (
+                                base_variant.get("distractor_strategy")
+                            )
+                        variants.append(targeted_record)
+
+                if skill == 2 and activity_number in {2, 4, 5}:
+                    targeted_pairs = targeted_skill2_variant_contents(
+                        activity_number,
+                        round_index,
+                        core_content,
+                        variants[0]["content"],
+                        variants[1]["content"],
+                        seed=skill * 10000 + activity_number * 100 + round_index,
+                    )
+                    next_variant_number = 3
+                    for targeted_unit, remediation, confirmation in targeted_pairs:
+                        for role, base_variant, targeted_content in (
+                            ("REMEDIATION", variants[0], remediation),
+                            ("CONFIRMATION", variants[1], confirmation),
+                        ):
+                            targeted_record = {
+                                "variant_id": f"V{next_variant_number}",
+                                "item_id": f"{item_id}V{next_variant_number}",
+                                "item_version": base_variant["item_version"],
+                                "item_role": role,
+                                "difficulty_b": base_variant["difficulty_b"],
+                                "difficulty_label": base_variant["difficulty_label"],
+                                "response_load_relation": (
+                                    "targeted_reduced"
+                                    if role == "REMEDIATION"
+                                    else "targeted_equivalent"
+                                ),
+                                "targeted_practice": True,
+                                "target_source_item_id": item_id,
+                                "targeted_unit": targeted_unit,
+                                "content": targeted_content,
+                            }
+                            if activity_number == 4:
+                                targeted_record["difficulty_features"] = {
+                                    "word_unit_count": len(targeted_content["word_units"]),
+                                    "pilla_count": targeted_content["pilla_count"],
+                                    "answer_pool_size": len(targeted_content["options"]),
+                                    "target_position": targeted_content["target_position"],
+                                }
+                            elif activity_number == 5:
+                                targeted_record["difficulty_features"] = {
+                                    "pattern_length": len(targeted_content["pattern"]),
+                                    "pilla_count": targeted_content["pilla_count"],
+                                    "answer_pool_size": len(targeted_content["options"]),
+                                    "show_seconds": targeted_content["show_seconds"],
+                                }
+                            variants.append(targeted_record)
+                            next_variant_number += 1
                 round_data["has_reduced_remediation"] = has_reduced_remediation
                 if (
                     (skill == 2 and activity_number == 4)

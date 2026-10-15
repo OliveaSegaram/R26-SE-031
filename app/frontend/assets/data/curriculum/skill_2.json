@@ -107,6 +107,73 @@
                     }
                   ]
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A1R01V3",
+                "item_version": 5,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R01",
+                "content": {
+                  "prompt": "'අ' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/animals/cat.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/animals/dog.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "අ",
+                      "is_target": true
+                    }
+                  ]
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A1R01V4",
+                "item_version": 5,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R01",
+                "content": {
+                  "prompt": "'අ' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/animals/rabbit.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/fruits_food/banana.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/fruits_food/orange.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "අ",
+                      "is_target": true
+                    }
+                  ]
+                }
               }
             ],
             "item_id": "S2A1R01",
@@ -210,6 +277,78 @@
                     {
                       "type": "letter",
                       "value": "ල",
+                      "is_target": true
+                    }
+                  ]
+                }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A1R02V3",
+                "item_version": 5,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R02",
+                "content": {
+                  "prompt": "'ම' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/everyday_objects/balloon.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/everyday_objects/book.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/vehicles/bus.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ම",
+                      "is_target": true
+                    }
+                  ]
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A1R02V4",
+                "item_version": 5,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R02",
+                "content": {
+                  "prompt": "'ම' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/vehicles/boat.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/nature/sun.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "න",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ම",
                       "is_target": true
                     }
                   ]
@@ -321,6 +460,78 @@
                     }
                   ]
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A1R03V3",
+                "item_version": 5,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R03",
+                "content": {
+                  "prompt": "'ර' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/animals/cat.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/animals/dog.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ත",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ර",
+                      "is_target": true
+                    }
+                  ]
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A1R03V4",
+                "item_version": 5,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R03",
+                "content": {
+                  "prompt": "'ර' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/animals/rabbit.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "න",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ග",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ර",
+                      "is_target": true
+                    }
+                  ]
+                }
               }
             ],
             "item_id": "S2A1R03",
@@ -424,6 +635,78 @@
                     {
                       "type": "letter",
                       "value": "බ",
+                      "is_target": true
+                    }
+                  ]
+                }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A1R04V3",
+                "item_version": 5,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R04",
+                "content": {
+                  "prompt": "'ඳ' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "icon",
+                      "value": "assets/images/activity_icons/everyday_objects/balloon.png",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ත",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ව",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ඳ",
+                      "is_target": true
+                    }
+                  ]
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A1R04V4",
+                "item_version": 5,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R04",
+                "content": {
+                  "prompt": "'ඳ' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "letter",
+                      "value": "න",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ග",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ර",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ඳ",
                       "is_target": true
                     }
                   ]
@@ -551,6 +834,88 @@
                     {
                       "type": "letter",
                       "value": "උ",
+                      "is_target": true
+                    }
+                  ]
+                }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A1R05V3",
+                "item_version": 5,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R05",
+                "content": {
+                  "prompt": "'ධ' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "letter",
+                      "value": "ත",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ව",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ය",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ධ",
+                      "is_target": true
+                    }
+                  ]
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A1R05V4",
+                "item_version": 5,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R05",
+                "content": {
+                  "prompt": "'ධ' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "letter",
+                      "value": "න",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ග",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ර",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "බ",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ම",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ධ",
                       "is_target": true
                     }
                   ]
@@ -692,6 +1057,98 @@
                     }
                   ]
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A1R06V3",
+                "item_version": 5,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R06",
+                "content": {
+                  "prompt": "'ට' අකුර සොයන්න.",
+                  "items": [
+                    {
+                      "type": "letter",
+                      "value": "ත",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ව",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ය",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ක",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ද",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ට",
+                      "is_target": true
+                    }
+                  ]
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A1R06V4",
+                "item_version": 5,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R06",
+                "content": {
+                  "prompt": "'ට' අකුරු දෙක සොයන්න.",
+                  "items": [
+                    {
+                      "type": "letter",
+                      "value": "න",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ග",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ර",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "බ",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ට",
+                      "is_target": true
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ට",
+                      "is_target": true
+                    }
+                  ]
+                }
               }
             ],
             "item_id": "S2A1R06",
@@ -829,6 +1286,98 @@
                     }
                   ]
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A1R07V3",
+                "item_version": 5,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R07",
+                "content": {
+                  "prompt": "'අ' සහ 'ආ' අකුරු සොයන්න.",
+                  "items": [
+                    {
+                      "type": "letter",
+                      "value": "ත",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ව",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ය",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ක",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "අ",
+                      "is_target": true
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ආ",
+                      "is_target": true
+                    }
+                  ]
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A1R07V4",
+                "item_version": 5,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A1R07",
+                "content": {
+                  "prompt": "'අ' සහ 'ආ' අකුරු සොයන්න.",
+                  "items": [
+                    {
+                      "type": "letter",
+                      "value": "න",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ග",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ර",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "බ",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "අ",
+                      "is_target": true
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ආ",
+                      "is_target": true
+                    }
+                  ]
+                }
               }
             ],
             "item_id": "S2A1R07",
@@ -897,6 +1446,82 @@
                     "ර"
                   ]
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A2R01V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R01",
+                "targeted_unit": "ක",
+                "content": {
+                  "letters": [
+                    "ක",
+                    "අ"
+                  ],
+                  "targeted_unit": "ක"
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A2R01V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R01",
+                "targeted_unit": "ක",
+                "content": {
+                  "letters": [
+                    "ය",
+                    "ක"
+                  ],
+                  "targeted_unit": "ක"
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A2R01V5",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R01",
+                "targeted_unit": "ම",
+                "content": {
+                  "letters": [
+                    "ම",
+                    "ඉ"
+                  ],
+                  "targeted_unit": "ම"
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A2R01V6",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R01",
+                "targeted_unit": "ම",
+                "content": {
+                  "letters": [
+                    "ර",
+                    "ම"
+                  ],
+                  "targeted_unit": "ම"
+                }
               }
             ],
             "item_id": "S2A2R01",
@@ -946,6 +1571,82 @@
                     "ලා",
                     "න"
                   ]
+                }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A2R02V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R02",
+                "targeted_unit": "කා",
+                "content": {
+                  "letters": [
+                    "කා",
+                    "ඉ"
+                  ],
+                  "targeted_unit": "කා"
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A2R02V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R02",
+                "targeted_unit": "කා",
+                "content": {
+                  "letters": [
+                    "ර",
+                    "කා"
+                  ],
+                  "targeted_unit": "කා"
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A2R02V5",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R02",
+                "targeted_unit": "ම",
+                "content": {
+                  "letters": [
+                    "ම",
+                    "ක"
+                  ],
+                  "targeted_unit": "ම"
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A2R02V6",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R02",
+                "targeted_unit": "ම",
+                "content": {
+                  "letters": [
+                    "සු",
+                    "ම"
+                  ],
+                  "targeted_unit": "ම"
                 }
               }
             ],
@@ -998,6 +1699,123 @@
                     "මු",
                     "ය"
                   ]
+                }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A2R03V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R03",
+                "targeted_unit": "ග",
+                "content": {
+                  "letters": [
+                    "ග",
+                    "ක"
+                  ],
+                  "targeted_unit": "ග"
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A2R03V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R03",
+                "targeted_unit": "ග",
+                "content": {
+                  "letters": [
+                    "ටු",
+                    "ල",
+                    "ග"
+                  ],
+                  "targeted_unit": "ග"
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A2R03V5",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R03",
+                "targeted_unit": "ටු",
+                "content": {
+                  "letters": [
+                    "ටු",
+                    "ග"
+                  ],
+                  "targeted_unit": "ටු"
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A2R03V6",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R03",
+                "targeted_unit": "ටු",
+                "content": {
+                  "letters": [
+                    "ල",
+                    "ව",
+                    "ටු"
+                  ],
+                  "targeted_unit": "ටු"
+                }
+              },
+              {
+                "variant_id": "V7",
+                "item_id": "S2A2R03V7",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R03",
+                "targeted_unit": "ව",
+                "content": {
+                  "letters": [
+                    "ව",
+                    "ත"
+                  ],
+                  "targeted_unit": "ව"
+                }
+              },
+              {
+                "variant_id": "V8",
+                "item_id": "S2A2R03V8",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R03",
+                "targeted_unit": "ව",
+                "content": {
+                  "letters": [
+                    "සු",
+                    "ස",
+                    "ව"
+                  ],
+                  "targeted_unit": "ව"
                 }
               }
             ],
@@ -1053,6 +1871,170 @@
                     "ය",
                     "කු"
                   ]
+                }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A2R04V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R04",
+                "targeted_unit": "ර",
+                "content": {
+                  "letters": [
+                    "ර",
+                    "ග",
+                    "ත"
+                  ],
+                  "targeted_unit": "ර"
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A2R04V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R04",
+                "targeted_unit": "ර",
+                "content": {
+                  "letters": [
+                    "ලි",
+                    "දු",
+                    "ව",
+                    "ර"
+                  ],
+                  "targeted_unit": "ර"
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A2R04V5",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R04",
+                "targeted_unit": "ලි",
+                "content": {
+                  "letters": [
+                    "ලි",
+                    "ත",
+                    "ද"
+                  ],
+                  "targeted_unit": "ලි"
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A2R04V6",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R04",
+                "targeted_unit": "ලි",
+                "content": {
+                  "letters": [
+                    "ගි",
+                    "ස",
+                    "හ",
+                    "ලි"
+                  ],
+                  "targeted_unit": "ලි"
+                }
+              },
+              {
+                "variant_id": "V7",
+                "item_id": "S2A2R04V7",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R04",
+                "targeted_unit": "ස",
+                "content": {
+                  "letters": [
+                    "ස",
+                    "ද",
+                    "න"
+                  ],
+                  "targeted_unit": "ස"
+                }
+              },
+              {
+                "variant_id": "V8",
+                "item_id": "S2A2R04V8",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R04",
+                "targeted_unit": "ස",
+                "content": {
+                  "letters": [
+                    "කා",
+                    "ගි",
+                    "හ",
+                    "ස"
+                  ],
+                  "targeted_unit": "ස"
+                }
+              },
+              {
+                "variant_id": "V9",
+                "item_id": "S2A2R04V9",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R04",
+                "targeted_unit": "දු",
+                "content": {
+                  "letters": [
+                    "දු",
+                    "ප",
+                    "බ"
+                  ],
+                  "targeted_unit": "දු"
+                }
+              },
+              {
+                "variant_id": "V10",
+                "item_id": "S2A2R04V10",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R04",
+                "targeted_unit": "දු",
+                "content": {
+                  "letters": [
+                    "සු",
+                    "ට",
+                    "අ",
+                    "දු"
+                  ],
+                  "targeted_unit": "දු"
                 }
               }
             ],
@@ -1111,6 +2093,221 @@
                     "බු",
                     "ම"
                   ]
+                }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A2R05V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R05",
+                "targeted_unit": "න",
+                "content": {
+                  "letters": [
+                    "න",
+                    "ත",
+                    "ද",
+                    "ප"
+                  ],
+                  "targeted_unit": "න"
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A2R05V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R05",
+                "targeted_unit": "න",
+                "content": {
+                  "letters": [
+                    "පා",
+                    "බි",
+                    "ස",
+                    "හ",
+                    "න"
+                  ],
+                  "targeted_unit": "න"
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A2R05V5",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R05",
+                "targeted_unit": "පා",
+                "content": {
+                  "letters": [
+                    "පා",
+                    "ද",
+                    "න",
+                    "බ"
+                  ],
+                  "targeted_unit": "පා"
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A2R05V6",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R05",
+                "targeted_unit": "පා",
+                "content": {
+                  "letters": [
+                    "ටු",
+                    "හ",
+                    "ට",
+                    "අ",
+                    "පා"
+                  ],
+                  "targeted_unit": "පා"
+                }
+              },
+              {
+                "variant_id": "V7",
+                "item_id": "S2A2R05V7",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R05",
+                "targeted_unit": "බ",
+                "content": {
+                  "letters": [
+                    "බ",
+                    "න",
+                    "ප",
+                    "ම"
+                  ],
+                  "targeted_unit": "බ"
+                }
+              },
+              {
+                "variant_id": "V8",
+                "item_id": "S2A2R05V8",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R05",
+                "targeted_unit": "බ",
+                "content": {
+                  "letters": [
+                    "ගි",
+                    "ටු",
+                    "ට",
+                    "අ",
+                    "බ"
+                  ],
+                  "targeted_unit": "බ"
+                }
+              },
+              {
+                "variant_id": "V9",
+                "item_id": "S2A2R05V9",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R05",
+                "targeted_unit": "මු",
+                "content": {
+                  "letters": [
+                    "මු",
+                    "ප",
+                    "බ",
+                    "ය"
+                  ],
+                  "targeted_unit": "මු"
+                }
+              },
+              {
+                "variant_id": "V10",
+                "item_id": "S2A2R05V10",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R05",
+                "targeted_unit": "මු",
+                "content": {
+                  "letters": [
+                    "කා",
+                    "අ",
+                    "ඉ",
+                    "ක",
+                    "මු"
+                  ],
+                  "targeted_unit": "මු"
+                }
+              },
+              {
+                "variant_id": "V11",
+                "item_id": "S2A2R05V11",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R05",
+                "targeted_unit": "ය",
+                "content": {
+                  "letters": [
+                    "ය",
+                    "බ",
+                    "ම",
+                    "ර"
+                  ],
+                  "targeted_unit": "ය"
+                }
+              },
+              {
+                "variant_id": "V12",
+                "item_id": "S2A2R05V12",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A2R05",
+                "targeted_unit": "ය",
+                "content": {
+                  "letters": [
+                    "මු",
+                    "ලි",
+                    "ඉ",
+                    "ක",
+                    "ය"
+                  ],
+                  "targeted_unit": "ය"
                 }
               }
             ],
@@ -1190,6 +2387,50 @@
                   "correct_index": 0
                 },
                 "distractor_strategy": "minimal_contrast_2"
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A3R01V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A3R01",
+                "content": {
+                  "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
+                  "audio_text": "අ",
+                  "options": [
+                    "අ",
+                    "හ"
+                  ],
+                  "correctOption": "අ",
+                  "correct_index": 0
+                },
+                "distractor_strategy": "minimal_contrast_2"
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A3R01V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A3R01",
+                "content": {
+                  "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
+                  "audio_text": "අ",
+                  "options": [
+                    "අ",
+                    "ක"
+                  ],
+                  "correctOption": "අ",
+                  "correct_index": 0
+                },
+                "distractor_strategy": "minimal_contrast_2"
               }
             ],
             "item_id": "S2A3R01",
@@ -1251,6 +2492,51 @@
                     "ර"
                   ],
                   "correctOption": "ල",
+                  "correct_index": 1
+                },
+                "distractor_strategy": "distinct_graphemes_3"
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A3R02V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A3R02",
+                "content": {
+                  "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
+                  "audio_text": "ස",
+                  "options": [
+                    "ස",
+                    "ය"
+                  ],
+                  "correctOption": "ස",
+                  "correct_index": 0
+                },
+                "distractor_strategy": "minimal_contrast_2"
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A3R02V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A3R02",
+                "content": {
+                  "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
+                  "audio_text": "ස",
+                  "options": [
+                    "ව",
+                    "ස",
+                    "ර"
+                  ],
+                  "correctOption": "ස",
                   "correct_index": 1
                 },
                 "distractor_strategy": "distinct_graphemes_3"
@@ -1319,6 +2605,52 @@
                   "correct_index": 1
                 },
                 "distractor_strategy": "confusable_graphemes_3"
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A3R03V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A3R03",
+                "content": {
+                  "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
+                  "audio_text": "බ",
+                  "options": [
+                    "අ",
+                    "බ",
+                    "උ"
+                  ],
+                  "correctOption": "බ",
+                  "correct_index": 1
+                },
+                "distractor_strategy": "distinct_graphemes_3"
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A3R03V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A3R03",
+                "content": {
+                  "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
+                  "audio_text": "බ",
+                  "options": [
+                    "ත",
+                    "බ",
+                    "න"
+                  ],
+                  "correctOption": "බ",
+                  "correct_index": 1
+                },
+                "distractor_strategy": "confusable_graphemes_3"
               }
             ],
             "item_id": "S2A3R03",
@@ -1384,6 +2716,53 @@
                   ],
                   "correctOption": "ඩ",
                   "correct_index": 1
+                },
+                "distractor_strategy": "confusable_graphemes_4"
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A3R04V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A3R04",
+                "content": {
+                  "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
+                  "audio_text": "ට",
+                  "options": [
+                    "බ",
+                    "ට",
+                    "ම"
+                  ],
+                  "correctOption": "ට",
+                  "correct_index": 1
+                },
+                "distractor_strategy": "confusable_graphemes_3"
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A3R04V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A3R04",
+                "content": {
+                  "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
+                  "audio_text": "ට",
+                  "options": [
+                    "ට",
+                    "ත",
+                    "ද",
+                    "ව"
+                  ],
+                  "correctOption": "ට",
+                  "correct_index": 0
                 },
                 "distractor_strategy": "confusable_graphemes_4"
               }
@@ -1456,6 +2835,55 @@
                   "correct_index": 1
                 },
                 "distractor_strategy": "confusable_graphemes_5"
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A3R05V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A3R05",
+                "content": {
+                  "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
+                  "audio_text": "ක",
+                  "options": [
+                    "ච",
+                    "ක",
+                    "ට",
+                    "ඩ"
+                  ],
+                  "correctOption": "ක",
+                  "correct_index": 1
+                },
+                "distractor_strategy": "confusable_graphemes_4"
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A3R05V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A3R05",
+                "content": {
+                  "prompt": "ශබ්දයට සවන් දී අකුර තෝරන්න",
+                  "audio_text": "ක",
+                  "options": [
+                    "ර",
+                    "ක",
+                    "ය",
+                    "ල",
+                    "ස"
+                  ],
+                  "correctOption": "ක",
+                  "correct_index": 1
+                },
+                "distractor_strategy": "confusable_graphemes_5"
               }
             ],
             "item_id": "S2A3R05",
@@ -1492,7 +2920,7 @@
               {
                 "variant_id": "V1",
                 "item_id": "S2A4R01V1",
-                "item_version": 6,
+                "item_version": 7,
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
@@ -1525,7 +2953,7 @@
               {
                 "variant_id": "V2",
                 "item_id": "S2A4R01V2",
-                "item_version": 6,
+                "item_version": 7,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
@@ -1552,9 +2980,79 @@
                   "answer_pool_size": 2,
                   "target_position": "first"
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A4R01V3",
+                "item_version": 7,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R01",
+                "targeted_unit": "අ",
+                "content": {
+                  "target_word": "අඹ",
+                  "word_units": [
+                    "අ",
+                    "ඹ"
+                  ],
+                  "pilla_count": 0,
+                  "target_position": "first",
+                  "options": [
+                    "අ",
+                    "ම"
+                  ],
+                  "prompt": "'අඹ' යන වචනයේ මුල් අකුර කුමක්ද?",
+                  "correctOption": "අ",
+                  "correct_index": 0,
+                  "targeted_unit": "අ"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "target_position": "first"
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A4R01V4",
+                "item_version": 7,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R01",
+                "targeted_unit": "අ",
+                "content": {
+                  "target_word": "අල",
+                  "word_units": [
+                    "අ",
+                    "ල"
+                  ],
+                  "pilla_count": 0,
+                  "target_position": "first",
+                  "options": [
+                    "ය",
+                    "අ"
+                  ],
+                  "prompt": "'අල' යන වචනයේ මුල් අකුර කුමක්ද?",
+                  "correctOption": "අ",
+                  "correct_index": 1,
+                  "targeted_unit": "අ"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "target_position": "first"
+                }
               }
             ],
-            "item_version": 6,
+            "item_version": 7,
             "equivalent_group_id": "S2A4R01",
             "difficulty_b": -1.0,
             "difficulty_label": "easy",
@@ -1588,7 +3086,7 @@
               {
                 "variant_id": "V1",
                 "item_id": "S2A4R02V1",
-                "item_version": 6,
+                "item_version": 7,
                 "item_role": "REMEDIATION",
                 "difficulty_b": -1.0,
                 "difficulty_label": "easy",
@@ -1621,7 +3119,7 @@
               {
                 "variant_id": "V2",
                 "item_id": "S2A4R02V2",
-                "item_version": 6,
+                "item_version": 7,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": -0.5,
                 "difficulty_label": "easy",
@@ -1649,9 +3147,80 @@
                   "answer_pool_size": 3,
                   "target_position": "first"
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A4R02V3",
+                "item_version": 7,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R02",
+                "targeted_unit": "ම",
+                "content": {
+                  "target_word": "මග",
+                  "word_units": [
+                    "ම",
+                    "ග"
+                  ],
+                  "pilla_count": 0,
+                  "target_position": "first",
+                  "options": [
+                    "ම",
+                    "න"
+                  ],
+                  "prompt": "'මග' යන වචනයේ මුල් අකුර කුමක්ද?",
+                  "correctOption": "ම",
+                  "correct_index": 0,
+                  "targeted_unit": "ම"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 2,
+                  "target_position": "first"
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A4R02V4",
+                "item_version": 7,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R02",
+                "targeted_unit": "ම",
+                "content": {
+                  "target_word": "මඩ",
+                  "word_units": [
+                    "ම",
+                    "ඩ"
+                  ],
+                  "pilla_count": 0,
+                  "target_position": "first",
+                  "options": [
+                    "ය",
+                    "ම",
+                    "ර"
+                  ],
+                  "prompt": "'මඩ' යන වචනයේ මුල් අකුර කුමක්ද?",
+                  "correctOption": "ම",
+                  "correct_index": 1,
+                  "targeted_unit": "ම"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "target_position": "first"
+                }
               }
             ],
-            "item_version": 6,
+            "item_version": 7,
             "equivalent_group_id": "S2A4R02",
             "difficulty_b": -0.5,
             "difficulty_label": "easy",
@@ -1686,7 +3255,7 @@
               {
                 "variant_id": "V1",
                 "item_id": "S2A4R03V1",
-                "item_version": 6,
+                "item_version": 7,
                 "item_role": "REMEDIATION",
                 "difficulty_b": -0.5,
                 "difficulty_label": "easy",
@@ -1720,7 +3289,7 @@
               {
                 "variant_id": "V2",
                 "item_id": "S2A4R03V2",
-                "item_version": 6,
+                "item_version": 7,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
@@ -1748,9 +3317,81 @@
                   "answer_pool_size": 3,
                   "target_position": "last"
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A4R03V3",
+                "item_version": 7,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R03",
+                "targeted_unit": "ත",
+                "content": {
+                  "target_word": "තල",
+                  "word_units": [
+                    "ත",
+                    "ල"
+                  ],
+                  "pilla_count": 0,
+                  "target_position": "first",
+                  "options": [
+                    "ත",
+                    "න",
+                    "ල"
+                  ],
+                  "prompt": "'තල' යන වචනයේ මුල් අකුර කුමක්ද?",
+                  "correctOption": "ත",
+                  "correct_index": 0,
+                  "targeted_unit": "ත"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "target_position": "first"
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A4R03V4",
+                "item_version": 7,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R03",
+                "targeted_unit": "ත",
+                "content": {
+                  "target_word": "සිත",
+                  "word_units": [
+                    "සි",
+                    "ත"
+                  ],
+                  "pilla_count": 1,
+                  "target_position": "last",
+                  "options": [
+                    "සි",
+                    "ව",
+                    "ත"
+                  ],
+                  "prompt": "'සිත' යන වචනයේ අග අකුර කුමක්ද?",
+                  "correctOption": "ත",
+                  "correct_index": 2,
+                  "targeted_unit": "ත"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "target_position": "last"
+                }
               }
             ],
-            "item_version": 6,
+            "item_version": 7,
             "equivalent_group_id": "S2A4R03",
             "difficulty_b": 0.0,
             "difficulty_label": "medium",
@@ -1785,7 +3426,7 @@
               {
                 "variant_id": "V1",
                 "item_id": "S2A4R04V1",
-                "item_version": 6,
+                "item_version": 7,
                 "item_role": "REMEDIATION",
                 "difficulty_b": 0.0,
                 "difficulty_label": "medium",
@@ -1819,7 +3460,7 @@
               {
                 "variant_id": "V2",
                 "item_id": "S2A4R04V2",
-                "item_version": 6,
+                "item_version": 7,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 0.5,
                 "difficulty_label": "medium",
@@ -1849,9 +3490,83 @@
                   "answer_pool_size": 4,
                   "target_position": "last"
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A4R04V3",
+                "item_version": 7,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R04",
+                "targeted_unit": "ස",
+                "content": {
+                  "target_word": "පස",
+                  "word_units": [
+                    "ප",
+                    "ස"
+                  ],
+                  "pilla_count": 0,
+                  "target_position": "last",
+                  "options": [
+                    "ප",
+                    "ය",
+                    "ස"
+                  ],
+                  "prompt": "'පස' යන වචනයේ අග අකුර කුමක්ද?",
+                  "correctOption": "ස",
+                  "correct_index": 2,
+                  "targeted_unit": "ස"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "target_position": "last"
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A4R04V4",
+                "item_version": 7,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R04",
+                "targeted_unit": "ස",
+                "content": {
+                  "target_word": "දවස",
+                  "word_units": [
+                    "ද",
+                    "ව",
+                    "ස"
+                  ],
+                  "pilla_count": 0,
+                  "target_position": "last",
+                  "options": [
+                    "ද",
+                    "ව",
+                    "ය",
+                    "ස"
+                  ],
+                  "prompt": "'දවස' යන වචනයේ අග අකුර කුමක්ද?",
+                  "correctOption": "ස",
+                  "correct_index": 3,
+                  "targeted_unit": "ස"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 4,
+                  "target_position": "last"
+                }
               }
             ],
-            "item_version": 6,
+            "item_version": 7,
             "equivalent_group_id": "S2A4R04",
             "difficulty_b": 0.5,
             "difficulty_label": "medium",
@@ -1888,7 +3603,7 @@
               {
                 "variant_id": "V1",
                 "item_id": "S2A4R05V1",
-                "item_version": 6,
+                "item_version": 7,
                 "item_role": "REMEDIATION",
                 "difficulty_b": 0.5,
                 "difficulty_label": "medium",
@@ -1924,7 +3639,7 @@
               {
                 "variant_id": "V2",
                 "item_id": "S2A4R05V2",
-                "item_version": 6,
+                "item_version": 7,
                 "item_role": "CONFIRMATION",
                 "difficulty_b": 1.0,
                 "difficulty_label": "hard",
@@ -1958,9 +3673,165 @@
                   "answer_pool_size": 6,
                   "target_position": "both"
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A4R05V3",
+                "item_version": 7,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R05",
+                "targeted_unit": "බ",
+                "content": {
+                  "target_word": "බලය",
+                  "word_units": [
+                    "බ",
+                    "ල",
+                    "ය"
+                  ],
+                  "pilla_count": 0,
+                  "target_position": "first",
+                  "options": [
+                    "බ",
+                    "ම",
+                    "ඔ",
+                    "ය"
+                  ],
+                  "prompt": "'බලය' යන වචනයේ මුල් අකුර කුමක්ද?",
+                  "correctOption": "බ",
+                  "correct_index": 0,
+                  "targeted_unit": "බ"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 4,
+                  "target_position": "first"
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A4R05V4",
+                "item_version": 7,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R05",
+                "targeted_unit": "බ",
+                "content": {
+                  "target_word": "බළලා",
+                  "word_units": [
+                    "බ",
+                    "ළ",
+                    "ලා"
+                  ],
+                  "pilla_count": 1,
+                  "target_position": "first",
+                  "options": [
+                    "ම",
+                    "ලා",
+                    "ඩ",
+                    "බ",
+                    "ඔ",
+                    "ය"
+                  ],
+                  "prompt": "'බළලා' යන වචනයේ මුල් අකුර කුමක්ද?",
+                  "correctOption": "බ",
+                  "correct_index": 3,
+                  "targeted_unit": "බ"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 6,
+                  "target_position": "first"
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A4R05V5",
+                "item_version": 7,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R05",
+                "targeted_unit": "ලා",
+                "content": {
+                  "target_word": "නටලා",
+                  "word_units": [
+                    "න",
+                    "ට",
+                    "ලා"
+                  ],
+                  "pilla_count": 1,
+                  "target_position": "last",
+                  "options": [
+                    "න",
+                    "ම",
+                    "ඔ",
+                    "ලා"
+                  ],
+                  "prompt": "'නටලා' යන වචනයේ අග අකුර කුමක්ද?",
+                  "correctOption": "ලා",
+                  "correct_index": 3,
+                  "targeted_unit": "ලා"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 4,
+                  "target_position": "last"
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A4R05V6",
+                "item_version": 7,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A4R05",
+                "targeted_unit": "ලා",
+                "content": {
+                  "target_word": "දුවලා",
+                  "word_units": [
+                    "දු",
+                    "ව",
+                    "ලා"
+                  ],
+                  "pilla_count": 2,
+                  "target_position": "last",
+                  "options": [
+                    "ම",
+                    "ලා",
+                    "ඩ",
+                    "දු",
+                    "ඔ",
+                    "ය"
+                  ],
+                  "prompt": "'දුවලා' යන වචනයේ අග අකුර කුමක්ද?",
+                  "correctOption": "ලා",
+                  "correct_index": 1,
+                  "targeted_unit": "ලා"
+                },
+                "difficulty_features": {
+                  "word_unit_count": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 6,
+                  "target_position": "last"
+                }
               }
             ],
-            "item_version": 6,
+            "item_version": 7,
             "equivalent_group_id": "S2A4R05",
             "difficulty_b": 1.0,
             "difficulty_label": "hard",
@@ -2080,6 +3951,138 @@
                   "answer_pool_size": 3,
                   "show_seconds": 6
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A5R01V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R01",
+                "targeted_unit": "ර",
+                "content": {
+                  "target_word": "ඉර",
+                  "pattern": [
+                    "ඉ",
+                    "ර"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "ඉ",
+                    "ර",
+                    "ක"
+                  ],
+                  "show_seconds": 8,
+                  "targeted_unit": "ර"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "show_seconds": 8
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A5R01V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R01",
+                "targeted_unit": "ර",
+                "content": {
+                  "target_word": "රස",
+                  "pattern": [
+                    "ර",
+                    "ස"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "ර",
+                    "ස",
+                    "ප"
+                  ],
+                  "show_seconds": 6,
+                  "targeted_unit": "ර"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "show_seconds": 6
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A5R01V5",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R01",
+                "targeted_unit": "ට",
+                "content": {
+                  "target_word": "අට",
+                  "pattern": [
+                    "අ",
+                    "ට"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "අ",
+                    "ට",
+                    "ක"
+                  ],
+                  "show_seconds": 8,
+                  "targeted_unit": "ට"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "show_seconds": 8
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A5R01V6",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R01",
+                "targeted_unit": "ට",
+                "content": {
+                  "target_word": "කට",
+                  "pattern": [
+                    "ක",
+                    "ට"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "ක",
+                    "ට",
+                    "ම"
+                  ],
+                  "show_seconds": 6,
+                  "targeted_unit": "ට"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "show_seconds": 6
+                }
               }
             ],
             "has_reduced_remediation": true,
@@ -2162,6 +4165,138 @@
                     "ත"
                   ],
                   "show_seconds": 5
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "show_seconds": 5
+                }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A5R02V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R02",
+                "targeted_unit": "ම",
+                "content": {
+                  "target_word": "මල",
+                  "pattern": [
+                    "ම",
+                    "ල"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "ම",
+                    "ල",
+                    "ක"
+                  ],
+                  "show_seconds": 7,
+                  "targeted_unit": "ම"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "show_seconds": 7
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A5R02V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R02",
+                "targeted_unit": "ම",
+                "content": {
+                  "target_word": "මගේ",
+                  "pattern": [
+                    "ම",
+                    "ගේ"
+                  ],
+                  "pilla_count": 1,
+                  "options": [
+                    "ම",
+                    "ගේ",
+                    "ත"
+                  ],
+                  "show_seconds": 5,
+                  "targeted_unit": "ම"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "show_seconds": 5
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A5R02V5",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -1.0,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R02",
+                "targeted_unit": "ල්",
+                "content": {
+                  "target_word": "ගල්",
+                  "pattern": [
+                    "ග",
+                    "ල්"
+                  ],
+                  "pilla_count": 1,
+                  "options": [
+                    "ග",
+                    "ල්",
+                    "ත"
+                  ],
+                  "show_seconds": 7,
+                  "targeted_unit": "ල්"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "show_seconds": 7
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A5R02V6",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R02",
+                "targeted_unit": "ල්",
+                "content": {
+                  "target_word": "කල්",
+                  "pattern": [
+                    "ක",
+                    "ල්"
+                  ],
+                  "pilla_count": 1,
+                  "options": [
+                    "ක",
+                    "ල්",
+                    "ම"
+                  ],
+                  "show_seconds": 5,
+                  "targeted_unit": "ල්"
                 },
                 "difficulty_features": {
                   "pattern_length": 2,
@@ -2253,6 +4388,210 @@
                     "ම"
                   ],
                   "show_seconds": 5
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 4,
+                  "show_seconds": 5
+                }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A5R03V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R03",
+                "targeted_unit": "ග",
+                "content": {
+                  "target_word": "ගස",
+                  "pattern": [
+                    "ග",
+                    "ස"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "ග",
+                    "ස",
+                    "ක"
+                  ],
+                  "show_seconds": 7,
+                  "targeted_unit": "ග"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "show_seconds": 7
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A5R03V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R03",
+                "targeted_unit": "ග",
+                "content": {
+                  "target_word": "ගමට",
+                  "pattern": [
+                    "ග",
+                    "ම",
+                    "ට"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "ග",
+                    "ම",
+                    "ට",
+                    "ව"
+                  ],
+                  "show_seconds": 5,
+                  "targeted_unit": "ග"
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 4,
+                  "show_seconds": 5
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A5R03V5",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R03",
+                "targeted_unit": "ම",
+                "content": {
+                  "target_word": "මල",
+                  "pattern": [
+                    "ම",
+                    "ල"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "ම",
+                    "ල",
+                    "ක"
+                  ],
+                  "show_seconds": 7,
+                  "targeted_unit": "ම"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "show_seconds": 7
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A5R03V6",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R03",
+                "targeted_unit": "ම",
+                "content": {
+                  "target_word": "මමද",
+                  "pattern": [
+                    "ම",
+                    "ම",
+                    "ද"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "ම",
+                    "ද",
+                    "ක",
+                    "න"
+                  ],
+                  "show_seconds": 5,
+                  "targeted_unit": "ම"
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 4,
+                  "show_seconds": 5
+                }
+              },
+              {
+                "variant_id": "V7",
+                "item_id": "S2A5R03V7",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": -0.5,
+                "difficulty_label": "easy",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R03",
+                "targeted_unit": "න",
+                "content": {
+                  "target_word": "නල",
+                  "pattern": [
+                    "න",
+                    "ල"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "න",
+                    "ල",
+                    "ක"
+                  ],
+                  "show_seconds": 7,
+                  "targeted_unit": "න"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 0,
+                  "answer_pool_size": 3,
+                  "show_seconds": 7
+                }
+              },
+              {
+                "variant_id": "V8",
+                "item_id": "S2A5R03V8",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R03",
+                "targeted_unit": "න",
+                "content": {
+                  "target_word": "නවය",
+                  "pattern": [
+                    "න",
+                    "ව",
+                    "ය"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "න",
+                    "ව",
+                    "ය",
+                    "ම"
+                  ],
+                  "show_seconds": 5,
+                  "targeted_unit": "න"
                 },
                 "difficulty_features": {
                   "pattern_length": 3,
@@ -2355,6 +4694,216 @@
                   "answer_pool_size": 4,
                   "show_seconds": 4
                 }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A5R04V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R04",
+                "targeted_unit": "ග",
+                "content": {
+                  "target_word": "ගමට",
+                  "pattern": [
+                    "ග",
+                    "ම",
+                    "ට"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "ග",
+                    "ම",
+                    "ට",
+                    "ව"
+                  ],
+                  "show_seconds": 6,
+                  "targeted_unit": "ග"
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 4,
+                  "show_seconds": 6
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A5R04V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R04",
+                "targeted_unit": "ග",
+                "content": {
+                  "target_word": "ගලක්",
+                  "pattern": [
+                    "ග",
+                    "ල",
+                    "ක්"
+                  ],
+                  "pilla_count": 1,
+                  "options": [
+                    "ග",
+                    "ල",
+                    "ක්",
+                    "ට්"
+                  ],
+                  "show_seconds": 4,
+                  "targeted_unit": "ග"
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 4,
+                  "show_seconds": 4
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A5R04V5",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R04",
+                "targeted_unit": "ස",
+                "content": {
+                  "target_word": "සරම",
+                  "pattern": [
+                    "ස",
+                    "ර",
+                    "ම"
+                  ],
+                  "pilla_count": 0,
+                  "options": [
+                    "ස",
+                    "ර",
+                    "ම",
+                    "ක"
+                  ],
+                  "show_seconds": 6,
+                  "targeted_unit": "ස"
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 0,
+                  "answer_pool_size": 4,
+                  "show_seconds": 6
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A5R04V6",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R04",
+                "targeted_unit": "ස",
+                "content": {
+                  "target_word": "සතක්",
+                  "pattern": [
+                    "ස",
+                    "ත",
+                    "ක්"
+                  ],
+                  "pilla_count": 1,
+                  "options": [
+                    "ස",
+                    "ත",
+                    "ක්",
+                    "ට්"
+                  ],
+                  "show_seconds": 4,
+                  "targeted_unit": "ස"
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 4,
+                  "show_seconds": 4
+                }
+              },
+              {
+                "variant_id": "V7",
+                "item_id": "S2A5R04V7",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.0,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R04",
+                "targeted_unit": "ක්",
+                "content": {
+                  "target_word": "අතක්",
+                  "pattern": [
+                    "අ",
+                    "ත",
+                    "ක්"
+                  ],
+                  "pilla_count": 1,
+                  "options": [
+                    "අ",
+                    "ත",
+                    "ක්",
+                    "ම"
+                  ],
+                  "show_seconds": 6,
+                  "targeted_unit": "ක්"
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 4,
+                  "show_seconds": 6
+                }
+              },
+              {
+                "variant_id": "V8",
+                "item_id": "S2A5R04V8",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R04",
+                "targeted_unit": "ක්",
+                "content": {
+                  "target_word": "මලක්",
+                  "pattern": [
+                    "ම",
+                    "ල",
+                    "ක්"
+                  ],
+                  "pilla_count": 1,
+                  "options": [
+                    "ම",
+                    "ල",
+                    "ක්",
+                    "ට්"
+                  ],
+                  "show_seconds": 4,
+                  "targeted_unit": "ක්"
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 1,
+                  "answer_pool_size": 4,
+                  "show_seconds": 4
+                }
               }
             ],
             "has_reduced_remediation": true,
@@ -2443,6 +4992,210 @@
                     "ක"
                   ],
                   "show_seconds": 4
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 4,
+                  "show_seconds": 4
+                }
+              },
+              {
+                "variant_id": "V3",
+                "item_id": "S2A5R05V3",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R05",
+                "targeted_unit": "මි",
+                "content": {
+                  "target_word": "මිල",
+                  "pattern": [
+                    "මි",
+                    "ල"
+                  ],
+                  "pilla_count": 1,
+                  "options": [
+                    "මි",
+                    "ල",
+                    "ක"
+                  ],
+                  "show_seconds": 6,
+                  "targeted_unit": "මි"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "show_seconds": 6
+                }
+              },
+              {
+                "variant_id": "V4",
+                "item_id": "S2A5R05V4",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R05",
+                "targeted_unit": "මි",
+                "content": {
+                  "target_word": "මිනිසා",
+                  "pattern": [
+                    "මි",
+                    "නි",
+                    "සා"
+                  ],
+                  "pilla_count": 3,
+                  "options": [
+                    "මි",
+                    "නි",
+                    "සා",
+                    "වි"
+                  ],
+                  "show_seconds": 4,
+                  "targeted_unit": "මි"
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 3,
+                  "answer_pool_size": 4,
+                  "show_seconds": 4
+                }
+              },
+              {
+                "variant_id": "V5",
+                "item_id": "S2A5R05V5",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R05",
+                "targeted_unit": "හි",
+                "content": {
+                  "target_word": "හිම",
+                  "pattern": [
+                    "හි",
+                    "ම"
+                  ],
+                  "pilla_count": 1,
+                  "options": [
+                    "හි",
+                    "ම",
+                    "ක"
+                  ],
+                  "show_seconds": 6,
+                  "targeted_unit": "හි"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "show_seconds": 6
+                }
+              },
+              {
+                "variant_id": "V6",
+                "item_id": "S2A5R05V6",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R05",
+                "targeted_unit": "හි",
+                "content": {
+                  "target_word": "හිතුවා",
+                  "pattern": [
+                    "හි",
+                    "තු",
+                    "වා"
+                  ],
+                  "pilla_count": 3,
+                  "options": [
+                    "හි",
+                    "තු",
+                    "වා",
+                    "රි"
+                  ],
+                  "show_seconds": 4,
+                  "targeted_unit": "හි"
+                },
+                "difficulty_features": {
+                  "pattern_length": 3,
+                  "pilla_count": 3,
+                  "answer_pool_size": 4,
+                  "show_seconds": 4
+                }
+              },
+              {
+                "variant_id": "V7",
+                "item_id": "S2A5R05V7",
+                "item_version": 3,
+                "item_role": "REMEDIATION",
+                "difficulty_b": 0.5,
+                "difficulty_label": "medium",
+                "response_load_relation": "targeted_reduced",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R05",
+                "targeted_unit": "රි",
+                "content": {
+                  "target_word": "රිය",
+                  "pattern": [
+                    "රි",
+                    "ය"
+                  ],
+                  "pilla_count": 1,
+                  "options": [
+                    "රි",
+                    "ය",
+                    "ක"
+                  ],
+                  "show_seconds": 6,
+                  "targeted_unit": "රි"
+                },
+                "difficulty_features": {
+                  "pattern_length": 2,
+                  "pilla_count": 1,
+                  "answer_pool_size": 3,
+                  "show_seconds": 6
+                }
+              },
+              {
+                "variant_id": "V8",
+                "item_id": "S2A5R05V8",
+                "item_version": 3,
+                "item_role": "CONFIRMATION",
+                "difficulty_b": 1.0,
+                "difficulty_label": "hard",
+                "response_load_relation": "targeted_equivalent",
+                "targeted_practice": true,
+                "target_source_item_id": "S2A5R05",
+                "targeted_unit": "රි",
+                "content": {
+                  "target_word": "රිළවා",
+                  "pattern": [
+                    "රි",
+                    "ළ",
+                    "වා"
+                  ],
+                  "pilla_count": 2,
+                  "options": [
+                    "රි",
+                    "ළ",
+                    "වා",
+                    "මි"
+                  ],
+                  "show_seconds": 4,
+                  "targeted_unit": "රි"
                 },
                 "difficulty_features": {
                   "pattern_length": 3,
