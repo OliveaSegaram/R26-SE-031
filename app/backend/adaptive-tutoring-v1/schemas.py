@@ -26,6 +26,7 @@ class TelemetryData(BaseModel):
     equivalent_group_id: Optional[str] = None
     response_load_relation: Optional[str] = None
     target_ids: Optional[List[str]] = None
+    struggled_target_units: Optional[List[str]] = None
     selected_answers: Optional[List[str]] = None
 
 class InteractionRequest(BaseModel):
