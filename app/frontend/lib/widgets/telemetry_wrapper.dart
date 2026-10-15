@@ -549,6 +549,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     required List<String> correctOptionIds,
     required List<String> supportedActions,
     required String errorType,
+    List<String> struggledTargetUnits = const <String>[],
     List<String> incorrectOptionIds = const <String>[],
     int minimumVisibleOptions = 2,
   }) async {
@@ -563,6 +564,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
         'supported_actions': supportedActions,
         'minimum_visible_options': minimumVisibleOptions,
         'error_type': errorType,
+        'struggled_target_units': struggledTargetUnits,
       },
     );
     return semanticScaffoldPlanFromResult(
