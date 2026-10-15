@@ -73,6 +73,56 @@ class Skill2PromptReadiness {
 }
 
 class Skill2RoundResolver {
+  static const String audioChoicePrompt = 'ශබ්දයට සවන් දී අකුර තෝරන්න';
+
+  /// The selected top grapheme is the concept being matched; the bottom tap
+  /// is only the distractor the child confused with it.
+  static List<String> matchingStruggledUnits(String? selectedTopLetter) {
+    final value = selectedTopLetter?.trim() ?? '';
+    return value.isEmpty ? const <String>[] : <String>[value];
+  }
+
+  /// Multi-boundary questions diagnose one unresolved target at a time.
+  static List<String> nextUnresolvedChoiceTarget({
+    required List<String> options,
+    required List<int> correctIndices,
+    required Set<int> selectedIndices,
+  }) {
+    for (final index in correctIndices) {
+      if (!selectedIndices.contains(index) &&
+          index >= 0 &&
+          index < options.length) {
+        return <String>[options[index]];
+      }
+    }
+    return const <String>[];
+  }
+
+  /// A sequence error has an objectively known expected token at this slot.
+  static List<String> sequenceStruggledUnits({
+    required List<String> pattern,
+    required int currentPosition,
+  }) {
+    if (currentPosition < 0 || currentPosition >= pattern.length) {
+      return const <String>[];
+    }
+    return <String>[pattern[currentPosition]];
+  }
+
+  /// Builds the spoken instruction from the explicit audio target rather than
+  /// rewriting the visible prompt. This keeps core and adaptive variants
+  /// identical on screen and prevents malformed Sinhala prompt fragments from
+  /// being produced by broad regular expressions.
+  static String spokenLetterInstruction(Map<String, dynamic> data) {
+    final target = (data['audio_text'] ?? data['correctOption'] ?? '')
+        .toString()
+        .trim();
+    if (target.isEmpty) {
+      return (data['prompt'] ?? audioChoicePrompt).toString();
+    }
+    return 'ශබ්දයට සවන් දී ${target}යන්න තෝරන්න';
+  }
+
   /// Activities 1 and 2 introduce their instruction automatically only on the
   /// first core task. Later core/equivalent tasks remain available through the
   /// sound button without interrupting the child on every navigation.
