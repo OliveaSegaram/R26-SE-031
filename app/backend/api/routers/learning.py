@@ -43,6 +43,7 @@ class TelemetryModel(BaseModel):
     equivalent_group_id: Optional[str] = None
     response_load_relation: Optional[str] = None
     target_ids: Optional[List[str]] = None
+    struggled_target_units: Optional[List[str]] = None
     selected_answers: Optional[List[str]] = None
     touch_stream: List[Any] = Field(default_factory=list)
     item_version: int = 1
@@ -242,6 +243,9 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
         ),
         "targets": getattr(payload.telemetry, "target_ids", None) or [],
         "target_ids": getattr(payload.telemetry, "target_ids", None) or [],
+        "struggled_target_units": (
+            getattr(payload.telemetry, "struggled_target_units", None) or []
+        ),
         "selected_answers": (
             getattr(payload.telemetry, "selected_answers", None) or []
         ),

@@ -59,6 +59,7 @@ def research_payload() -> InteractionPayload:
                 }
             ],
             "target_ids": ["animals/cat.png"],
+            "struggled_target_units": ["animals/cat.png"],
             "selected_answers": ["animals/cat.png"],
             "scaffold_applications": [
                 {"scaffold_level": 2, "action": "disable_options"}
@@ -90,6 +91,7 @@ def test_learning_gateway_preserves_research_lineage_for_c4():
     assert telemetry["equivalent_group_id"] == "S1A5R02"
     assert telemetry["response_load_relation"] == "reduced"
     assert telemetry["target_ids"] == ["animals/cat.png"]
+    assert telemetry["struggled_target_units"] == ["animals/cat.png"]
     assert telemetry["selected_answers"] == ["animals/cat.png"]
     assert telemetry["scaffold_level_used"] == 2
     assert telemetry["scaffold_applications"][0]["scaffold_level"] == 2
@@ -116,6 +118,25 @@ def test_gateway_forwards_explicit_simulation_experiment(monkeypatch):
 
     assert forwarded["policy_mode"] == "simulation_experiment"
     assert forwarded["data_origin"] == "observed"
+    assert forwarded["calibration_eligible"] is False
+
+
+def test_gateway_forwards_dynamic_practice_simulation_mode(monkeypatch):
+    monkeypatch.setenv("C4_POLICY_MODE", "simulation_model")
+    payload = research_payload()
+
+    forwarded = build_adaptive_submit(
+        payload,
+        event_id=payload.event_id,
+        canonical_activity_id="1.5",
+        canonical_item_id="S1A5R02V1",
+        fatigue_score=0.1,
+        learner_profile={},
+    )
+
+    assert forwarded["policy_mode"] == "simulation_model"
+    assert forwarded["data_origin"] == "observed"
+    assert forwarded["validation_status"] == "operational_observation"
     assert forwarded["calibration_eligible"] is False
 
 
@@ -185,6 +206,7 @@ async def test_realtime_persistence_keeps_the_same_complete_evidence(monkeypatch
     assert len(stored["touch_stream"]) == 1
     assert stored["targets"] == ["animals/cat.png"]
     assert stored["target_ids"] == ["animals/cat.png"]
+    assert stored["struggled_target_units"] == ["animals/cat.png"]
     assert stored["selected_answers"] == ["animals/cat.png"]
     assert stored["scaffold_level_used"] == 2
     assert stored["scaffold_applications"][0]["scaffold_level"] == 2
@@ -204,6 +226,7 @@ async def test_realtime_attempt_persistence_keeps_canonical_item_evidence(monkey
     payload.telemetry.difficulty_label = "easy"
     payload.telemetry.selected_answers = ["animals/cow.png"]
     payload.telemetry.target_ids = ["animals/cat.png"]
+    payload.telemetry.struggled_target_units = ["animals/cat.png"]
     event_id = "session:S1A5R02V1:attempt:1"
 
     await run_background_pipeline(payload, {}, event_id)
@@ -217,6 +240,7 @@ async def test_realtime_attempt_persistence_keeps_canonical_item_evidence(monkey
     assert stored["item_role"] == "REMEDIATION"
     assert stored["equivalent_group_id"] == "S1A5R02"
     assert stored["target_ids"] == ["animals/cat.png"]
+    assert stored["struggled_target_units"] == ["animals/cat.png"]
     assert stored["selected_answers"] == ["animals/cow.png"]
     assert stored["final_correct"] is False
 
