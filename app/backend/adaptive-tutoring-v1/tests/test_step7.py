@@ -471,6 +471,154 @@ async def test_13_skill1_assisted_core_runs_remediation_then_confirmation(client
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    (
+        "student_id", "skill_id", "activity_id", "kc_id", "core_id",
+        "struggled_unit",
+    ),
+    [
+        (
+            "skill1_static_simulation",
+            "skill_1",
+            "1.1",
+            "KC_VISUAL_IDENTIFICATION",
+            "S1A1R02",
+            "animals/elephant.png",
+        ),
+        (
+            "skill2_static_simulation",
+            "skill_2",
+            "2.2",
+            "KC_LETTER_MATCHING",
+            "S2A2R02",
+            "කා",
+        ),
+    ],
+)
+async def test_skill12_simulation_mode_uses_local_exact_target_practice(
+    client, student_id, skill_id, activity_id, kc_id, core_id, struggled_unit
+):
+    await mock_db["knowledge_states"].update_one(
+        {"student_id": student_id},
+        {"$set": {
+            "knowledge_state": {kc_id: 0.3},
+            "theta_estimate": 0.0,
+            "adaptive_states": {
+                activity_id: {
+                    "expected_item_id": core_id,
+                    "next_phase": "CORE",
+                    "administered_item_ids": [],
+                }
+            },
+        }},
+        upsert=True,
+    )
+    attempt = client.post("/update_interaction", json={
+        "student_id": student_id,
+        "session_id": f"{student_id}-session",
+        "skill_id": skill_id,
+        "activity_id": activity_id,
+        "knowledge_component_id": kc_id,
+        "item_id": core_id,
+        "is_correct": False,
+        "phase": "ATTEMPT",
+        "policy_mode": "simulation_model",
+        "current_session_duration_sec": 5,
+        "fatigue_score": 0.0,
+        "learner_profile": {},
+        "telemetry": {
+            "attempt_count": 1,
+            "incorrect_attempt_count": 1,
+            "original_options_count": 4,
+            "visible_option_ids": ["O1", "O2", "O3", "O4"],
+            "incorrect_option_ids": ["O2", "O3", "O4"],
+            "correct_option_ids": ["O1"],
+            "supported_actions": ["REMOVE_OPTION", "HIGHLIGHT_OPTION"],
+            "struggled_target_units": [struggled_unit],
+        },
+    })
+    assert attempt.status_code == 200
+
+    response = client.post("/update_interaction", json={
+        "student_id": student_id,
+        "session_id": f"{student_id}-session",
+        "skill_id": skill_id,
+        "activity_id": activity_id,
+        "knowledge_component_id": kc_id,
+        "item_id": core_id,
+        "is_correct": True,
+        "phase": "COMPLETE",
+        "policy_mode": "simulation_model",
+        "current_session_duration_sec": 10,
+        "fatigue_score": 0.0,
+        "learner_profile": {},
+        "telemetry": {
+            "first_attempt_correct": False,
+            "attempt_count": 2,
+            "incorrect_attempt_count": 1,
+            "scaffold_level_used": 1,
+        },
+    })
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["next_action"]["next_item"] == f"{core_id}V3"
+    assert body["next_action"]["next_phase"] == "REMEDIATION"
+    assert "DYNAMIC_TARGETED_PRACTICE_ACTIVE" in (
+        body["selection_evidence"]["policy_reason"]
+    )
+    assert body["selection_evidence"]["selection_intent"]["role"] == (
+        "REMEDIATION"
+    )
+    assert body["selection_evidence"]["candidate_scope"] == (
+        "SAME_ORIGIN_EXACT_TARGET"
+    )
+
+    remediation_id = body["next_action"]["next_item"]
+    remediation = client.post("/update_interaction", json={
+        "student_id": student_id,
+        "session_id": f"{student_id}-session",
+        "skill_id": skill_id,
+        "activity_id": activity_id,
+        "knowledge_component_id": kc_id,
+        "item_id": remediation_id,
+        "is_correct": True,
+        "phase": "COMPLETE",
+        "policy_mode": "simulation_model",
+        "current_session_duration_sec": 15,
+        "fatigue_score": 0.0,
+        "learner_profile": {},
+        "telemetry": {
+            "first_attempt_correct": True,
+            "attempt_count": 1,
+            "incorrect_attempt_count": 0,
+            "scaffold_level_used": 0,
+        },
+    })
+    assert remediation.status_code == 200
+    confirmation_id = remediation.json()["next_action"]["next_item"]
+    assert confirmation_id == f"{core_id}V4"
+    assert remediation.json()["next_action"]["next_phase"] == "CONFIRMATION"
+
+    remediation_item = await mock_db["item_bank"].find_one({
+        "item_id": remediation_id
+    })
+    confirmation_item = await mock_db["item_bank"].find_one({
+        "item_id": confirmation_id
+    })
+    assert remediation_item["equivalent_group_id"] == core_id
+    assert confirmation_item["equivalent_group_id"] == core_id
+    assert remediation_item.get("targeted_unit") == (
+        confirmation_item.get("targeted_unit")
+    )
+
+    state = await mock_db["knowledge_states"].find_one({
+        "student_id": student_id
+    })
+    assert "cross_activity_target_profile" not in state
+
+
+@pytest.mark.asyncio
 async def test_14_irt_ability_is_scoped_to_the_current_knowledge_component(client):
     await mock_db["knowledge_states"].update_one(
         {"student_id": "domain_theta_student"},
