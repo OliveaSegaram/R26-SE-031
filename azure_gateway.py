@@ -7,7 +7,7 @@ import socket
 
 from pathlib import Path
 from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 import httpx
 import uvicorn
 import asyncio
@@ -101,9 +101,11 @@ def start_services():
             [sys.executable, str(main_py)],
             cwd=str(svc_path),
             env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True
+            # Inherit container streams so verbose ML logs cannot fill a pipe
+            # and deadlock the service.
+            stdout=None,
+            stderr=None,
+            text=True,
         )
         processes.append(p)
         
@@ -115,20 +117,18 @@ def start_services():
     except Exception as e:
         print(f"[ERROR] Failed to save PID file: {e}")
 
-# Ensure only ONE gateway worker starts the background services (avoids race condition port collisions)
+# Ensure only one gateway worker owns the background services. An advisory
+# lock is released automatically if the process dies, unlike a stale sentinel.
 LOCK_FILE = "/tmp/azure_gateway_services.lock"
-
-if not os.path.exists(LOCK_FILE):
-    try:
-        # Atomic file creation
-        fd = os.open(LOCK_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        os.close(fd)
-        print("[INIT] First worker starting background services...")
-        start_services()
-        time.sleep(3) # Give them time to spin up
-    except FileExistsError:
-        print("[INIT] Services already started by another worker.")
-else:
+lock_fd = os.open(LOCK_FILE, os.O_CREAT | os.O_RDWR)
+owns_service_lock = False
+try:
+    fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    owns_service_lock = True
+    print("[INIT] Gateway worker starting background services...")
+    start_services()
+    time.sleep(3)  # Give them time to bind their ports.
+except BlockingIOError:
     print("[INIT] Services already started by another worker.")
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -145,7 +145,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = httpx.AsyncClient(timeout=120.0)
+client = httpx.AsyncClient(
+    timeout=httpx.Timeout(connect=10.0, read=300.0, write=60.0, pool=10.0)
+)
 
 async def proxy_request(request: Request, service_port: int, path: str):
     query_str = f"?{request.url.query}" if request.url.query else ""
@@ -183,9 +185,25 @@ async def proxy_request(request: Request, service_port: int, path: str):
             status_code=response.status_code,
             headers=resp_headers
         )
-    except Exception as e:
-        import traceback
-        return {"error": str(e), "traceback": traceback.format_exc()}
+    except httpx.TimeoutException:
+        return JSONResponse(
+            status_code=504,
+            content={
+                "error": "upstream_timeout",
+                "message": "The ML service took too long to respond. Please retry.",
+                "retryable": True,
+            },
+        )
+    except httpx.HTTPError as exc:
+        return JSONResponse(
+            status_code=502,
+            content={
+                "error": "upstream_unavailable",
+                "message": "The ML service is temporarily unavailable.",
+                "retryable": True,
+                "error_type": type(exc).__name__,
+            },
+        )
 
 @app.api_route("/speech/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"])
 async def proxy_speech(request: Request, path: str):
@@ -236,13 +254,13 @@ def health_check():
 
 if __name__ == "__main__":
     try:
-        uvicorn.run("azure_gateway:app", host="0.0.0.0", port=8080)
+        # Passing the object avoids importing this module a second time and
+        # losing the child-process state shown by /health.
+        uvicorn.run(app, host="0.0.0.0", port=8080)
     finally:
-        for p in processes:
-            p.terminate()
-        if os.path.exists(LOCK_FILE):
-            try:
-                os.remove(LOCK_FILE)
-            except Exception:
-                pass
+        if owns_service_lock:
+            for p in processes:
+                p.terminate()
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        os.close(lock_fd)
 
