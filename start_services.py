@@ -22,23 +22,43 @@ import socket
 # Force UTF-8 output on Windows
 if sys.platform == 'win32':
     os.environ['PYTHONIOENCODING'] = 'utf-8'
+    os.environ['PYTHONUNBUFFERED'] = '1'
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stdout = io.TextIOWrapper(
+        sys.stdout.buffer,
+        encoding='utf-8',
+        errors='replace',
+        line_buffering=True,
+        write_through=True,
+    )
 
 # Try to load environment
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    load_dotenv(Path(__file__).parent / "app/backend/api/.env")
 except:
     pass
 
+# Older local .env files used JWT_SECRET while every current service reads
+# JWT_SECRET_KEY.  Reuse the configured value so the auth API and C1 verify the
+# same tokens without duplicating secrets across service-specific files.
+if not os.getenv("JWT_SECRET_KEY") and os.getenv("JWT_SECRET"):
+    os.environ["JWT_SECRET_KEY"] = os.environ["JWT_SECRET"]
+
 BASE = Path(__file__).parent
 
+# Use the manually downloaded Whisper repository when it is available.  This
+# prevents an unnecessary Hub download during local C2 testing.
+LOCAL_WHISPER_MODEL = Path.home() / "Models" / "whisper-sinhala"
+if (LOCAL_WHISPER_MODEL / "model.safetensors").exists():
+    os.environ.setdefault("WHISPER_MODEL_PATH", str(LOCAL_WHISPER_MODEL))
+
 SERVICES = [
-    {"name": "C1-CBME", "path": "app/backend/telemetry-analytics-v1", "port": 9014, "desc": "Cognitive Behavioral Monitoring Engine"},
-    {"name": "C2-AVLI", "path": "app/backend/speech-monitoring-v1", "port": 9011, "desc": "Adaptive Visual Learning Interface"},
-    {"name": "C3-PLCE", "path": "app/backend/diagnostic-fusion-v1", "port": 9016, "desc": "Content Engine"},
-    {"name": "C4-IIGE", "path": "app/backend/adaptive-tutoring-v1", "port": 9017, "desc": "Intervention Engine"},
+    {"name": "C5-API", "path": "app/backend/api", "port": 8015, "desc": "Authentication, profiles, learning, and dashboards"},
+    {"name": "C1-CBME", "path": "app/backend/telemetry-analytics-v1", "port": 8025, "desc": "Touch telemetry and behavioral analytics"},
+    {"name": "C2-AVLI", "path": "app/backend/speech-monitoring-v1", "port": 8020, "desc": "Speech monitoring and reading analysis"},
+    {"name": "C3-PLCE", "path": "app/backend/diagnostic-fusion-v1", "port": 9016, "desc": "Diagnostic evidence fusion and explanation"},
+    {"name": "C4-IIGE", "path": "app/backend/adaptive-tutoring-v1", "port": 9017, "desc": "Adaptive tutoring engine"},
 ]
 
 def check_port_available(port):
@@ -81,10 +101,10 @@ def start_service(service):
         log_dir = BASE / "logs"
         log_path = log_dir / f"{service['path']}.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        log_file = open(log_path, "w+", encoding="utf-8")
+        log_file = open(log_path, "w+", encoding="utf-8", buffering=1)
 
         p = subprocess.Popen(
-            [sys.executable, str(main_py)],
+            [sys.executable, "-u", str(main_py)],
             cwd=str(svc_path),
             stdout=log_file,
             stderr=subprocess.STDOUT,

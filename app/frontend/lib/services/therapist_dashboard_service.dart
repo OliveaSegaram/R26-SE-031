@@ -17,14 +17,22 @@ class TherapistDashboardService {
   }
 
   final _client = DashboardClient();
-  Future<Map<String, dynamic>> getOverview(String id) => _client.get('$_baseUrl/$id/overview');
-  Future<Map<String, dynamic>> getC1Behavioral(String id) => _client.get('$_baseUrl/$id/c1-behavioral');
-  Future<Map<String, dynamic>> getC2Speech(String id) => _client.get('$_baseUrl/$id/c2-speech');
-  Future<Map<String, dynamic>> getC3Profile(String id) => _client.get('$_baseUrl/$id/c3-profile');
-  Future<Map<String, dynamic>> generateC3AiSummary(String id) => _client.post('$_baseUrl/students/$id/c3-ai-summary');
-  Future<Map<String, dynamic>> getC4Adaptive(String id) => _client.get('$_baseUrl/$id/c4-adaptive');
-  Future<Map<String, dynamic>> getPerformanceTree(String id) => _client.get('$_baseUrl/students/$id/performance-tree');
-  Future<Map<String, dynamic>> getResearchEvidence(String id) => _client.get('$_baseUrl/$id/research-evidence');
+  Future<Map<String, dynamic>> getOverview(String id) =>
+      _client.get('$_baseUrl/$id/overview');
+  Future<Map<String, dynamic>> getC1Behavioral(String id) =>
+      _client.get('$_baseUrl/$id/c1-behavioral');
+  Future<Map<String, dynamic>> getC2Speech(String id) =>
+      _client.get('$_baseUrl/$id/c2-speech');
+  Future<Map<String, dynamic>> getC3Profile(String id) =>
+      _client.get('$_baseUrl/$id/c3-profile');
+  Future<Map<String, dynamic>> generateC3AiSummary(String id) =>
+      _client.post('${ApiConfig.c1BaseUrl}/students/$id/c3-ai-summary');
+  Future<Map<String, dynamic>> getC4Adaptive(String id) =>
+      _client.get('$_baseUrl/$id/c4-adaptive');
+  Future<Map<String, dynamic>> getPerformanceTree(String id) =>
+      _client.get('${ApiConfig.c1BaseUrl}/students/$id/performance-tree');
+  Future<Map<String, dynamic>> getResearchEvidence(String id) =>
+      _client.get('$_baseUrl/$id/research-evidence');
 
   Future<Uint8List> downloadReport(String studentId) async {
     final headers = await _getHeaders();
@@ -38,7 +46,11 @@ class TherapistDashboardService {
     throw Exception('Failed to download report');
   }
 
-  Future<Map<String, dynamic>> markAssessmentReviewed(String studentId, String category, bool reviewed) async {
+  Future<Map<String, dynamic>> markAssessmentReviewed(
+    String studentId,
+    String category,
+    bool reviewed,
+  ) async {
     final headers = await _getHeaders();
     final response = await http.patch(
       Uri.parse('$_baseUrl/$studentId/review-assessment/$category'),

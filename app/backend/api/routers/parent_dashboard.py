@@ -19,7 +19,7 @@ from pathlib import Path as PathLib
 sys.path.insert(0, str(PathLib(__file__).parent.parent.parent.parent))
 from shared.database import get_db
 from services.dashboard_access import require_dashboard_access
-from services.dashboard_data import KC_NAMES, number, timestamp, records, base, pattern_profile, research_evidence
+from services.dashboard_data import KC_NAMES, number, timestamp, records, base, pattern_profile, research_evidence, speech
 
 router=APIRouter(prefix="/api/v1/parent/students",tags=["Parent Dashboard"],dependencies=[Depends(require_dashboard_access)])
 
@@ -151,6 +151,98 @@ async def get_parent_activity_history(student_id:str,limit:int=Query(10,ge=1,le=
 @router.get("/{student_id}/research-evidence")
 async def get_parent_evidence(student_id:str):
     return await research_evidence(get_db(),student_id)
+
+@router.get("/{student_id}/component-analytics")
+async def get_parent_component_analytics(student_id: str):
+    """Parent-safe projections for the four research components.
+
+    Missing measurements remain null and each component carries its own
+    availability/provenance instead of silently falling back to demo values.
+    """
+    db = get_db()
+    summaries = (await records(db, "session_summaries", student_id))[:10]
+    speech_rows = (await records(db, "speech_features", student_id))[:10]
+    profile_rows = await records(db, "learner_profiles", student_id, 1)
+    state_rows = await records(db, "knowledge_states", student_id, 1)
+    decisions = (await records(db, "adaptive_decisions", student_id))[:50]
+
+    latest_summary = summaries[0] if summaries else {}
+    latest_speech = speech_rows[0] if speech_rows else {}
+    latest_profile = profile_rows[0] if profile_rows else {}
+    latest_state = state_rows[0] if state_rows else {}
+    overall = latest_summary.get("overall") or {}
+
+    c1_trend = []
+    for row in reversed(summaries):
+        accuracy = number((row.get("overall") or {}).get("accuracy"))
+        c1_trend.append({"session": row.get("session_id"), "accuracy": accuracy})
+
+    speech_latest = speech(latest_speech)
+    c2_trend = []
+    for row in reversed(speech_rows):
+        values = speech(row)
+        c2_trend.append({
+            "session": row.get("session_id"),
+            "wer": values.get("wer"),
+            "latency_ms": values.get("acoustic_latency_ms"),
+        })
+
+    profile, probabilities, pattern = pattern_profile(latest_profile)
+    mastery_values = [number(value) for value in (latest_state.get("knowledge_state") or {}).values()]
+    mastery_values = [value for value in mastery_values if value is not None]
+    assisted = [d for d in decisions if (d.get("scaffold_level_used", d.get("scaffold_level", 0)) or 0) > 0]
+
+    def component(doc, **values):
+        return {
+            "available": bool(doc),
+            "data_origin": doc.get("data_origin", "observed" if doc else "unspecified"),
+            "dataset_id": doc.get("dataset_id"),
+            "validation_status": doc.get("validation_status", "not_clinically_validated"),
+            "last_data_at": timestamp(doc),
+            **values,
+        }
+
+    return {
+        **base(student_id, latest_summary, "Latest linked component records"),
+        "c1_behavioral": component(
+            latest_summary,
+            first_attempt_accuracy=number(overall.get("accuracy")),
+            retry_rate=number(overall.get("retry_rate")),
+            median_response_latency_ms=number(overall.get("median_response_latency_ms")),
+            fatigue_proxy=number(latest_summary.get("behavioral_fatigue_proxy")),
+            trend=c1_trend,
+        ),
+        "c2_speech": component(
+            latest_speech,
+            wer=speech_latest.get("wer"),
+            acoustic_latency_ms=speech_latest.get("acoustic_latency_ms"),
+            pause_ratio=speech_latest.get("pause_ratio"),
+            grapheme_accuracy=speech_latest.get("grapheme_accuracy"),
+            reading_rate_wpm=speech_latest.get("reading_rate_wpm"),
+            combined_confidence=speech_latest.get("combined_confidence"),
+            recording_quality=speech_latest.get("recording_quality"),
+            measurement_status=speech_latest.get("measurement_status"),
+            trend=c2_trend,
+        ),
+        "c3_explainability": component(
+            latest_profile,
+            primary_pattern=pattern,
+            confidence=number(profile.get("confidence")),
+            probabilities=probabilities,
+            explanation_status=(
+                "Experimental synthetic-trained model output; not a diagnosis."
+                if latest_profile else "No linked multimodal profile is available."
+            ),
+        ),
+        "c4_adaptive": component(
+            latest_state,
+            average_mastery=(sum(mastery_values) / len(mastery_values)) if mastery_values else None,
+            knowledge_components=len(mastery_values),
+            decision_count=len(decisions),
+            supported_decision_rate=(len(assisted) / len(decisions)) if decisions else None,
+            latest_decision=(decisions[0].get("decision") if decisions else None),
+        ),
+    }
 
 # ==========================================
 # REVIEWED ACTIVITY METADATA (Skills 1-4)

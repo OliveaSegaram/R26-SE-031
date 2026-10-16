@@ -145,29 +145,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = httpx.AsyncClient(timeout=60.0)
+client = httpx.AsyncClient(timeout=120.0)
 
 async def proxy_request(request: Request, service_port: int, path: str):
-    url = f"http://127.0.0.1:{service_port}/{path}"
+    query_str = f"?{request.url.query}" if request.url.query else ""
+    url = f"http://127.0.0.1:{service_port}/{path}{query_str}"
     
     # Read the body
     body = await request.body()
+    
+    # Filter hop-by-hop headers from client request
+    excluded_req_headers = {"host", "content-length"}
+    req_headers = [
+        (name, value) for (name, value) in request.headers.raw
+        if name.lower().decode("latin-1") not in excluded_req_headers
+    ]
     
     try:
         # Forward the request
         req = client.build_request(
             method=request.method,
             url=url,
-            headers=request.headers.raw,
+            headers=req_headers,
             content=body
         )
         
         response = await client.send(req, stream=True)
         
+        excluded_resp_headers = {"content-encoding", "content-length", "transfer-encoding", "connection"}
+        resp_headers = {
+            k: v for k, v in response.headers.items()
+            if k.lower() not in excluded_resp_headers
+        }
+        
         return StreamingResponse(
             response.aiter_raw(),
             status_code=response.status_code,
-            headers=response.headers
+            headers=resp_headers
         )
     except Exception as e:
         import traceback
@@ -226,3 +240,9 @@ if __name__ == "__main__":
     finally:
         for p in processes:
             p.terminate()
+        if os.path.exists(LOCK_FILE):
+            try:
+                os.remove(LOCK_FILE)
+            except Exception:
+                pass
+

@@ -6,6 +6,7 @@ import '../../services/parent_dashboard_service.dart';
 import '../../utils/avatar_utils.dart';
 import '../../widgets/app_loading_indicator.dart';
 import '../../widgets/trend_chart.dart';
+import '../../widgets/research_evidence_panel.dart';
 import '../../models/curriculum_models.dart';
 import '../games/game_factory.dart';
 
@@ -28,6 +29,8 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
   Map<String, dynamic>? _learningPattern;
   Map<String, dynamic>? _activityHistory;
   Map<String, dynamic>? _adaptiveInsights;
+  Map<String, dynamic>? _componentAnalytics;
+  Map<String, dynamic>? _evidence;
   String _currentFilter = "limit=10";
 
   @override
@@ -44,20 +47,44 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
         widget.studentData['_id']?.toString() ??
         '';
 
-    final responses = await Future.wait([
-      _dashboardService.getOverview(studentId),
-      _dashboardService.getSkills(studentId),
-      _dashboardService.getLearningPattern(studentId),
-      _dashboardService.getActivityHistory(studentId, _currentFilter),
-      _dashboardService.getAdaptiveInsights(studentId),
-    ]);
+    Future<Map<String, dynamic>> capture(
+      Future<Map<String, dynamic>> request,
+    ) async {
+      try {
+        return await request;
+      } catch (error) {
+        return {'_error': error.toString()};
+      }
+    }
 
+    final responses = studentId.isEmpty
+        ? List.generate(
+            8,
+            (_) => <String, dynamic>{'_error': 'Invalid student ID'},
+          )
+        : await Future.wait([
+            capture(_dashboardService.getOverview(studentId)),
+            capture(_dashboardService.getProgress(studentId)),
+            capture(_dashboardService.getSkills(studentId)),
+            capture(_dashboardService.getLearningPattern(studentId)),
+            capture(
+              _dashboardService.getActivityHistory(studentId, _currentFilter),
+            ),
+            capture(_dashboardService.getAdaptiveInsights(studentId)),
+            capture(_dashboardService.getComponentAnalytics(studentId)),
+            capture(_dashboardService.getResearchEvidence(studentId)),
+          ]);
+
+    if (!mounted) return;
     setState(() {
       _overview = responses[0];
-      _skills = responses[1];
-      _learningPattern = responses[2];
-      _activityHistory = responses[3];
-      _adaptiveInsights = responses[4];
+      _progress = responses[1];
+      _skills = responses[2];
+      _learningPattern = responses[3];
+      _activityHistory = responses[4];
+      _adaptiveInsights = responses[5];
+      _componentAnalytics = responses[6];
+      _evidence = responses[7];
       _isLoading = false;
     });
   }
@@ -72,7 +99,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
     );
 
     return DefaultTabController(
-      length: 6,
+      length: 7,
       child: Scaffold(
         backgroundColor: AppColors.cream,
         appBar: AppBar(
@@ -166,11 +193,12 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             indicatorColor: AppColors.calmBlue,
             tabs: [
               Tab(text: "Overview"),
+              Tab(text: "Telemetry Analytics"),
               Tab(text: "Reading Progress"),
               Tab(text: "Reading Pattern"),
               Tab(text: "Activity History"),
               Tab(text: "Adaptive Insights"),
-              Tab(text: "Reports"),
+              Tab(text: "Research Evidence"),
             ],
           ),
         ),
@@ -178,23 +206,223 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             ? const Center(child: AppLoadingIndicator())
             : TabBarView(
                 children: [
-                  _buildOverviewTab(),
-                  _buildReadingProgressTab(),
-                  _buildReadingPatternTab(),
-                  _buildActivityHistoryTab(),
-                  _buildAdaptiveInsightsTab(),
-                  _buildReportsTab(),
+                  DashboardSection(
+                    data: _overview,
+                    onRetry: _loadAllData,
+                    child: _buildOverviewTab(),
+                  ),
+                  DashboardSection(
+                    data: _componentAnalytics,
+                    onRetry: _loadAllData,
+                    child: _buildComponentAnalyticsTab(),
+                  ),
+                  DashboardSection(
+                    data: _progress,
+                    onRetry: _loadAllData,
+                    child: _buildReadingProgressTab(),
+                  ),
+                  DashboardSection(
+                    data: _learningPattern,
+                    onRetry: _loadAllData,
+                    child: _buildReadingPatternTab(),
+                  ),
+                  DashboardSection(
+                    data: _activityHistory,
+                    onRetry: _loadAllData,
+                    child: _buildActivityHistoryTab(),
+                  ),
+                  DashboardSection(
+                    data: _adaptiveInsights,
+                    onRetry: _loadAllData,
+                    child: _buildAdaptiveInsightsTab(),
+                  ),
+                  DashboardSection(
+                    data: _evidence,
+                    onRetry: _loadAllData,
+                    child: ResearchEvidencePanel(
+                      data: _evidence ?? const {},
+                      simplified: true,
+                    ),
+                  ),
                 ],
               ),
       ),
     );
   }
 
-  String metricText(dynamic value, {String suffix = '', int decimals = 1}) {
+  String metricText(
+    dynamic value, {
+    String suffix = '',
+    int decimals = 1,
+    double scale = 1,
+  }) {
     if (value == null) return '—';
     final number = value is num ? value : num.tryParse(value.toString());
     if (number == null) return value.toString();
-    return '${number.toStringAsFixed(decimals)}$suffix';
+    return '${(number * scale).toStringAsFixed(decimals)}$suffix';
+  }
+
+  Widget _buildComponentAnalyticsTab() {
+    final data = _componentAnalytics ?? const <String, dynamic>{};
+    final components = <Map<String, dynamic>>[
+      {
+        'title': 'Touch and learning behaviour',
+        'subtitle': 'C1 telemetry',
+        'icon': Icons.touch_app_rounded,
+        'color': AppColors.calmBlue,
+        'data': data['c1_behavioral'],
+        'metrics': <Map<String, dynamic>>[
+          {'label': 'First-attempt accuracy', 'key': 'first_attempt_accuracy', 'scale': 100.0, 'suffix': '%'},
+          {'label': 'Retry rate', 'key': 'retry_rate', 'scale': 100.0, 'suffix': '%'},
+          {'label': 'Response time', 'key': 'median_response_latency_ms', 'suffix': ' ms'},
+        ],
+      },
+      {
+        'title': 'Speaking and reading',
+        'subtitle': 'C2 audio telemetry',
+        'icon': Icons.record_voice_over_rounded,
+        'color': AppColors.softCoral,
+        'data': data['c2_speech'],
+        'metrics': <Map<String, dynamic>>[
+          {'label': 'Matched reading sounds', 'key': 'grapheme_accuracy', 'scale': 100.0, 'suffix': '%'},
+          {'label': 'Reading pace', 'key': 'reading_rate_wpm', 'suffix': ' wpm'},
+          {'label': 'Recording quality', 'key': 'recording_quality'},
+        ],
+      },
+      {
+        'title': 'Learning-pattern explanation',
+        'subtitle': 'C3 explainability',
+        'icon': Icons.insights_rounded,
+        'color': AppColors.warmAmber,
+        'data': data['c3_explainability'],
+        'metrics': <Map<String, dynamic>>[
+          {'label': 'Observed pattern', 'key': 'primary_pattern'},
+          {'label': 'Evidence confidence', 'key': 'confidence', 'scale': 100.0, 'suffix': '%'},
+        ],
+      },
+      {
+        'title': 'Adaptive learning support',
+        'subtitle': 'C4 adaptation',
+        'icon': Icons.auto_awesome_rounded,
+        'color': AppColors.gentleGreen,
+        'data': data['c4_adaptive'],
+        'metrics': <Map<String, dynamic>>[
+          {'label': 'Average mastery', 'key': 'average_mastery', 'scale': 100.0, 'suffix': '%'},
+          {'label': 'Learning areas', 'key': 'knowledge_components'},
+          {'label': 'Recent decisions', 'key': 'decision_count'},
+        ],
+      },
+    ];
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(20),
+      itemCount: components.length + 1,
+      separatorBuilder: (_, _) => const SizedBox(height: 14),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Text(
+            'These learning measurements describe practice performance only. They are not a diagnosis.',
+            style: AppTypography.caption(fontSize: 13, color: AppColors.textSecondary),
+          );
+        }
+        return _buildComponentCard(components[index - 1]);
+      },
+    );
+  }
+
+  Widget _buildComponentCard(Map<String, dynamic> definition) {
+    final raw = definition['data'];
+    final component = raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : <String, dynamic>{};
+    final available = component['available'] == true;
+    final color = definition['color'] as Color;
+    final metrics = definition['metrics'] as List<Map<String, dynamic>>;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(definition['icon'] as IconData, color: color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(definition['title'] as String, style: AppTypography.heading(fontSize: 16)),
+                    Text(
+                      definition['subtitle'] as String,
+                      style: AppTypography.caption(fontSize: 11, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                available ? Icons.check_circle_rounded : Icons.hourglass_empty_rounded,
+                color: available ? AppColors.gentleGreen : AppColors.textHint,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (!available)
+            Text(
+              'No measurements have been captured yet.',
+              style: AppTypography.caption(fontSize: 13, color: AppColors.textSecondary),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: metrics.map((metric) {
+                final value = component[metric['key']];
+                final text = value is num
+                    ? metricText(
+                        value,
+                        suffix: metric['suffix']?.toString() ?? '',
+                        decimals: value % 1 == 0 ? 0 : 1,
+                        scale: (metric['scale'] as num?)?.toDouble() ?? 1,
+                      )
+                    : (value?.toString().trim().isNotEmpty == true ? value.toString() : '—');
+                return Container(
+                  constraints: const BoxConstraints(minWidth: 110),
+                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(text, style: AppTypography.heading(fontSize: 15, color: color)),
+                      const SizedBox(height: 2),
+                      Text(
+                        metric['label'] as String,
+                        style: AppTypography.caption(fontSize: 10, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildOverviewTab() {
@@ -491,15 +719,6 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
       ),
     );
   }
-
-  Widget _buildReportsTab() => const Center(
-    child: Padding(
-      padding: EdgeInsets.all(24),
-      child: Text(
-        'Parent PDF export is not available yet. Use the PP2 Evidence tab to inspect objectives, baseline results and limitations.',
-      ),
-    ),
-  );
 
   Widget _buildStatCard(
     String label,

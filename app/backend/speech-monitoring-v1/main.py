@@ -18,8 +18,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Speech Monitoring & Analysis Service",
-    description="Microservice for STT, TTS, and Acoustic Hesitation Analysis",
-    version="1.0.0",
+    description="Quality-aware Sinhala STT, grapheme alignment, oral-reading fluency, and evidence fusion",
+    version="3.0.0",
     lifespan=lifespan,
     root_path=os.getenv("ROOT_PATH", ""),
 )

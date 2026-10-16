@@ -171,6 +171,7 @@ class AcousticAnalysisService:
             pause_count = 0
             mean_pause_duration_ms = 0.0
             pause_ratio = 1.0
+            pauses = []
             
             if len(intervals) > 0:
                 start_idx = intervals[0][0]
@@ -184,7 +185,6 @@ class AcousticAnalysisService:
                     silence_ratio = float(silence_duration) / float(total_speech_duration_samples)
                     
                     # Calculate pauses between active intervals
-                    pauses = []
                     for i in range(1, len(intervals)):
                         pause_samples = intervals[i][0] - intervals[i-1][1]
                         pause_ms = (float(pause_samples) / sr) * 1000.0
@@ -197,15 +197,7 @@ class AcousticAnalysisService:
                     total_pause_ms = sum(pauses)
                     pause_ratio = total_pause_ms / speech_duration_ms if speech_duration_ms > 0 else 0.0
 
-            # STT fallback (just for logging/comparison)
-            try:
-                from services.stt_service import get_stt_engine
-                transcription = get_stt_engine().transcribe_audio_bytes(wav_bytes)
-            except:
-                transcription = ""
-
             return {
-                "transcription": transcription, # Optional — Whisper (adult model, accuracy limited on children)
                 "Acoustic_Latency_ms": latency_ms,
                 "Voice_Onset_ms": t_voice_onset,
                 "Detected_Peaks": detected_peaks,
@@ -213,11 +205,16 @@ class AcousticAnalysisService:
                 "Peak_Count_Delta": peak_delta,
                 "Intra_Word_Silence_Ratio": round(silence_ratio, 4),
                 "Speech_Duration_ms": round(speech_duration_ms, 2),
+                "Articulation_Duration_ms": round(
+                    max(0.0, speech_duration_ms - sum(pauses)), 2
+                ),
                 "Pause_Count": pause_count,
                 "Mean_Pause_Duration_ms": round(mean_pause_duration_ms, 2),
                 "Pause_Ratio": round(pause_ratio, 4),
                 "Local_Jitter": round(jitter, 6) if jitter is not None else None,
                 "Local_Shimmer": round(shimmer, 6) if shimmer is not None else None,
+                "feature_version": "c2-acoustic-v3",
+                "feature_role": "descriptive_reading_fluency_not_diagnostic",
                 # Diagnostic quality flag: helps therapist interpret results
                 # "poor_prosody_extraction" = Praat failed on noisy audio (jitter/shimmer default to 0.0)
                 # "mostly_silence" = Child likely did not speak clearly

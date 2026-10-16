@@ -196,6 +196,7 @@ class _TherapistStudentDetailScreenState
               Tab(text: "Learner Profile & XAI"),
               Tab(text: "Adaptive Learning"),
               Tab(text: "Parent Assessment"),
+              Tab(text: "Research Evidence"),
             ],
           ),
         ),
@@ -1051,6 +1052,15 @@ class _TherapistStudentDetailScreenState
             style: AppTypography.heading(fontSize: 18),
           ),
           const SizedBox(height: 12),
+          if (probs.isEmpty)
+            Text(
+              _c3Profile?['skip_reason']?.toString() ??
+                  'No linked multimodal profile is available.',
+              style: const TextStyle(
+                fontStyle: FontStyle.italic,
+                color: AppColors.textSecondary,
+              ),
+            ),
           _buildHorizontalBar("Typical", probs['Typical'], AppColors.calmBlue),
           _buildHorizontalBar(
             "Visual-Orthographic",
@@ -1076,6 +1086,14 @@ class _TherapistStudentDetailScreenState
             style: AppTypography.heading(fontSize: 18),
           ),
           const SizedBox(height: 12),
+          if (shap.isEmpty)
+            const Text(
+              'No model attributions are available.',
+              style: TextStyle(
+                fontStyle: FontStyle.italic,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ...shap.map((s) {
             final featureName = s['feature'] ?? '';
             final impact = (s['contribution'] as num?)?.toDouble() ?? 0.0;
@@ -1974,15 +1992,23 @@ class _TherapistStudentDetailScreenState
   }
 
   Widget _buildModelInfo(Map<String, dynamic> data) {
-    if (data['model_version'] == null) return const SizedBox.shrink();
+    final available = data['available'] == true;
+    final model = data['model_version']?.toString() ?? 'unavailable';
+    final feature = data['feature_version']?.toString() ?? 'unavailable';
+    final origin = data['data_origin']?.toString() ?? 'unspecified';
+    final validation =
+        data['validation_status']?.toString() ?? 'not_clinically_validated';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           const FaIcon(
             FontAwesomeIcons.microchip,

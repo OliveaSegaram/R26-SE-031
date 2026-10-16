@@ -1,51 +1,13 @@
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from services.stt_service import get_stt_engine
-import math
-import unicodedata
 from datetime import datetime
 from database import get_db
+import json
+
+from services.c2_pipeline_service import get_c2_pipeline
+from services.sinhala_alignment_service import SinhalaAlignmentService
 
 router = APIRouter(prefix="/stt", tags=["Speech-to-Text"])
-
-def normalize_sinhala(text: str) -> str:
-    """Normalize Sinhala text for comparison."""
-    if not text:
-        return ""
-    # NFC normalization
-    text = unicodedata.normalize('NFC', text)
-    # Trim and collapse whitespace
-    text = " ".join(text.split())
-    # Keep only Sinhala unicode range and spaces
-    # Sinhala Unicode range: \u0D80 - \u0DFF
-    filtered = []
-    for c in text:
-        if ('\u0D80' <= c <= '\u0DFF') or c.isspace():
-            filtered.append(c)
-    return "".join(filtered).strip()
-
-
-def levenshtein_distance(s1: str, s2: str) -> int:
-    """Calculate the Levenshtein distance between two strings (measured in words)."""
-    words1 = s1.split()
-    words2 = s2.split()
-    
-    if len(words1) < len(words2):
-        return levenshtein_distance(s2, s1)
-        
-    if len(words2) == 0:
-        return len(words1)
-        
-    previous_row = range(len(words2) + 1)
-    for i, c1 in enumerate(words1):
-        current_row = [i + 1]
-        for j, c2 in enumerate(words2):
-            insertions = previous_row[j + 1] + 1
-            deletions = current_row[j] + 1
-            substitutions = previous_row[j] + (c1 != c2)
-            current_row.append(min(insertions, deletions, substitutions))
-        previous_row = current_row
-        
-    return previous_row[-1]
 
 @router.post("/transcribe")
 async def transcribe_audio(file: UploadFile = File(...)):
@@ -89,24 +51,14 @@ async def analyze_reading(
         stt_engine = get_stt_engine()
         transcription = stt_engine.transcribe_audio_bytes(audio_bytes)
         
-        # Calculate Word Error Rate (WER)
-        # WER = (Substitutions + Deletions + Insertions) / Number of words in expected text
-        expected_words = expected_text.split()
-        num_expected_words = len(expected_words)
-        
-        if num_expected_words == 0:
-            wer = None
-        else:
-            distance = levenshtein_distance(expected_text, transcription)
-            wer = float(distance) / num_expected_words
-            
-        # Ensure WER is capped at 1.0 (100% error) for sanity, though technically it can exceed 1.0 if many insertions
-        # WER is uncapped: insertion errors can exceed 1.
+        alignment = SinhalaAlignmentService().compare(expected_text, transcription)
             
         return {
             "transcription": transcription,
             "expected_text": expected_text,
-            "word_error_rate": wer
+            "word_error_rate": alignment["word"]["error_rate"],
+            "grapheme_error_rate": alignment["grapheme"]["error_rate"],
+            "alignment": alignment,
         }
         
     except Exception as e:
@@ -116,9 +68,16 @@ async def analyze_reading(
 async def analyze_acoustics(
     student_id: str = Form(None),
     session_id: str = Form(None),
+    event_id: str = Form(None),
+    attempt_id: str = Form(None),
+    skill_id: str = Form(None),
     activity_id: str = Form(None),
     item_id: str = Form(None),
+    round_id: str = Form(None),
+    dataset_id: str = Form(None),
+    data_origin: str = Form("observed"),
     expected_text: str = Form(""),
+    allowed_variants_json: str = Form("[]"),
     expected_syllables: int = Form(0),
     t_stimulus: int = Form(0),
     t_record_start: int = Form(0),
@@ -136,86 +95,140 @@ async def analyze_acoustics(
         if len(audio_bytes) == 0:
             raise HTTPException(status_code=400, detail="Empty file uploaded")
             
-        from services.acoustic_service import AcousticAnalysisService
-        acoustic_engine = AcousticAnalysisService()
-        
-        results = acoustic_engine.analyze_audio(
+        try:
+            allowed_variants = json.loads(allowed_variants_json or "[]")
+            if not isinstance(allowed_variants, list):
+                raise ValueError
+            allowed_variants = [str(value) for value in allowed_variants]
+        except (ValueError, TypeError, json.JSONDecodeError):
+            raise HTTPException(422, "allowed_variants_json must be a JSON string array")
+        if data_origin not in {"observed", "synthetic"}:
+            raise HTTPException(422, "data_origin must be observed or synthetic")
+        resolved_dataset_id = dataset_id or (
+            f"session:{session_id}" if session_id else None
+        )
+
+        result = get_c2_pipeline().process(
             wav_bytes=audio_bytes,
             expected_text=expected_text,
             expected_syllables=expected_syllables,
             t_stimulus=t_stimulus,
-            t_record_start=t_record_start
+            t_record_start=t_record_start,
+            allowed_variants=allowed_variants,
         )
-        
-        # Calculate ASR metrics
-        recognized_text = results.get("transcription", "")
-        norm_expected = normalize_sinhala(expected_text)
-        norm_recognized = normalize_sinhala(recognized_text)
-        
-        exact_match = (norm_expected == norm_recognized) if norm_expected else None
-        
-        # Char Error Rate
-        char_dist = levenshtein_distance(" ".join(norm_expected), " ".join(norm_recognized)) if norm_expected else 0
-        cer = float(char_dist) / len(norm_expected) if norm_expected else None
-        
-        # Word Error Rate
-        word_dist = levenshtein_distance(norm_expected, norm_recognized)
-        wer = float(word_dist) / len(norm_expected.split()) if norm_expected.split() else None
-        
-        # Normalized similarity
-        max_len = max(len(norm_expected), len(norm_recognized), 1)
-        normalized_similarity = max(0.0, 1.0 - (float(char_dist) / max_len))
+        quality = result["quality"]
+        transcription = result["transcription"]
+        alignment = result["alignment"]
+        acoustic = result["acoustic"]
+        fluency = result["fluency"]
+        fusion = result["fusion"]
+        recognized_text = transcription.get("text", "")
+        word_metrics = alignment.get("word") or {}
+        grapheme_metrics = alignment.get("grapheme") or {}
+
+        resolved_attempt_id = attempt_id or event_id
+        if not resolved_attempt_id and session_id and item_id:
+            resolved_attempt_id = f"{session_id}:{item_id}:{t_record_start}"
         
         doc = {
+            "attempt_id": resolved_attempt_id,
+            "event_id": event_id,
             "student_id": student_id,
             "session_id": session_id,
+            "skill_id": skill_id,
             "activity_id": activity_id,
             "item_id": item_id,
+            "round_id": round_id,
+            "dataset_id": resolved_dataset_id,
             "expected_text": expected_text,
             "recognized_text": recognized_text,
-            "asr_engine": "whisper",
-            "asr_confidence": None, # Whisper local doesn't expose confidence easily without tokens
-            "exact_match": exact_match,
-            "character_error_rate": cer,
-            "word_error_rate": wer,
-            "normalized_similarity": normalized_similarity,
-            "acoustic_latency_ms": results.get("Acoustic_Latency_ms"),
-            "voice_onset_ms": results.get("Voice_Onset_ms"),
-            "detected_peaks": results.get("Detected_Peaks"),
-            "expected_syllables": results.get("Expected_Syllables"),
-            "syllabic_event_mismatch": results.get("Peak_Count_Delta"),
-            "intra_word_silence_ratio": results.get("Intra_Word_Silence_Ratio"),
-            "speech_duration_ms": results.get("Speech_Duration_ms"),
-            "pause_count": results.get("Pause_Count"),
-            "mean_pause_duration_ms": results.get("Mean_Pause_Duration_ms"),
-            "pause_ratio": results.get("Pause_Ratio"),
-            "local_jitter": results.get("Local_Jitter"),
-            "local_shimmer": results.get("Local_Shimmer"),
-            "recording_quality": results.get("recording_quality", "unknown"),
+            "allowed_variants": allowed_variants,
+            "asr_engine": transcription.get("engine"),
+            "asr_model": transcription.get("model"),
+            "asr_confidence": transcription.get("confidence"),
+            "stt_confidence": transcription.get("confidence"),
+            "stt_confidence_method": "mean_token_likelihood",
+            "exact_match": alignment.get("exact_match"),
+            "character_error_rate": grapheme_metrics.get("error_rate"),
+            "grapheme_error_rate": grapheme_metrics.get("error_rate"),
+            "grapheme_accuracy": grapheme_metrics.get("accuracy"),
+            "word_error_rate": word_metrics.get("error_rate"),
+            "word_accuracy": word_metrics.get("accuracy"),
+            "normalized_similarity": grapheme_metrics.get("accuracy"),
+            "error_operations": grapheme_metrics.get("operations", []),
+            "acoustic_latency_ms": acoustic.get("Acoustic_Latency_ms"),
+            "voice_onset_ms": acoustic.get("Voice_Onset_ms"),
+            "detected_peaks": acoustic.get("Detected_Peaks"),
+            "expected_syllables": acoustic.get("Expected_Syllables"),
+            "syllabic_event_mismatch": acoustic.get("Peak_Count_Delta"),
+            "intra_word_silence_ratio": acoustic.get("Intra_Word_Silence_Ratio"),
+            "speech_duration_ms": acoustic.get("Speech_Duration_ms"),
+            "pause_count": acoustic.get("Pause_Count"),
+            "mean_pause_duration_ms": acoustic.get("Mean_Pause_Duration_ms"),
+            "pause_ratio": acoustic.get("Pause_Ratio"),
+            "reading_rate_wpm": fluency.get("recognized_words_per_minute"),
+            "adjacent_repetitions": fluency.get("adjacent_repetitions"),
+            "local_jitter": acoustic.get("Local_Jitter"),
+            "local_shimmer": acoustic.get("Local_Shimmer"),
+            "recording_quality": quality.get("status"),
+            "recording_quality_score": quality.get("quality_score"),
+            "recording_quality_issues": quality.get("issues", []),
+            "combined_confidence": fusion.get("combined_confidence"),
+            "reading_performance_score": fusion.get("reading_performance_score"),
             "created_at": datetime.utcnow(),
-            "feature_version": "c2-v2",
-            "data_origin": "observed",
+            "pipeline_version": result.get("pipeline_version"),
+            "feature_version": result.get("pipeline_version"),
+            "data_origin": data_origin,
             "validation_status": "not_clinically_validated",
-            "measurement_status": "available" if recognized_text and norm_expected else "incomplete_transcription",
-            "persistence_status": "not_requested"
+            "measurement_status": fusion.get("measurement_status"),
+            "persistence_status": "not_requested",
+            "audio_sha256": result.get("audio_sha256"),
+            "quality": quality,
+            "transcription_evidence": transcription,
+            "alignment": alignment,
+            "acoustic": acoustic,
+            "fluency": fluency,
+            "fusion": fusion,
         }
         
         # Save to DB
         if student_id:
+            if not all((session_id, activity_id, item_id)):
+                raise HTTPException(422, "student/session/activity/item identifiers are required for stored speech")
             try:
                 db = get_db()
-                if not all((session_id, activity_id, item_id)):
-                    raise HTTPException(422, "student/session/activity/item identifiers are required for stored speech")
-                await db.speech_features.insert_one(dict(doc))
+                stored_doc = dict(doc)
+                if resolved_attempt_id:
+                    await db.speech_features.update_one(
+                        {"student_id": student_id, "attempt_id": resolved_attempt_id},
+                        {"$set": stored_doc},
+                        upsert=True,
+                    )
+                else:
+                    await db.speech_features.insert_one(stored_doc)
                 doc["persistence_status"] = "saved"
             except Exception as e:
                 doc["persistence_status"] = "failed"
                 doc["measurement_status"] = "persistence_failed"
+                doc["persistence_error"] = type(e).__name__
                 
-        # Return merged results so the caller gets everything
-        return {**results, **doc}
+        # Preserve the former flat response keys while returning all seven
+        # versioned evidence stages for new clients.
+        return {
+            **acoustic,
+            **doc,
+            "transcription": recognized_text,
+            "word_error_rate": word_metrics.get("error_rate"),
+            "Acoustic_Latency_ms": acoustic.get("Acoustic_Latency_ms"),
+            "Peak_Count_Delta": acoustic.get("Peak_Count_Delta"),
+            "Local_Jitter": acoustic.get("Local_Jitter"),
+            "Local_Shimmer": acoustic.get("Local_Shimmer"),
+            "pipeline": result,
+        }
 
         
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Acoustic analysis error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

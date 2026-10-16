@@ -3,11 +3,11 @@ import 'package:sipsara_app/utils/sound_utils.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/telemetry_wrapper.dart';
+import '../../../widgets/reading_capture_card.dart';
 import '../../../models/curriculum_models.dart';
 import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../services/progress_service.dart';
-import '../shared_widgets/shared_celebration_popup.dart';
 import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
 
 /// Skill 5 Activity 4
@@ -39,7 +39,6 @@ class _Skill5Act4McqState extends State<Skill5Act4Mcq>
 
   // Animations
   late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
   late AnimationController _speakerBounceController;
   late Animation<double> _speakerBounceAnimation;
 
@@ -65,9 +64,6 @@ class _Skill5Act4McqState extends State<Skill5Act4Mcq>
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
 
     // Speaker bounce when tapped
     _speakerBounceController = AnimationController(
@@ -81,9 +77,7 @@ class _Skill5Act4McqState extends State<Skill5Act4Mcq>
       ),
     );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playAudioPrompt(autoPlay: true);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {});
   }
 
   @override
@@ -149,7 +143,8 @@ class _Skill5Act4McqState extends State<Skill5Act4Mcq>
         correctIndex: correctIndex,
         errorType: 'sentence_comprehension_error',
       );
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      setState(() {});
 
       if (_attemptCount >= 3) {
         context.findAncestorStateOfType<TelemetryWrapperState>()?.completeRound(
@@ -194,7 +189,6 @@ class _Skill5Act4McqState extends State<Skill5Act4Mcq>
           _selectedIndex = null;
           _isCorrect = false;
         });
-        _playAudioPrompt(autoPlay: true);
       } else {
         setState(() {
           _activityComplete = true;
@@ -230,6 +224,12 @@ class _Skill5Act4McqState extends State<Skill5Act4Mcq>
         (currentRound['options'] as List?)?.map((e) => e.toString()).toList() ??
         ['🔵', '🟥', '🔺', '⭐'];
     var correctIndex = (currentRound['correct_index'] as int?) ?? 0;
+
+    if (options.length > 1) {
+      final rotation = _currentRoundIndex % options.length;
+      options = [...options.sublist(rotation), ...options.sublist(0, rotation)];
+      correctIndex = (correctIndex - rotation) % options.length;
+    }
 
     if (widget.isRemedial && options.length > 2) {
       final correctItem = options[correctIndex];
@@ -271,9 +271,17 @@ class _Skill5Act4McqState extends State<Skill5Act4Mcq>
               const SizedBox(height: 8),
 
               // ── Premium Speaker Card ──
-              _buildSpeakerCard(),
+              _buildSpeakerCard(currentRound['prompt']?.toString() ?? ''),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+
+              ReadingCaptureCard(
+                activity: widget.activityNode!,
+                round: currentRound,
+                roundIndex: _currentRoundIndex,
+              ),
+
+              const SizedBox(height: 24),
 
               // ── Premium Answer Pool ──
               _buildAnswerPool(options, correctIndex, rounds.length),
@@ -287,7 +295,7 @@ class _Skill5Act4McqState extends State<Skill5Act4Mcq>
   }
 
   /// Premium animated speaker card — tap to hear the word
-  Widget _buildSpeakerCard() {
+  Widget _buildSpeakerCard(String prompt) {
     return GestureDetector(
       onTap: () {
         context
@@ -308,7 +316,7 @@ class _Skill5Act4McqState extends State<Skill5Act4Mcq>
           children: [
             Flexible(
               child: Text(
-                'ශබ්දයට සවන් දී වාක්‍ය තෝරන්න',
+                prompt,
                 style: AppTypography.sinhala(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
