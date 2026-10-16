@@ -1,5 +1,5 @@
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
-from services.stt_service import get_stt_engine
+from services.stt_service import get_stt_engine, get_stt_status
 from datetime import datetime
 from database import get_db
 import json
@@ -9,6 +9,23 @@ from services.sinhala_alignment_service import SinhalaAlignmentService
 
 router = APIRouter(prefix="/stt", tags=["Speech-to-Text"])
 
+
+def require_stt_available() -> None:
+    """Reject quickly while startup preload is running or has failed."""
+    status = get_stt_status()
+    if status["status"] in {"loading", "failed"}:
+        warming_up = status["status"] == "loading"
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "stt_warming_up" if warming_up else "stt_unavailable",
+                "message": "The speech model is preparing. Please retry shortly."
+                if warming_up
+                else "The speech model could not be loaded.",
+                "retryable": warming_up,
+            },
+        )
+
 @router.post("/transcribe")
 async def transcribe_audio(file: UploadFile = File(...)):
     """
@@ -16,6 +33,7 @@ async def transcribe_audio(file: UploadFile = File(...)):
     """
     if not file:
         raise HTTPException(status_code=400, detail="No file uploaded")
+    require_stt_available()
         
     try:
         audio_bytes = await file.read()
@@ -42,6 +60,7 @@ async def analyze_reading(
     """
     if not file:
         raise HTTPException(status_code=400, detail="No file uploaded")
+    require_stt_available()
         
     try:
         audio_bytes = await file.read()
@@ -89,6 +108,7 @@ async def analyze_acoustics(
     """
     if not file:
         raise HTTPException(status_code=400, detail="No file uploaded")
+    require_stt_available()
         
     try:
         audio_bytes = await file.read()

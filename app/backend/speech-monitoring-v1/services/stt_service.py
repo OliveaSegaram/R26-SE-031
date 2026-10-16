@@ -3,6 +3,7 @@ import soundfile as sf
 import tempfile
 import os
 import math
+import threading
 
 import logging
 
@@ -126,11 +127,61 @@ class STTService:
         """Backward-compatible text-only interface."""
         return self.transcribe_with_metadata(audio_bytes)["text"]
 
-# Singleton instance to avoid reloading the model on every request
+# Singleton instance to avoid reloading the model on every request.
 stt_engine = None
+_stt_init_lock = threading.Lock()
+_stt_state_lock = threading.Lock()
+_stt_status = "not_loaded"
+_stt_error_type = None
+
+
+def get_stt_status() -> dict:
+    """Return deployment-safe model readiness information."""
+    with _stt_state_lock:
+        return {
+            "status": _stt_status,
+            "model": MODEL_NAME,
+            "error_type": _stt_error_type,
+        }
+
+
+def mark_stt_preloading() -> None:
+    """Expose warming-up state before the worker thread begins."""
+    global _stt_status, _stt_error_type
+    with _stt_state_lock:
+        if stt_engine is None:
+            _stt_status = "loading"
+            _stt_error_type = None
+
 
 def get_stt_engine():
-    global stt_engine
-    if stt_engine is None:
-        stt_engine = STTService()
-    return stt_engine
+    global stt_engine, _stt_status, _stt_error_type
+    with _stt_init_lock:
+        if stt_engine is not None:
+            return stt_engine
+
+        with _stt_state_lock:
+            _stt_status = "loading"
+            _stt_error_type = None
+        try:
+            loaded_engine = STTService()
+            stt_engine = loaded_engine
+            with _stt_state_lock:
+                _stt_status = "ready"
+            return stt_engine
+        except Exception as exc:
+            with _stt_state_lock:
+                _stt_status = "failed"
+                _stt_error_type = type(exc).__name__
+            logger.exception("Sinhala Whisper model failed to load")
+            raise
+
+
+def preload_stt_engine() -> None:
+    """Warm the singleton outside a learner request."""
+    try:
+        get_stt_engine()
+        logger.info("Sinhala Whisper model is ready")
+    except Exception:
+        # The readiness endpoint exposes the failure without crashing C2.
+        pass
