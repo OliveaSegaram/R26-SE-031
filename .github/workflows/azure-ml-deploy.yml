@@ -31,15 +31,16 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Log in to Azure Container Registry
-      env:
-        ACR_PASS: ${{ secrets.ACR_PASSWORD }}
-      run: |
-        PASSWORD="${ACR_PASS:-DnXC77q5IrT9IYTI3qmiKnIxfRu1dFsKlDSwk9R3xjptPN9AiD3ZJQQJ99CJAC3pKaREqg7NAAACAZCRQAK5}"
-        echo "$PASSWORD" | docker login ${{ env.ACR_NAME }}.azurecr.io -u sipsaramlacr26 --password-stdin
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.ACR_NAME }}.azurecr.io
+        username: sipsaramlacr26
+        password: ${{ secrets.ACR_PASSWORD || 'DnXC77q5IrT9IYTI3qmiKnIxfRu1dFsKlDSwk9R3xjptPN9AiD3ZJQQJ99CJAC3pKaREqg7NAAACAZCRQAK5' }}
 
     - name: Build Docker Image
       run: |
         docker build -f Dockerfile.azure -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest .
+        docker images
 
     - name: Push Docker Image to ACR
       run: |
