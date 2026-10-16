@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/avatar_utils.dart';
-import '../../theme/app_theme.dart';
+import '../theme/app_theme.dart';
 import 'consent_screen.dart';
 import '../services/auth_service.dart';
 import '../services/student_service.dart';

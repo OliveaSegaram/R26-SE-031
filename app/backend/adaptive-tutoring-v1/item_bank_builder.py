@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from curriculum_mapping import ACTIVITY_TO_KC
+from services.practice_metadata import derive_practice_metadata
 
 
 APP_ROOT = Path(__file__).resolve().parents[2]
@@ -149,7 +150,7 @@ def _item_document(
     duplicate_of_core = base_hash is not None and content_hash == base_hash
     options = _option_records(item_id, content)
     option_count = len(options)
-    return {
+    document = {
         "item_id": normalize_item_id(item_id),
         "item_version": int(round_data.get("item_version", 1)),
         "skill_id": skill_id,
@@ -193,6 +194,9 @@ def _item_document(
             "response_load_relation",
             "core" if item_role == "CORE" else "equivalent",
         ),
+        "targeted_practice": bool(round_data.get("targeted_practice", False)),
+        "target_source_item_id": round_data.get("target_source_item_id"),
+        "targeted_unit": round_data.get("targeted_unit"),
         "distractor_strategy": round_data.get("distractor_strategy"),
         "single_floor_retry": bool(
             round_data.get("single_floor_retry", False)
@@ -215,6 +219,8 @@ def _item_document(
         # ordinary candidate selection until an educator replaces the content.
         "is_active": bool(round_data.get("is_active", not duplicate_of_core)),
     }
+    document.update(derive_practice_metadata(document))
+    return document
 
 
 def build_items(curriculum_dir: Optional[Path] = None) -> List[Dict[str, Any]]:

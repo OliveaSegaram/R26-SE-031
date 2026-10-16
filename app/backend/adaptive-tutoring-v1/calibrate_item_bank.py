@@ -55,6 +55,10 @@ def _canonical_completion_events(db, projection: dict):
         "equivalent_group_id": 1,
         "item_version": 1,
         "difficulty_b": 1,
+        "data_origin": 1,
+        "dataset_id": 1,
+        "validation_status": 1,
+        "calibration_eligible": 1,
     }
     canonical_bank = _canonical_component4_item_bank(db)
     seen_event_ids = set()
@@ -118,6 +122,17 @@ def _is_research_eligible(event: dict, canonical_bank: dict[str, dict]) -> bool:
         # Compatibility for small calibration unit-test doubles. Production
         # always has the item bank and therefore always takes the strict path.
         return True
+    # Production calibration is intentionally stricter than operational
+    # storage. Synthetic, public-external, and merely collected live rows can
+    # be audited, but only a reviewed observed cohort can fit Rasch/BKT.
+    if event.get("data_origin") != "observed":
+        return False
+    if event.get("calibration_eligible") is not True:
+        return False
+    if event.get("validation_status") not in {
+        "pilot_approved", "validated_observed"
+    }:
+        return False
     if not COMPONENT4_ITEM_RE.fullmatch(item_id.upper()):
         return False
     bank_item = canonical_bank.get(item_id.upper())
@@ -233,6 +248,7 @@ def main() -> None:
         report = {
             "mode": "apply" if args.apply else "dry_run",
             "canonical_completion_observations": len(rasch_responses),
+            "calibration_data_origin": "approved_observed_only",
             "canonical_students": len({
                 response["student_id"] for response in rasch_responses
             }),
@@ -278,6 +294,8 @@ def main() -> None:
                             result.item_sample_counts[item_id],
                         "calibrated_at": calibrated_at,
                         "calibration_model": "rasch_1pl_sgd_v1",
+                        "calibration_data_origin": "observed",
+                        "calibration_validation_status": "pilot_approved",
                     }},
                 )
             for kc, params in bkt_result.parameters.items():
@@ -298,6 +316,8 @@ def main() -> None:
                         "calibrated_at": calibrated_at,
                         "model_version": "bkt_grid_real_responses_v1",
                         "status": "active",
+                        "data_origin": "observed",
+                        "validation_status": "pilot_approved",
                     }},
                     upsert=True,
                 )

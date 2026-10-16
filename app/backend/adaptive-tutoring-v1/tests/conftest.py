@@ -24,6 +24,7 @@ async def reset_db():
     # Clear collections between tests
     await mock_db["knowledge_states"].delete_many({})
     await mock_db["adaptive_decisions"].delete_many({})
+    await mock_db["policy_decisions"].delete_many({})
     await mock_db["item_bank"].delete_many({})
     yield
 

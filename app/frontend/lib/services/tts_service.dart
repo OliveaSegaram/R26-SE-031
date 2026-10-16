@@ -22,6 +22,7 @@ class TtsService {
     String text, {
     String folder = 'general',
     bool waitUntilComplete = false,
+    double playbackRate = 1.0,
   }) async {
     if (text.isEmpty) return false;
 
@@ -38,7 +39,11 @@ class TtsService {
       // 1. ZERO LATENCY CACHE: Play instantly if we already downloaded it!
       if (await file.exists()) {
         print('TTS: ⚡ Playing INSTANTLY from local cache: ${file.path}');
-        await _playFile(file.path, waitUntilComplete: waitUntilComplete);
+        await _playFile(
+          file.path,
+          waitUntilComplete: waitUntilComplete,
+          playbackRate: playbackRate,
+        );
         return true;
       }
 
@@ -64,7 +69,11 @@ class TtsService {
             );
             // Save to our cache file for future instant playbacks
             await file.writeAsBytes(audioRes.bodyBytes);
-            await _playFile(file.path, waitUntilComplete: waitUntilComplete);
+            await _playFile(
+              file.path,
+              waitUntilComplete: waitUntilComplete,
+              playbackRate: playbackRate,
+            );
             return true;
           } else {
             print('TTS: ❌ Audio download failed: ${audioRes.statusCode}');
@@ -84,11 +93,13 @@ class TtsService {
   Future<void> _playFile(
     String filePath, {
     required bool waitUntilComplete,
+    required double playbackRate,
   }) async {
     final completion = waitUntilComplete
         ? _audioPlayer.onPlayerComplete.first
         : null;
     await _audioPlayer.play(DeviceFileSource(filePath));
+    await _audioPlayer.setPlaybackRate(playbackRate.clamp(0.5, 2.0));
     if (completion != null) {
       try {
         await completion.timeout(const Duration(seconds: 30));

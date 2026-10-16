@@ -12,6 +12,7 @@ import '../../../adaptive/controllers/adaptive_choice_controller.dart';
 import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import '../../../adaptive/widgets/adaptive_answer_pool.dart';
 import 'skill2_round_resolver.dart';
+import '../../../adaptive/utils/adaptive_option_order.dart';
 
 class Skill2Act3Audio extends StatefulWidget {
   final ActivityNode? activityNode;
@@ -40,6 +41,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
   late List<String> _options;
   int _correctIndex = 0;
   String _promptText = '';
+  String _spokenInstruction = '';
   String _currentItemId = '';
 
   Set<int> _wrongIndices = {};
@@ -89,12 +91,21 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
       final roundData = resolved.data;
 
       _promptText =
-          roundData['prompt']?.toString() ?? 'ශබ්දයට සවන්දී අකුර තෝරන්න';
-      _options =
+          roundData['prompt']?.toString() ??
+          Skill2RoundResolver.audioChoicePrompt;
+      _spokenInstruction = Skill2RoundResolver.spokenLetterInstruction(
+        roundData,
+      );
+      final rawOptions =
           (roundData['options'] as List?)?.map((e) => e.toString()).toList() ??
           [];
 
       final correctOption = roundData['correctOption']?.toString() ?? '';
+      _options = AdaptiveOptionOrder.withTargets<String>(
+        source: rawOptions,
+        itemId: _currentItemId,
+        isTarget: (value) => value == correctOption,
+      );
       _correctIndex = _options.indexOf(correctOption);
       if (_correctIndex == -1) _correctIndex = 0;
       _choiceController.configure(
@@ -112,6 +123,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
       );
     } else {
       _options = [];
+      _spokenInstruction = '';
     }
 
     _wrongIndices.clear();
@@ -164,35 +176,13 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
     }
   }
 
-  Future<void> _playAudioPrompt({bool autoPlay = false}) async {
-    String spokenInstruction = _promptText;
-
-    if (_promptText.contains("ශබ්දයට සවන් දී අකුර තෝරන්න")) {
-      final correctLetter =
-          _options.isNotEmpty &&
-              _correctIndex >= 0 &&
-              _correctIndex < _options.length
-          ? _options[_correctIndex]
-          : '';
-      if (correctLetter.isNotEmpty) {
-        spokenInstruction = "ශබ්දයට සවන් දී $correctLetterයන්න තෝරන්න";
-      }
-    } else {
-      spokenInstruction = _promptText
-          .replaceAll('මා', 'ම')
-          .replaceAllMapped(
-            RegExp(r"'?(.)'? අකුර"),
-            (match) => '${match.group(1)}, අකුර',
-          )
-          .replaceAllMapped(
-            RegExp(r"'?(.)'? පින්තූරය"),
-            (match) => '${match.group(1)}, පින්තූරය',
-          )
-          .replaceAllMapped(
-            RegExp(r"'?(.)'? තෝරන්න"),
-            (match) => '${match.group(1)}යන්න තෝරන්න',
-          );
-    }
+  Future<void> _playAudioPrompt({
+    bool autoPlay = false,
+    bool slow = false,
+  }) async {
+    final spokenInstruction = _spokenInstruction.isEmpty
+        ? _promptText
+        : _spokenInstruction;
 
     if (autoPlay && !_autoplayGate.shouldPlay(_currentItemId)) {
       return;
@@ -209,6 +199,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
       spokenInstruction,
       folder: 'skill_2',
       waitUntilComplete: true,
+      playbackRate: slow ? 0.78 : 1.0,
     );
     if (!mounted ||
         !_promptReadiness.finish(
@@ -288,10 +279,12 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
             ],
             "correct_option_ids": <String>[_optionId(_correctIndex)],
             "selected_option_ids": <String>[_optionId(index)],
+            "struggled_target_units": <String>[_options[_correctIndex]],
             "supported_actions": <String>[
               "REMOVE_OPTION",
               "HIGHLIGHT_OPTION",
               "REPLAY_INSTRUCTION",
+              "SLOW_AUDIO",
             ],
             "minimum_visible_options": 2,
             "error_type": "phoneme_grapheme_confusion",
@@ -302,6 +295,22 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
           result: result,
           correctOptionIds: <String>[_optionId(_correctIndex)],
         );
+        final rawAction = result?['next_action'];
+        if (rawAction is Map) {
+          final plan = ScaffoldPlan.fromNextAction(
+            Map<String, dynamic>.from(rawAction),
+            correctOptionIds: <String>[_optionId(_correctIndex)],
+          );
+          if (plan.commands.any(
+            (command) => command.type == ScaffoldActionType.slowAudio,
+          )) {
+            await _playAudioPrompt(slow: true);
+          } else if (plan.commands.any(
+            (command) => command.type == ScaffoldActionType.replayInstruction,
+          )) {
+            await _playAudioPrompt();
+          }
+        }
       }
 
       Future.delayed(const Duration(milliseconds: 800), () {

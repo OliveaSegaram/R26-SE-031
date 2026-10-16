@@ -16,7 +16,12 @@ MOCK_FUSION_PAYLOAD = {
         "dimensionless_jerk": 45.0,
         "dwell_time_ms": 200.0
     },
-    "student_age_months": 84
+    "student_age_months": 84,
+    "gender": 0,
+    "time_of_day_hour": 10,
+    "session_id": "mock_session_001",
+    "data_origin": "synthetic",
+    "dataset_id": "synthetic:c3-contract-test"
 }
 
 def test_health_check(client):
@@ -33,10 +38,10 @@ def test_diagnose_patient(client):
     assert "learner_profile" in data
     assert "shap_explanations" in data
     assert data["learner_profile"]["primary_pattern"] in [
-        "Typical Learning Pattern",
-        "Phonological Learning Pattern",
-        "Visual-Orthographic Learning Pattern",
-        "Combined Learning Pattern",
+        "Typical",
+        "Phonological",
+        "Visual-Orthographic",
+        "Combined",
     ]
     assert 0.0 <= data["learner_profile"]["confidence"] <= 1.0
     assert len(data["shap_explanations"]["top_contributing_features"]) == 3

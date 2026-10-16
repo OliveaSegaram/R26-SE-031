@@ -12,6 +12,7 @@ import '../../../services/progress_service.dart';
 import '../../../adaptive/controllers/adaptive_choice_controller.dart';
 import '../../../adaptive/controllers/adaptive_task_coordinator.dart';
 import '../../../adaptive/models/adaptive_scaffold_models.dart';
+import '../../../adaptive/utils/adaptive_option_order.dart';
 import 'widgets/pattern_background.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
 
@@ -265,15 +266,24 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
     return rounds;
   }
 
-  MemoryRound _memoryRoundFromData(Map<String, dynamic> data) {
-    final assets = (data['assets'] as Iterable? ?? const <dynamic>[])
+  MemoryRound _memoryRoundFromData(
+    Map<String, dynamic> data, {
+    String itemId = '',
+  }) {
+    final rawAssets = (data['assets'] as Iterable? ?? const <dynamic>[])
         .map((value) => value.toString())
         .toList();
+    final target = data['target_asset']?.toString() ?? rawAssets.first;
+    final assets = AdaptiveOptionOrder.withTargets<String>(
+      source: rawAssets,
+      itemId: itemId,
+      isTarget: (value) => value == target,
+    );
     return MemoryRound(
       itemCount: assets.length,
       memoryDurationMs: (data['show_milliseconds'] as num?)?.toInt() ?? 4000,
       assets: assets,
-      targetAsset: data['target_asset']?.toString() ?? assets.first,
+      targetAsset: target,
     );
   }
 
@@ -380,7 +390,10 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
   // ── Game logic ──
 
   MemoryRound get _currentRound =>
-      _memoryRoundFromData(_taskCoordinator.roundData);
+      _memoryRoundFromData(
+        _taskCoordinator.roundData,
+        itemId: _taskCoordinator.itemId,
+      );
 
   String _cardOptionId(int index) => '${_taskCoordinator.itemId}_O${index + 1}';
 
@@ -446,10 +459,12 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
                   'supported_actions': const <String>[
                     'DISABLE_OPTION',
                     'HIGHLIGHT_OPTION',
-                    'REPLAY_INSTRUCTION',
                   ],
                   'minimum_visible_options': 2,
                   'error_type': 'visual_memory_error',
+                  'struggled_target_units': <String>[
+                    _currentRound.targetAsset,
+                  ],
                 },
               )
               .then((result) {

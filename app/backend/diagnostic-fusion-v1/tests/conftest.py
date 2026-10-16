@@ -16,6 +16,8 @@ def mock_db_fixture():
     with patch("main.get_db") as mock_get_db:
         mock_db = MagicMock()
         mock_db.diagnoses.insert_one = AsyncMock()
+        mock_db.learner_profiles.insert_one = AsyncMock()
+        mock_db.model_audit_log.insert_one = AsyncMock()
         mock_get_db.return_value = mock_db
         yield mock_db
 

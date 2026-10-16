@@ -11,6 +11,8 @@ import '../../../theme/app_theme.dart';
 import '../../../services/tts_service.dart';
 import '../../../services/progress_service.dart';
 import '../../../adaptive/controllers/adaptive_task_coordinator.dart';
+import '../../../adaptive/models/adaptive_scaffold_models.dart';
+import '../../../adaptive/utils/adaptive_option_order.dart';
 import 'logic/shadow_generator.dart';
 import 'models/shadow_round.dart';
 import 'widgets/pattern_background.dart';
@@ -57,6 +59,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
 
   // ── Audio ──
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final Random _animationRandom = Random();
 
   // ── Animation controllers ──
   late AnimationController _celebrationController;
@@ -199,11 +202,16 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
   void _initRoundState() {
     _matchedObjects.clear();
     _hintedShadow = null;
-    final rng = Random();
-
-    // Ensure randomization changes the order for tray and shadows independently
-    _shuffledTrayObjects = List.from(_currentRound.targetAssets)..shuffle(rng);
-    _shuffledShadows = List.from(_currentRound.targetAssets)..shuffle(rng);
+    _shuffledTrayObjects = AdaptiveOptionOrder.shuffled<String>(
+      _currentRound.targetAssets,
+      _taskCoordinator.itemId,
+      salt: 'tray',
+    );
+    _shuffledShadows = AdaptiveOptionOrder.shuffled<String>(
+      _currentRound.targetAssets,
+      _taskCoordinator.itemId,
+      salt: 'shadow',
+    );
 
     for (var shadow in _shuffledShadows) {
       _shadowGlowControllers[shadow] = AnimationController(
@@ -223,7 +231,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
       final obj = _shuffledTrayObjects[i];
       _floatControllers[obj] = AnimationController(
         vsync: this,
-        duration: Duration(milliseconds: 1800 + rng.nextInt(600)),
+        duration: Duration(milliseconds: 1800 + _animationRandom.nextInt(600)),
       )..repeat(reverse: true);
     }
 
@@ -322,11 +330,20 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                   'HIGHLIGHT_OPTION',
                   'REPLAY_INSTRUCTION',
                 ],
+                struggledTargetUnits: <String>[object],
                 errorType: 'visual_matching_error',
               )
               .then((plan) {
-                if (mounted && plan != null)
+                if (!mounted || plan == null) return;
+                final types = plan.commands
+                    .map((command) => command.type)
+                    .toSet();
+                if (types.contains(ScaffoldActionType.replayInstruction)) {
+                  _playInstruction();
+                }
+                if (types.contains(ScaffoldActionType.highlightOptions)) {
                   setState(() => _hintedShadow = object);
+                }
               }),
         );
       }

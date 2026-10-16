@@ -11,6 +11,7 @@ import '../../../services/tts_service.dart';
 import '../../../adaptive/controllers/adaptive_choice_controller.dart';
 import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import 'skill2_round_resolver.dart';
+import '../../../adaptive/utils/adaptive_option_order.dart';
 
 /// Activity 2: එක සමාන අකුරු (Matching Similar Letters)
 class Skill2Act2IdenticalMatch extends StatefulWidget {
@@ -106,7 +107,11 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             )
             .toList(),
       );
-      _bottomLetters = List<String>.from(_topLetters)..shuffle();
+      _bottomLetters = AdaptiveOptionOrder.shuffled<String>(
+        _topLetters,
+        _currentItemId,
+        salt: 'bottom-pairs',
+      );
       _selectedTopLetter = null;
       _tappedBottomLetter = null;
       _isBottomLetterCorrect = false;
@@ -295,6 +300,9 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             .toList(),
         "correct_option_ids": [_pairId(_selectedTopLetter!)],
         "selected_option_ids": [_pairId(letter)],
+        "struggled_target_units": Skill2RoundResolver.matchingStruggledUnits(
+          _selectedTopLetter,
+        ),
         "supported_actions": ["HIGHLIGHT_OPTION", "REPLAY_INSTRUCTION"],
         "minimum_visible_options": 2,
         "error_type": "visual_matching_error",
@@ -308,19 +316,33 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             extraTelemetry: extraTelemetry,
           );
 
+      if (!mounted) return;
+
       if (scaffoldResult != null &&
           scaffoldResult.containsKey('next_action') &&
           scaffoldResult['next_action']['decision'] == 'TERMINATE') {
         _handleRoundComplete(0, forceNextIdx: scaffoldResult);
       } else if (scaffoldResult != null &&
           scaffoldResult.containsKey('next_action')) {
-        context
-            .findAncestorStateOfType<TelemetryWrapperState>()
-            ?.applyScaffoldResult<String>(
-              controller: _pairController,
-              result: scaffoldResult,
-              correctOptionIds: [_pairId(_selectedTopLetter!)],
-            );
+        final wrapper = context
+            .findAncestorStateOfType<TelemetryWrapperState>();
+        wrapper?.applyScaffoldResult<String>(
+          controller: _pairController,
+          result: scaffoldResult,
+          correctOptionIds: [_pairId(_selectedTopLetter!)],
+        );
+        final rawAction = scaffoldResult['next_action'];
+        if (rawAction is Map) {
+          final plan = ScaffoldPlan.fromNextAction(
+            Map<String, dynamic>.from(rawAction),
+            correctOptionIds: [_pairId(_selectedTopLetter!)],
+          );
+          if (plan.commands.any(
+            (command) => command.type == ScaffoldActionType.replayInstruction,
+          )) {
+            _playCurrentInstruction();
+          }
+        }
       }
 
       // Briefly show error state, but KEEP the top selection locked!

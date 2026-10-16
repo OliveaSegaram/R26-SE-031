@@ -12,6 +12,7 @@ import '../../../services/progress_service.dart';
 import '../../../adaptive/controllers/adaptive_choice_controller.dart';
 import '../../../adaptive/controllers/adaptive_task_coordinator.dart';
 import '../../../adaptive/models/adaptive_scaffold_models.dart';
+import '../../../adaptive/utils/adaptive_option_order.dart';
 import 'logic/hidden_search_generator.dart';
 import 'widgets/pattern_background.dart';
 import '../shared_widgets/shared_celebration_popup.dart';
@@ -219,7 +220,12 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
         _encourageMessages[rng.nextInt(_encourageMessages.length)];
 
     // Populate _items from generator output
-    for (var generatedItem in round.items) {
+    final orderedItems = AdaptiveOptionOrder.withTargets<HiddenSearchItem>(
+      source: round.items,
+      itemId: _currentItemId,
+      isTarget: (item) => item.isTarget,
+    );
+    for (var generatedItem in orderedItems) {
       _items.add(
         _GameItem(
           stableSuffix: generatedItem.id,
@@ -346,6 +352,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
           ],
           'minimum_visible_options': 2,
           'error_type': 'visual_search_miss',
+          'struggled_target_units': <String>[_activeRound.targetPath],
         },
       );
       if (!mounted) return;

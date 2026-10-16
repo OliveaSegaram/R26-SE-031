@@ -11,6 +11,7 @@ import '../shared_widgets/shared_celebration_popup.dart';
 import '../../../adaptive/controllers/adaptive_choice_controller.dart';
 import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import 'skill2_round_resolver.dart';
+import '../../../adaptive/utils/adaptive_option_order.dart';
 
 /// Activity 4: වචනයට සවන් දී පින්තූරය සොයමු (Listen to Word & Find Image)
 /// Template: audio_image_match_game
@@ -86,17 +87,30 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
 
       _promptText =
           roundData['prompt']?.toString() ?? 'අසා සිටින පින්තූරය තෝරන්න';
-      _options =
+      final rawOptions =
           (roundData['options'] as List?)?.map((e) => e.toString()).toList() ??
           [];
 
+      late final List<int> rawCorrectIndices;
       if (roundData['correct_indices'] != null) {
-        _correctIndices = List<int>.from(roundData['correct_indices']);
+        rawCorrectIndices = List<int>.from(roundData['correct_indices']);
       } else if (roundData['correct_index'] != null) {
-        _correctIndices = [roundData['correct_index'] as int];
+        rawCorrectIndices = [roundData['correct_index'] as int];
       } else {
-        _correctIndices = [0];
+        rawCorrectIndices = [0];
       }
+      final correctValues = <String>{
+        for (final index in rawCorrectIndices)
+          if (index >= 0 && index < rawOptions.length) rawOptions[index],
+      };
+      _options = AdaptiveOptionOrder.withTargets<String>(
+        source: rawOptions,
+        itemId: _currentItemId,
+        isTarget: correctValues.contains,
+      );
+      _correctIndices = List<int>.generate(_options.length, (index) => index)
+          .where((index) => correctValues.contains(_options[index]))
+          .toList();
       _choiceController.configure(
         List<AdaptiveOption<int>>.generate(
           _options.length,
@@ -285,13 +299,18 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
             "selected_option_ids": selectedOpts,
             "remaining_correct_option_ids": remainingCorrectOpts,
             "correct_option_ids": _correctIndices.map(_optionId).toList(),
+            // For the two-boundary final task, diagnose the next still-missing
+            // boundary. If the first boundary is already correct, a later
+            // error therefore targets the final pilla-bearing unit.
+            "struggled_target_units":
+                Skill2RoundResolver.nextUnresolvedChoiceTarget(
+                  options: _options,
+                  correctIndices: _correctIndices,
+                  selectedIndices: _selectedIndices,
+                ),
             "required_target_count": _correctIndices.length,
             "original_options_count": _options.length,
-            "supported_actions": [
-              "REMOVE_OPTION",
-              "HIGHLIGHT_OPTION",
-              "REPLAY_INSTRUCTION",
-            ],
+            "supported_actions": ["REMOVE_OPTION", "HIGHLIGHT_OPTION"],
             "minimum_visible_options": 2,
             "error_type": "orthographic_discrimination_error",
           },

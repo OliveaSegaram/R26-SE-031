@@ -1,5 +1,6 @@
 import 'dart:math';
 import '../models/sorting_round.dart';
+import '../../../../adaptive/utils/adaptive_option_order.dart';
 
 /// Generates 5 randomized sorting rounds with progressive difficulty.
 class SortingGenerator {
@@ -109,16 +110,27 @@ class SortingGenerator {
     return rounds;
   }
 
-  static SortingRound fromCurriculum(Map<String, dynamic> data) {
+  static SortingRound fromCurriculum(
+    Map<String, dynamic> data, {
+    String itemId = '',
+  }) {
     final rawCategories = Map<String, dynamic>.from(
       data['categories'] as Map? ?? const <String, dynamic>{},
     );
-    final categories = rawCategories.map(
+    final parsedCategories = rawCategories.map(
       (key, value) => MapEntry(
         key,
         (value as Iterable).map((asset) => asset.toString()).toList(),
       ),
     );
+    final orderedKeys = AdaptiveOptionOrder.shuffled<String>(
+      parsedCategories.keys.toList(),
+      itemId,
+      salt: 'categories',
+    );
+    final categories = <String, List<String>>{
+      for (final key in orderedKeys) key: parsedCategories[key]!,
+    };
     final labels = Map<String, String>.from(
       (data['category_labels'] as Map? ?? const <String, String>{}).map(
         (key, value) => MapEntry(key.toString(), value.toString()),
@@ -129,7 +141,11 @@ class SortingGenerator {
         (key, value) => MapEntry(key.toString(), value.toString()),
       ),
     );
-    final objects = categories.values.expand((items) => items).toList();
+    final objects = AdaptiveOptionOrder.shuffled<String>(
+      categories.values.expand((items) => items).toList(),
+      itemId,
+      salt: 'objects',
+    );
     final objectToCategory = <String, String>{};
     for (final entry in categories.entries) {
       for (final asset in entry.value) {

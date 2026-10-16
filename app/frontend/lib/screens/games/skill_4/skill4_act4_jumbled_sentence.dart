@@ -10,6 +10,7 @@ import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../services/progress_service.dart';
 import '../../../adaptive/adapters/sequence_scaffold_adapter.dart';
+import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import '../../../adaptive/sequence_progression.dart';
 
 class PlacedWord {
@@ -51,6 +52,15 @@ class _Skill4Act4JumbledSentenceState extends State<Skill4Act4JumbledSentence>
 
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
+
+  @override
+  Future<void> handleAdaptiveSequenceSemanticScaffold(
+    ScaffoldCommand command,
+  ) async {
+    if (command.type == ScaffoldActionType.replayInstruction) {
+      _playCurrentInstruction();
+    }
+  }
 
   @override
   void initState() {

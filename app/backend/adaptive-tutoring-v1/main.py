@@ -6,13 +6,127 @@ import database
 from services.bkt_engine import bkt_engine
 from services.irt_engine import irt_engine
 from services.policy_engine import policy_engine
-from typing import Dict, Any
+from services.action_policy_model import action_policy_model, context_features
+from services.dynamic_practice_policy import dynamic_practice_policy
+from services.error_profile_service import error_profile_service
+from services.practice_selector_model import (
+    APPROVED_ACTIVE_STATUSES as PRACTICE_APPROVED_STATUSES,
+    practice_selector_model,
+)
+from typing import Dict, Any, Optional
+import copy
+import os
 import re
+
+
+def _practice_policy_mode(requested_mode: Optional[str]) -> Dict[str, Any]:
+    """Resolve whether the targeted-practice model may control this run."""
+    mode = str(requested_mode or os.getenv("C4_POLICY_MODE", "shadow")).lower()
+    if mode == "simulation":
+        mode = "simulation_model"
+    status = str(
+        practice_selector_model.artifact.get("validation_status")
+        or "model_unavailable"
+    )
+    activation_allowed = bool(
+        practice_selector_model.artifact.get("activation_allowed", False)
+    )
+    controls = mode == "simulation_model" or (
+        mode == "model"
+        and status in PRACTICE_APPROVED_STATUSES
+        and activation_allowed
+    )
+    return {
+        "mode": mode,
+        "controls": controls,
+        "model_version": practice_selector_model.artifact.get("model_version"),
+        "validation_status": status,
+        "activation_allowed": activation_allowed,
+    }
 
 
 def difficulty_unit_interval(difficulty_b: float) -> float:
     """Expose a backwards-compatible 0..1 value while retaining the IRT logit."""
     return round(max(0.0, min(1.0, (float(difficulty_b) + 3.0) / 6.0)), 4)
+
+
+async def _link_proximal_policy_outcome(
+    db: Any,
+    *,
+    student_id: str,
+    session_id: str,
+    item_id: str,
+    response_event_id: Optional[str],
+    is_correct: bool,
+    phase: str,
+    response_quality: Optional[str] = None,
+) -> None:
+    """Link the latest scaffold to the response immediately following it.
+
+    A child may receive several scaffolds before completing one item. Linking
+    only the final scaffold loses the observed failures after earlier actions.
+    The proximal fields retain every action -> next response relationship.
+    """
+    query: Dict[str, Any] = {
+        "student_id": student_id,
+        "session_id": session_id,
+        "item_id": item_id,
+        "proximal_outcome_observed": {"$ne": True},
+    }
+    if response_event_id:
+        query["event_id"] = {"$ne": response_event_id}
+    latest = await db.policy_decisions.find_one(query, sort=[("_id", -1)])
+    if not latest:
+        return
+    await db.policy_decisions.update_one(
+        {"_id": latest["_id"]},
+        {"$set": {
+            "proximal_outcome_observed": True,
+            "proximal_next_response_correct": bool(is_correct),
+            "proximal_response_phase": phase,
+            "proximal_response_event_id": response_event_id,
+            "proximal_response_quality": response_quality,
+            "proximal_outcome_recorded_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+
+
+async def _link_confirmation_policy_outcomes(
+    db: Any,
+    *,
+    student_id: str,
+    session_id: str,
+    equivalent_group_id: str,
+    confirmation_item_id: str,
+    response_event_id: Optional[str],
+    first_independent_correct: bool,
+    final_correct: bool,
+    response_quality: str,
+) -> None:
+    """Attach the independent equivalent-task result to the whole support chain."""
+    now = datetime.now(timezone.utc).isoformat()
+    await db.policy_decisions.update_many(
+        {
+            "student_id": student_id,
+            "session_id": session_id,
+            "outcome_observed": {"$ne": True},
+            "$or": [
+                {"equivalent_group_id": equivalent_group_id},
+                {"item_id": equivalent_group_id},
+            ],
+        },
+        {"$set": {
+            "outcome_observed": True,
+            "outcome_definition": "equivalent_confirmation_first_attempt_success",
+            "outcome_first_attempt_correct": bool(first_independent_correct),
+            "outcome_final_correct": bool(final_correct),
+            "outcome_response_quality": response_quality,
+            "outcome_item_id": confirmation_item_id,
+            "outcome_event_id": response_event_id,
+            "outcome_phase": "CONFIRMATION",
+            "outcome_recorded_at": now,
+        }},
+    )
 
 def get_adaptive_state(student_doc: dict, activity_id: str) -> dict:
     if not student_doc:
@@ -40,8 +154,6 @@ def _get_default_state(activity_id: str) -> dict:
         }
     return {}
 
-import os
-
 app = FastAPI(
     title="Adaptive Tutoring Service",
     version="1.0",
@@ -55,6 +167,8 @@ async def startup_db_client():
     models = await db.model_registry.find({
         "model_type": "BKT",
         "status": "active",
+        "data_origin": "observed",
+        "validation_status": {"$in": ["pilot_approved", "validated_observed"]},
     }).to_list(length=100)
     loaded = 0
     for model in models:
@@ -76,7 +190,37 @@ async def shutdown_db_client():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "adaptive-tutoring-v1"}
+    return {
+        "status": "ok",
+        "service": "adaptive-tutoring-v1",
+        "default_policy_mode": os.getenv("C4_POLICY_MODE", "shadow"),
+        "action_model_version": action_policy_model.artifact.get("model_version"),
+        "action_model_validation_status": action_policy_model.artifact.get(
+            "validation_status", "unavailable"
+        ),
+        "action_model_activation_allowed": bool(
+            action_policy_model.artifact.get("activation_allowed", False)
+        ),
+        "practice_model_version": practice_selector_model.artifact.get(
+            "model_version"
+        ),
+        "practice_model_validation_status": practice_selector_model.artifact.get(
+            "validation_status", "unavailable"
+        ),
+        "practice_model_activation_allowed": bool(
+            practice_selector_model.artifact.get("activation_allowed", False)
+        ),
+        "dynamic_targeted_practice": (
+            "active_simulation"
+            if _practice_policy_mode(None)["controls"]
+            else "shadow_or_baseline"
+        ),
+        "skill_1_2_practice_flow": "local_exact_target_remediation_confirmation",
+        "supported_policy_modes": [
+            "baseline", "shadow", "simulation_model",
+            "simulation_experiment", "model",
+        ],
+    }
 
 @app.post("/update_interaction", response_model=TutoringResponse)
 async def update_interaction(request: InteractionRequest):
@@ -198,6 +342,15 @@ async def update_interaction(request: InteractionRequest):
         disc_a = 1.0
         guess_c = 0.2
 
+    item_role = (
+        item_doc.get("item_role") if item_doc else
+        getattr(request.telemetry, "item_role", None)
+    ) or "CORE"
+    equivalent_group_id = (
+        item_doc.get("equivalent_group_id") if item_doc else
+        getattr(request.telemetry, "equivalent_group_id", None)
+    ) or re.sub(r"V\d+$", "", canonical_item, flags=re.IGNORECASE)
+
     activity_total = await db.item_bank.count_documents({
         "activity_id": canonical_act,
         "is_core": True,
@@ -214,6 +367,61 @@ async def update_interaction(request: InteractionRequest):
 
     if request.phase == "ATTEMPT":
         round_num = item_doc.get("round", 1) if item_doc else 1
+
+        struggled_target_units = [
+            str(value)
+            for value in (
+                getattr(
+                    request.telemetry, "struggled_target_units", None
+                ) or []
+            )
+            if str(value).strip()
+        ]
+        if struggled_target_units:
+            # Retain the exact visual/letter/word unit until this item is
+            # completed. COMPLETE telemetry describes the whole reviewed task,
+            # while this attempt-level evidence identifies what the child
+            # actually struggled with. If a multi-object task produces more
+            # than one error, retain up to three ranked units. Remediation is
+            # later bounded to the strongest two while confirmation checks up
+            # to three. Frequency wins first and recency breaks a tie.
+            existing_struggle = adaptive_state.get(
+                "latest_struggled_target"
+            ) or {}
+            if str(existing_struggle.get("item_id") or "") != canonical_item:
+                existing_struggle = {}
+            target_counts = {
+                str(key): int(value or 0)
+                for key, value in (
+                    existing_struggle.get("target_counts") or {}
+                ).items()
+                if str(key).strip()
+            }
+            target_order = [
+                str(value)
+                for value in (existing_struggle.get("observed_units") or [])
+                if str(value).strip()
+            ]
+            for unit in struggled_target_units:
+                target_counts[unit] = target_counts.get(unit, 0) + 1
+                if unit in target_order:
+                    target_order.remove(unit)
+                target_order.append(unit)
+            order_index = {
+                unit: index for index, unit in enumerate(target_order)
+            }
+            ranked_units = sorted(
+                target_counts,
+                key=lambda unit: (
+                    -target_counts[unit], -order_index.get(unit, -1)
+                ),
+            )[:3]
+            adaptive_state["latest_struggled_target"] = {
+                "item_id": canonical_item,
+                "units": ranked_units,
+                "observed_units": target_order,
+                "target_counts": target_counts,
+            }
         
         # Telemetry may provide precise pool sizes, else fallback
         options_count = getattr(request.telemetry, "original_options_count", None)
@@ -224,15 +432,52 @@ async def update_interaction(request: InteractionRequest):
         if available_incorrect_ids is None:
             available_incorrect_ids = []
         
+        # The baseline and ML policies must be compared from the same state.
+        # Evaluate the baseline on a copy so a simulation-model recommendation
+        # does not accidentally retain a distractor removed by the baseline.
+        baseline_state = copy.deepcopy(adaptive_state)
         support = policy_engine.get_support_action(
             request.telemetry, 
             options_count, 
             struggle_score, 
             available_incorrect_ids, 
-            adaptive_state,
+            baseline_state,
             canonical_act,
             round_num
         )
+        model_features = context_features(
+            telemetry=request.telemetry,
+            struggle_score=struggle_score,
+            mastery=current_prob,
+            difficulty_b=diff_b,
+            fatigue=request.fatigue_score,
+            behavioral_context=request.behavioral_context,
+            learner_profile=request.learner_profile,
+        )
+        model_evidence = action_policy_model.evaluate(
+            baseline_action=support.get("decision", "RETRY_CURRENT"),
+            telemetry=request.telemetry,
+            features=model_features,
+            requested_mode=request.policy_mode,
+            data_origin=request.data_origin,
+            assignment_key=f"{request.student_id}:{request.session_id}",
+        )
+        applied_action = model_evidence["applied_action"]
+        if applied_action == support.get("decision", "RETRY_CURRENT"):
+            adaptive_state = baseline_state
+        else:
+            support = policy_engine.translate_model_support_action(
+                action=applied_action,
+                telemetry=request.telemetry,
+                available_incorrect_ids=available_incorrect_ids,
+                adaptive_state=adaptive_state,
+            )
+            if support.get("decision") != applied_action:
+                applied_action = support.get("decision", "RETRY_CURRENT")
+                model_evidence["applied_action"] = applied_action
+                model_evidence["fallback_reason"] = (
+                    "COMMAND_TRANSLATION_SAFETY_FALLBACK"
+                )
         support_commands = []
         for command_index, command in enumerate(support.get("commands", [])):
             command_copy = dict(command)
@@ -251,7 +496,7 @@ async def update_interaction(request: InteractionRequest):
             difficulty=difficulty_unit_interval(diff_b),
             difficulty_b=diff_b,
             scaffold_level=support.get("scaffold_level", 0),
-            decision=support.get("decision", "RETRY_CURRENT"),
+            decision=applied_action,
             remove_option_ids=support.get("remove_option_ids", None),
             highlight_correct=support.get("highlight_correct", False),
             next_phase=adaptive_state.get("next_phase", "CORE"),
@@ -261,6 +506,16 @@ async def update_interaction(request: InteractionRequest):
             commands=support_commands,
             reason_codes=support.get("reason_codes", []),
             policy_version=support.get("policy_version", "C4_POLICY_V2"),
+            policy_mode=model_evidence["policy_mode"],
+            model_recommendation=model_evidence["model_recommendation"],
+            model_confidence=model_evidence["model_confidence"],
+            model_version=model_evidence["model_version"],
+            fallback_reason=model_evidence["fallback_reason"],
+            applied_action=applied_action,
+            controls_live_adaptation=model_evidence["controls_live_adaptation"],
+            execution_source=model_evidence["execution_source"],
+            experiment_arm=model_evidence["experiment_arm"],
+            assignment_mechanism=model_evidence["assignment_mechanism"],
         )
         
         # Save adaptive state
@@ -283,6 +538,60 @@ async def update_interaction(request: InteractionRequest):
             {"$set": update_set},
             upsert=True
         )
+
+        existing_policy = None
+        if request.event_id:
+            existing_policy = await db.policy_decisions.find_one({
+                "student_id": request.student_id,
+                "event_id": request.event_id,
+            })
+        if not existing_policy:
+            await _link_proximal_policy_outcome(
+                db,
+                student_id=request.student_id,
+                session_id=request.session_id,
+                item_id=canonical_item,
+                response_event_id=request.event_id,
+                is_correct=request.is_correct,
+                phase="ATTEMPT",
+                response_quality="INCORRECT_ATTEMPT",
+            )
+
+        policy_record = {
+            "schema_version": "3.0",
+            "student_id": request.student_id,
+            "session_id": request.session_id,
+            "event_id": request.event_id,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "activity_id": canonical_act,
+            "item_id": canonical_item,
+            "item_role": item_role,
+            "equivalent_group_id": adaptive_state.get(
+                "practice_origin_group_id", equivalent_group_id
+            ),
+            "item_equivalent_group_id": equivalent_group_id,
+            "practice_phase": adaptive_state.get("next_phase", item_role),
+            "phase": "ATTEMPT",
+            "knowledge_component_id": official_kc,
+            "features": model_features,
+            "behavioral_context": request.behavioral_context or {},
+            "context_evidence": request.context_evidence or {},
+            "data_origin": request.data_origin,
+            "dataset_id": request.dataset_id,
+            "validation_status": request.validation_status,
+            "calibration_eligible": False,
+            **model_evidence,
+        }
+        if existing_policy:
+            pass
+        elif request.event_id:
+            await db.policy_decisions.update_one(
+                {"student_id": request.student_id, "event_id": request.event_id},
+                {"$setOnInsert": policy_record},
+                upsert=True,
+            )
+        else:
+            await db.policy_decisions.insert_one(policy_record)
         
         return TutoringResponse(
             student_id=request.student_id,
@@ -358,6 +667,31 @@ async def update_interaction(request: InteractionRequest):
     else:
         learning_observation_correct = bool(first_attempt_correct)
 
+    error_profile = error_profile_service.build(
+        item=item_doc or {
+            "item_id": canonical_item,
+            "knowledge_component_id": official_kc,
+            "template_type": "unknown",
+            "content": {},
+        },
+        telemetry=request.telemetry,
+        response_quality=response_quality,
+        learning_observation_correct=learning_observation_correct,
+        knowledge_component_id=official_kc,
+        adaptive_state=adaptive_state,
+    )
+    adaptive_state.pop("latest_struggled_target", None)
+    error_profile["equivalent_group_id"] = equivalent_group_id
+    practice_origin_group_before = adaptive_state.get(
+        "practice_origin_group_id", equivalent_group_id
+    )
+    practice_origin_item_before = adaptive_state.get(
+        "practice_origin_item_id", canonical_item
+    )
+    practice_phase_before = str(
+        adaptive_state.get("next_phase") or item_role or "CORE"
+    ).upper()
+
     print(
         f"BKT Before: {mastery_before:.3f}, "
         f"First Independent Correct: {learning_observation_correct}, "
@@ -379,27 +713,58 @@ async def update_interaction(request: InteractionRequest):
     )
     theta_by_kc[official_kc] = theta_new
 
-    # Generate explicit Next Action using Policy Engine
-    policy_output = policy_engine.get_next_action(
-        kc_mastery=new_prob,
-        theta=theta_new,
-        fatigue_score=getattr(request, "fatigue_score", 0),
-        current_activity=canonical_act,
-        response_quality=response_quality,
-        struggle_band=struggle_band,
-        current_difficulty_b=diff_b,
-        adaptive_state=adaptive_state,
-        learner_profile=getattr(request, "learner_profile", {}),
-        current_item_id=canonical_item,
-        has_reduced_remediation=bool(
-            item_doc.get("has_reduced_remediation", False)
-            if item_doc else False
-        ),
-        has_floor_remediation=bool(
-            item_doc.get("has_floor_remediation", False)
-            if item_doc else False
-        ),
-    )
+    # Generate the next instructional phase. Synthetic-trained targeted
+    # selection controls only an explicitly labelled simulation run. Shadow,
+    # baseline, and unapproved observed-child modes retain the validated fixed
+    # V1/V2 policy while still collecting the metadata needed for comparison.
+    practice_mode = _practice_policy_mode(request.policy_mode)
+    practice_controls = bool(practice_mode["controls"])
+    if practice_controls:
+        policy_output = dynamic_practice_policy.get_next_action(
+            activity_id=canonical_act,
+            current_item_id=canonical_item,
+            item_role=item_role,
+            response_quality=response_quality,
+            current_b=diff_b,
+            state=adaptive_state,
+            error_profile=error_profile,
+            policy_reason=[f"RESPONSE_QUALITY: {response_quality}"],
+            has_reduced_remediation=bool(
+                item_doc.get("has_reduced_remediation", False)
+                if item_doc else False
+            ),
+            has_floor_remediation=bool(
+                item_doc.get("has_floor_remediation", False)
+                if item_doc else False
+            ),
+        )
+        policy_output["policy_reason"].append(
+            "DYNAMIC_TARGETED_PRACTICE_ACTIVE"
+        )
+    else:
+        policy_output = policy_engine.get_next_action(
+            kc_mastery=new_prob,
+            theta=theta_new,
+            fatigue_score=getattr(request, "fatigue_score", 0),
+            current_activity=canonical_act,
+            response_quality=response_quality,
+            struggle_band=struggle_band,
+            current_difficulty_b=diff_b,
+            adaptive_state=adaptive_state,
+            learner_profile=getattr(request, "learner_profile", {}),
+            current_item_id=canonical_item,
+            has_reduced_remediation=bool(
+                item_doc.get("has_reduced_remediation", False)
+                if item_doc else False
+            ),
+            has_floor_remediation=bool(
+                item_doc.get("has_floor_remediation", False)
+                if item_doc else False
+            ),
+        )
+        policy_output["policy_reason"].append(
+            "DYNAMIC_TARGETED_PRACTICE_SHADOW_ONLY"
+        )
 
     # Keep the original Component 2/3 evidence signals in the unified C4
     # decision record. Learner profile may increase support intensity, but it
@@ -464,10 +829,11 @@ async def update_interaction(request: InteractionRequest):
     # A high BKT score may change the difficulty/order of the next task, but it
     # must not skip curriculum evidence. Keep selection inside the current
     # activity until every active core item has been administered at least once.
-    candidates_cursor = db.item_bank.find({
+    candidate_query: Dict[str, Any] = {
         "activity_id": canonical_act,
         "is_active": {"$ne": False},
-    })
+    }
+    candidates_cursor = db.item_bank.find(candidate_query)
     candidates = await candidates_cursor.to_list(length=100)
     core_candidate_ids = {
         item.get("item_id") for item in candidates if item.get("is_core", True)
@@ -484,6 +850,7 @@ async def update_interaction(request: InteractionRequest):
     # normal IRT selection. Missing historical variants fall back to their core
     # item for one unassisted confirmation.
     forced_id = policy_output.get("next_item", "")
+
     if forced_id and forced_id != "COMPLETE":
         forced_document = await db.item_bank.find_one({
             "item_id": forced_id,
@@ -529,7 +896,7 @@ async def update_interaction(request: InteractionRequest):
             policy_output["policy_reason"].append(
                 "CORE_ITEM_COVERAGE_REQUIRED"
             )
-        elif not forced_id:
+        elif not forced_id and not policy_output.get("selection_intent"):
             policy_output["decision"] = "ACTIVITY_COMPLETE"
             policy_output["next_item"] = "COMPLETE"
             policy_output["next_phase"] = "COMPLETE"
@@ -598,16 +965,98 @@ async def update_interaction(request: InteractionRequest):
         "progression_status": "PROGRESSED" if next_activity != canonical_act else "REMAINED"
     }
     
-    # 7. Select Next Item
-    selection_evidence = item_selector.select_next_item(
-        current_item_id=canonical_item,
-        current_activity=next_activity,
-        target_difficulty=policy_output["target_difficulty"],
-        candidates=candidates,
-        confirmation_required=policy_output.get("confirmation_required", False),
-        forced_item_id=forced_id if forced_id else None,
-        excluded_item_ids=adaptive_state.get("administered_item_ids", []),
-    )
+    # 7. Select Next Item. Dynamic practice ranks only reviewed, unseen
+    # alternatives. Ordinary core progression and non-simulation modes retain
+    # the established constrained IRT/fixed-equivalent selector.
+    selection_intent = policy_output.get("selection_intent")
+    exposure_counts = {
+        item_id: 1
+        for item_id in adaptive_state.get("administered_item_ids", [])
+    }
+    if practice_controls and selection_intent:
+        selection_evidence = item_selector.select_targeted_practice_item(
+            current_item_id=canonical_item,
+            current_activity=next_activity,
+            knowledge_component_id=official_kc,
+            target_difficulty=policy_output["target_difficulty"],
+            candidates=candidates,
+            selection_intent=selection_intent,
+            excluded_item_ids=adaptive_state.get("administered_item_ids", []),
+            exposure_counts=exposure_counts,
+            micro_skill_evidence=adaptive_state.get("micro_skill_evidence", {}),
+            fatigue=request.fatigue_score,
+            requested_mode=request.policy_mode,
+            data_origin=request.data_origin,
+        )
+        if not selection_evidence.get("selected_item"):
+            # Preserve availability even after a small candidate pool is
+            # exhausted. First try the reviewed authored equivalent for the
+            # original core; if it was already seen, leave the bounded cycle
+            # and continue to an unseen core item without trapping the child.
+            origin_id = str(selection_intent.get("origin_item_id") or "")
+            suffix = "V1" if selection_intent.get("role") == "REMEDIATION" else "V2"
+            fallback_id = f"{origin_id}{suffix}" if origin_id else ""
+            fallback = next(
+                (
+                    candidate for candidate in candidates
+                    if candidate.get("item_id") == fallback_id
+                    and candidate.get("is_active", True) is not False
+                    and fallback_id not in set(adaptive_state.get("administered_item_ids", []))
+                ),
+                None,
+            )
+            if fallback:
+                selection_evidence = item_selector.select_next_item(
+                    current_item_id=canonical_item,
+                    current_activity=next_activity,
+                    target_difficulty=policy_output["target_difficulty"],
+                    candidates=candidates,
+                    forced_item_id=fallback_id,
+                    excluded_item_ids=adaptive_state.get("administered_item_ids", []),
+                    knowledge_component_id=official_kc,
+                    equivalent_group_id=equivalent_group_id,
+                    exposure_counts=exposure_counts,
+                )
+                selection_evidence["selection_reason"] = (
+                    "DYNAMIC_POOL_EXHAUSTED_AUTHORED_FALLBACK"
+                )
+                selection_evidence["selection_intent"] = selection_intent
+                policy_output["policy_reason"].append(
+                    "DYNAMIC_POOL_EXHAUSTED_AUTHORED_FALLBACK"
+                )
+            else:
+                adaptive_state["teacher_review_required"] = True
+                adaptive_state["teacher_review_item_id"] = origin_id or canonical_item
+                policy_output["policy_reason"].append(
+                    "DYNAMIC_POOL_EXHAUSTED_BOUNDED_EXIT"
+                )
+                policy_output["decision"] = "CONTINUE"
+                policy_output["next_phase"] = "CORE"
+                policy_output["selection_intent"] = None
+                adaptive_state["next_phase"] = "CORE"
+                selection_evidence = item_selector.select_next_item(
+                    current_item_id=canonical_item,
+                    current_activity=next_activity,
+                    target_difficulty=policy_output["target_difficulty"],
+                    candidates=candidates,
+                    excluded_item_ids=adaptive_state.get("administered_item_ids", []),
+                    knowledge_component_id=official_kc,
+                    equivalent_group_id=equivalent_group_id,
+                    exposure_counts=exposure_counts,
+                )
+    else:
+        selection_evidence = item_selector.select_next_item(
+            current_item_id=canonical_item,
+            current_activity=next_activity,
+            target_difficulty=policy_output["target_difficulty"],
+            candidates=candidates,
+            confirmation_required=policy_output.get("confirmation_required", False),
+            forced_item_id=forced_id if forced_id else None,
+            excluded_item_ids=adaptive_state.get("administered_item_ids", []),
+            knowledge_component_id=official_kc,
+            equivalent_group_id=equivalent_group_id,
+            exposure_counts=exposure_counts,
+        )
 
     terminal_decisions = {"TERMINATE", "CURRICULUM_COMPLETE", "ACTIVITY_COMPLETE"}
     if (
@@ -621,6 +1070,38 @@ async def update_interaction(request: InteractionRequest):
     # Overwrite the policy's next_item placeholder if we are not terminating
     if policy_output["decision"] not in terminal_decisions:
         policy_output["next_item"] = selection_evidence["selected_item"]
+
+    if selection_intent:
+        print(
+            "C4_TARGETED_PRACTICE: "
+            f"origin={selection_intent.get('origin_item_id')} "
+            f"target={selection_intent.get('target_units', [])} "
+            f"phase={selection_intent.get('role')} "
+            f"selected={policy_output.get('next_item')} "
+            f"scope={selection_evidence.get('candidate_scope')}"
+        )
+
+    selected_practice_item = policy_output.get("next_item", "")
+    if (
+        selection_intent
+        and selected_practice_item
+        and selected_practice_item != "COMPLETE"
+    ):
+        route = list(adaptive_state.get("practice_route", []))
+        route.append({
+            "phase": policy_output.get("next_phase"),
+            "item_id": selected_practice_item,
+            "selection_reason": selection_evidence.get("selection_reason"),
+            "target_difficulty": policy_output.get("target_difficulty"),
+            "selected_difficulty": selection_evidence.get(
+                "selected_difficulty"
+            ),
+            "model_version": selection_evidence.get("model_version"),
+        })
+        adaptive_state["practice_route"] = route[-8:]
+        adaptive_state["active_practice_selection"] = route[-1]
+    elif policy_output.get("next_phase") == "CORE":
+        adaptive_state.pop("active_practice_selection", None)
 
     # Keep every activity's replay/confirmation state explicit. This lets an
     # intentional repeat proceed while a new R01 after completion resets the
@@ -659,6 +1140,12 @@ async def update_interaction(request: InteractionRequest):
     adaptive_decision_record = {
         "schema_version": "2.0",
         "research_eligible": item_doc is not None,
+        "data_origin": request.data_origin,
+        "dataset_id": request.dataset_id,
+        "validation_status": request.validation_status,
+        "calibration_eligible": bool(request.calibration_eligible),
+        "behavioral_context": request.behavioral_context or {},
+        "context_evidence": request.context_evidence or {},
         "research_validation_errors": (
             [] if item_doc is not None else ["ITEM_NOT_FOUND_IN_CANONICAL_BANK"]
         ),
@@ -669,14 +1156,8 @@ async def update_interaction(request: InteractionRequest):
         "activity_id": canonical_act,
         "kc_id": official_kc,
         "current_item": canonical_item,
-        "item_role": (
-            item_doc.get("item_role") if item_doc else
-            getattr(request.telemetry, "item_role", None)
-        ),
-        "equivalent_group_id": (
-            item_doc.get("equivalent_group_id") if item_doc else
-            getattr(request.telemetry, "equivalent_group_id", None)
-        ),
+        "item_role": item_role,
+        "equivalent_group_id": equivalent_group_id,
         "response_load_relation": (
             item_doc.get("response_load_relation") if item_doc else
             getattr(request.telemetry, "response_load_relation", None)
@@ -697,9 +1178,18 @@ async def update_interaction(request: InteractionRequest):
         "is_anchor": item_doc.get("is_anchor", False) if item_doc else False,
         "submitted_kc_id": request.knowledge_component_id,
         "target_ids": getattr(request.telemetry, "target_ids", None) or [],
+        "struggled_target_units": getattr(
+            request.telemetry, "struggled_target_units", None
+        ) or [],
         "selected_answers": (
             getattr(request.telemetry, "selected_answers", None) or []
         ),
+        "error_profile": error_profile,
+        "micro_skill_evidence": adaptive_state.get(
+            "micro_skill_evidence", {}
+        ),
+        "practice_origin_item_id": practice_origin_item_before,
+        "practice_origin_equivalent_group_id": practice_origin_group_before,
         "scaffold_applications": (
             getattr(request.telemetry, "scaffold_applications", None) or []
         ),
@@ -728,7 +1218,31 @@ async def update_interaction(request: InteractionRequest):
         "difficulty_direction": policy_output["difficulty_direction"],
         "target_difficulty": policy_output["target_difficulty"],
         "selected_item": policy_output["next_item"],
-        "selected_difficulty": next_action.difficulty,
+        "selected_difficulty": next_action.difficulty_b,
+        "practice_selection_strategy": selection_evidence.get(
+            "selection_strategy"
+        ),
+        "practice_selection_reason": selection_evidence.get(
+            "selection_reason"
+        ),
+        "practice_candidate_scope": selection_evidence.get(
+            "candidate_scope"
+        ),
+        "practice_selection_intent": selection_evidence.get(
+            "selection_intent"
+        ),
+        "practice_model_version": selection_evidence.get(
+            "model_version", practice_mode.get("model_version")
+        ),
+        "practice_model_validation_status": selection_evidence.get(
+            "model_validation_status", practice_mode.get("validation_status")
+        ),
+        "practice_model_controls_live_adaptation": bool(
+            selection_evidence.get("controls_live_adaptation", False)
+        ),
+        "practice_top_candidate_scores": selection_evidence.get(
+            "top_candidate_scores", []
+        ),
         # `scaffold_level` remains the dashboard-compatible treatment-fidelity
         # value. The recommendation for the next item is stored separately.
         "scaffold_level": scaffold_level_used,
@@ -757,6 +1271,45 @@ async def update_interaction(request: InteractionRequest):
         )
     else:
         await db.adaptive_decisions.insert_one(adaptive_decision_record)
+
+    # Close the final action -> immediate-response link for this item. Earlier
+    # scaffold actions were closed by the later ATTEMPT events above.
+    await _link_proximal_policy_outcome(
+        db,
+        student_id=request.student_id,
+        session_id=request.session_id,
+        item_id=canonical_item,
+        response_event_id=request.event_id,
+        is_correct=request.is_correct,
+        phase="COMPLETE",
+        response_quality=response_quality,
+    )
+
+    # The research target is an *independent equivalent-task check*, not the
+    # supported click that merely completes the original item. When V2 is
+    # completed, attach its first-attempt result to every scaffold in the same
+    # support chain. Unfinished/abandoned chains remain honestly censored.
+    normalized_role = str(item_role or "").upper()
+    is_confirmation = (
+        practice_phase_before == "CONFIRMATION"
+        if practice_controls
+        else (
+            normalized_role == "CONFIRMATION"
+            or bool(re.search(r"V2$", canonical_item, re.IGNORECASE))
+        )
+    )
+    if is_confirmation:
+        await _link_confirmation_policy_outcomes(
+            db,
+            student_id=request.student_id,
+            session_id=request.session_id,
+            equivalent_group_id=str(practice_origin_group_before),
+            confirmation_item_id=canonical_item,
+            response_event_id=request.event_id,
+            first_independent_correct=learning_observation_correct,
+            final_correct=request.is_correct,
+            response_quality=response_quality,
+        )
 
     adaptive_states = student_doc.get("adaptive_states", {}) if student_doc else {}
     adaptive_states[canonical_act] = adaptive_state

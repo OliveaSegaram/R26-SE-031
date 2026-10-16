@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,7 @@ class ActivityCompleteScreen extends StatefulWidget {
   final String skillId;
   final int score;
   final bool isRevisiting;
+  final bool recommendBreak;
   final VoidCallback? onRetake;
   final VoidCallback? onContinue;
 
@@ -20,6 +22,7 @@ class ActivityCompleteScreen extends StatefulWidget {
     required this.skillId,
     required this.score,
     this.isRevisiting = false,
+    this.recommendBreak = false,
     this.onRetake,
     this.onContinue,
   });
@@ -30,6 +33,10 @@ class ActivityCompleteScreen extends StatefulWidget {
 
 class _ActivityCompleteScreenState extends State<ActivityCompleteScreen> {
   String? _avatarUrl;
+  Timer? _breakTimer;
+  int _breakSecondsRemaining = 60;
+  bool _breakActive = false;
+  bool _breakCompleted = false;
 
   @override
   void initState() {
@@ -59,13 +66,44 @@ class _ActivityCompleteScreenState extends State<ActivityCompleteScreen> {
     }
   }
 
+  void _startBreak() {
+    _breakTimer?.cancel();
+    setState(() {
+      _breakActive = true;
+      _breakCompleted = false;
+      _breakSecondsRemaining = 60;
+    });
+    _breakTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_breakSecondsRemaining <= 1) {
+        timer.cancel();
+        setState(() {
+          _breakSecondsRemaining = 0;
+          _breakActive = false;
+          _breakCompleted = true;
+        });
+      } else {
+        setState(() => _breakSecondsRemaining--);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _breakTimer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     const stars = 5;
     const titleText = 'සුබ පැතුම්!';
     const subtitleText = 'ඔබ ක්‍රියාකාරකම සාර්ථකව අවසන් කළා!';
     const displayScore = 100;
-    
+
     final avatarPath = AvatarUtils.getCorrectedAvatarPath(
       _avatarUrl,
       'assets/images/characters/mascots/solo_blue.png',
@@ -77,7 +115,9 @@ class _ActivityCompleteScreenState extends State<ActivityCompleteScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const TelemetryDebugScreen()),
+            MaterialPageRoute(
+              builder: (context) => const TelemetryDebugScreen(),
+            ),
           );
         },
         backgroundColor: AppColors.primary,
@@ -105,22 +145,24 @@ class _ActivityCompleteScreenState extends State<ActivityCompleteScreen> {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  Image.asset(
-                    avatarPath,
-                    height: 130,
-                    fit: BoxFit.contain,
-                  ),
+                  Image.asset(avatarPath, height: 130, fit: BoxFit.contain),
                 ],
               ),
 
               // Activity Name Badge
               if (widget.activityNode.title.isNotEmpty) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.calmBlue.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.4), width: 1.5),
+                    border: Border.all(
+                      color: AppColors.calmBlue.withValues(alpha: 0.4),
+                      width: 1.5,
+                    ),
                   ),
                   child: Text(
                     widget.activityNode.title,
@@ -161,7 +203,10 @@ class _ActivityCompleteScreenState extends State<ActivityCompleteScreen> {
               // Score Card (Score % + 5 Stars)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 20,
+                  horizontal: 24,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.cardSurface,
                   borderRadius: BorderRadius.circular(24),
@@ -192,8 +237,12 @@ class _ActivityCompleteScreenState extends State<ActivityCompleteScreen> {
                         (i) => Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 3),
                           child: Icon(
-                            i < stars ? Icons.star_rounded : Icons.star_outline_rounded,
-                            color: i < stars ? AppColors.warmAmber : AppColors.borderLight,
+                            i < stars
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            color: i < stars
+                                ? AppColors.warmAmber
+                                : AppColors.borderLight,
                             size: 32,
                           ),
                         ),
@@ -202,6 +251,91 @@ class _ActivityCompleteScreenState extends State<ActivityCompleteScreen> {
                   ],
                 ),
               ),
+
+              if (widget.recommendBreak) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.gentleGreen.withValues(alpha: 0.11),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: AppColors.gentleGreen.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.gentleGreen.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _breakCompleted
+                              ? Icons.check_rounded
+                              : Icons.spa_rounded,
+                          color: AppColors.gentleGreen,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _breakCompleted
+                                  ? 'විවේකය අවසන්! 🌟'
+                                  : _breakActive
+                                  ? 'සන්සුන් වෙමු… $_breakSecondsRemaining'
+                                  : 'කෙටි විවේකයක් ගනිමු 🌿',
+                              style: AppTypography.sinhala(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            if (_breakActive)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: LinearProgressIndicator(
+                                  value: 1 - (_breakSecondsRemaining / 60),
+                                  minHeight: 7,
+                                  color: AppColors.gentleGreen,
+                                  backgroundColor: Colors.white,
+                                ),
+                              )
+                            else if (!_breakCompleted)
+                              Text(
+                                'විනාඩියක් ඇස් සහ මනස සන්සුන් කරමු.',
+                                style: AppTypography.sinhala(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (!_breakActive && !_breakCompleted)
+                        TextButton(
+                          onPressed: _startBreak,
+                          child: Text(
+                            'අරඹමු',
+                            style: AppTypography.sinhala(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.gentleGreen,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
 
               const Spacer(),
 

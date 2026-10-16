@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Dict, Any, List, Optional
 
 class TelemetryData(BaseModel):
@@ -26,6 +26,7 @@ class TelemetryData(BaseModel):
     equivalent_group_id: Optional[str] = None
     response_load_relation: Optional[str] = None
     target_ids: Optional[List[str]] = None
+    struggled_target_units: Optional[List[str]] = None
     selected_answers: Optional[List[str]] = None
 
 class InteractionRequest(BaseModel):
@@ -41,11 +42,20 @@ class InteractionRequest(BaseModel):
     current_session_duration_sec: int
     fatigue_score: float = 0.0
     learner_profile: Optional[Dict[str, float]] = None
+    behavioral_context: Optional[Dict[str, Any]] = None
+    context_evidence: Optional[Dict[str, Any]] = None
+    data_origin: str = "observed"
+    dataset_id: Optional[str] = None
+    validation_status: str = "operational_observation"
+    calibration_eligible: bool = False
+    policy_mode: Optional[str] = None
     skill_id: Optional[str] = None
     telemetry: Optional[TelemetryData] = None
     phase: str = Field(default="COMPLETE")
 
 class NextAction(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     next_activity: str
     next_item: str
     difficulty: float
@@ -61,6 +71,16 @@ class NextAction(BaseModel):
     commands: List[Dict[str, Any]] = Field(default_factory=list)
     reason_codes: List[str] = Field(default_factory=list)
     policy_version: str = "C4_POLICY_V2"
+    policy_mode: str = "baseline"
+    model_recommendation: Optional[str] = None
+    model_confidence: Optional[float] = None
+    model_version: Optional[str] = None
+    fallback_reason: Optional[str] = None
+    applied_action: Optional[str] = None
+    controls_live_adaptation: bool = False
+    execution_source: str = "deterministic_capability_policy"
+    experiment_arm: Optional[str] = None
+    assignment_mechanism: Optional[str] = None
     
 class TutoringResponse(BaseModel):
     student_id: str

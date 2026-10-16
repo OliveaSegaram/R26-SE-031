@@ -11,6 +11,7 @@ import '../../../theme/app_theme.dart';
 import '../../../services/tts_service.dart';
 import '../../../services/progress_service.dart';
 import '../../../adaptive/controllers/adaptive_task_coordinator.dart';
+import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import 'logic/sorting_generator.dart';
 import 'models/sorting_round.dart';
 import 'widgets/pattern_background.dart';
@@ -61,6 +62,16 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   String? _lastWrongCategory;
   String? _lastWrongObject;
   String? _hintedCategory;
+  bool _isShowingWorkedExample = false;
+  String? _workedExampleObject;
+  String? _workedExampleCategory;
+
+  // Worked-example popup controls
+  bool _weAnimationComplete = false;
+  bool _weIsPlaying = false;
+  bool _weDebounceLock = false;
+  int _weCurrentStep = 0; // 0=waiting, 1=highlight, 2=move, 3=complete
+  Future<bool>? _weNarrationFuture;
 
   // ── Audio ──
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -88,6 +99,46 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   final Map<String, AnimationController> _categoryGlowControllers = {};
   late AnimationController _wrongShakeController;
   late Animation<double> _wrongShakeAnimation;
+  late AnimationController _workedExampleController;
+  // Worked-example sub-phase controllers
+  late AnimationController _weHighlightController;
+  late AnimationController _weMoveController;
+  late AnimationController _weGlowController;
+  late AnimationController _weOverlayEntryController;
+  // Premium WE micro-animation controllers
+  late AnimationController _weMascotBreathController;
+  late AnimationController _weButtonPulseController;
+  late AnimationController _weSparkleController;
+
+  // Authored, non-scored examples. The selected example is always different
+  // from every object in the current task, so the demonstration teaches the
+  // sorting rule without revealing the learner's current answer.
+  static const Map<String, List<String>> _workedExampleAssets = {
+    'animals': <String>[
+      'animals/turtle.png',
+      'animals/snail.png',
+      'animals/frog.png',
+      'animals/butterfly.png',
+    ],
+    'fruits': <String>[
+      'fruits_food/watermelon.png',
+      'fruits_food/grapes.png',
+      'fruits_food/orange.png',
+      'fruits_food/mango.png',
+    ],
+    'vehicles': <String>[
+      'vehicles/airplane.png',
+      'vehicles/boat.png',
+      'vehicles/train.png',
+      'vehicles/bicycle.png',
+    ],
+    'flowers': <String>[
+      'flowers/wada_mal.png',
+      'flowers/araliya.png',
+      'flowers/nil_manel.png',
+      'flowers/flower_05.png',
+    ],
+  };
 
   // ── Mascot ──
   static const List<String> _mascots = [
@@ -176,6 +227,41 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
             curve: Curves.easeInOut,
           ),
         );
+
+    _workedExampleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3200),
+    );
+
+    // 3-step demonstration controllers
+    _weHighlightController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _weMoveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+    _weGlowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _weOverlayEntryController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _weMascotBreathController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    );
+    _weButtonPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    );
+    _weSparkleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 6000),
+    );
 
     // Speaker bounce
     _speakerBounceController = AnimationController(
@@ -267,9 +353,20 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
 
   @override
   void dispose() {
+    if (_isShowingWorkedExample) {
+      unawaited(TtsService().stop());
+    }
     _celebrationController.dispose();
     _roundTransitionController.dispose();
     _wrongShakeController.dispose();
+    _workedExampleController.dispose();
+    _weHighlightController.dispose();
+    _weMoveController.dispose();
+    _weGlowController.dispose();
+    _weOverlayEntryController.dispose();
+    _weMascotBreathController.dispose();
+    _weButtonPulseController.dispose();
+    _weSparkleController.dispose();
     _speakerBounceController.dispose();
     for (var c in _floatControllers.values) {
       c.dispose();
@@ -287,7 +384,171 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
   // ── Game logic ──
 
   SortingRound get _currentRound =>
-      SortingGenerator.fromCurriculum(_taskCoordinator.roundData);
+      SortingGenerator.fromCurriculum(
+        _taskCoordinator.roundData,
+        itemId: _taskCoordinator.itemId,
+      );
+
+  String? _workedExampleFor(String category, {required String excluding}) {
+    final candidates = _workedExampleAssets[category] ?? const <String>[];
+    final currentObjects = _currentRound.objects.toSet();
+    for (final candidate in candidates) {
+      if (candidate != excluding && !currentObjects.contains(candidate)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _showWorkedExample({
+    required String currentObject,
+    required String correctCategory,
+  }) async {
+    if (_isShowingWorkedExample) return;
+    final example = _workedExampleFor(
+      correctCategory,
+      excluding: currentObject,
+    );
+    if (example == null) {
+      setState(() => _hintedCategory = correctCategory);
+      return;
+    }
+    setState(() {
+      _workedExampleObject = example;
+      _workedExampleCategory = correctCategory;
+      _isShowingWorkedExample = true;
+      _weAnimationComplete = false;
+      _weIsPlaying = false;
+      _weDebounceLock = false;
+      _hintedCategory = null;
+      _weCurrentStep = 0;
+    });
+    // Animate the overlay entry + start ambient animations
+    _weOverlayEntryController.forward(from: 0);
+    _weMascotBreathController.repeat();
+    _weSparkleController.repeat();
+    // Auto-play the demonstration after a short settle
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted && _isShowingWorkedExample) {
+        _playWorkedExampleDemo();
+      }
+    });
+  }
+
+  /// Plays the 3-step demonstration animation sequence.
+  Future<void> _playWorkedExampleDemo() async {
+    if (_weIsPlaying || !mounted) return;
+    _weButtonPulseController
+      ..stop()
+      ..value = 0;
+    setState(() {
+      _weIsPlaying = true;
+      _weAnimationComplete = false;
+    });
+
+    final category = _workedExampleCategory;
+    final label =
+        (category != null ? _currentRound.categoryLabels[category] : null) ??
+        '';
+
+    // Narration is intentionally non-blocking for the visual demonstration,
+    // but only one request/playback may exist at a time. This prevents a fast
+    // replay tap from creating duplicate downloads or overlapping speech.
+    _playWorkedExampleNarration(label);
+
+    final bool reduceMotion = MediaQuery.of(context).disableAnimations;
+
+    // Reset sub-controllers
+    _weHighlightController.reset();
+    _weMoveController.reset();
+    _weGlowController.reset();
+
+    if (reduceMotion) {
+      // Instant transitions for reduced-motion
+      setState(() => _weCurrentStep = 1);
+      _weHighlightController.value = 1.0;
+      await Future.delayed(const Duration(milliseconds: 250));
+      if (!mounted || !_isShowingWorkedExample) return;
+      setState(() => _weCurrentStep = 2);
+      _weMoveController.value = 1.0;
+      await Future.delayed(const Duration(milliseconds: 250));
+      if (!mounted || !_isShowingWorkedExample) return;
+      setState(() => _weCurrentStep = 3);
+      _weGlowController.value = 1.0;
+    } else {
+      // Step 1: Highlight the example image
+      if (mounted) setState(() => _weCurrentStep = 1);
+      await _weHighlightController.forward(from: 0);
+      if (!mounted) return;
+      // Small pause between steps
+      await Future.delayed(const Duration(milliseconds: 250));
+      // Step 2: Move the image toward the category
+      if (mounted) setState(() => _weCurrentStep = 2);
+      await _weMoveController.forward(from: 0);
+      if (!mounted) return;
+      await Future.delayed(const Duration(milliseconds: 200));
+      // Step 3: Glow the destination + success effect
+      if (mounted) setState(() => _weCurrentStep = 3);
+      await _weGlowController.forward(from: 0);
+    }
+
+    if (!mounted || !_isShowingWorkedExample) return;
+    _weButtonPulseController.repeat();
+    setState(() {
+      _weAnimationComplete = true;
+      _weIsPlaying = false;
+    });
+  }
+
+  void _playWorkedExampleNarration(String label) {
+    if (_weNarrationFuture != null) return;
+    final narration = TtsService().speak(
+      'අපි උදාහරණයක් බලමු. මේ පින්තූරය $label කූඩයට දමමු.',
+      folder: 'skill_1',
+      waitUntilComplete: true,
+    );
+    _weNarrationFuture = narration;
+    unawaited(
+      narration.whenComplete(() {
+        if (identical(_weNarrationFuture, narration)) {
+          _weNarrationFuture = null;
+        }
+      }),
+    );
+  }
+
+  /// Replays the demonstration without duplicate telemetry/callbacks.
+  void _replayWorkedExample() {
+    if (_weDebounceLock || _weIsPlaying) return;
+    _weDebounceLock = true;
+    _playWorkedExampleDemo().whenComplete(() {
+      _weDebounceLock = false;
+    });
+  }
+
+  /// Dismisses the worked-example popup and returns to the scored task.
+  void _dismissWorkedExample() {
+    if (_weIsPlaying) return; // Can't dismiss while playing
+    _weNarrationFuture = null;
+    unawaited(TtsService().stop());
+    setState(() {
+      _isShowingWorkedExample = false;
+      _workedExampleObject = null;
+      _workedExampleCategory = null;
+      _weAnimationComplete = false;
+      _weIsPlaying = false;
+      _weCurrentStep = 0;
+    });
+    _workedExampleController.reset();
+    _weHighlightController.reset();
+    _weMoveController.reset();
+    _weGlowController.reset();
+    _weOverlayEntryController.reset();
+    _weMascotBreathController.reset();
+    _weButtonPulseController.reset();
+    _weSparkleController.reset();
+  }
+
   int get _totalObjects => _currentRound.objects.length;
   int get _sortedCount =>
       _totalObjects - (_objectQueue.length + _visibleObjects.length);
@@ -362,16 +623,39 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 incorrectOptionIds: <String>[
                   '${itemId}_DEST${selectedIndex + 1}',
                 ],
-                supportedActions: const <String>[
-                  'HIGHLIGHT_OPTION',
-                  'SHOW_WORKED_EXAMPLE',
+                supportedActions: <String>[
+                  'HIGHLIGHT_DESTINATION',
+                  if (_workedExampleFor(correctCategory, excluding: object) !=
+                      null)
+                    'SHOW_WORKED_EXAMPLE',
                   'REPLAY_INSTRUCTION',
                 ],
+                struggledTargetUnits: <String>[object],
                 errorType: 'categorization_error',
               )
-              .then((plan) {
-                if (mounted && plan != null) {
+              .then((plan) async {
+                if (!mounted || plan == null) return;
+                final types = plan.commands
+                    .map((command) => command.type)
+                    .toSet();
+                if (types.contains(ScaffoldActionType.replayInstruction)) {
+                  _playInstruction();
+                }
+                if (types.contains(ScaffoldActionType.showWorkedExample)) {
+                  await _showWorkedExample(
+                    currentObject: object,
+                    correctCategory: correctCategory,
+                  );
+                } else if (types.contains(
+                  ScaffoldActionType.highlightOptions,
+                )) {
                   setState(() => _hintedCategory = correctCategory);
+                  _categoryGlowControllers[correctCategory]
+                      ?.forward(from: 0)
+                      .then(
+                        (_) => _categoryGlowControllers[correctCategory]
+                            ?.reverse(),
+                      );
                 }
               }),
         );
@@ -511,6 +795,7 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
           ),
 
           // ── Celebration Overlay ──
+          if (_isShowingWorkedExample) _buildWorkedExampleOverlay(),
           if (_activityComplete) _buildCelebrationOverlay(),
         ],
       ),
@@ -1248,8 +1533,627 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
     );
   }
 
-  Widget _buildStar(double size) {
-    return Icon(Icons.star_rounded, size: size, color: const Color(0xFFF9C623));
+  // ═══════════════════════════════════════════════════════════
+  // WORKED EXAMPLE — Premium Full-Screen Overlay
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _buildWorkedExampleOverlay() {
+    final object = _workedExampleObject;
+    final category = _workedExampleCategory;
+    if (object == null || category == null) return const SizedBox.shrink();
+    final label = _currentRound.categoryLabels[category] ?? category;
+    final accent = _categoryColors[category] ?? AppColors.calmBlue;
+    final screenW = MediaQuery.sizeOf(context).width;
+    final contentWidth = min(screenW - 40, 380.0);
+
+    return Positioned.fill(
+      child: BlockSemantics(
+        child: FadeTransition(
+          opacity: CurvedAnimation(
+            parent: _weOverlayEntryController,
+            curve: Curves.easeOut,
+          ),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {},
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0.0, -0.4),
+                    radius: 1.4,
+                    colors: <Color>[
+                      accent.withValues(alpha: 0.06),
+                      const Color(0xFF1A2438).withValues(alpha: 0.72),
+                    ],
+                  ),
+                ),
+                child: Stack(
+                  children: <Widget>[
+                    // ── Floating sparkle particles ──
+                    Positioned.fill(
+                      child: AnimatedBuilder(
+                        animation: _weSparkleController,
+                        builder: (context, _) => CustomPaint(
+                          painter: _WeSparklesPainter(
+                            _weSparkleController.value,
+                            accent,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // ── Main content ──
+                    SafeArea(
+                      child: Center(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: SizedBox(
+                            width: contentWidth,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                // ── Living mascot ──
+                                _buildWeMascot(accent),
+                                // ── Speech bubble heading ──
+                                _buildWeSpeechBubble(accent),
+                                const SizedBox(height: 14),
+                                // ── Theater stage card ──
+                                _buildWeTheaterCard(
+                                  object,
+                                  category,
+                                  label,
+                                  accent,
+                                ),
+                                const SizedBox(height: 24),
+                                // ── Primary action button ──
+                                _buildWeDismissButton(accent),
+                                const SizedBox(height: 10),
+                                // ── Replay secondary control ──
+                                _buildWeReplayButton(accent),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Living Mascot with breathing animation ──
+  Widget _buildWeMascot(Color accent) {
+    return AnimatedBuilder(
+      animation: _weMascotBreathController,
+      builder: (context, child) {
+        final breathScale =
+            1.0 + (sin(_weMascotBreathController.value * 2 * pi) * 0.03);
+        return Transform.scale(scale: breathScale, child: child);
+      },
+      child: Container(
+        width: 88,
+        height: 88,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[Colors.white, accent.withValues(alpha: 0.12)],
+          ),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: accent.withValues(alpha: 0.25),
+              blurRadius: 24,
+              spreadRadius: 4,
+            ),
+            const BoxShadow(
+              color: Color(0x22FFFFFF),
+              blurRadius: 2,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: ClipOval(
+          child: Padding(
+            padding: const EdgeInsets.all(6),
+            child: Image.asset(
+              _currentMascot,
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) =>
+                  Icon(Icons.auto_awesome_rounded, color: accent, size: 40),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Speech Bubble with tail ──
+  Widget _buildWeSpeechBubble(Color accent) {
+    return Column(
+      children: <Widget>[
+        // Tail pointing up toward mascot
+        CustomPaint(size: const Size(20, 10), painter: _BubbleTailPainter()),
+        // Bubble body
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: accent.withValues(alpha: 0.10),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: <Widget>[
+              Text(
+                'අපි උදාහරණයක් බලමු!',
+                textAlign: TextAlign.center,
+                style: AppTypography.sinhala(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'පින්තූරය හරි තැනට යන හැටි බලන්න.',
+                textAlign: TextAlign.center,
+                style: AppTypography.sinhala(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Theater-style demonstration card ──
+  Widget _buildWeTheaterCard(
+    String object,
+    String category,
+    String label,
+    Color accent,
+  ) {
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.97),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.9),
+          width: 2,
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: const Color(0xFF000000).withValues(alpha: 0.10),
+            blurRadius: 28,
+            offset: const Offset(0, 10),
+          ),
+          BoxShadow(
+            color: accent.withValues(alpha: 0.08),
+            blurRadius: 44,
+            spreadRadius: 6,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          // ── Gradient accent strip (theater curtain top) ──
+          Container(
+            height: 6,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: <Color>[
+                  accent.withValues(alpha: 0.25),
+                  accent,
+                  accent.withValues(alpha: 0.25),
+                ],
+              ),
+            ),
+          ),
+          // ── Demo stage area ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+            child: _buildDemoStage(object, category, label, accent),
+          ),
+          // ── Step indicator dots ──
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: _buildWeStepDots(accent),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── 3-Step Demo Stage (Premium Animation) ──
+  Widget _buildDemoStage(
+    String object,
+    String category,
+    String label,
+    Color accent,
+  ) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        _weHighlightController,
+        _weMoveController,
+        _weGlowController,
+      ]),
+      builder: (context, _) {
+        final highlightV = Curves.easeOutCubic.transform(
+          _weHighlightController.value,
+        );
+        final moveV = Curves.easeInOutCubic.transform(_weMoveController.value);
+        final glowV = Curves.easeOut.transform(_weGlowController.value);
+
+        // Arc-based movement: slight horizontal sway during vertical travel
+        final arcX = sin(moveV * pi) * 20.0;
+
+        return SizedBox(
+          height: 255,
+          child: Stack(
+            alignment: Alignment.topCenter,
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              // ── Destination basket/category zone ──
+              Positioned(
+                bottom: 0,
+                child: Container(
+                  width: 175,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    color: Color.lerp(
+                      accent.withValues(alpha: 0.08),
+                      AppColors.gentleGreen.withValues(alpha: 0.12),
+                      glowV,
+                    ),
+                    borderRadius: BorderRadius.circular(26),
+                    border: Border.all(
+                      color: Color.lerp(
+                        accent.withValues(alpha: 0.25),
+                        AppColors.gentleGreen,
+                        glowV,
+                      )!,
+                      width: 2.5 + (glowV * 1.5),
+                    ),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: Color.lerp(
+                          accent.withValues(alpha: 0.06),
+                          AppColors.gentleGreen.withValues(alpha: 0.35),
+                          glowV,
+                        )!,
+                        blurRadius: 12 + (glowV * 22),
+                        spreadRadius: glowV * 8,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Image.asset(
+                        'assets/images/activity_icons/basket/basket_$category.png',
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => Icon(
+                          Icons.inventory_2_rounded,
+                          color: accent,
+                          size: 44,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          label,
+                          style: AppTypography.sinhala(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Demonstration image (arc path movement) ──
+              Positioned(
+                top: 5 + (moveV * 100),
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Transform.translate(
+                    offset: Offset(arcX, 0),
+                    child: Transform.scale(
+                      scale: (0.80 + (highlightV * 0.20)) - (moveV * 0.22),
+                      child: Container(
+                        width: 108,
+                        height: 108,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Color.lerp(
+                              accent.withValues(alpha: 0.2),
+                              accent,
+                              highlightV,
+                            )!,
+                            width: 2.5 + (highlightV * 1.5),
+                          ),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: accent.withValues(
+                                alpha: 0.06 + (highlightV * 0.22),
+                              ),
+                              blurRadius: 10 + (highlightV * 20),
+                              spreadRadius: highlightV * 6,
+                              offset: const Offset(0, 4),
+                            ),
+                            // Warm inner glow when highlighted
+                            if (highlightV > 0.3)
+                              BoxShadow(
+                                color: AppColors.warmAmberLight.withValues(
+                                  alpha: highlightV * 0.15,
+                                ),
+                                blurRadius: 30,
+                                spreadRadius: 8,
+                              ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/images/activity_icons/$object',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Success effect: green check badge with bounce ──
+              if (glowV > 0.05)
+                Positioned(
+                  right: 50,
+                  bottom: 78,
+                  child: Opacity(
+                    opacity: glowV,
+                    child: Transform.scale(
+                      scale: Curves.elasticOut.transform(
+                        (glowV * 1.3).clamp(0.0, 1.0),
+                      ),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: <Color>[
+                              Color(0xFF7DCE7D),
+                              Color(0xFF4A9E50),
+                            ],
+                          ),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: AppColors.gentleGreen.withValues(
+                                alpha: 0.45,
+                              ),
+                              blurRadius: 16,
+                              spreadRadius: 3,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+              // ── Success particle burst ──
+              if (glowV > 0.1)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _WeSuccessBurstPainter(glowV, accent),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Step indicator dots ──
+  Widget _buildWeStepDots(Color accent) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(3, (i) {
+        final stepNum = i + 1;
+        final isActive = _weCurrentStep >= stepNum;
+        final isCurrent = _weCurrentStep == stepNum && _weIsPlaying;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: isCurrent ? 28 : 10,
+          height: 10,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            color: isActive ? accent : Colors.grey.withValues(alpha: 0.18),
+            boxShadow: isCurrent
+                ? <BoxShadow>[
+                    BoxShadow(
+                      color: accent.withValues(alpha: 0.45),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+        );
+      }),
+    );
+  }
+
+  // ── Premium pulsing dismiss button ──
+  Widget _buildWeDismissButton(Color accent) {
+    final bool enabled = _weAnimationComplete && !_weIsPlaying;
+    return AnimatedBuilder(
+      animation: _weButtonPulseController,
+      builder: (context, child) {
+        final pulseScale = enabled
+            ? 1.0 + (sin(_weButtonPulseController.value * 2 * pi) * 0.018)
+            : 1.0;
+        return Transform.scale(scale: pulseScale, child: child);
+      },
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        label: 'දැන් මම උත්සාහ කරන්නම්',
+        child: GestureDetector(
+          onTap: enabled ? _dismissWorkedExample : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            constraints: const BoxConstraints(minHeight: 58, minWidth: 240),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            decoration: BoxDecoration(
+              gradient: enabled
+                  ? const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: <Color>[Color(0xFF6EC074), Color(0xFF4A9E50)],
+                    )
+                  : null,
+              color: enabled ? null : const Color(0xFFD5DAE2),
+              borderRadius: BorderRadius.circular(29),
+              boxShadow: enabled
+                  ? <BoxShadow>[
+                      BoxShadow(
+                        color: const Color(0xFF4A9E50).withValues(alpha: 0.40),
+                        blurRadius: 18,
+                        offset: const Offset(0, 7),
+                      ),
+                      BoxShadow(
+                        color: const Color(0xFF6EC074).withValues(alpha: 0.18),
+                        blurRadius: 36,
+                        spreadRadius: 3,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  Icons.rocket_launch_rounded,
+                  color: enabled ? Colors.white : const Color(0xFFA0A8B4),
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'දැන් මම උත්සාහ කරන්නම්',
+                      style: AppTypography.sinhala(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: enabled ? Colors.white : const Color(0xFFA0A8B4),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Secondary replay control ──
+  Widget _buildWeReplayButton(Color accent) {
+    final bool canReplay = _weAnimationComplete && !_weIsPlaying;
+    return Semantics(
+      button: true,
+      enabled: canReplay,
+      label: 'උදාහරණය නැවත බලන්න',
+      child: GestureDetector(
+        onTap: canReplay ? _replayWorkedExample : null,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: canReplay
+                ? Colors.white.withValues(alpha: 0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(
+                Icons.replay_rounded,
+                size: 18,
+                color: canReplay
+                    ? Colors.white.withValues(alpha: 0.85)
+                    : Colors.white.withValues(alpha: 0.30),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'නැවත බලන්න',
+                style: AppTypography.sinhala(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: canReplay
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : Colors.white.withValues(alpha: 0.30),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1310,4 +2214,96 @@ class _StarBurstPainter extends CustomPainter {
   bool shouldRepaint(covariant _StarBurstPainter oldDelegate) {
     return oldDelegate.progress != progress;
   }
+}
+
+// ── Floating sparkle particles for the worked-example overlay ──
+class _WeSparklesPainter extends CustomPainter {
+  final double phase;
+  final Color accent;
+  _WeSparklesPainter(this.phase, this.accent);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rng = Random(42);
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    for (int i = 0; i < 14; i++) {
+      final baseX = rng.nextDouble() * size.width;
+      final baseY = rng.nextDouble() * size.height;
+      final speed = 0.3 + rng.nextDouble() * 0.7;
+      final sparkleSize = 1.5 + rng.nextDouble() * 3.5;
+
+      final x = baseX + sin((phase * speed + i) * 2 * pi) * 18;
+      final y = (baseY - (phase * 60 * speed)) % size.height;
+
+      final alpha = (0.12 + sin((phase * 2 + i * 0.4) * 2 * pi) * 0.10).clamp(
+        0.02,
+        0.25,
+      );
+
+      final isGold = i % 3 == 0;
+      paint.color = (isGold ? const Color(0xFFF9C623) : accent).withValues(
+        alpha: alpha,
+      );
+
+      canvas.drawCircle(Offset(x, y), sparkleSize, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WeSparklesPainter old) => old.phase != phase;
+}
+
+// ── Speech bubble tail painter ──
+class _BubbleTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    final path = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ── Success burst particles (gentle star-like expanding dots) ──
+class _WeSuccessBurstPainter extends CustomPainter {
+  final double progress;
+  final Color accent;
+  _WeSuccessBurstPainter(this.progress, this.accent);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0.05) return;
+    final center = Offset(size.width * 0.65, size.height * 0.72);
+    final paint = Paint()..style = PaintingStyle.fill;
+    final maxRadius = size.width * 0.35;
+
+    for (int i = 0; i < 8; i++) {
+      final angle = (i * 2 * pi / 8) + (progress * pi / 6);
+      final dist = progress * maxRadius * (0.5 + (i % 3) * 0.2);
+      final pos = Offset(
+        center.dx + cos(angle) * dist,
+        center.dy + sin(angle) * dist,
+      );
+      final fade = ((1.0 - progress) * 0.6).clamp(0.0, 0.5);
+      final dotSize = 3.0 * (1.0 - progress * 0.5);
+
+      final isGold = i % 2 == 0;
+      paint.color = (isGold ? const Color(0xFFF9C623) : AppColors.gentleGreen)
+          .withValues(alpha: fade);
+      canvas.drawCircle(pos, dotSize, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WeSuccessBurstPainter old) =>
+      old.progress != progress;
 }

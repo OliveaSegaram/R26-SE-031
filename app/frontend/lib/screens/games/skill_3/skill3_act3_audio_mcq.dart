@@ -8,6 +8,7 @@ import '../../../services/tts_service.dart';
 import '../shared_templates/widgets/shared_game_layout.dart';
 import '../../../services/progress_service.dart';
 import '../../../adaptive/adapters/choice_scaffold_adapter.dart';
+import '../../../adaptive/models/adaptive_scaffold_models.dart';
 
 /// Skill 3 Activity 3 (Listen to Word & Select Matching Word)
 /// Premium redesign with interactive animations and world-class UI
@@ -36,6 +37,21 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
   Map<String, dynamic>? _completedRoundSnapshot;
   int _currentRoundIndex = 0;
   int _attemptCount = 0;
+
+  @override
+  List<String> get adaptiveSemanticScaffoldCapabilities => const <String>[
+    'REPLAY_INSTRUCTION',
+    'SLOW_AUDIO',
+  ];
+
+  @override
+  Future<void> handleAdaptiveSemanticScaffold(ScaffoldCommand command) async {
+    if (command.type == ScaffoldActionType.replayInstruction) {
+      await _playAudioPrompt();
+    } else if (command.type == ScaffoldActionType.slowAudio) {
+      await _playAudioPrompt(slow: true);
+    }
+  }
 
   // Animations
   late AnimationController _speakerBounceController;
@@ -82,7 +98,10 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
     super.dispose();
   }
 
-  Future<void> _playAudioPrompt({bool autoPlay = false}) async {
+  Future<void> _playAudioPrompt({
+    bool autoPlay = false,
+    bool slow = false,
+  }) async {
     final rounds = widget.activityNode?.rounds ?? [];
     if (rounds.isEmpty) return;
 
@@ -115,6 +134,7 @@ class _Skill3Act3AudioMcqState extends State<Skill3Act3AudioMcq>
     final played = await TtsService().speak(
       spokenInstruction,
       folder: 'skill_3',
+      playbackRate: slow ? 0.78 : 1.0,
     );
     if (!mounted) return;
     if (autoPlay && !played && _lastAutoPlayedItemId == itemId) {

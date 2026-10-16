@@ -13,6 +13,7 @@ import '../../../adaptive/controllers/adaptive_choice_controller.dart';
 import '../../../adaptive/models/adaptive_scaffold_models.dart';
 import '../../../adaptive/widgets/adaptive_answer_pool.dart';
 import 'skill2_round_resolver.dart';
+import '../../../adaptive/utils/adaptive_option_order.dart';
 
 /// Activity 5: අකුරු මතකයෙන් සකසමු (Remember the Pattern)
 /// Template: pattern_memory_game
@@ -86,7 +87,15 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
       );
       _currentItemId = resolved.itemId;
       _currentVariantId = resolved.variantId;
-      _activeRoundData = resolved.data;
+      _activeRoundData = Map<String, dynamic>.from(resolved.data);
+      final rawOptions = (_activeRoundData['options'] as List? ?? const [])
+          .map((value) => value.toString())
+          .toList();
+      _activeRoundData['options'] = AdaptiveOptionOrder.shuffled<String>(
+        rawOptions,
+        _currentItemId,
+        salt: 'sequence-pool',
+      );
     } else {
       _currentItemId = '';
       _activeRoundData = <String, dynamic>{};
@@ -304,16 +313,17 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
             "selected_option_id": item,
             "selected_option_ids": [optionId],
             "correct_option_ids": expectedIds,
+            "struggled_target_units":
+                Skill2RoundResolver.sequenceStruggledUnits(
+                  pattern: targetPattern,
+                  currentPosition: currentIndex,
+                ),
             "original_options_count": allOptions.length,
             "incorrect_option_ids": genuineDistractors,
             "visible_option_ids": _choiceController.visibleOptions
                 .map((option) => option.id)
                 .toList(),
-            "supported_actions": [
-              "HIGHLIGHT_OPTION",
-              "REVEAL_FIRST_TOKEN",
-              "REPLAY_INSTRUCTION",
-            ],
+            "supported_actions": ["HIGHLIGHT_OPTION", "REVEAL_FIRST_TOKEN"],
             "minimum_visible_options": 2,
             "error_type": "sequence_memory_error",
           },

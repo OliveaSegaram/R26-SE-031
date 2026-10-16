@@ -78,7 +78,11 @@ app.include_router(learning_router)
 # --- Health Check ---
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "C5-Auth"}
+    return {
+        "status": "ok",
+        "service": "C5-Auth",
+        "c4_policy_mode_forwarded": os.getenv("C4_POLICY_MODE", "shadow"),
+    }
 
 # --- Centralized OpenAPI Docs ---
 @app.get("/docs", include_in_schema=False)
@@ -95,9 +99,9 @@ async def custom_swagger_ui_html():
             "urls": [
                 {"url": "/openapi.json", "name": "C5 - Auth & Student Management"},
                 {"url": f"{speech_url}/openapi.json", "name": "C2 - Speech Monitoring"},
-                {"url": f"{telemetry_url}/openapi.json", "name": "C4 - Telemetry Analytics"},
+                {"url": f"{telemetry_url}/openapi.json", "name": "C1 - Behavioral Telemetry Analytics"},
                 {"url": f"{fusion_url}/openapi.json", "name": "C3 - Diagnostic Fusion"},
-                {"url": f"{tutoring_url}/openapi.json", "name": "C1 - Adaptive Tutoring"},
+                {"url": f"{tutoring_url}/openapi.json", "name": "C4 - Adaptive Tutoring"},
             ]
         }
     )

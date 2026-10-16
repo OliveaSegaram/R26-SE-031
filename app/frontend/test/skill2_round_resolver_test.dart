@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/models/curriculum_models.dart';
-import '../lib/screens/games/skill_2/skill2_round_resolver.dart';
+import 'package:sipsara_app/models/curriculum_models.dart';
+import 'package:sipsara_app/screens/games/skill_2/skill2_round_resolver.dart';
 
 void main() {
   late SkillDetail skill;
@@ -19,7 +19,7 @@ void main() {
     }
   });
 
-  test('all 81 Skill 2 core and equivalent items resolve exactly', () {
+  test('all 175 Skill 2 core and local practice items resolve exactly', () {
     var resolvedCount = 0;
 
     for (final activity in skill.activities) {
@@ -33,7 +33,17 @@ void main() {
         final hasReducedRemediation =
             coreRound['has_reduced_remediation'] == true;
 
-        for (final variantId in <String?>[null, 'V1', 'V2']) {
+        final variants = List<Map<String, dynamic>>.from(
+          ((coreRound['adaptive_variants'] as List?) ?? const <dynamic>[]).map(
+            (variant) => Map<String, dynamic>.from(variant as Map),
+          ),
+        );
+        final variantIds = <String?>[
+          null,
+          ...variants.map((variant) => variant['variant_id'] as String),
+        ];
+
+        for (final variantId in variantIds) {
           final resolved = Skill2RoundResolver.resolve(
             activity: activity,
             roundIndex: roundIndex,
@@ -51,17 +61,21 @@ void main() {
           );
           expect(research.itemId, expectedId, reason: expectedId);
           expect(research.targets, isNotEmpty, reason: expectedId);
-          if (variantId == null) {
+          final variant = variantId == null
+              ? null
+              : variants.firstWhere(
+                  (candidate) => candidate['variant_id'] == variantId,
+                );
+          final expectedRole = variant?['item_role']?.toString() ?? 'CORE';
+          if (expectedRole == 'CORE') {
             expect(research.itemRole, 'CORE', reason: expectedId);
             expect(research.difficultyB, coreDifficulty, reason: expectedId);
-          } else if (variantId == 'V1') {
+          } else if (expectedRole == 'REMEDIATION') {
             expect(research.itemRole, 'REMEDIATION', reason: expectedId);
             expect(
               research.difficultyB,
               hasReducedRemediation
-                  ? activity.id == 'act_1'
-                        ? lessThanOrEqualTo(coreDifficulty)
-                        : lessThan(coreDifficulty)
+                  ? lessThanOrEqualTo(coreDifficulty)
                   : coreDifficulty,
               reason: expectedId,
             );
@@ -76,7 +90,7 @@ void main() {
       }
     }
 
-    expect(resolvedCount, 81);
+    expect(resolvedCount, 175);
   });
 
   test(
@@ -86,9 +100,76 @@ void main() {
       expect(Skill2RoundResolver.roundIndexFromItemId('S2A5R05V2'), 4);
       expect(Skill2RoundResolver.variantFromItemId('S2A1R01V1'), 'V1');
       expect(Skill2RoundResolver.variantFromItemId('S2A1R01V2'), 'V2');
+      expect(Skill2RoundResolver.variantFromItemId('S2A1R01V3'), 'V3');
+      expect(Skill2RoundResolver.variantFromItemId('S2A1R01V4'), 'V4');
       expect(Skill2RoundResolver.variantFromItemId('S2A1R02'), isNull);
     },
   );
+
+  test('Skill 2 keeps exact targets in local remediation and confirmation', () {
+    var targetedCount = 0;
+    for (final activity in skill.activities) {
+      for (
+        var roundIndex = 0;
+        roundIndex < activity.rounds.length;
+        roundIndex++
+      ) {
+        final round = activity.rounds[roundIndex];
+        final variants = List<Map<String, dynamic>>.from(
+          ((round['adaptive_variants'] as List?) ?? const <dynamic>[]).map(
+            (value) => Map<String, dynamic>.from(value as Map),
+          ),
+        );
+        final targeted = variants
+            .where((variant) => variant['targeted_practice'] == true)
+            .toList();
+        expect(targeted, isNotEmpty, reason: round['item_id'].toString());
+
+        final core = Skill2RoundResolver.resolve(
+          activity: activity,
+          roundIndex: roundIndex,
+        );
+        final coreTargets = _surfaceTargets(activity.id, core.data);
+        for (final variant in targeted) {
+          final resolved = Skill2RoundResolver.resolve(
+            activity: activity,
+            roundIndex: roundIndex,
+            variantId: variant['variant_id'].toString(),
+          );
+          final practiceTargets = _surfaceTargets(activity.id, resolved.data);
+          expect(
+            coreTargets.intersection(practiceTargets),
+            isNotEmpty,
+            reason: resolved.itemId,
+          );
+          expect(
+            variant['target_source_item_id'],
+            round['item_id'],
+            reason: resolved.itemId,
+          );
+          expect(
+            variant['response_load_relation'],
+            variant['item_role'] == 'REMEDIATION'
+                ? 'targeted_reduced'
+                : 'targeted_equivalent',
+            reason: resolved.itemId,
+          );
+          targetedCount++;
+        }
+
+        expect(
+          targeted
+              .where((variant) => variant['item_role'] == 'REMEDIATION')
+              .length,
+          targeted
+              .where((variant) => variant['item_role'] == 'CONFIRMATION')
+              .length,
+          reason: round['item_id'].toString(),
+        );
+      }
+    }
+    expect(targetedCount, 94);
+  });
 
   test(
     'autoplay gate keys playback by item identity instead of spoken text',
@@ -192,6 +273,25 @@ void main() {
     expect(research.targets, hasLength(2));
     expect(research.targets, containsAll(<String>['පු', 'ව']));
     expect(research.distractors, isNot(contains('ව')));
+  });
+
+  test('Skill 2 mistakes resolve to one precise semantic target', () {
+    expect(Skill2RoundResolver.matchingStruggledUnits('කා'), <String>['කා']);
+    expect(
+      Skill2RoundResolver.nextUnresolvedChoiceTarget(
+        options: <String>['ම', 'ලා', 'ඩ', 'බ'],
+        correctIndices: <int>[3, 1],
+        selectedIndices: <int>{3},
+      ),
+      <String>['ලා'],
+    );
+    expect(
+      Skill2RoundResolver.sequenceStruggledUnits(
+        pattern: <String>['මි', 'හි', 'රි'],
+        currentPosition: 1,
+      ),
+      <String>['හි'],
+    );
   });
 
   test('Activity 1 equivalents preserve each round image-letter family', () {
@@ -387,6 +487,46 @@ void main() {
     }
   });
 
+  test(
+    'Activity 3 core and adaptive tasks share one question and safe speech',
+    () {
+      final activity = skill.activities.firstWhere(
+        (candidate) => candidate.id == 'act_3',
+      );
+
+      for (
+        var roundIndex = 0;
+        roundIndex < activity.rounds.length;
+        roundIndex++
+      ) {
+        for (final variantId in <String?>[null, 'V1', 'V2', 'V3', 'V4']) {
+          final resolved = Skill2RoundResolver.resolve(
+            activity: activity,
+            roundIndex: roundIndex,
+            variantId: variantId,
+          );
+          final target = resolved.data['audio_text'].toString();
+
+          expect(
+            resolved.data['prompt'],
+            Skill2RoundResolver.audioChoicePrompt,
+            reason: resolved.itemId,
+          );
+          expect(
+            Skill2RoundResolver.spokenLetterInstruction(resolved.data),
+            'ශබ්දයට සවන් දී ${target}යන්න තෝරන්න',
+            reason: resolved.itemId,
+          );
+          expect(
+            Skill2RoundResolver.spokenLetterInstruction(resolved.data),
+            isNot(contains('අසායන්න')),
+            reason: resolved.itemId,
+          );
+        }
+      }
+    },
+  );
+
   test('Activity 4 variants preserve reviewed word-boundary progression', () {
     final activity = skill.activities.firstWhere(
       (candidate) => candidate.id == 'act_4',
@@ -445,8 +585,8 @@ void main() {
       expect(signature(core.data), coreSignatures[roundIndex]);
       expect(signature(remediation.data), remediationSignatures[roundIndex]);
       expect(signature(confirmation.data), coreSignatures[roundIndex]);
-      expect(coreRound['item_version'], 6);
-      expect(variants.every((variant) => variant['item_version'] == 6), isTrue);
+      expect(coreRound['item_version'], 7);
+      expect(variants.every((variant) => variant['item_version'] == 7), isTrue);
 
       presentedWords.addAll(<String>[
         core.data['target_word'] as String,
@@ -610,5 +750,30 @@ void _expectPlayableContent(
       break;
     default:
       fail('Unexpected Skill 2 activity $activityId');
+  }
+}
+
+Set<String> _surfaceTargets(String activityId, Map<String, dynamic> data) {
+  switch (activityId) {
+    case 'act_1':
+      return (data['items'] as List)
+          .whereType<Map>()
+          .where((item) => item['is_target'] == true)
+          .map((item) => item['value'].toString())
+          .toSet();
+    case 'act_2':
+      return List<String>.from(data['letters'] as List).toSet();
+    case 'act_3':
+      return <String>{data['correctOption'].toString()};
+    case 'act_4':
+      final options = List<String>.from(data['options'] as List);
+      final indices = data['correct_indices'] is List
+          ? List<int>.from(data['correct_indices'] as List)
+          : <int>[data['correct_index'] as int];
+      return indices.map((index) => options[index]).toSet();
+    case 'act_5':
+      return List<String>.from(data['pattern'] as List).toSet();
+    default:
+      return const <String>{};
   }
 }

@@ -1,5 +1,9 @@
 # Component 4 — Adaptive Tutoring and Item Selection
 
+The ML research/deployment workflow is documented in
+[ML_RESEARCH_PIPELINE.md](ML_RESEARCH_PIPELINE.md). It defaults to shadow
+evaluation and preserves the reviewed deterministic Skills 1–4 policy.
+
 Component 4 now uses one shared adaptive protocol across every task in Skills
 1–4 (19 activities). Each activity keeps its own Grade 1 Sinhala interaction,
 but item identity, evidence updates, remediation, confirmation, selection, and
@@ -14,6 +18,8 @@ Grade 1 task UI
   -> adaptive service resolves canonical item/KC/difficulty
   -> BKT updates KC mastery from the first independent response
   -> Rasch/IRT updates ability for that KC and reports measurement uncertainty
+  -> constrained selector ranks unseen same-KC authored items by difficulty,
+     Rasch information, exposure and curriculum order
   -> bounded policy chooses core, exact V1 remediation, or exact V2 confirmation
   -> shared Flutter navigation contract renders that exact item's distinct content
   -> progress remains on the original core dot during V1/V2
@@ -58,12 +64,13 @@ screen advertises only actions it can safely implement.
 
 | Family | Safe behavior |
 |---|---|
-| Choice/image/audio/fill blank | Remove only identified distractors, highlight, replay |
+| Choice/image/fill blank | Remove only identified distractors or highlight |
+| Audio | Remove/highlight plus prompt replay and 0.78× slow replay |
 | Pair matching | Highlight/replay; never remove a letter needed by another pair |
 | Sequence | Reveal the first required token; never remove a future required token |
 | Hidden search | Guide a remaining target |
-| Sorting | Guide the correct destination |
-| Pattern/memory | Highlight/replay while retaining required choices |
+| Sorting | Highlight the destination or show a worked category cue |
+| Pattern/memory | Disable a distractor in place or highlight while retaining required choices |
 
 Choice pools are rebuilt from visible options with `Wrap`, so remaining answers
 re-center and close the removed space automatically. The correct target is
@@ -110,8 +117,11 @@ Component 4 uses complementary, auditable models:
 1. **BKT** estimates mastery separately for each Sinhala knowledge component.
 2. **Rasch/1PL IRT** maintains KC-scoped learner ability, matches item
    difficulty, and records test information and standard error.
-3. **Deterministic bounded policy** converts model evidence and task
-   capabilities into reproducible instructional actions.
+3. **Action-outcome logistic models** rank the next-independent-success
+   probability of only the actions supported by the current screen.
+4. **Deterministic bounded policy and safety translator** provide a baseline,
+   enforce target/minimum-option rules, and convert a permitted model action
+   into exact semantic commands.
 
 Initial BKT and difficulty values are explicitly expert-provisional. They must
 not be described as validated or trained on children. The offline calibrator
@@ -168,16 +178,22 @@ The stopping rule is explicit:
 ```bash
 cd app/backend/adaptive-tutoring-v1
 source venv/bin/activate
+python research/verify_component4_system.py
 pytest -q
 
 cd ../../frontend
 flutter test test/adaptive_choice_controller_test.dart test/canonical_resolver_test.dart test/adaptive_task_coordinator_test.dart
 ```
 
-Current Component 4 result: 102 backend tests and 66 focused Flutter tests pass.
-The repository-wide frontend/backend suites still contain unrelated existing
-parent-dashboard PP2 assertions; they are outside Component 4 and are recorded
-separately rather than hidden.
+Current verified result: 114 adaptive-backend tests, 21 API/dashboard tests,
+30 telemetry tests, and all 74 Flutter tests pass. Direct Dart analysis reports
+no errors (existing warnings and style notices remain in legacy app screens).
+
+The verifier is database-free and read-only. It validates the Skills 1–4 item
+lineage and prints the candidate probabilities, selected support, and rendered
+command for visual-choice, audio, sorting, and sequence examples. A `PASS`
+proves that the target pipeline is wired and capability-safe; because the
+included action model is synthetic-trained, it does not prove learning impact.
 
 ## Research deployment requirements
 

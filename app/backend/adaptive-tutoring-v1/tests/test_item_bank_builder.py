@@ -438,7 +438,8 @@ def test_pair_matching_variants_never_repeat_a_required_letter():
         if item["activity_id"] == "2.2" and not item["is_core"]
     ]
 
-    assert len(pair_variants) == 10
+    # Five rounds expose V1/V2 and one exact-target pair per core letter.
+    assert len(pair_variants) == 42
     for item in pair_variants:
         values = [
             option["value"] for option in item["options"]
@@ -510,7 +511,8 @@ def test_skill_two_client_metadata_uses_the_same_official_kcs_as_item_bank():
 def test_every_skill_two_rendered_item_has_an_unambiguous_valid_answer():
     items = [item for item in build_items() if item["skill_id"] == "skill_2"]
 
-    assert len(items) == 81
+    # Twenty-seven cores expose V1/V2 plus reviewed exact-target pairs.
+    assert len(items) == 175
     assert {item["activity_id"] for item in items} == {
         "2.1", "2.2", "2.3", "2.4", "2.5"
     }
@@ -545,6 +547,17 @@ def test_every_skill_two_rendered_item_has_an_unambiguous_valid_answer():
             assert pattern and all(token in options for token in pattern), item["item_id"]
 
 
+def test_skill_two_activity_three_uses_one_visible_prompt_and_explicit_audio_target():
+    items = [item for item in build_items() if item["activity_id"] == "2.3"]
+
+    assert len(items) == 25
+    for item in items:
+        content = item["content"]
+        assert content["prompt"] == "ශබ්දයට සවන් දී අකුර තෝරන්න", item["item_id"]
+        assert content["audio_text"] == content["correctOption"], item["item_id"]
+        assert content["correctOption"] in content["options"], item["item_id"]
+
+
 def test_skill_two_activity_one_preserves_the_reviewed_difficulty_progression():
     by_id = {
         item["item_id"]: item
@@ -575,7 +588,7 @@ def test_skill_two_activity_one_preserves_the_reviewed_difficulty_progression():
         "S2A1R07V2": (0, 6),
     }
 
-    assert set(by_id) == set(expected_signatures)
+    assert set(expected_signatures).issubset(by_id)
     frontend_root = DEFAULT_CURRICULUM_DIR.parents[2]
     for item_id, (expected_icons, expected_letters) in expected_signatures.items():
         document = by_id[item_id]
@@ -595,6 +608,22 @@ def test_skill_two_activity_one_preserves_the_reviewed_difficulty_progression():
 
         expected_version = 5 if item_id.endswith(("V1", "V2")) else 2
         assert document["item_version"] == expected_version, item_id
+
+    # Every Activity 1 core also retains one local exact-target remediation
+    # and confirmation pair. It remains in the same equivalent group and is
+    # never a cross-activity transfer task.
+    for round_number in range(1, 8):
+        core_id = f"S2A1R{round_number:02d}"
+        remediation = by_id[f"{core_id}V3"]
+        confirmation = by_id[f"{core_id}V4"]
+        assert remediation["targeted_practice"] is True
+        assert confirmation["targeted_practice"] is True
+        assert remediation["item_role"] == "REMEDIATION"
+        assert confirmation["item_role"] == "CONFIRMATION"
+        assert remediation["equivalent_group_id"] == core_id
+        assert confirmation["equivalent_group_id"] == core_id
+        assert remediation["response_load_relation"] == "targeted_reduced"
+        assert confirmation["response_load_relation"] == "targeted_equivalent"
 
     simple_letters = {
         "අ", "ඉ", "උ", "එ", "ඔ", "ක", "ග", "ත", "ද", "න",
@@ -730,6 +759,32 @@ def test_skill_two_activity_two_preserves_pair_count_and_pilla_progression():
                 f"S2A2R{round_number - 1:02d}"
             ]["difficulty_b"]
 
+        targeted = [
+            item for item in by_id.values()
+            if item.get("equivalent_group_id") == core_id
+            and item.get("targeted_practice") is True
+        ]
+        targeted_remediations = [
+            item for item in targeted if item["item_role"] == "REMEDIATION"
+        ]
+        targeted_confirmations = [
+            item for item in targeted if item["item_role"] == "CONFIRMATION"
+        ]
+        assert targeted_remediations
+        assert targeted_confirmations
+        assert all(
+            len(item["content"]["letters"]) == remediation_signatures[
+                round_number - 1
+            ][0]
+            for item in targeted_remediations
+        )
+        assert all(
+            len(item["content"]["letters"]) == core_signatures[
+                round_number - 1
+            ][0]
+            for item in targeted_confirmations
+        )
+
 
 def test_skill_two_activity_three_preserves_audio_difficulty_and_unique_targets():
     by_id = {
@@ -833,7 +888,7 @@ def test_skill_two_activity_four_preserves_reviewed_word_boundary_progression():
         assert signature(core) == core_signatures[round_number - 1]
         assert signature(remediation) == remediation_signatures[round_number - 1]
         assert signature(confirmation) == signature(core)
-        assert {core["item_version"], remediation["item_version"], confirmation["item_version"]} == {6}
+        assert {core["item_version"], remediation["item_version"], confirmation["item_version"]} == {7}
         assert core["difficulty_features"] == {
             "word_unit_count": core_signatures[round_number - 1][0],
             "pilla_count": core_signatures[round_number - 1][1],
@@ -876,6 +931,39 @@ def test_skill_two_activity_four_preserves_reviewed_word_boundary_progression():
         by_id[f"S2A4R{round_number:02d}"]["has_floor_remediation"] is False
         for round_number in range(2, 6)
     )
+    assert by_id["S2A4R05V4"]["content"] == {
+        "target_word": "බළලා",
+        "word_units": ["බ", "ළ", "ලා"],
+        "pilla_count": 1,
+        "target_position": "first",
+        "options": ["ම", "ලා", "ඩ", "බ", "ඔ", "ය"],
+        "targeted_unit": "බ",
+        "prompt": "'බළලා' යන වචනයේ මුල් අකුර කුමක්ද?",
+        "correctOption": "බ",
+        "correct_index": 3,
+    }
+    assert by_id["S2A4R05V5"]["content"] == {
+        "target_word": "නටලා",
+        "word_units": ["න", "ට", "ලා"],
+        "pilla_count": 1,
+        "target_position": "last",
+        "options": ["න", "ම", "ඔ", "ලා"],
+        "targeted_unit": "ලා",
+        "prompt": "'නටලා' යන වචනයේ අග අකුර කුමක්ද?",
+        "correctOption": "ලා",
+        "correct_index": 3,
+    }
+    assert by_id["S2A4R05V6"]["content"] == {
+        "target_word": "දුවලා",
+        "word_units": ["දු", "ව", "ලා"],
+        "pilla_count": 2,
+        "target_position": "last",
+        "options": ["ම", "ලා", "ඩ", "දු", "ඔ", "ය"],
+        "targeted_unit": "ලා",
+        "prompt": "'දුවලා' යන වචනයේ අග අකුර කුමක්ද?",
+        "correctOption": "ලා",
+        "correct_index": 1,
+    }
 
 
 def test_skill_two_activity_five_preserves_reviewed_memory_progression():
@@ -979,7 +1067,7 @@ def test_item_bank_sync_quarantines_only_superseded_activity_one_variants():
         "superseded_telemetry_sessions": 2,
     }
     decision_filter = database.adaptive_decisions.calls[0][0]
-    assert len(decision_filter["current_item"]["$in"]) == 14
+    assert len(decision_filter["current_item"]["$in"]) == 28
     assert decision_filter["item_version"] == {"$ne": 5}
     assert database.telemetry_sessions.calls[0][2]["array_filters"][0][
         "event.item_version"
@@ -1015,7 +1103,7 @@ def test_item_bank_sync_quarantines_superseded_activity_two_variants():
         "superseded_s2a2_telemetry_sessions": 3,
     }
     decision_filter = database.adaptive_decisions.calls[0][0]
-    assert len(decision_filter["current_item"]["$in"]) == 10
+    assert len(decision_filter["current_item"]["$in"]) == 42
     assert decision_filter["item_version"] == {"$ne": 3}
     assert database.telemetry_sessions.calls[0][2]["array_filters"][0][
         "event.item_version"
@@ -1051,7 +1139,7 @@ def test_item_bank_sync_quarantines_all_superseded_activity_three_items():
         "superseded_s2a3_telemetry_sessions": 4,
     }
     decision_filter = database.adaptive_decisions.calls[0][0]
-    assert len(decision_filter["current_item"]["$in"]) == 15
+    assert len(decision_filter["current_item"]["$in"]) == 25
     assert decision_filter["item_version"] == {"$ne": 3}
 
 
@@ -1084,8 +1172,8 @@ def test_item_bank_sync_quarantines_all_superseded_activity_four_items():
         "superseded_s2a4_telemetry_sessions": 5,
     }
     decision_filter = database.adaptive_decisions.calls[0][0]
-    assert len(decision_filter["current_item"]["$in"]) == 15
-    assert decision_filter["item_version"] == {"$ne": 6}
+    assert len(decision_filter["current_item"]["$in"]) == 27
+    assert decision_filter["item_version"] == {"$ne": 7}
 
 
 def test_item_bank_sync_quarantines_all_superseded_activity_five_items():
@@ -1117,7 +1205,7 @@ def test_item_bank_sync_quarantines_all_superseded_activity_five_items():
         "superseded_s2a5_telemetry_sessions": 6,
     }
     decision_filter = database.adaptive_decisions.calls[0][0]
-    assert len(decision_filter["current_item"]["$in"]) == 15
+    assert len(decision_filter["current_item"]["$in"]) == 41
     assert decision_filter["item_version"] == {"$ne": 3}
 
 
@@ -1401,7 +1489,7 @@ def test_item_bank_sync_removes_legacy_activity_four_aliases():
 
     assert result == {"cleaned_s2a4_legacy_item_records": 5}
     query, update = database.item_bank.calls[0]
-    assert len(query["item_id"]["$in"]) == 15
+    assert len(query["item_id"]["$in"]) == 27
     assert update == {"$unset": {"frontend_item_alias": ""}}
 
 
@@ -1428,7 +1516,7 @@ def test_item_bank_sync_removes_legacy_activity_one_to_three_fields():
 
     assert result == {"cleaned_s2a1_to_s2a3_legacy_item_records": 37}
     query, update = database.item_bank.calls[0]
-    assert len(query["item_id"]["$in"]) == 51
+    assert len(query["item_id"]["$in"]) == 107
     assert update == {"$unset": {
         "frontend_item_alias": "",
         "kc_id": "",
@@ -1463,7 +1551,7 @@ def test_item_bank_sync_removes_legacy_activity_five_fields():
 
     assert result == {"cleaned_s2a5_legacy_item_records": 15}
     query, update = database.item_bank.calls[0]
-    assert len(query["item_id"]["$in"]) == 15
+    assert len(query["item_id"]["$in"]) == 41
     assert update == {
         "$unset": {"difficulty": "", "frontend_item_alias": ""}
     }

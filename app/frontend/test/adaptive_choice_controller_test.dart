@@ -210,6 +210,38 @@ void main() {
     );
   });
 
+  test(
+    'parses semantic audio and worked-example commands without hiding choices',
+    () {
+      final choices = controller();
+      final plan = ScaffoldPlan.fromNextAction(<String, dynamic>{
+        'action_id': 'semantic-plan',
+        'policy_version': 'C4_ML_COMMAND_TRANSLATOR_V1',
+        'commands': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'action_id': 'slow-audio',
+            'type': 'SLOW_AUDIO',
+            'reason_code': 'MODEL_SELECTED_SLOW_AUDIO',
+          },
+          <String, dynamic>{
+            'action_id': 'worked-example',
+            'type': 'SHOW_WORKED_EXAMPLE',
+            'target_option_ids': <String>['S2A1R01_O1'],
+            'reason_code': 'MODEL_SELECTED_WORKED_EXAMPLE',
+          },
+        ],
+      });
+
+      expect(plan.commands.map((command) => command.type), <ScaffoldActionType>[
+        ScaffoldActionType.slowAudio,
+        ScaffoldActionType.showWorkedExample,
+      ]);
+      final report = choices.applyPlan(plan);
+      expect(choices.visibleOptions, hasLength(4));
+      expect(report.visibleAfter, 4);
+    },
+  );
+
   testWidgets('answer pool rebuilds from visible options and closes the gap', (
     tester,
   ) async {

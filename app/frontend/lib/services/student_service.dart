@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../config/api_config.dart';
+import 'auth_service.dart';
 
 /// Handles all student-related API calls.
 /// Separated from AuthService for clean architecture.
@@ -20,8 +21,7 @@ class StudentService {
   }
 
   Future<String?> _getAccessToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    return AuthService().getAccessToken();
   }
 
   /// Add a student under the current parent.
