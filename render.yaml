@@ -22,3 +22,14 @@ services:
         sync: false
       - key: JWT_SECRET_KEY
         generateValue: true
+      - key: SPEECH_API_URL
+        value: https://sipsara-ml-backend-v2.azurewebsites.net/speech
+      - key: TELEMETRY_API_URL
+        value: https://sipsara-ml-backend-v2.azurewebsites.net/telemetry
+      - key: FUSION_API_URL
+        value: https://sipsara-ml-backend-v2.azurewebsites.net/diagnostic
+      - key: TUTORING_API_URL
+        value: https://sipsara-ml-backend-v2.azurewebsites.net/tutoring
+      - key: ADAPTIVE_API_URL
+        value: https://sipsara-ml-backend-v2.azurewebsites.net/tutoring
+
