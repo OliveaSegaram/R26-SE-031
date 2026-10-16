@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_sound/flutter_sound.dart';
@@ -194,7 +195,9 @@ class VoiceAnalysisService {
         await http.MultipartFile.fromPath('file', audioFile.path),
       );
 
-      var streamedResponse = await request.send();
+      var streamedResponse = await request.send().timeout(
+        const Duration(seconds: 180),
+      );
       var response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
@@ -203,20 +206,44 @@ class VoiceAnalysisService {
         return data;
       } else {
         debugPrint('VoiceAnalysisService API Error: ${response.body}');
+        final retryable =
+            response.statusCode == 502 ||
+            response.statusCode == 503 ||
+            response.statusCode == 504;
+        lastError = retryable
+            ? 'Speech analysis is preparing. Please try again shortly.'
+            : 'Speech analysis failed (${response.statusCode}).';
         return {
           'transcription': '',
           'word_error_rate': null,
           'Acoustic_Latency_ms': null,
-          'measurement_status': 'request_failed',
+          'measurement_status': retryable
+              ? 'service_warming_up'
+              : 'request_failed',
+          'retryable': retryable,
+          'user_message': lastError,
         };
       }
+    } on TimeoutException {
+      lastError = 'Speech analysis took too long. Please try again.';
+      return {
+        'transcription': '',
+        'word_error_rate': null,
+        'Acoustic_Latency_ms': null,
+        'measurement_status': 'service_timeout',
+        'retryable': true,
+        'user_message': lastError,
+      };
     } catch (e) {
+      lastError = e.toString();
       debugPrint('VoiceAnalysisService Network Error: $e');
       return {
         'transcription': '',
         'word_error_rate': null,
         'Acoustic_Latency_ms': null,
         'measurement_status': 'request_failed',
+        'retryable': true,
+        'user_message': 'Could not reach speech analysis. Please try again.',
       };
     }
   }
