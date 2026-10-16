@@ -34,8 +34,8 @@ jobs:
       uses: azure/docker-login@v1
       with:
         login-server: ${{ env.ACR_NAME }}.azurecr.io
-        username: sipsaramlacr26
-        password: DnXC77q5IrT9IYTI3qmiKnIxfRu1dFsKlDSwk9R3xjptPN9AiD3ZJQQJ99CJAC3pKaREqg7NAAACAZCRQAK5
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
 
     - name: Build Docker Image
       run: |
