@@ -35,7 +35,7 @@ jobs:
       with:
         login-server: ${{ env.ACR_NAME }}.azurecr.io
         username: sipsaramlacr26
-        password: ${{ secrets.ACR_PASSWORD || 'DnXC77q5IrT9IYTI3qmiKnIxfRu1dFsKlDSwk9R3xjptPN9AiD3ZJQQJ99CJAC3pKaREqg7NAAACAZCRQAK5' }}
+        password: DnXC77q5IrT9IYTI3qmiKnIxfRu1dFsKlDSwk9R3xjptPN9AiD3ZJQQJ99CJAC3pKaREqg7NAAACAZCRQAK5
 
     - name: Build Docker Image
       run: |
