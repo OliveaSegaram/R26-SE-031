@@ -126,10 +126,11 @@ class DynamicPracticePolicy:
             state["practice_remediation_count"] = count
             recovery_target = state.get("practice_recovery_target_unit")
 
-            # Skill 2 Activity 2 presents several letters in one task, but a
-            # practice cycle should isolate only the highest-ranked diagnosed
-            # letter. Do not make a Grade-1 learner complete a second targeted
-            # pair simply because another letter was also touched incorrectly.
+            # Skill 1 Activity 3 and Skill 2 Activity 2 present several
+            # targets in one task, but a practice cycle should isolate only
+            # the highest-ranked diagnosed target. Do not make a Grade-1
+            # learner complete a second targeted pair simply because another
+            # object/letter was also touched incorrectly.
             # If the targeted remediation itself needed support, finish its
             # matching confirmation first and then run the authored generic
             # V1 -> V2 safety pair exactly once.
@@ -469,7 +470,7 @@ class DynamicPracticePolicy:
         state["practice_origin_difficulty_b"] = current_b
         state["practice_error_profile"] = dict(error_profile)
         ranked_units = list(error_profile.get("target_units") or [])
-        single_target_cycle = str(activity_id) == "2.2"
+        single_target_cycle = str(activity_id) in {"1.3", "2.2"}
         state["practice_single_target_cycle"] = single_target_cycle
         if single_target_cycle:
             ranked_units = ranked_units[:1]
