@@ -38,10 +38,6 @@ ACTION_COSTS = {
     "SCAFFOLD_REMOVE_DISTRACTOR": 0.045,
     "SCAFFOLD_DISABLE_DISTRACTOR": 0.045,
     "SCAFFOLD_HIGHLIGHT_DESTINATION": 0.07,
-    # The example is longer than a glow, but it demonstrates a different
-    # object and does not reveal the live answer; its disclosure cost is
-    # therefore comparable to a destination cue.
-    "SCAFFOLD_SHOW_WORKED_EXAMPLE": 0.07,
     "SCAFFOLD_REVEAL_FIRST_TOKEN": 0.09,
     "SCAFFOLD_HIGHLIGHT_CORRECT": 0.11,
 }
@@ -79,14 +75,6 @@ def candidate_actions(telemetry: Any) -> List[str]:
         actions.append("SCAFFOLD_SLOW_AUDIO")
     if "HIGHLIGHT_DESTINATION" in capabilities:
         actions.append("SCAFFOLD_HIGHLIGHT_DESTINATION")
-    # A worked example is deliberately reserved for repeated conceptual
-    # errors. Showing it after the first slip would over-support a Grade-1
-    # learner and reveal more information than a retry or destination cue.
-    incorrect_attempts = int(
-        getattr(telemetry, "incorrect_attempt_count", 0) or 0
-    )
-    if "SHOW_WORKED_EXAMPLE" in capabilities and incorrect_attempts >= 2:
-        actions.append("SCAFFOLD_SHOW_WORKED_EXAMPLE")
     # Correct-prefix locking is a deterministic sequence invariant. It is
     # applied locally after every sequence error and is intentionally not an
     # ML action: the model must never recommend undoing already-correct work.

@@ -424,10 +424,6 @@ class PolicyEngine:
         elif action == "SCAFFOLD_SLOW_AUDIO":
             command_type = "SLOW_AUDIO"
             reason = "MODEL_SELECTED_SLOW_AUDIO"
-        elif action == "SCAFFOLD_SHOW_WORKED_EXAMPLE":
-            command_type = "SHOW_WORKED_EXAMPLE"
-            targets = correct_ids[:1]
-            reason = "MODEL_SELECTED_WORKED_EXAMPLE"
 
         # The learned model ranks support actions, but the Grade-1 safety
         # policy owns escalation. Once distractor reduction is exhausted (or
@@ -457,7 +453,6 @@ class PolicyEngine:
                 "SCAFFOLD_HIGHLIGHT_DESTINATION",
                 "SCAFFOLD_REVEAL_FIRST_TOKEN",
                 "SCAFFOLD_LOCK_CORRECT_TOKEN",
-                "SCAFFOLD_SHOW_WORKED_EXAMPLE",
             }
             and (command_type is None or not targets)
         ):

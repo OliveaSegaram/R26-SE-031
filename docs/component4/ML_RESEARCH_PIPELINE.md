@@ -137,7 +137,6 @@ The candidate set is built per task. Unsupported actions cannot be selected.
 | `REPLAY_INSTRUCTION` | Replay the exact current prompt |
 | `SLOW_AUDIO` | Replay at 0.78× speed after replay/hesitation evidence; it has its own fitted action model |
 | `REVEAL_FIRST_TOKEN` | Reveal the next unresolved sequence token |
-| `SHOW_WORKED_EXAMPLE` | After repeated sorting errors, animate a different non-scored example into its category without revealing the live answer |
 
 Correct-prefix locking is a deterministic safety invariant in sequence tasks,
 not an ML treatment. Once the child has built a correct prefix, the UI keeps it
@@ -284,8 +283,8 @@ flowchart LR
 
 The visible scaffold can still be remove/highlight when that is the best safe
 action supported by a screen. Audio, sorting, memory and sequence families now
-also expose distinct replay, slow-audio, destination, animated worked-example,
-spatial disable and next-token behaviors where the UI really implements them.
+also expose distinct replay, slow-audio, destination highlighting, spatial
+disable and next-token behaviors where the UI really implements them.
 The model does not advertise local correct-prefix locking or mid-task pause as
 independent actions because those are safety/experience rules, not competing
 treatments.
@@ -302,7 +301,7 @@ problems:
 
 | Decision | Model input | Output | Safety boundary |
 |---|---|---|---|
-| Immediate scaffold | Attempts, timing, errors, mastery, fatigue and screen capabilities | One supported UI command such as replay, remove, reveal or worked example | The Flutter screen advertises and safely renders the command |
+| Immediate scaffold | Attempts, timing, errors, mastery, fatigue and screen capabilities | One supported UI command such as replay, remove, reveal or destination highlighting | The Flutter screen advertises and safely renders the command |
 | Next practice item | Diagnosed target, components, error tags, difficulty, exposure, micro-mastery and fatigue | One reviewed remediation or confirmation item | Same failed-core equivalent group first, then exact target and reviewed load; same activity/KC, correct role, active, unseen and non-duplicate |
 
 The practice selector artifact is

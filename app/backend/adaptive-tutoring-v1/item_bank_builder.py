@@ -52,11 +52,11 @@ def _capabilities(template: str) -> List[str]:
     if "jumbled" in template or "pattern" in template or "memory" in template:
         return ["HIGHLIGHT_OPTION", "REVEAL_FIRST_TOKEN", "REPLAY_INSTRUCTION"]
     if "sorting" in template:
-        return ["HIGHLIGHT_DESTINATION", "SHOW_WORKED_EXAMPLE", "REPLAY_INSTRUCTION"]
+        return ["HIGHLIGHT_DESTINATION", "REPLAY_INSTRUCTION"]
     if "matching" in template or "match" in template:
         return ["REMOVE_OPTION", "HIGHLIGHT_OPTION", "REPLAY_INSTRUCTION"]
     if "story" in template or "reading" in template:
-        return ["REPLAY_INSTRUCTION", "SLOW_AUDIO", "SHOW_WORKED_EXAMPLE"]
+        return ["REPLAY_INSTRUCTION", "SLOW_AUDIO"]
     return ["REMOVE_OPTION", "HIGHLIGHT_OPTION", "REPLAY_INSTRUCTION"]
 
 
