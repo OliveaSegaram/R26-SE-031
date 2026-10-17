@@ -23,11 +23,23 @@ def get_activity_latency_baseline(activity_id: str) -> int:
     return baselines.get(activity_id, 12000)
 
 class PolicyEngine:
-    def classify_response(self, is_correct: bool, telemetry: Any, activity_id: str) -> Tuple[str, int, str, float]:
+    def classify_response(
+        self,
+        is_correct: bool,
+        telemetry: Any,
+        activity_id: str,
+        personal_latency_factor: float = 1.0,
+    ) -> Tuple[str, int, str, float]:
         if not telemetry:
             return "CLEAN_SUCCESS" if is_correct else "FAILED", 0, "LOW", 1.0
             
-        baseline = get_activity_latency_baseline(activity_id)
+        # A completed Starter Learning Profile may gently personalize the
+        # Grade-1 timing baseline. The blend is bounded upstream to 0.95..1.10,
+        # so timing never overrules correctness or creates a speed test.
+        personal_latency_factor = max(
+            0.90, min(1.15, float(personal_latency_factor or 1.0))
+        )
+        baseline = get_activity_latency_baseline(activity_id) * personal_latency_factor
         latency_ratio = telemetry.total_round_latency_ms / baseline if baseline > 0 else 1.0
         
         score = 0

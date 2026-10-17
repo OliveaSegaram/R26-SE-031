@@ -1,3 +1,5 @@
+import pytest
+
 from services.equivalent_task_policy import EquivalentTaskPolicy
 from services.policy_engine import policy_engine
 from schemas import TelemetryData
@@ -137,3 +139,20 @@ def test_wrong_first_attempt_is_assisted_even_when_final_answer_is_correct():
     )
     quality, _, _, _ = policy_engine.classify_response(True, telemetry, "1.1")
     assert quality == "ASSISTED_SUCCESS"
+
+
+def test_starter_profile_only_gently_personalizes_latency_interpretation():
+    telemetry = TelemetryData(
+        total_round_latency_ms=21600,
+        first_attempt_correct=True,
+    )
+    _, default_score, _, default_ratio = policy_engine.classify_response(
+        True, telemetry, "1.1"
+    )
+    _, personal_score, _, personal_ratio = policy_engine.classify_response(
+        True, telemetry, "1.1", personal_latency_factor=1.10
+    )
+    assert default_ratio == pytest.approx(1.8)
+    assert personal_ratio == pytest.approx(21600 / 13200)
+    assert default_score == 1
+    assert personal_score == 0

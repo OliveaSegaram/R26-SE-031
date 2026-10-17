@@ -102,10 +102,14 @@ def context_features(
     fatigue: float,
     behavioral_context: Dict[str, Any] | None,
     learner_profile: Dict[str, float] | None,
+    personal_latency_factor: float = 1.0,
 ) -> Dict[str, float]:
     behavior = behavioral_context or {}
     profile = learner_profile or {}
     latency = float(getattr(telemetry, "total_round_latency_ms", 0) or 0)
+    personal_latency_factor = max(
+        0.90, min(1.15, float(personal_latency_factor or 1.0))
+    )
     return {
         "mastery": _bounded(mastery),
         "difficulty_b": _bounded(difficulty_b, -3.0, 3.0),
@@ -113,7 +117,11 @@ def context_features(
         "struggle_score": _bounded(struggle_score, 0.0, 8.0),
         "attempt_count": _bounded(getattr(telemetry, "attempt_count", 0), 0.0, 10.0),
         "incorrect_attempt_count": _bounded(getattr(telemetry, "incorrect_attempt_count", 0), 0.0, 10.0),
-        "latency_seconds": _bounded(latency / 1000.0, 0.0, 120.0),
+        # Normalize the observed duration by the conservative personal timing
+        # factor before the action model compares scaffold candidates.
+        "latency_seconds": _bounded(
+            latency / personal_latency_factor / 1000.0, 0.0, 120.0
+        ),
         "hesitation_count": _bounded(getattr(telemetry, "hesitation_count", 0), 0.0, 10.0),
         "misclick_count": _bounded(getattr(telemetry, "misclick_count", 0), 0.0, 10.0),
         "audio_replay_count": _bounded(
