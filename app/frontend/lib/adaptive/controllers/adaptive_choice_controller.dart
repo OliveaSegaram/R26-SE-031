@@ -133,7 +133,6 @@ class AdaptiveChoiceController<T> extends ChangeNotifier {
         case ScaffoldActionType.replayInstruction:
         case ScaffoldActionType.slowAudio:
         case ScaffoldActionType.lockCorrectToken:
-        case ScaffoldActionType.showWorkedExample:
         case ScaffoldActionType.pauseSession:
           // These are consumed by task-family adapters rather than choice state.
           break;

@@ -38,10 +38,6 @@ ACTION_COSTS = {
     "SCAFFOLD_REMOVE_DISTRACTOR": 0.045,
     "SCAFFOLD_DISABLE_DISTRACTOR": 0.045,
     "SCAFFOLD_HIGHLIGHT_DESTINATION": 0.07,
-    # The example is longer than a glow, but it demonstrates a different
-    # object and does not reveal the live answer; its disclosure cost is
-    # therefore comparable to a destination cue.
-    "SCAFFOLD_SHOW_WORKED_EXAMPLE": 0.07,
     "SCAFFOLD_REVEAL_FIRST_TOKEN": 0.09,
     "SCAFFOLD_HIGHLIGHT_CORRECT": 0.11,
 }
@@ -79,14 +75,6 @@ def candidate_actions(telemetry: Any) -> List[str]:
         actions.append("SCAFFOLD_SLOW_AUDIO")
     if "HIGHLIGHT_DESTINATION" in capabilities:
         actions.append("SCAFFOLD_HIGHLIGHT_DESTINATION")
-    # A worked example is deliberately reserved for repeated conceptual
-    # errors. Showing it after the first slip would over-support a Grade-1
-    # learner and reveal more information than a retry or destination cue.
-    incorrect_attempts = int(
-        getattr(telemetry, "incorrect_attempt_count", 0) or 0
-    )
-    if "SHOW_WORKED_EXAMPLE" in capabilities and incorrect_attempts >= 2:
-        actions.append("SCAFFOLD_SHOW_WORKED_EXAMPLE")
     # Correct-prefix locking is a deterministic sequence invariant. It is
     # applied locally after every sequence error and is intentionally not an
     # ML action: the model must never recommend undoing already-correct work.
@@ -102,10 +90,14 @@ def context_features(
     fatigue: float,
     behavioral_context: Dict[str, Any] | None,
     learner_profile: Dict[str, float] | None,
+    personal_latency_factor: float = 1.0,
 ) -> Dict[str, float]:
     behavior = behavioral_context or {}
     profile = learner_profile or {}
     latency = float(getattr(telemetry, "total_round_latency_ms", 0) or 0)
+    personal_latency_factor = max(
+        0.90, min(1.15, float(personal_latency_factor or 1.0))
+    )
     return {
         "mastery": _bounded(mastery),
         "difficulty_b": _bounded(difficulty_b, -3.0, 3.0),
@@ -113,7 +105,11 @@ def context_features(
         "struggle_score": _bounded(struggle_score, 0.0, 8.0),
         "attempt_count": _bounded(getattr(telemetry, "attempt_count", 0), 0.0, 10.0),
         "incorrect_attempt_count": _bounded(getattr(telemetry, "incorrect_attempt_count", 0), 0.0, 10.0),
-        "latency_seconds": _bounded(latency / 1000.0, 0.0, 120.0),
+        # Normalize the observed duration by the conservative personal timing
+        # factor before the action model compares scaffold candidates.
+        "latency_seconds": _bounded(
+            latency / personal_latency_factor / 1000.0, 0.0, 120.0
+        ),
         "hesitation_count": _bounded(getattr(telemetry, "hesitation_count", 0), 0.0, 10.0),
         "misclick_count": _bounded(getattr(telemetry, "misclick_count", 0), 0.0, 10.0),
         "audio_replay_count": _bounded(

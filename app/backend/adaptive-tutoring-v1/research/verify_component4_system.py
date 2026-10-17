@@ -140,7 +140,6 @@ def _verify_policy() -> dict[str, Any]:
         "sorting": {
             "capabilities": [
                 "HIGHLIGHT_DESTINATION",
-                "SHOW_WORKED_EXAMPLE",
                 "REPLAY_INSTRUCTION",
             ],
             "options": 3,

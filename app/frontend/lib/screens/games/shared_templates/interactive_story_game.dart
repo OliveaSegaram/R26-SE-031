@@ -213,7 +213,6 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
               supportedActions: const <String>[
                 'REPLAY_INSTRUCTION',
                 'SLOW_AUDIO',
-                'SHOW_WORKED_EXAMPLE',
               ],
               errorType: 'oral_reading_retry',
               minimumVisibleOptions: 1,

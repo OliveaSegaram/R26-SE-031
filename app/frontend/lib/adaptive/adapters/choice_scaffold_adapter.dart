@@ -21,7 +21,7 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
   /// render. This keeps the model's candidate set honest.
   List<String> get adaptiveSemanticScaffoldCapabilities => const <String>[];
 
-  /// Override in an audio or worked-example activity to execute the semantic
+  /// Override in an audio activity to execute the semantic
   /// command after the shared choice reducer has handled option commands.
   Future<void> handleAdaptiveSemanticScaffold(ScaffoldCommand command) async {}
 
@@ -203,7 +203,6 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
       for (final command in plan.commands) {
         if (command.type == ScaffoldActionType.replayInstruction ||
             command.type == ScaffoldActionType.slowAudio ||
-            command.type == ScaffoldActionType.showWorkedExample ||
             command.type == ScaffoldActionType.pauseSession) {
           await handleAdaptiveSemanticScaffold(command);
         }

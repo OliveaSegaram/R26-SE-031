@@ -146,6 +146,14 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
     bool autoPlay = false,
     bool waitUntilComplete = false,
   }) async {
+    if (autoPlay &&
+        !Skill2RoundResolver.shouldAutoplayActivityIntroduction(
+          roundIndex: _currentRoundIndex,
+          variantId: _currentVariantId,
+        )) {
+      return;
+    }
+
     final promptText = _isMemorizing
         ? 'රටාව මතක තබා ගන්න!'
         : 'රටාව නැවත සකසන්න';

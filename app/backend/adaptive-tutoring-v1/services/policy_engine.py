@@ -23,11 +23,23 @@ def get_activity_latency_baseline(activity_id: str) -> int:
     return baselines.get(activity_id, 12000)
 
 class PolicyEngine:
-    def classify_response(self, is_correct: bool, telemetry: Any, activity_id: str) -> Tuple[str, int, str, float]:
+    def classify_response(
+        self,
+        is_correct: bool,
+        telemetry: Any,
+        activity_id: str,
+        personal_latency_factor: float = 1.0,
+    ) -> Tuple[str, int, str, float]:
         if not telemetry:
             return "CLEAN_SUCCESS" if is_correct else "FAILED", 0, "LOW", 1.0
             
-        baseline = get_activity_latency_baseline(activity_id)
+        # A completed Starter Learning Profile may gently personalize the
+        # Grade-1 timing baseline. The blend is bounded upstream to 0.95..1.10,
+        # so timing never overrules correctness or creates a speed test.
+        personal_latency_factor = max(
+            0.90, min(1.15, float(personal_latency_factor or 1.0))
+        )
+        baseline = get_activity_latency_baseline(activity_id) * personal_latency_factor
         latency_ratio = telemetry.total_round_latency_ms / baseline if baseline > 0 else 1.0
         
         score = 0
@@ -412,10 +424,6 @@ class PolicyEngine:
         elif action == "SCAFFOLD_SLOW_AUDIO":
             command_type = "SLOW_AUDIO"
             reason = "MODEL_SELECTED_SLOW_AUDIO"
-        elif action == "SCAFFOLD_SHOW_WORKED_EXAMPLE":
-            command_type = "SHOW_WORKED_EXAMPLE"
-            targets = correct_ids[:1]
-            reason = "MODEL_SELECTED_WORKED_EXAMPLE"
 
         # The learned model ranks support actions, but the Grade-1 safety
         # policy owns escalation. Once distractor reduction is exhausted (or
@@ -445,7 +453,6 @@ class PolicyEngine:
                 "SCAFFOLD_HIGHLIGHT_DESTINATION",
                 "SCAFFOLD_REVEAL_FIRST_TOKEN",
                 "SCAFFOLD_LOCK_CORRECT_TOKEN",
-                "SCAFFOLD_SHOW_WORKED_EXAMPLE",
             }
             and (command_type is None or not targets)
         ):

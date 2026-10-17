@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -1218,12 +1219,13 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         returnedScore = result;
       }
 
-      // Submit the telemetry session that was recorded during this activity
+      // Persist the completed telemetry session locally before updating the
+      // map, but never make the child wait for the network request. The
+      // background flush is idempotent and retains failed payloads for retry.
       final studentId = ProgressService().currentStudentId;
-      // Do not start another activity until this session has either reached
-      // the telemetry service or been durably placed in the offline queue.
-      // The telemetry endpoint is idempotent, so queued retries are safe.
-      await TelemetryService().endSessionAndSubmit(studentId);
+      final telemetry = TelemetryService();
+      await telemetry.queueSessionForBackgroundSubmission(studentId);
+      unawaited(telemetry.flushOfflineQueue(studentId));
 
       if (result == 'retake') {
         // A retake is a distinct research session. The just-completed run has
@@ -1241,10 +1243,6 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         level.id,
       );
       final finalScore = returnedScore ?? currentScore;
-
-      // NEW: Wait for the screen transition to completely finish before triggering UI updates,
-      // so the user can fully witness the progress bar animating!
-      await Future.delayed(const Duration(milliseconds: 400));
 
       // DDA: Update failure count (only if they actually returned a score)
       if (returnedScore != null) {
@@ -1269,6 +1267,12 @@ class _LevelMapScreenState extends State<LevelMapScreen>
         );
 
         if (!isCompleted) {
+          // Give the returned map one brief settling beat before the ring
+          // begins filling. This is intentionally UI-only and never waits for
+          // the background telemetry upload.
+          await Future.delayed(const Duration(milliseconds: 200));
+          if (!mounted) return;
+
           // Show progress filling up to 100% first
           setState(() {
             _animatingProgressForLevel = index;

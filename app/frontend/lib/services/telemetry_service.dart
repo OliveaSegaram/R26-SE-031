@@ -331,10 +331,45 @@ class TelemetryService {
 
   /// Submit current session's telemetry to the backend.
   /// On network failure, payload is saved to an offline queue in SharedPreferences.
-  Future<void> endSessionAndSubmit(String studentId) {
+  Future<void> endSessionAndSubmit(String studentId) async {
     if (_sessionEvents.isEmpty) {
       return _submissionInFlight ?? Future<void>.value();
     }
+
+    final snapshot = await _takeSessionSnapshot(studentId);
+    if (snapshot == null) return;
+
+    late final Future<void> trackedSubmission;
+    trackedSubmission = _submitSessionSnapshot(snapshot).whenComplete(() {
+      if (identical(_submissionInFlight, trackedSubmission)) {
+        _submissionInFlight = null;
+      }
+    });
+    _submissionInFlight = trackedSubmission;
+    return trackedSubmission;
+  }
+
+  /// Durably queue the current session without waiting for an HTTP request.
+  ///
+  /// Level-map activities use this method so their completion animation is
+  /// driven by local progress and never by network latency. Call
+  /// [flushOfflineQueue] without awaiting it after this future completes.
+  Future<void> queueSessionForBackgroundSubmission(String studentId) async {
+    if (_sessionEvents.isEmpty) return;
+
+    final snapshot = await _takeSessionSnapshot(studentId);
+    if (snapshot == null) return;
+
+    await _enqueueOffline(snapshot.payload);
+    debugPrint(
+      'Telemetry: Session queued safely; background upload may continue.',
+    );
+  }
+
+  Future<_TelemetrySessionSnapshot?> _takeSessionSnapshot(
+    String studentId,
+  ) async {
+    if (_sessionEvents.isEmpty) return null;
 
     final completedAt = DateTime.now();
     final startedAt = _sessionStartTime ?? completedAt;
@@ -350,34 +385,6 @@ class TelemetryService {
     _sessionEvents.clear();
     _submitOnActivityComplete = false;
 
-    late final Future<void> trackedSubmission;
-    trackedSubmission =
-        _submitSessionSnapshot(
-          studentId: studentId,
-          sessionId: sessionId,
-          totalDuration: totalDuration,
-          startedAt: startedAt,
-          completedAt: completedAt,
-          eventsToSubmit: eventsToSubmit,
-          sessionEventCount: sessionEventCount,
-        ).whenComplete(() {
-          if (identical(_submissionInFlight, trackedSubmission)) {
-            _submissionInFlight = null;
-          }
-        });
-    _submissionInFlight = trackedSubmission;
-    return trackedSubmission;
-  }
-
-  Future<void> _submitSessionSnapshot({
-    required String studentId,
-    required String sessionId,
-    required int totalDuration,
-    required DateTime startedAt,
-    required DateTime completedAt,
-    required List<Map<String, dynamic>> eventsToSubmit,
-    required int sessionEventCount,
-  }) async {
     final payload = buildTelemetrySessionPayload(
       studentId: studentId,
       sessionId: sessionId,
@@ -388,7 +395,20 @@ class TelemetryService {
       deviceMetrics: await _getDeviceMetrics(),
     );
 
-    debugPrint('Telemetry: Submitting session ($sessionEventCount events)...');
+    return _TelemetrySessionSnapshot(
+      payload: payload,
+      eventCount: sessionEventCount,
+    );
+  }
+
+  Future<void> _submitSessionSnapshot(
+    _TelemetrySessionSnapshot snapshot,
+  ) async {
+    final payload = snapshot.payload;
+    final studentId = payload['student_id']?.toString() ?? '';
+    debugPrint(
+      'Telemetry: Submitting session (${snapshot.eventCount} events)...',
+    );
 
     try {
       final error = await StudentService().submitTelemetry(payload);
@@ -499,4 +519,14 @@ class TelemetryService {
     }
     return {'os': 'unknown', 'model': 'unknown'};
   }
+}
+
+class _TelemetrySessionSnapshot {
+  final Map<String, dynamic> payload;
+  final int eventCount;
+
+  const _TelemetrySessionSnapshot({
+    required this.payload,
+    required this.eventCount,
+  });
 }

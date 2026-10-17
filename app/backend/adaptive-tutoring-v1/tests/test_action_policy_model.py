@@ -46,18 +46,6 @@ def test_slow_audio_requires_audio_specific_evidence():
     assert "SCAFFOLD_SLOW_AUDIO" in repeated_audio_need
 
 
-def test_worked_example_requires_repeated_conceptual_error():
-    capabilities = ["HIGHLIGHT_DESTINATION", "SHOW_WORKED_EXAMPLE"]
-    first_error = candidate_actions(
-        telemetry(supported_actions=capabilities, incorrect_attempt_count=1)
-    )
-    repeated_error = candidate_actions(
-        telemetry(supported_actions=capabilities, incorrect_attempt_count=2)
-    )
-    assert "SCAFFOLD_SHOW_WORKED_EXAMPLE" not in first_error
-    assert "SCAFFOLD_SHOW_WORKED_EXAMPLE" in repeated_error
-
-
 def test_correct_prefix_lock_is_not_an_ml_candidate():
     actions = candidate_actions(
         telemetry(supported_actions=["REVEAL_FIRST_TOKEN", "LOCK_CORRECT_TOKEN"])
@@ -71,7 +59,6 @@ def test_same_sorting_task_can_receive_learner_specific_support():
     current = telemetry(
         supported_actions=[
             "HIGHLIGHT_DESTINATION",
-            "SHOW_WORKED_EXAMPLE",
             "REPLAY_INSTRUCTION",
         ],
         original_options_count=2,
@@ -102,7 +89,7 @@ def test_same_sorting_task_can_receive_learner_specific_support():
             data_origin="observed",
         )["applied_action"]
 
-    assert decision(0.3) == "SCAFFOLD_SHOW_WORKED_EXAMPLE"
+    assert decision(0.3) == "SCAFFOLD_HIGHLIGHT_DESTINATION"
     assert decision(0.9) == "SCAFFOLD_REPLAY_INSTRUCTION"
 
 

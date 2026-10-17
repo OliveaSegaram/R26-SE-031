@@ -19,6 +19,50 @@ def test_health_check(client):
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
+
+@pytest.mark.asyncio
+async def test_first_skill_uses_completed_starter_profile_prior(client):
+    student_id = "starter_profile_student"
+    await database.get_db().knowledge_states.insert_one({
+        "student_id": student_id,
+        "knowledge_state": {"KC_VISUAL_IDENTIFICATION": 0.52},
+        "theta_by_kc": {"KC_VISUAL_IDENTIFICATION": 0.25},
+        "theta_estimate": 0.1,
+        "starter_baseline": {
+            "baseline_version": "starter-profile-v1",
+            "profile_status": "completed",
+            "effective_latency_factor": 1.08,
+            "skill_profiles": {
+                "skill_1": {"mastery_prior": 0.52, "confidence": 0.42},
+            },
+        },
+    })
+    payload = {
+        **MOCK_INTERACTION_PAYLOAD,
+        "student_id": student_id,
+        "session_id": "starter-first-session",
+        "event_id": "starter-first-complete",
+        "activity_id": "1.1",
+        "knowledge_component_id": "KC_VISUAL_IDENTIFICATION",
+        "item_id": "S1A1R01",
+        "is_correct": True,
+        "phase": "COMPLETE",
+        "telemetry": {
+            "total_round_latency_ms": 9000,
+            "first_attempt_correct": True,
+            "attempt_count": 1,
+        },
+    }
+    response = client.post("/update_interaction", json=payload)
+    assert response.status_code == 200
+    stored = await database.get_db().adaptive_decisions.find_one({
+        "event_id": payload["event_id"],
+    })
+    assert stored["mastery_before"] == pytest.approx(0.52)
+    assert stored["theta_before"] == pytest.approx(0.25)
+    assert stored["starter_baseline_context"]["available"] is True
+    assert stored["starter_baseline_context"]["effective_latency_factor"] == 1.08
+
 @pytest.mark.asyncio
 async def test_update_interaction(client):
     response = client.post("/update_interaction", json=MOCK_INTERACTION_PAYLOAD)

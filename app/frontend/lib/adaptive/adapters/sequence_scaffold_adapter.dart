@@ -175,7 +175,6 @@ mixin SequenceScaffoldAdapter<T extends StatefulWidget> on State<T> {
     for (final command in plan.commands) {
       if (command.type == ScaffoldActionType.replayInstruction ||
           command.type == ScaffoldActionType.slowAudio ||
-          command.type == ScaffoldActionType.showWorkedExample ||
           command.type == ScaffoldActionType.pauseSession) {
         await handleAdaptiveSequenceSemanticScaffold(command);
       }

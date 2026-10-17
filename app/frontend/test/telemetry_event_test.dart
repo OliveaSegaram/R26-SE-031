@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sipsara_app/adaptive/models/adaptive_scaffold_models.dart';
 import 'package:sipsara_app/models/curriculum_models.dart';
 import 'package:sipsara_app/services/telemetry_service.dart';
@@ -147,6 +148,47 @@ void main() {
     expect(telemetry.submitOnActivityComplete, isFalse);
   });
 
+  test(
+    'completed session can be durably queued without a network request',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final telemetry = TelemetryService()..startSession();
+      telemetry.logInteraction(
+        TelemetryEvent(
+          eventId: '${telemetry.sessionId}:S1A1R01:complete',
+          activityName: 'visual_hidden_search',
+          roundNumber: 1,
+          isCorrect: true,
+          score: 100,
+          timestamp: DateTime.utc(2026, 10, 17),
+          firstTouchLatencyMs: 500,
+          totalRoundLatencyMs: 1500,
+          misclickCount: 0,
+          hesitationCount: 0,
+          audioReplayCount: 0,
+          isAbandoned: false,
+          touchPath: const <TouchPoint>[],
+          itemId: 'S1A1R01',
+          skillId: 'skill_1',
+          activityId: 'act_1',
+          targets: const <String>['butterfly'],
+          selectedAnswers: const <String>['butterfly'],
+          firstAttemptCorrect: true,
+          finalCorrect: true,
+        ),
+      );
+
+      await telemetry.queueSessionForBackgroundSubmission('student-1');
+
+      final prefs = await SharedPreferences.getInstance();
+      final queued = prefs.getStringList('pending_telemetry_queue');
+      expect(queued, hasLength(1));
+      expect(queued!.single, contains('student-1'));
+      expect(queued.single, contains('S1A1R01'));
+      expect(telemetry.sessionEvents, isEmpty);
+    },
+  );
+
   testWidgets('abandonment keeps canonical Skill 1 research identity', (
     tester,
   ) async {
@@ -248,4 +290,68 @@ void main() {
 
     expect(telemetry.sessionEvents, isEmpty);
   });
+
+  testWidgets(
+    'continue removes the completed game before revealing the level map',
+    (tester) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      tester.view.physicalSize = const Size(430, 930);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final wrapperKey = GlobalKey<TelemetryWrapperState>();
+      int? routeResult;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Column(
+                children: <Widget>[
+                  const Text('LEVEL MAP'),
+                  TextButton(
+                    onPressed: () async {
+                      routeResult = await Navigator.of(context).push<int>(
+                        MaterialPageRoute<int>(
+                          builder: (_) => TelemetryWrapper(
+                            key: wrapperKey,
+                            activityNode: _skillOneActivity(),
+                            onRoundComplete: (_) {},
+                            child: const Scaffold(
+                              body: Center(child: Text('TRAIN GAME')),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('START'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('START'));
+      await tester.pumpAndSettle();
+      wrapperKey.currentState!.applyAdaptiveNextAction(<String, dynamic>{
+        'next_action': <String, dynamic>{
+          'decision': 'ACTIVITY_COMPLETE',
+          'next_item': 'COMPLETE',
+        },
+      });
+      wrapperKey.currentState!.completeActivity(wrapperKey.currentContext!);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('ඉදිරියට යමු'));
+      await tester.pump();
+
+      expect(find.text('TRAIN GAME'), findsNothing);
+      await tester.pumpAndSettle();
+      expect(find.text('LEVEL MAP'), findsOneWidget);
+      expect(routeResult, 100);
+    },
+  );
 }

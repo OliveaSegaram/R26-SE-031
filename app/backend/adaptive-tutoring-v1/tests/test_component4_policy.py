@@ -311,15 +311,6 @@ def test_model_translator_removes_at_most_two_distractors_then_highlights():
 
 def test_model_translator_emits_activity_specific_semantic_commands():
     engine = PolicyEngine()
-    worked = engine.translate_model_support_action(
-        action="SCAFFOLD_SHOW_WORKED_EXAMPLE",
-        telemetry=telemetry(
-            supported_actions=["SHOW_WORKED_EXAMPLE"],
-            correct_option_ids=["ITEM_DEST2"],
-        ),
-        available_incorrect_ids=[],
-        adaptive_state={},
-    )
     slow = engine.translate_model_support_action(
         action="SCAFFOLD_SLOW_AUDIO",
         telemetry=telemetry(
@@ -329,6 +320,4 @@ def test_model_translator_emits_activity_specific_semantic_commands():
         available_incorrect_ids=[],
         adaptive_state={},
     )
-    assert worked["commands"][0]["type"] == "SHOW_WORKED_EXAMPLE"
-    assert worked["commands"][0]["target_option_ids"] == ["ITEM_DEST2"]
     assert slow["commands"][0]["type"] == "SLOW_AUDIO"

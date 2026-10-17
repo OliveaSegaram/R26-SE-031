@@ -76,6 +76,22 @@ async def connect_to_mongo():
         db.assessment_submissions,
         [("student_id", pymongo.ASCENDING), ("version", pymongo.ASCENDING)],
     )
+    await create_index_safely(
+        db.student_baseline_profiles,
+        [("student_id", pymongo.ASCENDING), ("baseline_version", pymongo.ASCENDING)],
+        unique=True,
+        name="student_baseline_version_unique_v1",
+    )
+    await create_index_safely(
+        db.baseline_item_events,
+        [
+            ("student_id", pymongo.ASCENDING),
+            ("baseline_version", pymongo.ASCENDING),
+            ("event_id", pymongo.ASCENDING),
+        ],
+        unique=True,
+        name="baseline_student_event_unique_v1",
+    )
     print("MongoDB index verification finished.")
 
 async def close_mongo_connection():

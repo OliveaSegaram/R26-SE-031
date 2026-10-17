@@ -59,6 +59,34 @@ def main() -> None:
                 {"content_review_status": {"$exists": False}},
             ],
         })
+        baseline_statuses = list(db.student_baseline_profiles.aggregate([
+            {"$match": {"baseline_version": "starter-profile-v1"}},
+            {"$group": {"_id": "$status", "count": {"$sum": 1}}},
+            {"$sort": {"_id": 1}},
+        ]))
+        invalid_baseline_events = db.baseline_item_events.count_documents({
+            "$or": [
+                {"baseline_version": {"$ne": "starter-profile-v1"}},
+                {"research_role": {"$ne": "baseline_probe"}},
+                {"data_origin": {"$ne": "observed_baseline"}},
+                {"scaffold_level_used": {"$ne": 0}},
+                {"remediation_used": True},
+                {"confirmation_used": True},
+                {"calibration_eligible": True},
+            ],
+        })
+        completed_profiles = list(db.student_baseline_profiles.find({
+            "baseline_version": "starter-profile-v1",
+            "status": "completed",
+        }, {"student_id": 1}))
+        completed_without_c4_initialization = 0
+        for profile in completed_profiles:
+            if not db.knowledge_states.find_one({
+                "student_id": profile.get("student_id"),
+                "starter_baseline.baseline_version": "starter-profile-v1",
+                "starter_baseline.profile_status": "completed",
+            }):
+                completed_without_c4_initialization += 1
         report = {
             "database": db_name,
             "active_skill_1_4_items": db.item_bank.count_documents(
@@ -122,6 +150,26 @@ def main() -> None:
                 "data_origin": "observed",
                 "measurement_status": "available",
             }),
+            "starter_baseline": {
+                "version": "starter-profile-v1",
+                "profiles": db.student_baseline_profiles.count_documents({
+                    "baseline_version": "starter-profile-v1",
+                }),
+                "status_counts": {
+                    str(row["_id"]): row["count"] for row in baseline_statuses
+                },
+                "item_events": db.baseline_item_events.count_documents({
+                    "baseline_version": "starter-profile-v1",
+                }),
+                "invalid_contract_events": invalid_baseline_events,
+                "completed_without_c4_initialization": (
+                    completed_without_c4_initialization
+                ),
+                "scope": (
+                    "cold_start_only; no scaffold, remediation, confirmation, "
+                    "diagnostic claim, or calibration eligibility"
+                ),
+            },
             "active_unapproved_bkt_models": db.model_registry.count_documents({
                 "model_type": "BKT",
                 "status": "active",
@@ -134,6 +182,8 @@ def main() -> None:
         report["blocking_integrity_errors"] = (
             report["invalid_nonobserved_calibration_rows"]
             + report["items_missing_practice_metadata"]
+            + invalid_baseline_events
+            + completed_without_c4_initialization
         )
         print(json.dumps(report, indent=2, ensure_ascii=False))
     finally:
