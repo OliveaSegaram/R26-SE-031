@@ -10,6 +10,7 @@ between parent accounts.
 from fastapi import APIRouter, HTTPException, status, Depends
 from bson.objectid import ObjectId
 import io
+from datetime import datetime, timezone
 from fastapi.responses import StreamingResponse
 
 from shared.database import get_db
@@ -48,6 +49,10 @@ async def add_student(request: StudentCreate, current_user: dict = Depends(get_c
         "consent_date": request.consent_date,
         "completed_activities": [],
         "activity_scores": {},
+        # Only newly-created learners enter the child-friendly cold-start
+        # profile. Existing children are never unexpectedly blocked.
+        "starter_profile_required": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
     result = await db.students.insert_one(student_doc)
@@ -314,5 +319,4 @@ async def submit_comprehensive_assessment(student_id: str, category: str, reques
         activity_scores=updated_student.get("activity_scores", {}),
         assessment_completed=len(assessment) == 14,
     )
-
 
