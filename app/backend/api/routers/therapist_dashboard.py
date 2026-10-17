@@ -134,14 +134,18 @@ async def get_therapist_c4_adaptive(student_id: str):
     states=await records(db,"knowledge_states",student_id,1)
     state=states[0] if states else {}
     history=(await records(db,"adaptive_decisions",student_id))[:20]
-    policy_rows=(await records(db,"policy_decisions",student_id))[:200]
-    audit_rows=(await records(db,"model_audit_log",student_id))[:20]
-    c3_audit=next((row for row in audit_rows if row.get("model_name")=="XGBoost"),{})
+    latest_measurement_se = None
     timeline=[]
     for d in reversed(history):
+        reason_codes = d.get("policy_reason") or []
+        if isinstance(reason_codes, str):
+            reason_codes = [reason_codes]
+        measurement_se = number(d.get("measurement_standard_error"))
+        if measurement_se is not None:
+            latest_measurement_se = measurement_se
         timeline.append(dict(timestamp=timestamp(d) or "Unavailable", mastery_before=number(d.get("mastery_before")),
             mastery_after=number(d.get("mastery_after")), fatigue=number(d.get("behavioral_fatigue_indicator", d.get("fatigue_score"))),
-            previous_difficulty=number(d.get("previous_difficulty")), selected_difficulty=number(d.get("selected_difficulty")),
+            previous_difficulty=number(d.get("difficulty_b", d.get("previous_difficulty"))), selected_difficulty=number(d.get("selected_difficulty")),
             scaffold_level=d.get("scaffold_level",0), next_activity=d.get("next_activity",d.get("selected_activity","Unavailable")),
             decision=d.get("decision", "Unavailable"), reason=d.get("decision_reason","Unavailable")))
     action_groups = {}

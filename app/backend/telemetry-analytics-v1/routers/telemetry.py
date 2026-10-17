@@ -155,7 +155,7 @@ async def _trigger_c3_background(student_id: str, session_summary: dict):
         origins = {speech.get("data_origin"), motion.get("data_origin")}
         if origins not in ({"observed"}, {"synthetic"}):
             missing.append("consistent_explicit_modality_provenance")
-        if speech.get("measurement_status") not in ("available", "synthetic_features"):
+        if speech.get("measurement_status") not in ("available", "valid", "synthetic_features"):
             missing.append("valid_speech_measurement")
         if speech.get("dataset_id") != motion.get("dataset_id"):
             missing.append("matched_dataset_id")

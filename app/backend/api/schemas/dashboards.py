@@ -42,6 +42,7 @@ class ParentOverviewDTO(APIResponseBase):
     practice_time_minutes: Optional[int] = None
     sessions_completed: int
     reading_progress: str
+    assessment_summary: Dict[str, Any] = Field(default_factory=dict)
 
 class ParentReadingFluencyDTO(APIResponseBase):
     fluency_status: str
@@ -198,6 +199,13 @@ class SpeechLatest(BaseModel):
     silence_ratio: Optional[float] = None
     jitter: Optional[float] = None
     shimmer: Optional[float] = None
+    grapheme_accuracy: Optional[float] = None
+    word_accuracy: Optional[float] = None
+    reading_rate_wpm: Optional[float] = None
+    combined_confidence: Optional[float] = None
+    reading_performance_score: Optional[float] = None
+    method_disagreement: bool = False
+    quality_issues: List[str] = Field(default_factory=list)
     recording_quality: str
 
 class SpeechTrends(BaseModel):
@@ -244,6 +252,10 @@ class AdaptiveHistoryItem(BaseModel):
     next_activity: str
     decision: str
     reason: str
+    reason_codes: List[str] = Field(default_factory=list)
+    item_id: Optional[str] = None
+    knowledge_component_id: Optional[str] = None
+    response_quality: Optional[str] = None
 
 class TherapistC4AdaptiveDTO(MLResponseBase):
     knowledge_components: List[KnowledgeComponent]

@@ -51,7 +51,7 @@ class ApiConfig {
       return 'http://$_localHost:8020';
     }
     // Deployed to Azure ML Gateway
-    return 'https://sipsara-ml-backend-app.azurewebsites.net/speech';
+    return 'https://sipsara-ml-backend-v2.azurewebsites.net/speech';
   }
 
   /// Telemetry Analytics API (Port 8025 locally, /telemetry on Azure)
@@ -60,7 +60,7 @@ class ApiConfig {
       return 'http://$_localHost:8025/api/v1/auth';
     }
     // Deployed to Azure ML Gateway
-    return 'https://sipsara-ml-backend-app.azurewebsites.net/telemetry/api/v1/auth';
+    return 'https://sipsara-ml-backend-v2.azurewebsites.net/telemetry/api/v1/auth';
   }
 
   /// C1 Behavioral Analytics API (Port 8025 locally, /telemetry/api/v1/c1 on Azure)
@@ -69,7 +69,7 @@ class ApiConfig {
       return 'http://$_localHost:8025/api/v1/c1';
     }
     // Deployed to Azure ML Gateway
-    return 'https://sipsara-ml-backend-app.azurewebsites.net/telemetry/api/v1/c1';
+    return 'https://sipsara-ml-backend-v2.azurewebsites.net/telemetry/api/v1/c1';
   }
 
   /// Unified Learning API Gateway (Port 8015 locally, /learning on Azure)

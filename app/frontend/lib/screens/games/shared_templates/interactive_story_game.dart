@@ -29,8 +29,6 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
   bool _isRecording = false;
   bool _isAnalyzing = false;
 
-  Map<String, dynamic>? _analysisResults;
-
   @override
   void initState() {
     super.initState();
@@ -47,25 +45,6 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
-  }
-
-  void _runDiagnostic() async {
-    final report = await VoiceAnalysisService().runHardwareDiagnostic();
-    if (mounted) {
-      showDialog(
-        context: context,
-        builder: (c) => AlertDialog(
-          title: const Text('Hardware Diagnostic'),
-          content: SingleChildScrollView(child: Text(report)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(c),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    }
   }
 
   @override
@@ -86,11 +65,20 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
   void _startRecording() async {
     setState(() {
       _isRecording = true;
-      _analysisResults = null;
       _tRecordStart = DateTime.now().millisecondsSinceEpoch;
     });
 
     await VoiceAnalysisService().startRecording();
+    if (!mounted) return;
+    if (VoiceAnalysisService().lastError != null) {
+      setState(() => _isRecording = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('මයික්‍රෆෝනය ආරම්භ කළ නොහැක. නැවත උත්සාහ කරන්න.'),
+          backgroundColor: AppColors.warmAmber,
+        ),
+      );
+    }
   }
 
   void _stopRecording(String targetSentence, int expectedSyllables) async {
@@ -100,6 +88,7 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
     });
 
     final audioFile = await VoiceAnalysisService().stopRecording();
+    if (!mounted) return;
 
     if (audioFile != null) {
       String? studentId;
@@ -128,8 +117,17 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
         targetSentence,
         studentId: studentId,
         sessionId: sessionId,
+        eventId: '$sessionId:$itemId:speech',
+        attemptId: '$sessionId:$itemId:${_tRecordStart.toString()}',
+        skillId: widget.activityNode.skillId,
         activityId: activityId,
         itemId: itemId,
+        roundId: index.toString(),
+        allowedVariants:
+            (round['allowed_spoken_variants'] as List?)
+                ?.map((value) => value.toString())
+                .toList() ??
+            const [],
         expectedSyllables: expectedSyllables,
         tStimulus: _tStimulus,
         tRecordStart: _tRecordStart,
@@ -138,7 +136,6 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
       if (!mounted) return;
       setState(() {
         _isAnalyzing = false;
-        _analysisResults = results;
       });
 
       // Log the acoustic metrics to telemetry
@@ -151,27 +148,34 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
         // If there was a logCustomMetric method we could use it: telemetry.logCustomMetric(results);
       }
 
-      // We are logging these metrics, so we can always pass them for now since it's zero-shot
-      // We check word error rate as a fallback just in case STT ran, but primarily we proceed.
-      final double? wer = (results['word_error_rate'] as num?)?.toDouble();
-
-      if (wer != null &&
-          wer < 0.5 &&
-          results['persistence_status'] != 'failed' &&
-          results['measurement_status'] == 'available') {
-        // Success
+      final status = results['measurement_status']?.toString();
+      final scoreValue = (results['reading_performance_score'] as num?)
+          ?.toDouble();
+      if (status == 'valid' || status == 'uncertain') {
+        // An uncertain STT result is retained for research but never blocks the
+        // child. Only a recording-quality failure requests a retry.
+        final score = status == 'valid' && scoreValue != null
+            ? (scoreValue * 100).round().clamp(0, 100)
+            : 0;
         unawaited(
           telemetryAfter?.completeAdaptiveRound(
-            100,
+            score,
             currentRoundIndex: index,
             itemId: itemId,
-            isCorrect: true,
+            isCorrect: status == 'valid' && score >= 70,
             selectedAnswers: <String>['spoken_response'],
+            errorType: status == 'uncertain'
+                ? 'speech_measurement_uncertain'
+                : null,
           ),
         );
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('හොඳයි! (Great job!)'),
+          SnackBar(
+            content: Text(
+              status == 'valid'
+                  ? 'හොඳයි! (Great job!)'
+                  : 'ඔබගේ කියවීම සටහන් කළා. (Reading saved.)',
+            ),
             backgroundColor: AppColors.gentleGreen,
           ),
         );
@@ -184,11 +188,18 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
           }
         });
       } else {
-        // Still allow progression if the WER is high since we are transitioning to Acoustic,
-        // but let's prompt them to try again if it completely failed.
+        final issues =
+            (results['recording_quality_issues'] as List?)
+                ?.map((value) => value.toString())
+                .join(', ') ??
+            '';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('තව පාරක් උත්සාහ කරන්න. (Try reading that again!)'),
+          SnackBar(
+            content: Text(
+              issues.isEmpty
+                  ? 'හඬ පැහැදිලි නැහැ. නැවත කියවමු.'
+                  : 'හඬ පටිගත කිරීම පැහැදිලි නැහැ ($issues). නැවත කියවමු.',
+            ),
             backgroundColor: AppColors.warmAmber,
           ),
         );
@@ -464,12 +475,12 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
                   if (!_isAnalyzing)
                     Center(
                       child: GestureDetector(
-                        onTapDown: (_) => _startRecording(),
-                        onTapUp: (_) =>
-                            _stopRecording(targetSentence, expectedSyllables),
-                        onTapCancel: () {
-                          if (_isRecording)
+                        onTap: () {
+                          if (_isRecording) {
                             _stopRecording(targetSentence, expectedSyllables);
+                          } else {
+                            _startRecording();
+                          }
                         },
                         child: AnimatedBuilder(
                           animation: _pulseController,
@@ -518,7 +529,9 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
 
                   // Instruction / Hint
                   Text(
-                    _isRecording ? 'Release to Check' : 'Hold & Read',
+                    _isRecording
+                        ? 'කියවා අවසන් වූ පසු නැවත ඔබන්න'
+                        : 'කියවීම ආරම්භ කිරීමට ඔබන්න',
                     style: AppTypography.caption(
                       color: _isRecording
                           ? AppColors.softCoral
@@ -561,7 +574,7 @@ class _InteractiveStoryGameState extends State<InteractiveStoryGame>
             fallbackPath,
             fit: fit,
             alignment: Alignment.topCenter,
-            errorBuilder: (_, __, ___) => Container(color: Colors.white),
+            errorBuilder: (_, _, _) => Container(color: Colors.white),
           );
 
           if (fallbackParallax) {

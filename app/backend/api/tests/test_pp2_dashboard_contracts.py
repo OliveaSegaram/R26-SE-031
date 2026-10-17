@@ -202,13 +202,24 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(c4.data_quality['c3_pipeline_status'],'skipped_missing_inputs')
     def test_parent_real_session_count_duration_and_history(self):
         self.db.session_summaries.rows=[self.session(1,activity_breakdown={'act_1':{'accuracy':.75,'trials':2}})]
-        self.db.telemetry_events.rows=[dict(student_id=STUDENT,session_id='session-1',events=[{'activity_id':'act_1','total_round_latency_ms':60000}],session_duration_seconds=120),
-            dict(student_id=STUDENT,session_id='session-1',is_correct=True)]
+        self.db.telemetry_sessions.rows=[dict(student_id=STUDENT,session_id='session-1',schema_version='2.0',
+            events=[{'activity_id':'act_1','total_round_latency_ms':60000}],session_duration_seconds=120)]
         dto=self.call(parent.get_parent_overview,STUDENT)
         self.assertEqual(dto.sessions_completed,1);self.assertEqual(dto.practice_time_minutes,2)
         history=self.call(parent.get_parent_activity_history,STUDENT,10,None)
         self.assertEqual(history.history[0].duration_minutes,1)
         self.assertEqual(history.history[0].session_date,'2026-08-02')
+    def test_parent_component_analytics_preserves_component_availability(self):
+        self.db.session_summaries.rows=[self.session(1,behavioral_fatigue_proxy=.2)]
+        self.db.speech_features.rows=[dict(student_id=STUDENT,session_id='session-1',created_at='2026-08-02T00:00:00Z',
+            word_error_rate=.25,acoustic_latency_ms=900,recording_quality='good')]
+        self.db.knowledge_states.rows=[dict(student_id=STUDENT,knowledge_state={'KC_AKSHARA_IDENTITY':.7})]
+        self.db.adaptive_decisions.rows=[dict(student_id=STUDENT,decision='CONTINUE',scaffold_level_used=1)]
+        result=self.call(parent.get_parent_component_analytics,STUDENT)
+        self.assertTrue(result['c1_behavioral']['available']);self.assertTrue(result['c2_speech']['available'])
+        self.assertFalse(result['c3_explainability']['available'])
+        self.assertEqual(result['c4_adaptive']['average_mastery'],.7)
+        self.assertEqual(result['c4_adaptive']['supported_decision_rate'],1.0)
     def test_parent_empty_is_not_a_fabricated_progress_point(self):
         self.assertEqual(self.call(parent.get_parent_progress,STUDENT).accuracy_trend,[])
         self.assertIsNone(self.call(parent.get_parent_overview,STUDENT).accuracy)
