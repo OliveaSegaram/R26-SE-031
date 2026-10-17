@@ -123,9 +123,9 @@ class Skill2RoundResolver {
     return 'ශබ්දයට සවන් දී ${target}යන්න තෝරන්න';
   }
 
-  /// Activities 1 and 2 introduce their instruction automatically only on the
-  /// first core task. Later core/equivalent tasks remain available through the
-  /// sound button without interrupting the child on every navigation.
+  /// Activities 1, 2, and 5 introduce their instruction automatically only on
+  /// the first core task. Later core/adaptive tasks remain available through
+  /// the sound button without interrupting the child on every navigation.
   static bool shouldAutoplayActivityIntroduction({
     required int roundIndex,
     String? variantId,

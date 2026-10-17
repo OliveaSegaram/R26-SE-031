@@ -545,26 +545,26 @@
           {
             "core_round": 4,
             "content": {
-              "prompt": "'ඳ' අකුර සොයන්න.",
+              "prompt": "'ක' අකුර සොයන්න.",
               "items": [
                 {
                   "type": "letter",
-                  "value": "උ",
+                  "value": "ත",
                   "is_target": false
                 },
                 {
                   "type": "letter",
-                  "value": "උ",
+                  "value": "ත",
                   "is_target": false
                 },
                 {
                   "type": "letter",
-                  "value": "උ",
+                  "value": "ත",
                   "is_target": false
                 },
                 {
                   "type": "letter",
-                  "value": "ඳ",
+                  "value": "ක",
                   "is_target": true
                 }
               ]
@@ -651,7 +651,7 @@
                 "targeted_practice": true,
                 "target_source_item_id": "S2A1R04",
                 "content": {
-                  "prompt": "'ඳ' අකුර සොයන්න.",
+                  "prompt": "'ක' අකුර සොයන්න.",
                   "items": [
                     {
                       "type": "icon",
@@ -670,7 +670,7 @@
                     },
                     {
                       "type": "letter",
-                      "value": "ඳ",
+                      "value": "ක",
                       "is_target": true
                     }
                   ]
@@ -687,13 +687,8 @@
                 "targeted_practice": true,
                 "target_source_item_id": "S2A1R04",
                 "content": {
-                  "prompt": "'ඳ' අකුර සොයන්න.",
+                  "prompt": "'ක' අකුර සොයන්න.",
                   "items": [
-                    {
-                      "type": "letter",
-                      "value": "න",
-                      "is_target": false
-                    },
                     {
                       "type": "letter",
                       "value": "ග",
@@ -706,7 +701,12 @@
                     },
                     {
                       "type": "letter",
-                      "value": "ඳ",
+                      "value": "බ",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "ක",
                       "is_target": true
                     }
                   ]
@@ -724,36 +724,36 @@
           {
             "core_round": 5,
             "content": {
-              "prompt": "'ධ' අකුර සොයන්න.",
+              "prompt": "'න' අකුර සොයන්න.",
               "items": [
                 {
                   "type": "letter",
-                  "value": "ඔ",
+                  "value": "ත",
                   "is_target": false
                 },
                 {
                   "type": "letter",
-                  "value": "ඔ",
+                  "value": "ත",
                   "is_target": false
                 },
                 {
                   "type": "letter",
-                  "value": "ඔ",
+                  "value": "ත",
                   "is_target": false
                 },
                 {
                   "type": "letter",
-                  "value": "ඔ",
+                  "value": "ත",
                   "is_target": false
                 },
                 {
                   "type": "letter",
-                  "value": "ඔ",
+                  "value": "ත",
                   "is_target": false
                 },
                 {
                   "type": "letter",
-                  "value": "ධ",
+                  "value": "න",
                   "is_target": true
                 }
               ]
@@ -850,7 +850,7 @@
                 "targeted_practice": true,
                 "target_source_item_id": "S2A1R05",
                 "content": {
-                  "prompt": "'ධ' අකුර සොයන්න.",
+                  "prompt": "'න' අකුර සොයන්න.",
                   "items": [
                     {
                       "type": "letter",
@@ -869,7 +869,7 @@
                     },
                     {
                       "type": "letter",
-                      "value": "ධ",
+                      "value": "න",
                       "is_target": true
                     }
                   ]
@@ -886,13 +886,8 @@
                 "targeted_practice": true,
                 "target_source_item_id": "S2A1R05",
                 "content": {
-                  "prompt": "'ධ' අකුර සොයන්න.",
+                  "prompt": "'න' අකුර සොයන්න.",
                   "items": [
-                    {
-                      "type": "letter",
-                      "value": "න",
-                      "is_target": false
-                    },
                     {
                       "type": "letter",
                       "value": "ග",
@@ -915,7 +910,12 @@
                     },
                     {
                       "type": "letter",
-                      "value": "ධ",
+                      "value": "ය",
+                      "is_target": false
+                    },
+                    {
+                      "type": "letter",
+                      "value": "න",
                       "is_target": true
                     }
                   ]
@@ -4509,17 +4509,17 @@
                 "target_source_item_id": "S2A5R03",
                 "targeted_unit": "ම",
                 "content": {
-                  "target_word": "මමද",
+                  "target_word": "මහත",
                   "pattern": [
                     "ම",
-                    "ම",
-                    "ද"
+                    "හ",
+                    "ත"
                   ],
                   "pilla_count": 0,
                   "options": [
                     "ම",
-                    "ද",
-                    "ක",
+                    "හ",
+                    "ත",
                     "න"
                   ],
                   "show_seconds": 5,
@@ -4812,16 +4812,16 @@
                 "target_source_item_id": "S2A5R04",
                 "targeted_unit": "ස",
                 "content": {
-                  "target_word": "සතක්",
+                  "target_word": "රසක්",
                   "pattern": [
+                    "ර",
                     "ස",
-                    "ත",
                     "ක්"
                   ],
                   "pilla_count": 1,
                   "options": [
+                    "ර",
                     "ස",
-                    "ත",
                     "ක්",
                     "ට්"
                   ],
@@ -4847,16 +4847,16 @@
                 "target_source_item_id": "S2A5R04",
                 "targeted_unit": "ක්",
                 "content": {
-                  "target_word": "අතක්",
+                  "target_word": "රටක්",
                   "pattern": [
-                    "අ",
-                    "ත",
+                    "ර",
+                    "ට",
                     "ක්"
                   ],
                   "pilla_count": 1,
                   "options": [
-                    "අ",
-                    "ත",
+                    "ර",
+                    "ට",
                     "ක්",
                     "ම"
                   ],
@@ -5012,14 +5012,16 @@
                 "target_source_item_id": "S2A5R05",
                 "targeted_unit": "මි",
                 "content": {
-                  "target_word": "මිල",
+                  "target_word": "මිදුල",
                   "pattern": [
                     "මි",
+                    "දු",
                     "ල"
                   ],
-                  "pilla_count": 1,
+                  "pilla_count": 2,
                   "options": [
                     "මි",
+                    "දු",
                     "ල",
                     "ක"
                   ],
@@ -5027,9 +5029,9 @@
                   "targeted_unit": "මි"
                 },
                 "difficulty_features": {
-                  "pattern_length": 2,
-                  "pilla_count": 1,
-                  "answer_pool_size": 3,
+                  "pattern_length": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 4,
                   "show_seconds": 6
                 }
               },
@@ -5080,24 +5082,26 @@
                 "target_source_item_id": "S2A5R05",
                 "targeted_unit": "හි",
                 "content": {
-                  "target_word": "හිම",
+                  "target_word": "හිනාව",
                   "pattern": [
                     "හි",
-                    "ම"
+                    "නා",
+                    "ව"
                   ],
-                  "pilla_count": 1,
+                  "pilla_count": 2,
                   "options": [
                     "හි",
-                    "ම",
+                    "නා",
+                    "ව",
                     "ක"
                   ],
                   "show_seconds": 6,
                   "targeted_unit": "හි"
                 },
                 "difficulty_features": {
-                  "pattern_length": 2,
-                  "pilla_count": 1,
-                  "answer_pool_size": 3,
+                  "pattern_length": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 4,
                   "show_seconds": 6
                 }
               },
@@ -5148,24 +5152,26 @@
                 "target_source_item_id": "S2A5R05",
                 "targeted_unit": "රි",
                 "content": {
-                  "target_word": "රිය",
+                  "target_word": "රිදෙන",
                   "pattern": [
                     "රි",
-                    "ය"
+                    "දෙ",
+                    "න"
                   ],
-                  "pilla_count": 1,
+                  "pilla_count": 2,
                   "options": [
                     "රි",
-                    "ය",
+                    "දෙ",
+                    "න",
                     "ක"
                   ],
                   "show_seconds": 6,
                   "targeted_unit": "රි"
                 },
                 "difficulty_features": {
-                  "pattern_length": 2,
-                  "pilla_count": 1,
-                  "answer_pool_size": 3,
+                  "pattern_length": 3,
+                  "pilla_count": 2,
+                  "answer_pool_size": 4,
                   "show_seconds": 6
                 }
               },

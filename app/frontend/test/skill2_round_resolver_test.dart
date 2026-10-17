@@ -183,7 +183,7 @@ void main() {
     },
   );
 
-  test('Activities 1 and 2 autoplay only their opening core task', () {
+  test('supported activities autoplay only their opening core task', () {
     expect(
       Skill2RoundResolver.shouldAutoplayActivityIntroduction(roundIndex: 0),
       isTrue,
@@ -354,6 +354,43 @@ void main() {
       expect(
         research.itemVersion,
         entry.key.endsWith('V1') || entry.key.endsWith('V2') ? 5 : 2,
+        reason: entry.key,
+      );
+    }
+  });
+
+  test('Activity 1 later rounds use reviewed simple Grade 1 targets', () {
+    final activity = skill.activities.firstWhere(
+      (candidate) => candidate.id == 'act_1',
+    );
+
+    for (final entry in <String, String>{
+      'S2A1R04': 'ක',
+      'S2A1R04V3': 'ක',
+      'S2A1R04V4': 'ක',
+      'S2A1R05': 'න',
+      'S2A1R05V3': 'න',
+      'S2A1R05V4': 'න',
+    }.entries) {
+      final roundIndex = Skill2RoundResolver.roundIndexFromItemId(entry.key)!;
+      final resolved = Skill2RoundResolver.resolve(
+        activity: activity,
+        roundIndex: roundIndex,
+        variantId: Skill2RoundResolver.variantFromItemId(entry.key),
+      );
+      final targets =
+          List<Map<String, dynamic>>.from(
+                (resolved.data['items'] as List).map(
+                  (item) => Map<String, dynamic>.from(item as Map),
+                ),
+              )
+              .where((item) => item['is_target'] == true)
+              .map((item) => item['value'])
+              .toList();
+      expect(targets, everyElement(entry.value), reason: entry.key);
+      expect(
+        resolved.data['prompt'],
+        contains("'${entry.value}'"),
         reason: entry.key,
       );
     }
