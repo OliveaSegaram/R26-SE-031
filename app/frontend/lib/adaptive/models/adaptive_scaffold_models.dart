@@ -10,7 +10,6 @@ enum ScaffoldActionType {
   slowAudio,
   revealFirstToken,
   lockCorrectToken,
-  showWorkedExample,
   pauseSession,
 }
 
@@ -107,8 +106,6 @@ class ScaffoldCommand {
         return ScaffoldActionType.revealFirstToken;
       case 'LOCK_CORRECT_TOKEN':
         return ScaffoldActionType.lockCorrectToken;
-      case 'SHOW_WORKED_EXAMPLE':
-        return ScaffoldActionType.showWorkedExample;
       case 'PAUSE_SESSION':
         return ScaffoldActionType.pauseSession;
       default:
