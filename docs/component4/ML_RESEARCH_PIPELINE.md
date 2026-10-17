@@ -7,6 +7,36 @@ the authored remediation/confirmation state machine.
 
 ## Runtime flow
 
+### New-learner cold start
+
+Newly created children complete a separate **Starter Learning Profile** before
+their first dashboard visit:
+
+1. Two guided, unscored examples teach tap and sequence interactions.
+2. Eight independent probes sample the four curriculum skills (two per skill).
+3. The probe flow never calls C4 and never applies a scaffold, remediation, or
+   confirmation task. It gives neutral feedback and displays no score.
+4. Every response is immediately and idempotently stored in
+   `baseline_item_events` with `data_origin=observed_baseline`,
+   `research_role=baseline_probe`, and `calibration_eligible=false`.
+   Choice positions are deterministically shuffled per learner, and the exact
+   presented order is stored so position effects remain auditable.
+5. A run is usable only with at least six valid responses and at least one from
+   every skill. Otherwise it is retained as `insufficient` and C4 uses its
+   normal defaults.
+6. A usable run creates conservative, bounded mastery and Rasch starting
+   values in `knowledge_states`; it never overwrites later learning evidence.
+7. The median response-time ratio creates only a gentle 0.95–1.10 timing
+   adjustment. Correctness remains the primary learning observation.
+8. C4 records the profile version and timing factor with later decisions, so
+   the cold-start influence is auditable.
+
+The profile is a personalization aid, not a diagnosis or efficacy result. It
+is resumable and required before the first dashboard visit for students created
+after this feature was introduced. A child may pause and return to student
+selection, but cannot bypass an unfinished profile. The existing
+parent-completed screening remains a separate workflow.
+
 1. Flutter sends stable item/option IDs, attempts, timing, touch points, and the
    screen's supported scaffold actions to API port `8015`.
 2. The gateway creates server-controlled provenance, builds a rolling
