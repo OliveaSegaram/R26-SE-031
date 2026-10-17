@@ -285,6 +285,12 @@ async def update_interaction(request: InteractionRequest):
         theta = 0.0
         
     adaptive_state = get_adaptive_state(student_doc, canonical_act)
+    starter_baseline = (
+        dict(student_doc.get("starter_baseline") or {}) if student_doc else {}
+    )
+    personal_latency_factor = float(
+        starter_baseline.get("effective_latency_factor", 1.0) or 1.0
+    )
     current_prob = knowledge_state.get(official_kc, bkt_engine.priors["default"][0])
     mastery_before = current_prob
     
@@ -313,10 +319,25 @@ async def update_interaction(request: InteractionRequest):
             is_fresh_start = True
 
     if is_fresh_start:
-        # Reset knowledge state and theta
-        knowledge_state[official_kc] = bkt_engine.priors.get(official_kc, bkt_engine.priors["default"])[0]
-        theta = 0.0
-        theta_by_kc[official_kc] = 0.0
+        # An explicit RESET remains a true test reset. A normal first round for
+        # a learner with a valid Starter Learning Profile preserves the soft
+        # cold-start prior (and any later evidence) instead of erasing it back
+        # to the global 0.30/0.00 defaults.
+        has_starter_profile = starter_baseline.get("profile_status") == "completed"
+        if canonical_item == "RESET" or not has_starter_profile:
+            knowledge_state[official_kc] = bkt_engine.priors.get(
+                official_kc, bkt_engine.priors["default"]
+            )[0]
+            theta = 0.0
+            theta_by_kc[official_kc] = 0.0
+        else:
+            knowledge_state.setdefault(
+                official_kc,
+                bkt_engine.priors.get(
+                    official_kc, bkt_engine.priors["default"]
+                )[0],
+            )
+            theta = theta_by_kc.get(official_kc, theta)
         adaptive_state = _get_default_state(canonical_act)
         adaptive_state["expected_item_id"] = canonical_item
         if canonical_act == "2.2":
@@ -362,7 +383,8 @@ async def update_interaction(request: InteractionRequest):
     response_quality, struggle_score, struggle_band, latency_ratio = policy_engine.classify_response(
         is_correct=request.is_correct,
         telemetry=request.telemetry,
-        activity_id=canonical_act
+        activity_id=canonical_act,
+        personal_latency_factor=personal_latency_factor,
     )
 
     if request.phase == "ATTEMPT":
@@ -453,6 +475,7 @@ async def update_interaction(request: InteractionRequest):
             fatigue=request.fatigue_score,
             behavioral_context=request.behavioral_context,
             learner_profile=request.learner_profile,
+            personal_latency_factor=personal_latency_factor,
         )
         model_evidence = action_policy_model.evaluate(
             baseline_action=support.get("decision", "RETRY_CURRENT"),
@@ -576,6 +599,14 @@ async def update_interaction(request: InteractionRequest):
             "features": model_features,
             "behavioral_context": request.behavioral_context or {},
             "context_evidence": request.context_evidence or {},
+            "starter_baseline_context": {
+                "available": starter_baseline.get("profile_status") == "completed",
+                "baseline_version": starter_baseline.get("baseline_version"),
+                "effective_latency_factor": round(personal_latency_factor, 4),
+                "skill_profile": (
+                    starter_baseline.get("skill_profiles") or {}
+                ).get(f"skill_{str(canonical_act).split('.')[0]}", {}),
+            },
             "data_origin": request.data_origin,
             "dataset_id": request.dataset_id,
             "validation_status": request.validation_status,
@@ -1146,6 +1177,14 @@ async def update_interaction(request: InteractionRequest):
         "calibration_eligible": bool(request.calibration_eligible),
         "behavioral_context": request.behavioral_context or {},
         "context_evidence": request.context_evidence or {},
+        "starter_baseline_context": {
+            "available": starter_baseline.get("profile_status") == "completed",
+            "baseline_version": starter_baseline.get("baseline_version"),
+            "effective_latency_factor": round(personal_latency_factor, 4),
+            "skill_profile": (starter_baseline.get("skill_profiles") or {}).get(
+                f"skill_{str(canonical_act).split('.')[0]}", {}
+            ),
+        },
         "research_validation_errors": (
             [] if item_doc is not None else ["ITEM_NOT_FOUND_IN_CANONICAL_BANK"]
         ),
