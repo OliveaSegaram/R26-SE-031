@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import '../services/telemetry_service.dart';
 import '../services/telemetry/plugins/voice_analysis_plugin.dart';
@@ -1016,44 +1014,50 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   /// Called after all rounds are completed to show the completion screen.
   void completeActivity(BuildContext context) {
     int finalScore = 100; // Always award 100% for completing the activity
+    final navigator = Navigator.of(context);
+    final activityRoute = ModalRoute.of(context);
+    var returnedDirectlyToMap = false;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ActivityCompleteScreen(
-          activityNode: widget.activityNode,
-          skillId: widget.activityNode.id,
-          score: finalScore,
-          isRevisiting: false,
-          recommendBreak: _breakRecommendedAfterActivity,
-          onRetake: () {
-            Navigator.pop(context, 'retake');
-          },
-          onContinue: () {
-            final studentId = _studentId;
-            final telemetry = TelemetryService();
-            if (studentId != null && telemetry.submitOnActivityComplete) {
-              // Snapshot immediately; the level map awaits this same in-flight
-              // request before another activity can start.
-              unawaited(telemetry.endSessionAndSubmit(studentId));
+    navigator
+        .push(
+          MaterialPageRoute(
+            builder: (context) => ActivityCompleteScreen(
+              activityNode: widget.activityNode,
+              skillId: widget.activityNode.id,
+              score: finalScore,
+              isRevisiting: false,
+              recommendBreak: _breakRecommendedAfterActivity,
+              onRetake: () {
+                Navigator.pop(context, 'retake');
+              },
+              onContinue: () {
+                // Remove the completed game underneath this screen first. The
+                // completion screen then closes directly onto the map, preventing
+                // the old game (especially Activity 4's train) from flashing for
+                // one reverse-route transition.
+                returnedDirectlyToMap = true;
+                if (activityRoute != null && activityRoute.isActive) {
+                  navigator.removeRoute(activityRoute, finalScore);
+                }
+                navigator.pop(finalScore);
+              },
+            ),
+          ),
+        )
+        .then((value) {
+          if (returnedDirectlyToMap) return;
+          if (mounted) {
+            if (value == 'retake') {
+              // Return ownership to the level map. It closes the completed
+              // telemetry session before launching the retake as a new session.
+              // Replacing this route directly used to detach the retake from the
+              // level-map future, causing a later abandonment to be discarded.
+              Navigator.pop(context, 'retake');
+            } else {
+              Navigator.pop(context, value ?? finalScore);
             }
-            Navigator.pop(context, finalScore);
-          },
-        ),
-      ),
-    ).then((value) {
-      if (mounted) {
-        if (value == 'retake') {
-          // Return ownership to the level map. It closes the completed
-          // telemetry session before launching the retake as a new session.
-          // Replacing this route directly used to detach the retake from the
-          // level-map future, causing a later abandonment to be discarded.
-          Navigator.pop(context, 'retake');
-        } else {
-          Navigator.pop(context, value ?? finalScore);
-        }
-      }
-    });
+          }
+        });
   }
 
   @override
