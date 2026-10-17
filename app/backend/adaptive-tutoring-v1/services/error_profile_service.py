@@ -54,6 +54,7 @@ class ErrorProfileService:
         )
         stored_struggle = adaptive_state.get("latest_struggled_target") or {}
         stored_units = []
+        first_observed_units = []
         diagnostic_target_counts: Dict[str, int] = {}
         if (
             isinstance(stored_struggle, dict)
@@ -63,6 +64,12 @@ class ErrorProfileService:
             stored_units = _unique(
                 normalize_target_unit(value)
                 for value in (stored_struggle.get("units") or [])
+            )
+            first_observed_units = _unique(
+                normalize_target_unit(value)
+                for value in (
+                    stored_struggle.get("first_observed_units") or []
+                )
             )
             for raw_key, raw_count in (
                 stored_struggle.get("target_counts") or {}
@@ -116,6 +123,7 @@ class ErrorProfileService:
                 else "reviewed_item_metadata"
             ),
             "diagnostic_target_counts": diagnostic_target_counts,
+            "first_observed_target_units": first_observed_units,
         }
 
         histories = adaptive_state.setdefault("micro_skill_evidence", {})

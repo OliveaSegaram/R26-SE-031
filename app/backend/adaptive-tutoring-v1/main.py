@@ -424,8 +424,18 @@ async def update_interaction(request: InteractionRequest):
                 for value in (existing_struggle.get("observed_units") or [])
                 if str(value).strip()
             ]
+            first_observed_units = [
+                str(value)
+                for value in (
+                    existing_struggle.get("first_observed_units")
+                    or target_order
+                )
+                if str(value).strip()
+            ]
             for unit in struggled_target_units:
                 target_counts[unit] = target_counts.get(unit, 0) + 1
+                if unit not in first_observed_units:
+                    first_observed_units.append(unit)
                 if unit in target_order:
                     target_order.remove(unit)
                 target_order.append(unit)
@@ -442,6 +452,7 @@ async def update_interaction(request: InteractionRequest):
                 "item_id": canonical_item,
                 "units": ranked_units,
                 "observed_units": target_order,
+                "first_observed_units": first_observed_units,
                 "target_counts": target_counts,
             }
         

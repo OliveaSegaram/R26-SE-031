@@ -1,4 +1,7 @@
+from types import SimpleNamespace
+
 from services.dynamic_practice_policy import DynamicPracticePolicy
+from services.error_profile_service import ErrorProfileService
 from services.item_selector import ItemSelector
 from item_bank_builder import build_items
 
@@ -12,6 +15,7 @@ def _complete(
     current_item,
     activity_id="2.2",
     target_units=None,
+    first_observed_target_units=None,
 ):
     return policy.get_next_action(
         activity_id=activity_id,
@@ -23,6 +27,9 @@ def _complete(
         error_profile={
             "equivalent_group_id": "S2A2R04",
             "target_units": target_units or ["ස", "ර"],
+            "first_observed_target_units": (
+                first_observed_target_units or []
+            ),
             "component_units": ["ස", "ර", "ලි", "දු"],
             "error_tags": ["letter_matching"],
             "diagnostic_confidence": 1.0,
@@ -31,6 +38,220 @@ def _complete(
         has_reduced_remediation=True,
         has_floor_remediation=False,
     )
+
+
+def test_activity_five_uses_only_the_first_observed_struggled_unit():
+    policy = DynamicPracticePolicy()
+    state = {"next_phase": "CORE"}
+
+    core = _complete(
+        policy,
+        state,
+        role="CORE",
+        quality="ASSISTED_SUCCESS",
+        current_item="S2A5R04",
+        activity_id="2.5",
+        target_units=["ක්", "ග", "ස"],
+        first_observed_target_units=["ග", "ක්", "ස"],
+    )
+    assert core["next_phase"] == "REMEDIATION"
+    assert core["selection_intent"]["target_units"] == ["ග"]
+    assert state["practice_remediation_units"] == ["ග"]
+    assert state["practice_confirmation_units"] == ["ග"]
+
+    remediation = _complete(
+        policy,
+        state,
+        role="REMEDIATION",
+        quality="CLEAN_SUCCESS",
+        current_item="S2A5R04V3",
+        activity_id="2.5",
+    )
+    assert remediation["next_phase"] == "CONFIRMATION"
+    assert remediation["selection_intent"]["target_units"] == ["ග"]
+
+    confirmation = _complete(
+        policy,
+        state,
+        role="CONFIRMATION",
+        quality="CLEAN_SUCCESS",
+        current_item="S2A5R04V4",
+        activity_id="2.5",
+    )
+    assert confirmation["next_phase"] == "CORE"
+    assert "practice_origin_item_id" not in state
+
+
+def test_activity_five_error_profile_preserves_first_observed_order():
+    item = next(
+        item for item in build_items() if item["item_id"] == "S2A5R04"
+    )
+    state = {
+        "latest_struggled_target": {
+            "item_id": "S2A5R04",
+            "units": ["ක්", "ග"],
+            "first_observed_units": ["ග", "ක්"],
+            "target_counts": {"ග": 1, "ක්": 2},
+        }
+    }
+    telemetry = SimpleNamespace(
+        target_ids=[],
+        selected_answers=["ට්"],
+        selected_option_ids=["S2A5R04_O3"],
+        correct_option_ids=[],
+        struggled_target_units=[],
+        incorrect_attempt_count=2,
+        scaffold_level_used=1,
+    )
+
+    profile = ErrorProfileService().build(
+        item=item,
+        telemetry=telemetry,
+        response_quality="ASSISTED_SUCCESS",
+        learning_observation_correct=False,
+        knowledge_component_id=item["knowledge_component_id"],
+        adaptive_state=state,
+    )
+
+    assert profile["target_units"] == ["ක්", "ග"]
+    assert profile["first_observed_target_units"] == ["ග", "ක්"]
+
+
+def test_activity_five_uses_generic_pair_only_after_targeted_pair_needs_help():
+    policy = DynamicPracticePolicy()
+    state = {"next_phase": "CORE"}
+
+    _complete(
+        policy,
+        state,
+        role="CORE",
+        quality="ASSISTED_SUCCESS",
+        current_item="S2A5R04",
+        activity_id="2.5",
+        target_units=["ක්", "ග"],
+        first_observed_target_units=["ග", "ක්"],
+    )
+    targeted_remediation = _complete(
+        policy,
+        state,
+        role="REMEDIATION",
+        quality="ASSISTED_SUCCESS",
+        current_item="S2A5R04V3",
+        activity_id="2.5",
+    )
+    assert targeted_remediation["next_phase"] == "CONFIRMATION"
+    assert targeted_remediation["selection_intent"]["target_units"] == ["ග"]
+
+    targeted_confirmation = _complete(
+        policy,
+        state,
+        role="CONFIRMATION",
+        quality="CLEAN_SUCCESS",
+        current_item="S2A5R04V4",
+        activity_id="2.5",
+    )
+    assert targeted_confirmation["next_phase"] == "REMEDIATION"
+    assert targeted_confirmation["selection_intent"][
+        "generic_authored_fallback"
+    ] is True
+    assert targeted_confirmation["selection_intent"]["target_units"] == []
+
+    generic_remediation = _complete(
+        policy,
+        state,
+        role="REMEDIATION",
+        quality="CLEAN_SUCCESS",
+        current_item="S2A5R04V1",
+        activity_id="2.5",
+    )
+    assert generic_remediation["next_phase"] == "CONFIRMATION"
+    assert generic_remediation["selection_intent"][
+        "generic_authored_fallback"
+    ] is True
+
+    generic_confirmation = _complete(
+        policy,
+        state,
+        role="CONFIRMATION",
+        quality="CLEAN_SUCCESS",
+        current_item="S2A5R04V2",
+        activity_id="2.5",
+    )
+    assert generic_confirmation["next_phase"] == "CORE"
+    assert "practice_origin_item_id" not in state
+
+
+def test_activity_five_migrates_an_existing_multi_target_cycle_safely():
+    policy = DynamicPracticePolicy()
+    state = {
+        "next_phase": "REMEDIATION",
+        "practice_origin_item_id": "S2A5R04",
+        "practice_origin_group_id": "S2A5R04",
+        "practice_origin_difficulty_b": 0.5,
+        "practice_error_profile": {"target_units": ["ක්", "ග"]},
+        "practice_current_target_unit": "ක්",
+        "practice_remediation_units": ["ක්", "ග"],
+        "practice_confirmation_units": ["ක්", "ග"],
+        "practice_completed_remediation_units": [],
+        "practice_completed_confirmation_units": [],
+        "practice_remediation_count": 0,
+        "practice_confirmation_count": 0,
+        "practice_single_target_cycle": False,
+    }
+
+    remediation = _complete(
+        policy,
+        state,
+        role="REMEDIATION",
+        quality="CLEAN_SUCCESS",
+        current_item="S2A5R04V7",
+        activity_id="2.5",
+    )
+
+    assert remediation["next_phase"] == "CONFIRMATION"
+    assert remediation["selection_intent"]["target_units"] == ["ක්"]
+    assert state["practice_single_target_cycle"] is True
+
+
+def test_activity_five_selects_one_exact_pair_then_authored_generic_pair():
+    selector = ItemSelector()
+    candidates = [
+        item
+        for item in build_items()
+        if item.get("equivalent_group_id") == "S2A5R04"
+        or item.get("item_id") == "S2A5R04"
+    ]
+    core = next(item for item in candidates if item["item_id"] == "S2A5R04")
+    common = {
+        "current_activity": "2.5",
+        "knowledge_component_id": core["knowledge_component_id"],
+        "candidates": candidates,
+        "excluded_item_ids": [],
+        "exposure_counts": {},
+        "micro_skill_evidence": {},
+        "requested_mode": "simulation_model",
+        "data_origin": "observed",
+    }
+
+    requests = (
+        ("S2A5R04", "REMEDIATION", ["ග"], False, 0.0, "S2A5R04V3"),
+        ("S2A5R04V3", "CONFIRMATION", ["ග"], False, 0.5, "S2A5R04V4"),
+        ("S2A5R04V4", "REMEDIATION", [], True, 0.0, "S2A5R04V1"),
+        ("S2A5R04V1", "CONFIRMATION", [], True, 0.5, "S2A5R04V2"),
+    )
+    for current, role, units, generic, difficulty, expected in requests:
+        selected = selector.select_targeted_practice_item(
+            current_item_id=current,
+            target_difficulty=difficulty,
+            selection_intent={
+                "role": role,
+                "origin_equivalent_group_id": "S2A5R04",
+                "target_units": units,
+                "generic_authored_fallback": generic,
+            },
+            **common,
+        )
+        assert selected["selected_item"] == expected
 
 
 def test_skill_one_activity_three_uses_one_targeted_pair_only():
