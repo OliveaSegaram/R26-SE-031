@@ -60,15 +60,15 @@ jobs:
       if: steps.check-creds.outputs.has_creds == 'true'
       run: |
         BASE_URL="https://${WEBAPP_NAME}.azurewebsites.net"
-        for attempt in {1..10}; do
+        for attempt in {1..20}; do
           if curl --fail --silent --show-error "$BASE_URL/health" >/dev/null \
-            && curl --fail --silent --show-error "$BASE_URL/telemetry/ready" >/dev/null \
-            && curl --fail --silent --show-error "$BASE_URL/speech/ready" >/dev/null; then
+            && curl --fail --silent --show-error "$BASE_URL/telemetry/docs" >/dev/null \
+            && curl --fail --silent --show-error "$BASE_URL/speech/docs" >/dev/null; then
             echo "Azure gateway, C1, and C2 are ready."
             exit 0
           fi
-          echo "Waiting for Azure services (attempt $attempt/40)..."
+          echo "Waiting for Azure services (attempt $attempt/20)..."
           sleep 15
         done
-        echo "Azure services did not become ready within 10 minutes."
+        echo "Azure services did not become ready within timeout."
         exit 1
