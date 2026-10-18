@@ -186,6 +186,143 @@ class DashboardTests(unittest.TestCase):
         older_activity=dto.activities[1]
         self.assertEqual(older_activity.rounds_completed,1)
         self.assertEqual(older_activity.times_played,1)
+
+    def test_parent_adaptive_summary_uses_real_component4_state(self):
+        self.db.knowledge_states.rows=[{
+            'student_id':STUDENT,
+            'knowledge_state':{
+                'KC_VISUAL_IDENTIFICATION':.84,
+                'KC_PHONEME_LETTER_MAPPING':.43,
+            },
+        }]
+        self.db.adaptive_decisions.rows=[
+            {
+                '_id':'200','student_id':STUDENT,'session_id':'letters',
+                'timestamp':'2026-10-14T10:00:00Z','activity_id':'2.3',
+                'current_item':'S2A3R01','response_quality':'ASSISTED_SUCCESS',
+                'scaffold_level':1,'is_correct':True,'decision':'REMEDIATION',
+                'next_phase':'CONFIRMATION',
+            },
+            {
+                '_id':'100','student_id':STUDENT,'session_id':'pictures',
+                'timestamp':'2026-10-13T10:00:00Z','activity_id':'1.1',
+                'current_item':'S1A1R01','response_quality':'CLEAN_SUCCESS',
+                'scaffold_level':0,'is_correct':True,'decision':'CONTINUE',
+                'next_phase':'CORE',
+            },
+        ]
+        dto=self.call(parent.get_adaptive_insights,STUDENT)
+        summary=dto.support_summary
+        self.assertEqual(summary['strongest_area']['title'],'Picture recognition')
+        self.assertEqual(summary['strongest_area']['score_percent'],84)
+        self.assertEqual(summary['focus_area']['title'],'Listening to letters')
+        self.assertEqual(summary['focus_area']['score_percent'],43)
+        self.assertEqual(summary['focus_area']['source'],'component4_mastery_estimate')
+        self.assertEqual(summary['help_story']['learning_checks'],1)
+        self.assertEqual(summary['home_practice']['minutes'],5)
+        self.assertNotIn('KC_',summary['home_practice']['title'])
+        self.assertEqual(summary['coverage']['activities_tried'],2)
+        self.assertEqual(summary['coverage']['activities_available'],19)
+        self.assertEqual(
+            [skill['title'] for skill in summary['skill_progress']],
+            ['Pictures','Letters'],
+        )
+        self.assertEqual(summary['skill_progress'][0]['observed_tasks'],1)
+        self.assertEqual(summary['skill_progress'][0]['first_try_successes'],1)
+        self.assertEqual(
+            summary['support_effectiveness']['legacy_follow_up_routes'],1
+        )
+        self.assertEqual(
+            summary['metric_details']['independent'][0]['skill_title'],
+            'Pictures',
+        )
+        self.assertEqual(
+            summary['metric_details']['independent'][0]['task_label'],
+            'Task 1',
+        )
+        self.assertEqual(
+            summary['metric_details']['helped'][0]['activity_id'],'2.3'
+        )
+
+    def test_parent_support_result_uses_completed_confirmation_evidence(self):
+        self.db.adaptive_decisions.rows=[
+            {
+                '_id':'301','student_id':STUDENT,'session_id':'pictures',
+                'timestamp':'2026-10-14T10:00:03Z','activity_id':'1.1',
+                'current_item':'S1A1R01V2','item_role':'CONFIRMATION',
+                'practice_phase':'CONFIRMATION','response_quality':'CLEAN_SUCCESS',
+                'scaffold_level':0,'is_correct':True,'decision':'CONTINUE',
+                'next_phase':'CORE',
+            },
+            {
+                '_id':'300','student_id':STUDENT,'session_id':'pictures',
+                'timestamp':'2026-10-14T10:00:02Z','activity_id':'1.1',
+                'current_item':'S1A1R01','item_role':'CORE',
+                'response_quality':'ASSISTED_SUCCESS','scaffold_level':1,
+                'is_correct':True,'decision':'CONFIRMATION',
+                'next_phase':'CONFIRMATION',
+            },
+        ]
+        summary=self.call(parent.get_adaptive_insights,STUDENT).support_summary
+        self.assertEqual(summary['confirmation_checks'],1)
+        self.assertEqual(
+            summary['confirmation_check_basis'],'completed_follow_up_items'
+        )
+        effectiveness=summary['support_effectiveness']
+        self.assertEqual(effectiveness['completed_follow_up_checks'],1)
+        self.assertEqual(effectiveness['independent_follow_up_checks'],1)
+        self.assertIn('1 of 1 fresh checks',effectiveness['summary'])
+        checked=summary['metric_details']['checked']
+        self.assertEqual(len(checked),1)
+        self.assertEqual(checked[0]['skill_title'],'Pictures')
+        self.assertEqual(checked[0]['task_kind'],'Learning check')
+        self.assertIn('independently',checked[0]['detail'])
+
+    def test_parent_support_priorities_use_observed_struggle_and_reviewed_pair(self):
+        self.db.item_bank.rows=[
+            {
+                'item_id':'S2A3R02V1','equivalent_group_id':'S2A3R02',
+                'item_role':'REMEDIATION','is_active':True,
+                'targeted_practice':False,
+            },
+            {
+                'item_id':'S2A3R02V2','equivalent_group_id':'S2A3R02',
+                'item_role':'CONFIRMATION','is_active':True,
+                'targeted_practice':False,
+            },
+            {
+                'item_id':'S2A3R02V3','equivalent_group_id':'S2A3R02',
+                'item_role':'REMEDIATION','is_active':True,
+                'targeted_practice':True,
+            },
+        ]
+        self.db.adaptive_decisions.rows=[
+            {
+                '_id':'202','student_id':STUDENT,'session_id':'letters',
+                'timestamp':'2026-10-14T10:00:02Z','activity_id':'2.3',
+                'current_item':'S2A3R02','response_quality':'ASSISTED_SUCCESS',
+                'scaffold_level':1,'is_correct':True,'decision':'REMEDIATION',
+                'next_phase':'REMEDIATION',
+            },
+            {
+                '_id':'201','student_id':STUDENT,'session_id':'letters',
+                'timestamp':'2026-10-14T10:00:01Z','activity_id':'2.3',
+                'current_item':'S2A3R01','response_quality':'CLEAN_SUCCESS',
+                'scaffold_level':0,'is_correct':True,'decision':'CONTINUE',
+                'next_phase':'CORE',
+            },
+        ]
+        summary=self.call(parent.get_adaptive_insights,STUDENT).support_summary
+        self.assertEqual(len(summary['needs_practice']),1)
+        need=summary['needs_practice'][0]
+        self.assertEqual(need['activity_id'],'2.3')
+        self.assertEqual(need['origin_item_id'],'S2A3R02')
+        self.assertTrue(need['practice_available'])
+        self.assertEqual(
+            [step['item_id'] for step in need['practice_steps']],
+            ['S2A3R02V1','S2A3R02V2'],
+        )
+        self.assertIn('Needed help on 1 task',need['evidence_text'])
     def test_c3_missing_inputs_are_visible_to_specialist_without_fabricated_profile(self):
         self.db.model_audit_log.rows=[{
             '_id':'900','student_id':STUDENT,'model_name':'XGBoost',

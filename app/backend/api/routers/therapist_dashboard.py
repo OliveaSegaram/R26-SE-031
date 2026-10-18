@@ -148,6 +148,12 @@ async def get_therapist_c4_adaptive(student_id: str):
             previous_difficulty=number(d.get("difficulty_b", d.get("previous_difficulty"))), selected_difficulty=number(d.get("selected_difficulty")),
             scaffold_level=d.get("scaffold_level",0), next_activity=d.get("next_activity",d.get("selected_activity","Unavailable")),
             decision=d.get("decision", "Unavailable"), reason=d.get("decision_reason","Unavailable")))
+    policy_rows=(await records(db,"policy_decisions",student_id))[:100]
+    c3_audit_rows=await records(db,"model_audit_log",student_id,20)
+    c3_audit=next(
+        (row for row in c3_audit_rows if row.get("model_name") == "XGBoost"),
+        {},
+    )
     action_groups = {}
     for row in policy_rows:
         action = row.get("applied_action") or "Unavailable"
