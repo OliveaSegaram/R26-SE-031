@@ -42,8 +42,10 @@ jobs:
 
     - name: Check ACR credentials
       id: check-creds
+      env:
+        ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
       run: |
-        if [ -n "${{ secrets.ACR_PASSWORD }}" ]; then
+        if [ -n "$ACR_PASSWORD" ]; then
           echo "has_creds=true" >> $GITHUB_OUTPUT
         else
           echo "has_creds=false" >> $GITHUB_OUTPUT
@@ -55,7 +57,7 @@ jobs:
       uses: azure/docker-login@v1
       with:
         login-server: ${{ env.ACR_NAME }}.azurecr.io
-        username: ${{ secrets.ACR_USERNAME || env.ACR_NAME }}
+        username: ${{ env.ACR_NAME }}
         password: ${{ secrets.ACR_PASSWORD }}
 
     - name: Build and Push Docker image
