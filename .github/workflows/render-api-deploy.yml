@@ -7,18 +7,22 @@ on:
       - dev
     paths:
       - 'app/backend/api/**'
+      - 'render.yaml'
       - '.github/workflows/render-api-deploy.yml'
 
 jobs:
   deploy-to-render:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render Deploy Hook
-        # Only runs if the secret is set, preventing failures if not configured yet
-        if: env.RENDER_DEPLOY_HOOK_URL != ''
+      - name: Validate Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: test -n "$RENDER_DEPLOY_HOOK_URL"
+
+      - name: Trigger Render deploy hook
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           echo "Triggering deployment to Render..."
-          curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+          curl --fail-with-body --retry 3 -X POST "$RENDER_DEPLOY_HOOK_URL"
           echo -e "\nRender deployment triggered successfully!"

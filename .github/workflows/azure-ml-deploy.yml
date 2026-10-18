@@ -1,5 +1,9 @@
 name: Build and Deploy ML Backend to Azure
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
   workflow_dispatch:
   push:
@@ -21,6 +25,12 @@ env:
   ACR_NAME: "sipsaramlacr26"
   IMAGE_NAME: "sipsara-ml-backend"
   WEBAPP_NAME: "sipsara-ml-backend-v2"
+  RESOURCE_GROUP: "SipsaraMLGroup"
+  IMAGE_TAG: ${{ github.sha }}
+
+concurrency:
+  group: azure-ml-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:
@@ -30,6 +40,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Log in to Azure
+      uses: azure/login@v3
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
     - name: Log in to Azure Container Registry
       uses: azure/docker-login@v1
       with:
@@ -37,11 +54,39 @@ jobs:
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
 
-    - name: Build Docker Image
+    - name: Build Docker image
       run: |
-        docker build -f Dockerfile.azure -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest .
-        docker images
+        IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}"
+        docker build -f Dockerfile.azure -t "$IMAGE" .
 
-    - name: Push Docker Image to ACR
+    - name: Push Docker image to ACR
       run: |
-        docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+        IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}"
+        docker push "$IMAGE"
+
+    - name: Deploy image to Azure App Service
+      run: |
+        IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}"
+        az webapp config container set \
+          --resource-group "$RESOURCE_GROUP" \
+          --name "$WEBAPP_NAME" \
+          --container-image-name "$IMAGE"
+        az webapp restart \
+          --resource-group "$RESOURCE_GROUP" \
+          --name "$WEBAPP_NAME"
+
+    - name: Verify gateway, C1, and C2 readiness
+      run: |
+        BASE_URL="https://${WEBAPP_NAME}.azurewebsites.net"
+        for attempt in {1..40}; do
+          if curl --fail --silent --show-error "$BASE_URL/health" >/dev/null \
+            && curl --fail --silent --show-error "$BASE_URL/telemetry/ready" >/dev/null \
+            && curl --fail --silent --show-error "$BASE_URL/speech/ready" >/dev/null; then
+            echo "Azure gateway, C1, and C2 are ready."
+            exit 0
+          fi
+          echo "Waiting for Azure services (attempt $attempt/40)..."
+          sleep 15
+        done
+        echo "Azure services did not become ready within 10 minutes."
+        exit 1
