@@ -6,20 +6,6 @@ permissions:
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - dev
-      - 'temp/**'
-    paths:
-      - 'app/backend/speech-monitoring-v1/**'
-      - 'app/backend/telemetry-analytics-v1/**'
-      - 'app/backend/diagnostic-fusion-v1/**'
-      - 'app/backend/adaptive-tutoring-v1/**'
-      - 'Dockerfile.azure'
-      - 'requirements-azure.txt'
-      - 'azure_gateway.py'
-      - '.dockerignore'
-      - '.github/workflows/**'
 
 env:
   ACR_NAME: "sipsaramlacr26"
@@ -74,7 +60,7 @@ jobs:
       if: steps.check-creds.outputs.has_creds == 'true'
       run: |
         BASE_URL="https://${WEBAPP_NAME}.azurewebsites.net"
-        for attempt in {1..40}; do
+        for attempt in {1..10}; do
           if curl --fail --silent --show-error "$BASE_URL/health" >/dev/null \
             && curl --fail --silent --show-error "$BASE_URL/telemetry/ready" >/dev/null \
             && curl --fail --silent --show-error "$BASE_URL/speech/ready" >/dev/null; then
