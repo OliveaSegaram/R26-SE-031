@@ -14,15 +14,16 @@ jobs:
   deploy-to-render:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate Render deploy hook
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-        run: test -n "$RENDER_DEPLOY_HOOK_URL"
-
       - name: Trigger Render deploy hook
+        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           echo "Triggering deployment to Render..."
           curl --fail-with-body --retry 3 -X POST "$RENDER_DEPLOY_HOOK_URL"
           echo -e "\nRender deployment triggered successfully!"
+
+      - name: Skip notice when secret is not set
+        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL == '' }}
+        run: |
+          echo "::notice ::RENDER_DEPLOY_HOOK_URL secret is not set in GitHub repository secrets. If Auto-Deploy is enabled on Render, changes deploy automatically on push."
