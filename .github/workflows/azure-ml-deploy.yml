@@ -6,6 +6,19 @@ permissions:
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'app/backend/speech-monitoring-v1/**'
+      - 'app/backend/telemetry-analytics-v1/**'
+      - 'app/backend/diagnostic-fusion-v1/**'
+      - 'app/backend/adaptive-tutoring-v1/**'
+      - 'Dockerfile.azure'
+      - 'requirements-azure.txt'
+      - 'azure_gateway.py'
+      - '.dockerignore'
+      - '.github/workflows/azure-ml-deploy.yml'
 
 env:
   ACR_NAME: "sipsaramlacr26"
