@@ -17,6 +17,8 @@ class TherapistDashboardService {
   }
 
   final _client = DashboardClient();
+  Future<Map<String, dynamic>> getDashboardSummary() =>
+      _client.get('${ApiConfig.authBaseUrl}/therapist/dashboard-summary');
   Future<Map<String, dynamic>> getOverview(String id) =>
       _client.get('$_baseUrl/$id/overview');
   Future<Map<String, dynamic>> getC1Behavioral(String id) =>
@@ -27,8 +29,8 @@ class TherapistDashboardService {
       _client.get('$_baseUrl/$id/c3-profile');
   Future<Map<String, dynamic>> generateC3AiSummary(String id) =>
       _client.post('${ApiConfig.c1BaseUrl}/students/$id/c3-ai-summary');
-  Future<Map<String, dynamic>> getC4Adaptive(String id) =>
-      _client.get('$_baseUrl/$id/c4-adaptive');
+  Future<Map<String, dynamic>> getC4Adaptive(String id, {int window = 20}) =>
+      _client.get('$_baseUrl/$id/c4-adaptive?window=$window');
   Future<Map<String, dynamic>> getPerformanceTree(String id) =>
       _client.get('${ApiConfig.c1BaseUrl}/students/$id/performance-tree');
   Future<Map<String, dynamic>> getResearchEvidence(String id) =>

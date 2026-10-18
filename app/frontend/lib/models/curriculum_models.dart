@@ -234,6 +234,7 @@ class ActivityNode {
   final String templateType;
   final List<Map<String, dynamic>> rounds;
   final ResearchMetadata? researchMetadata;
+  final bool isParentPractice;
 
   ActivityNode({
     required this.id,
@@ -248,6 +249,7 @@ class ActivityNode {
     required this.templateType,
     required this.rounds,
     this.researchMetadata,
+    this.isParentPractice = false,
   });
 
   factory ActivityNode.fromJson(Map<String, dynamic> json) {
@@ -286,6 +288,89 @@ class ActivityNode {
               Map<String, dynamic>.from(json['research_metadata'] as Map),
             )
           : null,
+      isParentPractice: json['is_parent_practice'] == true,
+    );
+  }
+
+  /// Builds a parent-led practice copy using each core round's reviewed,
+  /// equivalent confirmation item. Normal curriculum rounds are never
+  /// mutated, and the practice copy is explicitly isolated from Component 4
+  /// mastery/progression updates by [isParentPractice].
+  ActivityNode asParentPractice() {
+    final practiceRounds = rounds
+        .map((rawRound) {
+          final core = Map<String, dynamic>.from(rawRound);
+          final variants = core['adaptive_variants'];
+          Map<String, dynamic>? confirmation;
+
+          if (variants is Iterable) {
+            for (final rawVariant in variants) {
+              if (rawVariant is! Map) continue;
+              final variant = Map<String, dynamic>.from(rawVariant);
+              final isGenericConfirmation =
+                  variant['item_role']?.toString().toUpperCase() ==
+                      'CONFIRMATION' &&
+                  variant['targeted_practice'] != true;
+              if (isGenericConfirmation) {
+                confirmation = variant;
+                break;
+              }
+            }
+          }
+
+          // Every Skills 1-4 core item currently has one reviewed generic
+          // confirmation. Retaining the core is a safe fallback for future
+          // curriculum additions that have not yet supplied one.
+          if (confirmation == null) {
+            return <String, dynamic>{
+              ...core,
+              'item_role': 'PARENT_PRACTICE',
+              'parent_practice': true,
+              'practice_origin_item_id': core['item_id'],
+            }..remove('adaptive_variants');
+          }
+
+          final content = confirmation['content'] is Map
+              ? Map<String, dynamic>.from(confirmation['content'] as Map)
+              : const <String, dynamic>{};
+          final variantMetadata = <String, dynamic>{...confirmation}
+            ..remove('content');
+          final sourceItemId = confirmation['item_id']?.toString();
+
+          return <String, dynamic>{
+            ...CanonicalItemResolver.mergeVariantContent(core, content),
+            ...variantMetadata,
+            'item_role': 'PARENT_PRACTICE',
+            'parent_practice': true,
+            'practice_source_item_id': sourceItemId,
+            'practice_origin_item_id': core['item_id'],
+          }..remove('adaptive_variants');
+        })
+        .toList(growable: false);
+
+    return ActivityNode(
+      // A separate identifier prevents game templates from reading or writing
+      // the normal activity's saved round/score while this practice is open.
+      id: 'parent_practice_$id',
+      skillId: skillId,
+      skillTitle: skillTitle,
+      title: title,
+      description: description,
+      introText: introText,
+      audioUrl: audioUrl,
+      filePath: filePath,
+      telemetryTags: List<String>.from(telemetryTags),
+      templateType: templateType,
+      rounds: practiceRounds,
+      researchMetadata: researchMetadata == null
+          ? null
+          : ResearchMetadata(
+              knowledgeComponentId: researchMetadata!.knowledgeComponentId,
+              promptModality: researchMetadata!.promptModality,
+              responseModality: researchMetadata!.responseModality,
+              researchRole: 'parent_guided_practice',
+            ),
+      isParentPractice: true,
     );
   }
 }

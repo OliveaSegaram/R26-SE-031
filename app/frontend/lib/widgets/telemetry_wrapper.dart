@@ -139,6 +139,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   }
 
   void _logAbandonment() {
+    if (widget.activityNode.isParentPractice) return;
     if (_activityCompleted || _abandonmentLogged) return;
     // Seal the unfinished round exactly once. PopScope calls this while the
     // route is still alive so the level map can submit the event immediately
@@ -342,6 +343,14 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       selectedAnswers: _extractSelectedAnswers(extraTelemetry),
       errorType: extraTelemetry?['error_type']?.toString(),
     );
+
+    // Parent-launched practice uses reviewed confirmation content as a fresh
+    // sequential activity. It must not update BKT, invoke the adaptive policy,
+    // or change the child's normal curriculum position.
+    if (widget.activityNode.isParentPractice) {
+      debugPrint('PARENT_PRACTICE: wrong attempt retained locally.');
+      return null;
+    }
 
     final roundNumber = currentRoundIndex != null
         ? currentRoundIndex + 1
@@ -758,7 +767,9 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       finalRoundScore,
       totalRoundLatency,
     );
-    TelemetryService().logInteraction(event);
+    if (!widget.activityNode.isParentPractice) {
+      TelemetryService().logInteraction(event);
+    }
 
     // --- NEW: Real-time Orchestrator Submission (C1-C4) ---
     final studentId = _studentId;
@@ -813,10 +824,14 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     };
 
     // Await response
-    final result = studentId == null
+    final result = widget.activityNode.isParentPractice || studentId == null
         ? null
         : await StudentService().submitInteraction(payload);
-    if (studentId == null) {
+    if (widget.activityNode.isParentPractice) {
+      debugPrint(
+        'PARENT_PRACTICE: completion kept outside Component 4 mastery and progression.',
+      );
+    } else if (studentId == null) {
       debugPrint('C4 submission skipped: no authenticated student identifier.');
     }
 
@@ -832,6 +847,24 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     }
 
     _applyAdaptiveNextAction(result, itemId: payloadItemId);
+
+    if (widget.activityNode.isParentPractice) {
+      if (_currentRound >= 1 &&
+          _currentRound <= widget.activityNode.rounds.length) {
+        // Store the zero-based index of the next unfinished practice task.
+        await ProgressService().saveActivityState(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+          _currentRound - 1,
+        );
+      } else {
+        // Finishing the final task removes the resume prompt.
+        await ProgressService().clearActivityState(
+          widget.activityNode.skillId,
+          widget.activityNode.id,
+        );
+      }
+    }
 
     if (finalRoundScore > 0) {
       final logItemId = payloadItemId;

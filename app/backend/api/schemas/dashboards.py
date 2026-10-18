@@ -268,4 +268,8 @@ class TherapistC4AdaptiveDTO(MLResponseBase):
     latest_policy_decision: Dict[str, Any] = Field(default_factory=dict)
     support_effectiveness: List[Dict[str, Any]] = Field(default_factory=list)
     persistent_learning_needs: List[Dict[str, Any]] = Field(default_factory=list)
+    summary: Dict[str, Any] = Field(default_factory=dict)
+    mastery_trend: List[Dict[str, Any]] = Field(default_factory=list)
+    recurring_targets: List[Dict[str, Any]] = Field(default_factory=list)
+    next_session_plan: Dict[str, Any] = Field(default_factory=dict)
     data_quality: Dict[str, Any] = Field(default_factory=dict)
