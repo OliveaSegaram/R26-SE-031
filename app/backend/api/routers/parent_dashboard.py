@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import re
 from schemas.dashboards import (
     ParentOverviewDTO,
@@ -280,6 +280,117 @@ ACTIVITY_ROUNDS_TOTAL = {
     **{f"4.{activity}": 4 for activity in range(1, 5)},
 }
 
+PARENT_SKILL_PRESENTATION = {
+    "1": {"title": "Pictures", "icon_key": "pictures"},
+    "2": {"title": "Letters", "icon_key": "letters"},
+    "3": {"title": "Words", "icon_key": "words"},
+    "4": {"title": "Sentences", "icon_key": "sentences"},
+}
+
+# Parent-facing labels deliberately avoid research terminology. The score shown
+# in the app is still traceable to the student's current Component-4 knowledge
+# state (or, for legacy rows, the latest first-try activity evidence).
+ACTIVITY_TO_KC = {
+    "1.1": "KC_VISUAL_IDENTIFICATION",
+    "1.2": "KC_VISUAL_MATCHING",
+    "1.3": "KC_VISUAL_CATEGORIZATION",
+    "1.4": "KC_VISUAL_PATTERN",
+    "1.5": "KC_VISUAL_MEMORY",
+    "2.1": "KC_LETTER_IDENTIFICATION",
+    "2.2": "KC_LETTER_MATCHING",
+    "2.3": "KC_PHONEME_LETTER_MAPPING",
+    "2.4": "KC_LETTER_DECODING",
+    "2.5": "KC_LETTER_MEMORY",
+    "3.1": "KC_WORD_RECOGNITION",
+    "3.2": "KC_WORD_FORMATION",
+    "3.3": "KC_AUDITORY_WORD_RECOGNITION",
+    "3.4": "KC_WORD_COMPLETION",
+    "3.5": "KC_WORD_SEQUENCING",
+    "4.1": "KC_SENTENCE_COMPREHENSION",
+    "4.2": "KC_SENTENCE_COMPLETION",
+    "4.3": "KC_AUDITORY_SENTENCE_RECOGNITION",
+    "4.4": "KC_SENTENCE_SEQUENCING",
+}
+
+PARENT_KC_PRESENTATION = {
+    "KC_VISUAL_IDENTIFICATION": {
+        "title": "Picture recognition", "icon_key": "pictures",
+        "home_practice": "Name three familiar objects and ask your child to point to each matching picture.",
+    },
+    "KC_VISUAL_MATCHING": {
+        "title": "Picture matching", "icon_key": "matching",
+        "home_practice": "Place two picture pairs face up and find the pictures that match.",
+    },
+    "KC_VISUAL_CATEGORIZATION": {
+        "title": "Sorting pictures", "icon_key": "sorting",
+        "home_practice": "Sort four familiar pictures into two simple groups and say why they belong together.",
+    },
+    "KC_VISUAL_PATTERN": {
+        "title": "Finding patterns", "icon_key": "patterns",
+        "home_practice": "Make a short colour or object pattern and ask what should come next.",
+    },
+    "KC_VISUAL_MEMORY": {
+        "title": "Picture memory", "icon_key": "memory",
+        "home_practice": "Show three familiar pictures, cover them, and ask which pictures were there.",
+    },
+    "KC_LETTER_IDENTIFICATION": {
+        "title": "Recognising letters", "icon_key": "letters",
+        "home_practice": "Show two Sinhala letter cards and ask your child to point to the letter you name.",
+    },
+    "KC_LETTER_MATCHING": {
+        "title": "Matching letters", "icon_key": "matching",
+        "home_practice": "Use two pairs of Sinhala letter cards and find the matching pair together.",
+    },
+    "KC_PHONEME_LETTER_MAPPING": {
+        "title": "Listening to letters", "icon_key": "listening",
+        "home_practice": "Spend five minutes matching one spoken sound to two Sinhala letter cards.",
+    },
+    "KC_LETTER_DECODING": {
+        "title": "Finding letters in words", "icon_key": "letters",
+        "home_practice": "Say a short familiar word and find its first letter from two letter cards.",
+    },
+    "KC_LETTER_MEMORY": {
+        "title": "Remembering letters", "icon_key": "memory",
+        "home_practice": "Show two Sinhala letters, cover them, and ask your child to name or point to one.",
+    },
+    "KC_WORD_RECOGNITION": {
+        "title": "Recognising words", "icon_key": "words",
+        "home_practice": "Match two familiar word cards to their pictures and read each word together.",
+    },
+    "KC_WORD_FORMATION": {
+        "title": "Building words", "icon_key": "words",
+        "home_practice": "Build one familiar two-letter word with letter cards, then read it together.",
+    },
+    "KC_AUDITORY_WORD_RECOGNITION": {
+        "title": "Listening to words", "icon_key": "listening",
+        "home_practice": "Say one familiar word and ask your child to choose its picture from two choices.",
+    },
+    "KC_WORD_COMPLETION": {
+        "title": "Completing words", "icon_key": "words",
+        "home_practice": "Cover one letter in a familiar word and choose the missing letter from two cards.",
+    },
+    "KC_WORD_SEQUENCING": {
+        "title": "Ordering letters", "icon_key": "sequence",
+        "home_practice": "Mix the letters of one short familiar word and put them in order together.",
+    },
+    "KC_SENTENCE_COMPREHENSION": {
+        "title": "Understanding sentences", "icon_key": "sentences",
+        "home_practice": "Look at a familiar picture and choose which of two short sentences describes it.",
+    },
+    "KC_SENTENCE_COMPLETION": {
+        "title": "Completing sentences", "icon_key": "sentences",
+        "home_practice": "Read a short sentence with one missing word and choose the word together.",
+    },
+    "KC_AUDITORY_SENTENCE_RECOGNITION": {
+        "title": "Listening to sentences", "icon_key": "listening",
+        "home_practice": "Read one short sentence aloud and ask your child to point to the matching picture.",
+    },
+    "KC_SENTENCE_SEQUENCING": {
+        "title": "Ordering words", "icon_key": "sequence",
+        "home_practice": "Mix the words of one short sentence and put them back in order together.",
+    },
+}
+
 SKILL2_ACTIVITY_NAMES = {
     key: value for key, value in ACTIVITY_NAMES.items() if key.startswith("2.")
 }
@@ -428,7 +539,91 @@ async def get_adaptive_insights(student_id: str = Path(...)):
         1 for row in summary_decisions if row.get("response_quality") == "ASSISTED_SUCCESS"
     )
     remediation = sum(1 for row in summary_decisions if row.get("decision") == "REMEDIATION")
-    confirmation = sum(1 for row in summary_decisions if row.get("next_phase") == "CONFIRMATION")
+    explicit_confirmation_rows = [
+        row for row in summary_decisions
+        if str(row.get("item_role") or row.get("practice_phase") or "").upper()
+        == "CONFIRMATION"
+    ]
+    routed_confirmation = sum(
+        1 for row in summary_decisions if row.get("next_phase") == "CONFIRMATION"
+    )
+    # Current rows identify a completed confirmation by item_role. Older rows
+    # only recorded the transition into confirmation, so preserve a clearly
+    # labelled compatibility fallback instead of silently dropping history.
+    confirmation = (
+        len(explicit_confirmation_rows)
+        if explicit_confirmation_rows else routed_confirmation
+    )
+
+    def parent_metric_detail(row: Dict[str, Any], metric: str) -> Dict[str, Any]:
+        activity_id = str(row.get("activity_id") or "")
+        skill_number = activity_id.split(".", 1)[0] if "." in activity_id else ""
+        item_id = str(row.get("current_item") or "")
+        round_number = _extract_round_number(item_id)
+        role = str(row.get("item_role") or row.get("practice_phase") or "").upper()
+        if metric == "checked":
+            task_kind = "Learning check"
+            if role == "CONFIRMATION":
+                quality = str(row.get("response_quality") or "").upper()
+                detail = (
+                    "Completed the fresh check independently."
+                    if quality in {"CLEAN_SUCCESS", "INDEPENDENT_SUCCESS", "MASTERED"}
+                    else "Completed the fresh check with app support."
+                    if quality == "ASSISTED_SUCCESS"
+                    else "Completed a fresh check after support."
+                )
+            else:
+                detail = "The app started a fresh check after this task."
+        elif metric == "helped":
+            task_kind = (
+                "Learning check" if role == "CONFIRMATION"
+                else "Practice task" if role == "REMEDIATION"
+                else "Learning task"
+            )
+            detail = "Completed after the app provided learning support."
+        else:
+            task_kind = (
+                "Learning check" if role == "CONFIRMATION"
+                else "Practice task" if role == "REMEDIATION"
+                else "Learning task"
+            )
+            detail = "Correct on the first try without an app hint."
+        skill_meta = PARENT_SKILL_PRESENTATION.get(skill_number, {})
+        return {
+            "skill_number": int(skill_number) if skill_number.isdigit() else None,
+            "skill_title": skill_meta.get("title", "Learning"),
+            "skill_icon_key": skill_meta.get("icon_key", "practice"),
+            "activity_id": activity_id,
+            "activity_name": ACTIVITY_NAMES.get(activity_id, "Learning activity"),
+            "task_number": round_number or None,
+            "task_label": f"Task {round_number}" if round_number else task_kind,
+            "task_kind": task_kind,
+            "detail": detail,
+        }
+
+    independent_details = [
+        parent_metric_detail(row, "independent")
+        for row in summary_decisions
+        if row.get("response_quality") in {
+            "CLEAN_SUCCESS", "INDEPENDENT_SUCCESS", "MASTERED"
+        }
+    ]
+    helped_details = [
+        parent_metric_detail(row, "helped")
+        for row in summary_decisions
+        if row.get("response_quality") == "ASSISTED_SUCCESS"
+    ]
+    checked_source_rows = (
+        explicit_confirmation_rows
+        if explicit_confirmation_rows
+        else [
+            row for row in summary_decisions
+            if row.get("next_phase") == "CONFIRMATION"
+        ]
+    )
+    checked_details = [
+        parent_metric_detail(row, "checked") for row in checked_source_rows
+    ]
     if completed == 0:
         plain_message = "No completed learning tasks are available yet."
     elif supported == 0:
@@ -444,6 +639,15 @@ async def get_adaptive_insights(student_id: str = Path(...)):
         "supported_successes": supported,
         "remediation_routes": remediation,
         "confirmation_checks": confirmation,
+        "confirmation_check_basis": (
+            "completed_follow_up_items"
+            if explicit_confirmation_rows else "legacy_follow_up_routes"
+        ),
+        "metric_details": {
+            "independent": independent_details,
+            "helped": helped_details,
+            "checked": checked_details,
+        },
         "plain_message": plain_message,
         "scope": "Latest attempt for each activity in Skills 1–4",
         "session_id": None,
@@ -463,6 +667,7 @@ async def get_adaptive_insights(student_id: str = Path(...)):
 
     activity_ids = sorted(latest_records_by_activity, key=activity_sort_key)
     activities = []
+    practice_origin_by_activity: Dict[str, str] = {}
 
     for act_id in activity_ids:
         # all_decisions is newest first; calculations below require chronology.
@@ -628,6 +833,21 @@ async def get_adaptive_insights(student_id: str = Path(...)):
                 was_first_try=was_first_try,
                 needed_remediation=needed_rem
             ))
+
+        # Keep the most recent core task that was not completed independently.
+        # This gives the parent UI a concrete, observed practice target instead
+        # of inventing a generic weakness from an aggregate percentage.
+        struggled_rounds = [
+            row.round_number
+            for row in round_journey
+            if not row.was_first_try or row.needed_remediation
+        ]
+        if struggled_rounds:
+            skill_number, activity_number = act_id.split(".", 1)
+            practice_origin_by_activity[act_id] = (
+                f"S{int(skill_number)}A{int(activity_number)}"
+                f"R{max(struggled_rounds):02d}"
+            )
         
         # --- 6. Overall Rating ---
         if first_try_total > 0:
@@ -681,6 +901,272 @@ async def get_adaptive_insights(student_id: str = Path(...)):
             last_played=last_played,
             times_played=times_played
         ))
+
+    # Convert the current Component-4 state into two plain-language parent
+    # signals. Only areas the child has actually attempted are eligible. This
+    # avoids presenting an untouched skill as a weakness and keeps every score
+    # traceable to either BKT state or observed first-try performance.
+    state_rows = await records(db, "knowledge_states", student_id, 1)
+    knowledge_state = (state_rows[0].get("knowledge_state") or {}) if state_rows else {}
+    parent_areas = []
+    for activity in activities:
+        kc_id = ACTIVITY_TO_KC.get(activity.activity_id)
+        presentation = PARENT_KC_PRESENTATION.get(kc_id or "")
+        if not presentation or activity.first_try_total <= 0:
+            continue
+        mastery = number(knowledge_state.get(kc_id))
+        if mastery is None:
+            mastery = activity.first_try_correct / activity.first_try_total
+            score_source = "latest_activity_first_try_evidence"
+        else:
+            score_source = "component4_mastery_estimate"
+        mastery = max(0.0, min(1.0, mastery))
+        parent_areas.append({
+            "knowledge_component_id": kc_id,
+            "activity_id": activity.activity_id,
+            "activity_name": activity.activity_name,
+            "title": presentation["title"],
+            "icon_key": presentation["icon_key"],
+            "score": round(mastery, 4),
+            "score_percent": round(mastery * 100),
+            "evidence_count": activity.first_try_total,
+            "independent_rounds": activity.independent_rounds,
+            "guided_rounds": activity.guided_rounds,
+            "source": score_source,
+        })
+
+    strongest_area = max(parent_areas, key=lambda area: area["score"], default=None)
+    focus_area = min(parent_areas, key=lambda area: area["score"], default=None)
+    if strongest_area:
+        strongest_area = dict(strongest_area)
+        strongest_area["subtitle"] = (
+            "Strong and steady" if strongest_area["score"] >= 0.80
+            else "Growing confidently" if strongest_area["score"] >= 0.60
+            else "Best current area"
+        )
+    if focus_area:
+        focus_area = dict(focus_area)
+        focus_area["subtitle"] = (
+            "Still needs support" if focus_area["score"] < 0.50
+            else "Building with support" if focus_area["score"] < 0.70
+            else "Ready to strengthen"
+        )
+        focus_area["support_message"] = (
+            "The app is giving shorter practice and checking again with a new task."
+            if supported or remediation
+            else "The app will continue with short practice and check this area again."
+        )
+
+    practice_area = focus_area or strongest_area
+    home_practice = None
+    if practice_area:
+        practice_meta = PARENT_KC_PRESENTATION.get(
+            practice_area["knowledge_component_id"], {}
+        )
+        home_practice = {
+            "title": f"Practise {practice_area['title'].lower()}",
+            "instruction": practice_meta.get("home_practice", ""),
+            "minutes": 5,
+            "knowledge_component_id": practice_area["knowledge_component_id"],
+        }
+
+    # Parent-facing priorities are based only on the latest observed attempt
+    # for each activity. A larger score means more first-try misses and/or more
+    # guided rounds. The item bank lookup is used only to confirm that the
+    # reviewed generic remediation and confirmation pair really exists.
+    needs_practice = []
+    going_well = []
+    for activity in activities:
+        misses = max(0, activity.first_try_total - activity.first_try_correct)
+        support_count = max(activity.guided_rounds, activity.remediation_count)
+        origin_item_id = practice_origin_by_activity.get(activity.activity_id)
+        priority_score = misses + (support_count * 2)
+        area = next(
+            (
+                item for item in parent_areas
+                if item["activity_id"] == activity.activity_id
+            ),
+            None,
+        )
+
+        if priority_score > 0 and origin_item_id:
+            variants = await db.item_bank.find({
+                "equivalent_group_id": origin_item_id,
+            }).to_list(length=50)
+            active_variants = [
+                item for item in variants
+                if item.get("is_active", True)
+                and not item.get("targeted_practice", False)
+            ]
+            remediation_item = next(
+                (
+                    item for item in active_variants
+                    if str(item.get("item_role", "")).upper() == "REMEDIATION"
+                ),
+                None,
+            )
+            confirmation_item = next(
+                (
+                    item for item in active_variants
+                    if str(item.get("item_role", "")).upper() == "CONFIRMATION"
+                ),
+                None,
+            )
+            if misses and support_count:
+                evidence_text = (
+                    f"Needed help on {support_count} task"
+                    f"{'s' if support_count != 1 else ''}; "
+                    f"{misses} were not correct on the first try."
+                )
+            elif support_count:
+                evidence_text = (
+                    f"Needed help on {support_count} task"
+                    f"{'s' if support_count != 1 else ''}."
+                )
+            else:
+                evidence_text = (
+                    f"{misses} task{'s were' if misses != 1 else ' was'} "
+                    "not correct on the first try."
+                )
+            needs_practice.append({
+                "activity_id": activity.activity_id,
+                "activity_name": activity.activity_name,
+                "title": (area or {}).get("title", activity.activity_name),
+                "icon_key": (area or {}).get("icon_key", "practice"),
+                "first_try_misses": misses,
+                "guided_rounds": activity.guided_rounds,
+                "observed_rounds": activity.first_try_total,
+                "priority_score": priority_score,
+                "evidence_text": evidence_text,
+                "origin_item_id": origin_item_id,
+                "practice_available": bool(remediation_item and confirmation_item),
+                "practice_steps": [
+                    {
+                        "role": "REMEDIATION",
+                        "label": "Shorter supported practice",
+                        "item_id": remediation_item.get("item_id"),
+                    },
+                    {
+                        "role": "CONFIRMATION",
+                        "label": "Fresh learning check",
+                        "item_id": confirmation_item.get("item_id"),
+                    },
+                ] if remediation_item and confirmation_item else [],
+            })
+        elif activity.first_try_total > 0:
+            going_well.append({
+                "activity_id": activity.activity_id,
+                "activity_name": activity.activity_name,
+                "title": (area or {}).get("title", activity.activity_name),
+                "icon_key": (area or {}).get("icon_key", "practice"),
+                "independent_rounds": activity.independent_rounds,
+                "observed_rounds": activity.first_try_total,
+                "evidence_text": (
+                    f"Completed {activity.first_try_correct} of "
+                    f"{activity.first_try_total} tasks independently on the first try."
+                ),
+            })
+
+    needs_practice.sort(
+        key=lambda item: (
+            item["priority_score"], item["guided_rounds"], item["first_try_misses"]
+        ),
+        reverse=True,
+    )
+    going_well.sort(
+        key=lambda item: item["independent_rounds"], reverse=True
+    )
+
+    skill_progress = []
+    for skill_number, presentation in PARENT_SKILL_PRESENTATION.items():
+        skill_activities = [
+            activity for activity in activities
+            if activity.activity_id.startswith(f"{skill_number}.")
+        ]
+        if not skill_activities:
+            continue
+        observed = sum(activity.first_try_total for activity in skill_activities)
+        first_try = sum(activity.first_try_correct for activity in skill_activities)
+        helped = sum(activity.guided_rounds for activity in skill_activities)
+        completed_activities = sum(
+            1 for activity in skill_activities if activity.is_activity_complete
+        )
+        first_try_ratio = first_try / observed if observed else 0.0
+        if observed and first_try_ratio >= 0.80 and helped == 0:
+            status = "Going smoothly"
+        elif observed and first_try_ratio >= 0.60:
+            status = "Building steadily"
+        else:
+            status = "Needs more practice"
+        skill_progress.append({
+            "skill_number": int(skill_number),
+            "title": presentation["title"],
+            "icon_key": presentation["icon_key"],
+            "activities_tried": len(skill_activities),
+            "activities_available": sum(
+                1 for activity_id in ACTIVITY_NAMES
+                if activity_id.startswith(f"{skill_number}.")
+            ),
+            "activities_completed": completed_activities,
+            "observed_tasks": observed,
+            "first_try_successes": first_try,
+            "helped_tasks": helped,
+            "first_try_ratio": round(first_try_ratio, 4),
+            "status": status,
+        })
+
+    confirmation_independent = sum(
+        1 for row in explicit_confirmation_rows
+        if row.get("response_quality") in {
+            "CLEAN_SUCCESS", "INDEPENDENT_SUCCESS", "MASTERED"
+        }
+    )
+    if explicit_confirmation_rows:
+        support_result_text = (
+            f"After support, {confirmation_independent} of "
+            f"{len(explicit_confirmation_rows)} fresh checks were completed "
+            "independently."
+        )
+    elif routed_confirmation:
+        support_result_text = (
+            f"The app started {routed_confirmation} fresh learning check"
+            f"{'s' if routed_confirmation != 1 else ''}. Older records do not "
+            "show the check result separately."
+        )
+    elif supported:
+        support_result_text = (
+            "Help was used, but no completed fresh learning check is recorded yet."
+        )
+    else:
+        support_result_text = "No learning support was needed in these activities."
+
+    support_summary.update({
+        "strongest_area": strongest_area,
+        "focus_area": focus_area,
+        "home_practice": home_practice,
+        "coverage": {
+            "activities_tried": len(activities),
+            "activities_available": len(ACTIVITY_NAMES),
+            "activities_completed": sum(
+                1 for activity in activities if activity.is_activity_complete
+            ),
+        },
+        "skill_progress": skill_progress,
+        "support_effectiveness": {
+            "helped_tasks": supported,
+            "completed_follow_up_checks": len(explicit_confirmation_rows),
+            "independent_follow_up_checks": confirmation_independent,
+            "legacy_follow_up_routes": routed_confirmation,
+            "summary": support_result_text,
+        },
+        "help_story": {
+            "tricky_tasks_noticed": supported,
+            "extra_practice_routes": remediation,
+            "learning_checks": confirmation,
+        },
+        "needs_practice": needs_practice[:3],
+        "going_well": going_well[:2],
+    })
     
     latest_policy = await db.policy_decisions.find_one(
         {"student_id": student_id},
