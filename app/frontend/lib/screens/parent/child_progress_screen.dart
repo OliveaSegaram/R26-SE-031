@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../theme/app_theme.dart';
 import '../../services/parent_dashboard_service.dart';
+import '../../services/progress_service.dart';
 import '../../utils/avatar_utils.dart';
 import '../../widgets/app_loading_indicator.dart';
 import '../../widgets/trend_chart.dart';
@@ -41,6 +42,7 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
 
   Future<void> _loadAllData() async {
     if (mounted) setState(() => _isLoading = true);
+    await ProgressService().init();
     final studentId =
         widget.studentData['student_id']?.toString() ??
         widget.studentData['id']?.toString() ??
@@ -103,103 +105,220 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
       child: Scaffold(
         backgroundColor: AppColors.cream,
         appBar: AppBar(
-          backgroundColor: AppColors.cream,
+          backgroundColor: AppColors.cardSurface,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_rounded,
-              color: AppColors.textPrimary,
+          toolbarHeight: 78,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          leadingWidth: 66,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 14, top: 12, bottom: 12),
+            child: Material(
+              color: AppColors.slateBg,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => Navigator.pop(context),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ),
-            onPressed: () => Navigator.pop(context),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(
-                Icons.refresh_rounded,
-                color: AppColors.calmBlue,
+            IconButton.filledTonal(
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.slateBg,
+                foregroundColor: AppColors.calmBlue,
               ),
+              icon: const Icon(Icons.refresh_rounded),
               tooltip: 'Reload latest data',
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Refreshing dashboard data...'),
-                    duration: Duration(seconds: 1),
-                  ),
-                );
-                _loadAllData();
-              },
+              onPressed: _loadAllData,
             ),
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: DropdownButton<String>(
-                value: _currentFilter,
-                underline: const SizedBox(),
-                icon: const Icon(Icons.filter_list, color: AppColors.calmBlue),
-                style: const TextStyle(
-                  color: AppColors.textDark,
-                  fontWeight: FontWeight.bold,
+            const SizedBox(width: 6),
+            PopupMenuButton<String>(
+              tooltip: 'Choose activity-history range',
+              color: AppColors.cardSurface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              onSelected: (String newValue) {
+                if (newValue != _currentFilter) {
+                  setState(() {
+                    _currentFilter = newValue;
+                    _isLoading = true;
+                  });
+                  _loadAllData();
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: 'limit=5',
+                  child: Text('Last 5 activities'),
                 ),
-                onChanged: (String? newValue) {
-                  if (newValue != null && newValue != _currentFilter) {
-                    setState(() {
-                      _currentFilter = newValue;
-                      _isLoading = true;
-                    });
-                    _loadAllData();
-                  }
-                },
-                items: const [
-                  DropdownMenuItem(
-                    value: "limit=5",
-                    child: Text("Last 5 Interactions"),
+                PopupMenuItem(
+                  value: 'limit=10',
+                  child: Text('Last 10 activities'),
+                ),
+                PopupMenuItem(
+                  value: 'limit=20',
+                  child: Text('Last 20 activities'),
+                ),
+                PopupMenuItem(value: 'days=7', child: Text('Last 7 days')),
+                PopupMenuItem(value: 'days=30', child: Text('Last 30 days')),
+              ],
+              child: Container(
+                margin: const EdgeInsets.only(right: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.slateBg,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.history_rounded,
+                      size: 17,
+                      color: AppColors.calmBlue,
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      _filterLabel(_currentFilter),
+                      style: AppTypography.caption(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          titleSpacing: 8,
+          title: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.borderBlue, width: 2),
+                ),
+                child: CircleAvatar(backgroundImage: AssetImage(avatar)),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name.toString(),
+                      style: AppTypography.heading(
+                        fontSize: 19,
+                        color: AppColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      '$grade · Learning progress',
+                      style: AppTypography.caption(
+                        fontSize: 10,
+                        color: AppColors.textSecondary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(64),
+            child: Container(
+              height: 56,
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: AppColors.slateBg.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.borderBlue),
+              ),
+              child: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                dividerColor: Colors.transparent,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                  color: AppColors.calmBlue,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor: AppColors.textSecondary,
+                labelStyle: AppTypography.caption(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+                unselectedLabelStyle: AppTypography.caption(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+                tabs: const [
+                  Tab(
+                    child: _ProgressTab(
+                      icon: Icons.dashboard_rounded,
+                      label: 'Summary',
+                    ),
                   ),
-                  DropdownMenuItem(
-                    value: "limit=10",
-                    child: Text("Last 10 Interactions"),
+                  Tab(
+                    child: _ProgressTab(
+                      icon: Icons.touch_app_rounded,
+                      label: 'Behaviour',
+                    ),
                   ),
-                  DropdownMenuItem(
-                    value: "limit=20",
-                    child: Text("Last 20 Interactions"),
+                  Tab(
+                    child: _ProgressTab(
+                      icon: Icons.menu_book_rounded,
+                      label: 'Reading',
+                    ),
                   ),
-                  DropdownMenuItem(value: "days=7", child: Text("Last 7 Days")),
-                  DropdownMenuItem(
-                    value: "days=30",
-                    child: Text("Last 30 Days"),
+                  Tab(
+                    child: _ProgressTab(
+                      icon: Icons.insights_rounded,
+                      label: 'Patterns',
+                    ),
+                  ),
+                  Tab(
+                    child: _ProgressTab(
+                      icon: Icons.history_rounded,
+                      label: 'History',
+                    ),
+                  ),
+                  Tab(
+                    child: _ProgressTab(
+                      icon: Icons.favorite_rounded,
+                      label: 'Learning support',
+                    ),
+                  ),
+                  Tab(
+                    child: _ProgressTab(
+                      icon: Icons.fact_check_rounded,
+                      label: 'Research',
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
-          title: Row(
-            children: [
-              CircleAvatar(radius: 16, backgroundImage: AssetImage(avatar)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  '$name - $grade',
-                  style: AppTypography.heading(
-                    fontSize: 18,
-                    color: AppColors.textPrimary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          bottom: const TabBar(
-            isScrollable: true,
-            labelColor: AppColors.calmBlue,
-            unselectedLabelColor: AppColors.textHint,
-            indicatorColor: AppColors.calmBlue,
-            tabs: [
-              Tab(text: "Overview"),
-              Tab(text: "Telemetry Analytics"),
-              Tab(text: "Reading Progress"),
-              Tab(text: "Reading Pattern"),
-              Tab(text: "Activity History"),
-              Tab(text: "Adaptive Insights"),
-              Tab(text: "Research Evidence"),
-            ],
           ),
         ),
         body: _isLoading
@@ -272,9 +391,23 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
         'color': AppColors.calmBlue,
         'data': data['c1_behavioral'],
         'metrics': <Map<String, dynamic>>[
-          {'label': 'First-attempt accuracy', 'key': 'first_attempt_accuracy', 'scale': 100.0, 'suffix': '%'},
-          {'label': 'Retry rate', 'key': 'retry_rate', 'scale': 100.0, 'suffix': '%'},
-          {'label': 'Response time', 'key': 'median_response_latency_ms', 'suffix': ' ms'},
+          {
+            'label': 'First-attempt accuracy',
+            'key': 'first_attempt_accuracy',
+            'scale': 100.0,
+            'suffix': '%',
+          },
+          {
+            'label': 'Retry rate',
+            'key': 'retry_rate',
+            'scale': 100.0,
+            'suffix': '%',
+          },
+          {
+            'label': 'Response time',
+            'key': 'median_response_latency_ms',
+            'suffix': ' ms',
+          },
         ],
       },
       {
@@ -284,8 +417,17 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
         'color': AppColors.softCoral,
         'data': data['c2_speech'],
         'metrics': <Map<String, dynamic>>[
-          {'label': 'Matched reading sounds', 'key': 'grapheme_accuracy', 'scale': 100.0, 'suffix': '%'},
-          {'label': 'Reading pace', 'key': 'reading_rate_wpm', 'suffix': ' wpm'},
+          {
+            'label': 'Matched reading sounds',
+            'key': 'grapheme_accuracy',
+            'scale': 100.0,
+            'suffix': '%',
+          },
+          {
+            'label': 'Reading pace',
+            'key': 'reading_rate_wpm',
+            'suffix': ' wpm',
+          },
           {'label': 'Recording quality', 'key': 'recording_quality'},
         ],
       },
@@ -297,7 +439,12 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
         'data': data['c3_explainability'],
         'metrics': <Map<String, dynamic>>[
           {'label': 'Observed pattern', 'key': 'primary_pattern'},
-          {'label': 'Evidence confidence', 'key': 'confidence', 'scale': 100.0, 'suffix': '%'},
+          {
+            'label': 'Evidence confidence',
+            'key': 'confidence',
+            'scale': 100.0,
+            'suffix': '%',
+          },
         ],
       },
       {
@@ -307,7 +454,12 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
         'color': AppColors.gentleGreen,
         'data': data['c4_adaptive'],
         'metrics': <Map<String, dynamic>>[
-          {'label': 'Average mastery', 'key': 'average_mastery', 'scale': 100.0, 'suffix': '%'},
+          {
+            'label': 'Average mastery',
+            'key': 'average_mastery',
+            'scale': 100.0,
+            'suffix': '%',
+          },
           {'label': 'Learning areas', 'key': 'knowledge_components'},
           {'label': 'Recent decisions', 'key': 'decision_count'},
         ],
@@ -322,7 +474,10 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
         if (index == 0) {
           return Text(
             'These learning measurements describe practice performance only. They are not a diagnosis.',
-            style: AppTypography.caption(fontSize: 13, color: AppColors.textSecondary),
+            style: AppTypography.caption(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
           );
         }
         return _buildComponentCard(components[index - 1]);
@@ -365,16 +520,24 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(definition['title'] as String, style: AppTypography.heading(fontSize: 16)),
+                    Text(
+                      definition['title'] as String,
+                      style: AppTypography.heading(fontSize: 16),
+                    ),
                     Text(
                       definition['subtitle'] as String,
-                      style: AppTypography.caption(fontSize: 11, color: AppColors.textSecondary),
+                      style: AppTypography.caption(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
               ),
               Icon(
-                available ? Icons.check_circle_rounded : Icons.hourglass_empty_rounded,
+                available
+                    ? Icons.check_circle_rounded
+                    : Icons.hourglass_empty_rounded,
                 color: available ? AppColors.gentleGreen : AppColors.textHint,
               ),
             ],
@@ -383,7 +546,10 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
           if (!available)
             Text(
               'No measurements have been captured yet.',
-              style: AppTypography.caption(fontSize: 13, color: AppColors.textSecondary),
+              style: AppTypography.caption(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             )
           else
             Wrap(
@@ -398,10 +564,15 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
                         decimals: value % 1 == 0 ? 0 : 1,
                         scale: (metric['scale'] as num?)?.toDouble() ?? 1,
                       )
-                    : (value?.toString().trim().isNotEmpty == true ? value.toString() : '—');
+                    : (value?.toString().trim().isNotEmpty == true
+                          ? value.toString()
+                          : '—');
                 return Container(
                   constraints: const BoxConstraints(minWidth: 110),
-                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 9,
+                  ),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
@@ -409,11 +580,20 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(text, style: AppTypography.heading(fontSize: 15, color: color)),
+                      Text(
+                        text,
+                        style: AppTypography.heading(
+                          fontSize: 15,
+                          color: color,
+                        ),
+                      ),
                       const SizedBox(height: 2),
                       Text(
                         metric['label'] as String,
-                        style: AppTypography.caption(fontSize: 10, color: AppColors.textSecondary),
+                        style: AppTypography.caption(
+                          fontSize: 10,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -758,101 +938,532 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
     );
   }
 
-  // ─── Adaptive Insights Tab (latest attempt for every Skill 1–4 activity) ───
-  Widget _buildAdaptiveInsightsTab() {
-    final activities =
-        (_adaptiveInsights?['activities'] as List<dynamic>?) ?? [];
-    final supportSummary =
-        (_adaptiveInsights?['support_summary'] as Map<String, dynamic>?) ??
-        <String, dynamic>{};
-    final policyNotice = _adaptiveInsights?['policy_notice']?.toString() ?? '';
+  String _filterLabel(String value) {
+    switch (value) {
+      case 'limit=5':
+        return 'History 5';
+      case 'limit=20':
+        return 'History 20';
+      case 'days=7':
+        return 'History 7d';
+      case 'days=30':
+        return 'History 30d';
+      default:
+        return 'History 10';
+    }
+  }
 
+  List<Map<String, dynamic>> _mapList(dynamic value) {
+    if (value is! List) return const <Map<String, dynamic>>[];
+    return value
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+  }
+
+  List<Map<String, dynamic>> _fallbackPracticeNeeds(
+    List<Map<String, dynamic>> activities,
+  ) {
+    final needs = <Map<String, dynamic>>[];
+    for (final activity in activities) {
+      final total = (activity['first_try_total'] as num?)?.toInt() ?? 0;
+      final correct = (activity['first_try_correct'] as num?)?.toInt() ?? 0;
+      final guided = (activity['guided_rounds'] as num?)?.toInt() ?? 0;
+      final misses = (total - correct).clamp(0, total);
+      if (total == 0 || (misses == 0 && guided == 0)) continue;
+      needs.add({
+        'activity_id': activity['activity_id'],
+        'activity_name': activity['activity_name'],
+        'title': activity['activity_name'],
+        'icon_key': 'practice',
+        'first_try_misses': misses,
+        'guided_rounds': guided,
+        'observed_rounds': total,
+        'priority_score': misses + (guided * 2),
+        'evidence_text': guided > 0
+            ? 'Needed help on $guided ${guided == 1 ? 'task' : 'tasks'}.'
+            : '$misses ${misses == 1 ? 'task was' : 'tasks were'} not correct on the first try.',
+        'practice_available': false,
+        'practice_steps': const <Map<String, dynamic>>[],
+      });
+    }
+    needs.sort(
+      (a, b) => ((b['priority_score'] as num?) ?? 0).compareTo(
+        (a['priority_score'] as num?) ?? 0,
+      ),
+    );
+    return needs.take(3).toList();
+  }
+
+  IconData _parentAreaIcon(String? key) {
+    switch (key) {
+      case 'pictures':
+        return Icons.image_search_rounded;
+      case 'matching':
+        return Icons.compare_arrows_rounded;
+      case 'sorting':
+        return Icons.category_rounded;
+      case 'patterns':
+        return Icons.grid_view_rounded;
+      case 'memory':
+        return Icons.psychology_alt_rounded;
+      case 'letters':
+        return Icons.text_fields_rounded;
+      case 'listening':
+        return Icons.hearing_rounded;
+      case 'words':
+        return Icons.spellcheck_rounded;
+      case 'sentences':
+        return Icons.short_text_rounded;
+      case 'sequence':
+        return Icons.format_list_numbered_rounded;
+      default:
+        return Icons.school_rounded;
+    }
+  }
+
+  Widget _buildAdaptiveInsightsTab() {
+    final activities = _mapList(_adaptiveInsights?['activities']);
+    final supportSummary = _adaptiveInsights?['support_summary'] is Map
+        ? Map<String, dynamic>.from(
+            _adaptiveInsights!['support_summary'] as Map,
+          )
+        : <String, dynamic>{};
     if (activities.isEmpty && supportSummary.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.auto_awesome,
-                size: 64,
-                color: AppColors.calmBlue.withValues(alpha: 0.4),
+      return _buildEmptyParentSupport();
+    }
+
+    var needsPractice = _mapList(supportSummary['needs_practice']);
+    if (needsPractice.isEmpty) {
+      needsPractice = _fallbackPracticeNeeds(activities);
+    }
+    final goingWell = _mapList(supportSummary['going_well']);
+    final skillProgress = _mapList(supportSummary['skill_progress']);
+    final coverage = supportSummary['coverage'] is Map
+        ? Map<String, dynamic>.from(supportSummary['coverage'] as Map)
+        : <String, dynamic>{};
+    final homePractice = supportSummary['home_practice'] is Map
+        ? Map<String, dynamic>.from(supportSummary['home_practice'] as Map)
+        : <String, dynamic>{};
+    final name = widget.studentData['first_name']?.toString() ?? 'Your child';
+    final completed = (supportSummary['completed_tasks'] as num?)?.toInt() ?? 0;
+    final independent =
+        (supportSummary['independent_successes'] as num?)?.toInt() ?? 0;
+    final supported =
+        (supportSummary['supported_successes'] as num?)?.toInt() ?? 0;
+    final checks =
+        (supportSummary['confirmation_checks'] as num?)?.toInt() ?? 0;
+    final summaryMessage = needsPractice.isEmpty
+        ? '$name is managing the recent activities independently.'
+        : '${needsPractice.length} ${needsPractice.length == 1 ? 'area is' : 'areas are'} ready for a little extra practice.';
+
+    return RefreshIndicator(
+      color: AppColors.calmBlue,
+      onRefresh: _loadAllData,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 36),
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 20, 18, 18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFDDEEFF), Color(0xFFE7F5E9)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 20),
-              Text(
-                "No adaptive learning data yet",
-                style: AppTypography.heading(
-                  fontSize: 18,
-                  color: AppColors.textSecondary,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: AppColors.borderBlue),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x164A90D9),
+                  blurRadius: 20,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'LEARNING SUPPORT',
+                    style: AppTypography.caption(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.calmBlueDark,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 13),
+                Text(
+                  needsPractice.isEmpty
+                      ? 'Learning is moving forward'
+                      : 'A clear next step for $name',
+                  style: AppTypography.heading(
+                    fontSize: 26,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  summaryMessage,
+                  style: AppTypography.body(
+                    fontSize: 15,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (completed > 0) ...[
+                  const SizedBox(height: 7),
+                  Text(
+                    '$completed recent learning tasks reviewed',
+                    style: AppTypography.caption(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.calmBlueDark,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _buildParentMetric(
+                  icon: Icons.favorite_rounded,
+                  value: independent,
+                  label: 'Independent',
+                  color: AppColors.gentleGreen,
+                  onTap: independent > 0
+                      ? () => _showMetricBreakdown('independent')
+                      : null,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                "Once your child completes an activity, personalised insights will appear here.",
-                textAlign: TextAlign.center,
-                style: AppTypography.caption(
+              const SizedBox(width: 9),
+              Expanded(
+                child: _buildParentMetric(
+                  icon: Icons.volunteer_activism_rounded,
+                  value: supported,
+                  label: 'Helped',
+                  color: AppColors.warmAmber,
+                  onTap: supported > 0
+                      ? () => _showMetricBreakdown('helped')
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: _buildParentMetric(
+                  icon: Icons.fact_check_rounded,
+                  value: checks,
+                  label: 'Checked again',
+                  color: AppColors.calmBlue,
+                  onTap: checks > 0
+                      ? () => _showMetricBreakdown('checked')
+                      : null,
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: _showLearningSupportGuide,
+              icon: const Icon(Icons.help_outline_rounded, size: 17),
+              label: Text(
+                'What do these mean?',
+                style: AppTypography.button(
+                  fontSize: 12,
+                  color: AppColors.calmBlueDark,
+                ),
+              ),
+            ),
+          ),
+          if (skillProgress.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildParentSectionTitle(
+              title: 'Learning across skills',
+              subtitle: _coverageText(coverage),
+            ),
+            const SizedBox(height: 12),
+            _buildSkillProgressPanel(skillProgress),
+          ],
+          const SizedBox(height: 28),
+          _buildParentSectionTitle(
+            title: needsPractice.isEmpty
+                ? 'No urgent practice right now'
+                : 'Needs a little practice',
+            subtitle: needsPractice.isEmpty
+                ? 'Recent tasks did not show a repeated need for help.'
+                : 'Based on first attempts and help used in recent activities.',
+          ),
+          const SizedBox(height: 12),
+          if (needsPractice.isEmpty)
+            _buildCalmStatusCard()
+          else
+            ...needsPractice.map(_buildPracticeNeedCard),
+          if (goingWell.isNotEmpty) ...[
+            const SizedBox(height: 22),
+            _buildParentSectionTitle(
+              title: 'Going well',
+              subtitle: 'Areas completed independently in recent activities.',
+            ),
+            const SizedBox(height: 12),
+            ...goingWell.map(_buildGoingWellCard),
+          ],
+          if (homePractice.isNotEmpty) ...[
+            const SizedBox(height: 22),
+            _buildParentSectionTitle(
+              title: 'Try together at home',
+              subtitle: 'A calm five-minute activity with no score.',
+            ),
+            const SizedBox(height: 12),
+            _buildHomePracticeCard(homePractice),
+          ],
+          if (activities.isNotEmpty) ...[
+            const SizedBox(height: 22),
+            OutlinedButton.icon(
+              onPressed: () => _showRecentLearningSheet(activities),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(54),
+                foregroundColor: AppColors.calmBlueDark,
+                side: const BorderSide(color: AppColors.borderBlue),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              icon: const Icon(Icons.history_rounded),
+              label: Text(
+                'View recent learning details',
+                style: AppTypography.button(
                   fontSize: 14,
-                  color: AppColors.textHint,
+                  color: AppColors.calmBlueDark,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyParentSupport() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(36),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: AppColors.cardSurface,
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: AppColors.borderBlue),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 66,
+                height: 66,
+                decoration: const BoxDecoration(
+                  color: AppColors.slateBg,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.hourglass_empty_rounded,
+                  color: AppColors.calmBlue,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Learning insights will appear here',
+                textAlign: TextAlign.center,
+                style: AppTypography.heading(fontSize: 20),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                'After your child completes an activity, you will see what is going well and one clear area to practise next.',
+                textAlign: TextAlign.center,
+                style: AppTypography.body(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ],
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+  Widget _buildParentMetric({
+    required IconData icon,
+    required int value,
+    required String label,
+    required Color color,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 128),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 13),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.09),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withValues(alpha: 0.20)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 25),
+              const SizedBox(height: 6),
+              Text(
+                '$value',
+                style: AppTypography.heading(fontSize: 24, color: color),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                style: AppTypography.caption(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 7),
+              if (onTap != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View',
+                        style: AppTypography.caption(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: color,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(Icons.chevron_right_rounded, size: 14, color: color),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _coverageText(Map<String, dynamic> coverage) {
+    final tried = (coverage['activities_tried'] as num?)?.toInt() ?? 0;
+    final available = (coverage['activities_available'] as num?)?.toInt() ?? 0;
+    final completed = (coverage['activities_completed'] as num?)?.toInt() ?? 0;
+    if (available == 0) return 'Progress from activities your child has tried.';
+    return '$tried of $available activity areas tried · $completed completed';
+  }
+
+  Widget _buildSkillProgressPanel(List<Map<String, dynamic>> skills) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.borderBlue),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.calmBlue.withValues(alpha: 0.16),
-                  AppColors.gentleGreen.withValues(alpha: 0.10),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: AppColors.calmBlue.withValues(alpha: 0.20),
-              ),
-            ),
+        children: skills.map((skill) {
+          final observed = (skill['observed_tasks'] as num?)?.toInt() ?? 0;
+          final firstTry = (skill['first_try_successes'] as num?)?.toInt() ?? 0;
+          final progress = observed == 0
+              ? 0.0
+              : (firstTry / observed).clamp(0.0, 1.0);
+          final helped = (skill['helped_tasks'] as num?)?.toInt() ?? 0;
+          final title = skill['title']?.toString() ?? 'Learning skill';
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 9),
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppColors.calmBlue,
-                    borderRadius: BorderRadius.circular(15),
+                  width: 43,
+                  height: 43,
+                  decoration: const BoxDecoration(
+                    color: AppColors.slateBg,
+                    shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Colors.white,
+                  child: Icon(
+                    _parentAreaIcon(skill['icon_key']?.toString()),
+                    size: 21,
+                    color: AppColors.calmBlue,
                   ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Learning support',
-                        style: AppTypography.heading(
-                          fontSize: 20,
-                          color: AppColors.textPrimary,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: AppTypography.heading(fontSize: 14),
+                            ),
+                          ),
+                          Text(
+                            skill['status']?.toString() ?? '',
+                            style: AppTypography.caption(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: progress >= 0.8
+                                  ? AppColors.gentleGreenDark
+                                  : AppColors.warmAmber,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          minHeight: 8,
+                          value: progress,
+                          backgroundColor: AppColors.slateBg,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            progress >= 0.8
+                                ? AppColors.gentleGreen
+                                : AppColors.calmBlue,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 5),
                       Text(
-                        'A clear view of progress, help and follow-up practice.',
+                        '$firstTry of $observed first try · $helped helped',
                         style: AppTypography.caption(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -861,212 +1472,965 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
-          if (supportSummary.isNotEmpty) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.cardSurface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.borderLight),
+  Widget _buildParentSectionTitle({
+    required String title,
+    required String subtitle,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppTypography.heading(fontSize: 21)),
+        const SizedBox(height: 3),
+        Text(
+          subtitle,
+          style: AppTypography.caption(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHomePracticeCard(Map<String, dynamic> homePractice) {
+    final minutes = (homePractice['minutes'] as num?)?.toInt() ?? 5;
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF4DD), Color(0xFFFFFAEF)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.warmAmberLight),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.warmAmber.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: const Icon(Icons.home_rounded, color: AppColors.warmAmber),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  homePractice['title']?.toString() ?? 'Short home practice',
+                  style: AppTypography.heading(fontSize: 16),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  homePractice['instruction']?.toString() ?? '',
+                  style: AppTypography.body(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    '$minutes minutes · no score needed',
+                    style: AppTypography.caption(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.warmAmber,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showMetricBreakdown(String metric) async {
+    const meanings = {
+      'independent': (
+        'Independent',
+        'Your child completed the task correctly on the first try without an app hint. It does not mean they must always work alone.',
+        Icons.favorite_rounded,
+        AppColors.gentleGreen,
+      ),
+      'helped': (
+        'Helped',
+        'Your child completed the task after the app gave support, such as another try, fewer choices, a highlight, or repeated audio. This is successful learning with help—not failure.',
+        Icons.volunteer_activism_rounded,
+        AppColors.warmAmber,
+      ),
+      'checked': (
+        'Checked again',
+        'After support, the app used a different task to see whether your child could use the same learning again.',
+        Icons.fact_check_rounded,
+        AppColors.calmBlue,
+      ),
+    };
+    final meaning = meanings[metric]!;
+    final supportSummary = _adaptiveInsights?['support_summary'] is Map
+        ? Map<String, dynamic>.from(
+            _adaptiveInsights!['support_summary'] as Map,
+          )
+        : <String, dynamic>{};
+    final metricDetails = supportSummary['metric_details'] is Map
+        ? Map<String, dynamic>.from(supportSummary['metric_details'] as Map)
+        : <String, dynamic>{};
+    var details = _mapList(metricDetails[metric]);
+    var usingCompatibilityDetails = false;
+    if (details.isEmpty) {
+      details = _fallbackMetricDetails(metric);
+      usingCompatibilityDetails = details.isNotEmpty;
+    }
+    final grouped = <int, List<Map<String, dynamic>>>{};
+    for (final detail in details) {
+      final skillNumber = (detail['skill_number'] as num?)?.toInt();
+      if (skillNumber != null) {
+        grouped.putIfAbsent(skillNumber, () => []).add(detail);
+      }
+    }
+    final skillNumbers = grouped.keys.toList()..sort();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.72,
+        minChildSize: 0.45,
+        maxChildSize: 0.94,
+        expand: false,
+        builder: (context, controller) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.cardSurface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: ListView(
+            controller: controller,
+            padding: EdgeInsets.fromLTRB(
+              18,
+              12,
+              18,
+              24 + MediaQuery.of(sheetContext).padding.bottom,
+            ),
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
               ),
-              child: Column(
+              const SizedBox(height: 18),
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Latest learning snapshot',
-                    style: AppTypography.heading(
-                      fontSize: 16,
-                      color: AppColors.calmBlue,
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: meaning.$4.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    child: Icon(meaning.$3, color: meaning.$4, size: 26),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    supportSummary['plain_message']?.toString() ?? '',
-                    style: AppTypography.caption(
-                      fontSize: 14,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildSupportMetric(
-                          'Independent',
-                          supportSummary['independent_successes'],
-                          AppColors.gentleGreen,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildSupportMetric(
-                          'Helped',
-                          supportSummary['supported_successes'],
-                          AppColors.warmAmber,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildSupportMetric(
-                          'Checks',
-                          supportSummary['confirmation_checks'],
-                          AppColors.calmBlue,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (policyNotice.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Row(
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.verified_user_outlined,
-                          size: 16,
-                          color: AppColors.calmBlue,
+                        Text(
+                          meaning.$1,
+                          style: AppTypography.heading(fontSize: 22),
                         ),
-                        const SizedBox(width: 7),
-                        Expanded(
-                          child: Text(
-                            policyNotice,
-                            style: AppTypography.caption(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
+                        const SizedBox(height: 4),
+                        Text(
+                          meaning.$2,
+                          style: AppTypography.body(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
-
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Activities',
-                  style: AppTypography.heading(fontSize: 18),
+              const SizedBox(height: 18),
+              Text(
+                details.isEmpty
+                    ? 'No matching tasks in the current activity history.'
+                    : '${details.length} ${details.length == 1 ? 'task' : 'tasks'} across ${skillNumbers.length} ${skillNumbers.length == 1 ? 'skill' : 'skills'}',
+                style: AppTypography.caption(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
                 ),
               ),
-              _buildSupportMetric(
-                'Shown',
-                activities.length,
-                AppColors.calmBlue,
+              const SizedBox(height: 10),
+              if (usingCompatibilityDetails) ...[
+                Container(
+                  padding: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: AppColors.slateBg.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.history_rounded,
+                        size: 17,
+                        color: AppColors.calmBlue,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Showing the matching core tasks from the child\'s saved activity journey.',
+                          style: AppTypography.caption(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+              ...skillNumbers.map(
+                (skillNumber) => _buildMetricSkillDropdown(
+                  skillNumber,
+                  grouped[skillNumber]!,
+                  meaning.$4,
+                ),
               ),
+              if (metric == 'checked' && details.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.slateBg.withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    'A checked-again task can also appear under Independent or Helped, depending on how your child completed it.',
+                    style: AppTypography.caption(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 12),
-
-          // One card for the latest attempt of every completed/started activity.
-          ...activities.map(
-            (act) => _buildInsightCard(act as Map<String, dynamic>),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildSupportMetric(String label, dynamic value, Color color) {
+  List<Map<String, dynamic>> _fallbackMetricDetails(String metric) {
+    final activities = _mapList(_adaptiveInsights?['activities']);
+    final details = <Map<String, dynamic>>[];
+    const skillTitles = {
+      1: ('Pictures', 'pictures'),
+      2: ('Letters', 'letters'),
+      3: ('Words', 'words'),
+      4: ('Sentences', 'sentences'),
+    };
+    for (final activity in activities) {
+      final activityId = activity['activity_id']?.toString() ?? '';
+      final parts = activityId.split('.');
+      final skillNumber = parts.isNotEmpty ? int.tryParse(parts.first) : null;
+      if (skillNumber == null || !skillTitles.containsKey(skillNumber)) {
+        continue;
+      }
+      final journey = _mapList(activity['round_journey']);
+      for (final round in journey) {
+        final firstTry = round['was_first_try'] == true;
+        final neededSupport = round['needed_remediation'] == true;
+        final include = switch (metric) {
+          'independent' => firstTry && !neededSupport,
+          'helped' => !firstTry || neededSupport,
+          'checked' => neededSupport,
+          _ => false,
+        };
+        if (!include) continue;
+        final roundNumber = (round['round_number'] as num?)?.toInt();
+        final skill = skillTitles[skillNumber]!;
+        details.add({
+          'skill_number': skillNumber,
+          'skill_title': skill.$1,
+          'skill_icon_key': skill.$2,
+          'activity_id': activityId,
+          'activity_name':
+              activity['activity_name']?.toString() ?? 'Learning activity',
+          'task_number': roundNumber,
+          'task_label': roundNumber == null ? 'Task' : 'Task $roundNumber',
+          'task_kind': metric == 'checked'
+              ? 'Fresh check after support'
+              : 'Learning task',
+          'detail': metric == 'independent'
+              ? 'Correct on the first try without an app hint.'
+              : metric == 'helped'
+              ? 'Completed after the app provided learning support.'
+              : 'The app checked this learning again after support.',
+        });
+      }
+    }
+    return details;
+  }
+
+  Widget _buildMetricSkillDropdown(
+    int skillNumber,
+    List<Map<String, dynamic>> details,
+    Color color,
+  ) {
+    final skillTitle = details.first['skill_title']?.toString() ?? 'Learning';
+    final activities = <String, List<Map<String, dynamic>>>{};
+    for (final detail in details) {
+      final activityId = detail['activity_id']?.toString() ?? '';
+      activities.putIfAbsent(activityId, () => []).add(detail);
+    }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '${value ?? 0}',
-            style: AppTypography.heading(fontSize: 17, color: color),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+          childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _parentAreaIcon(details.first['skill_icon_key']?.toString()),
+              color: color,
+              size: 20,
+            ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          title: Text(
+            'Skill $skillNumber · $skillTitle',
+            style: AppTypography.heading(fontSize: 14),
+          ),
+          subtitle: Text(
+            '${details.length} ${details.length == 1 ? 'task' : 'tasks'}',
             style: AppTypography.caption(
               fontSize: 10,
-              fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
             ),
           ),
+          iconColor: color,
+          collapsedIconColor: AppColors.textSecondary,
+          children: activities.values
+              .map((rows) => _buildMetricActivityGroup(rows, color))
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricActivityGroup(
+    List<Map<String, dynamic>> rows,
+    Color color,
+  ) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.cream.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            rows.first['activity_name']?.toString() ?? 'Learning activity',
+            style: AppTypography.heading(fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          ...rows.map(
+            (row) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    constraints: const BoxConstraints(minWidth: 54),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      row['task_label']?.toString() ?? 'Task',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.caption(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          row['task_kind']?.toString() ?? 'Learning task',
+                          style: AppTypography.caption(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          row['detail']?.toString() ?? '',
+                          style: AppTypography.caption(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInsightCard(Map<String, dynamic> act) {
-    final activityName = act['activity_name']?.toString() ?? 'Activity';
-    final roundsCompleted = (act['rounds_completed'] as num?)?.toInt() ?? 0;
-    final roundsTotal = (act['rounds_total'] as num?)?.toInt() ?? 5;
-    final firstTryCorrect = (act['first_try_correct'] as num?)?.toInt() ?? 0;
-    final firstTryTotal = (act['first_try_total'] as num?)?.toInt() ?? 0;
-    final guided = (act['guided_rounds'] as num?)?.toInt() ?? 0;
-    final isComplete = act['is_activity_complete'] == true;
-    final accent = isComplete
-        ? AppColors.gentleGreen
-        : (roundsCompleted > 0 ? AppColors.warmAmber : AppColors.softCoral);
+  Future<void> _showLearningSupportGuide() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          12,
+          20,
+          22 + MediaQuery.of(sheetContext).padding.bottom,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.cardSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'How to read this page',
+                style: AppTypography.heading(fontSize: 22),
+              ),
+              const SizedBox(height: 16),
+              _buildGuideRow(
+                Icons.favorite_rounded,
+                AppColors.gentleGreen,
+                'Independent',
+                'Correct on the first try without an app hint.',
+              ),
+              _buildGuideRow(
+                Icons.volunteer_activism_rounded,
+                AppColors.warmAmber,
+                'Helped',
+                'Completed after the app gave learning support.',
+              ),
+              _buildGuideRow(
+                Icons.fact_check_rounded,
+                AppColors.calmBlue,
+                'Checked again',
+                'A different task checked the same learning after help.',
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'These are learning observations, not marks, rankings, or a diagnosis.',
+                style: AppTypography.caption(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
+  Widget _buildGuideRow(
+    IconData icon,
+    Color color,
+    String title,
+    String description,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 21),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTypography.heading(fontSize: 15)),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: AppTypography.body(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPracticeNeedCard(Map<String, dynamic> need) {
+    final title =
+        need['title']?.toString() ??
+        need['activity_name']?.toString() ??
+        'Practice activity';
+    final evidence = need['evidence_text']?.toString() ?? '';
+    final available = need['practice_available'] == true;
+    final savedRound = _savedParentPracticeRound(need);
+    final canResume = savedRound > 0;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accent.withValues(alpha: 0.28)),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.warmAmberLight),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0FE8A54B),
+            blurRadius: 14,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
-      child: ExpansionTile(
-        shape: const Border(),
-        collapsedShape: const Border(),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        leading: Container(
-          width: 42,
-          height: 42,
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.warmAmber.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(
+                  _parentAreaIcon(need['icon_key']?.toString()),
+                  color: AppColors.warmAmber,
+                ),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: AppTypography.heading(fontSize: 17)),
+                    const SizedBox(height: 4),
+                    Text(
+                      evidence,
+                      style: AppTypography.body(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.creamDark.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  available
+                      ? Icons.verified_rounded
+                      : Icons.play_circle_outline_rounded,
+                  size: 18,
+                  color: available ? AppColors.gentleGreen : AppColors.calmBlue,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    canResume
+                        ? 'Practice saved after task $savedRound. Continue when your child is ready.'
+                        : available
+                        ? 'Reviewed support task and fresh check are available.'
+                        : 'Open the reviewed activity for another calm practice.',
+                    style: AppTypography.caption(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _showPracticePlan(need),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+                backgroundColor: canResume
+                    ? AppColors.warmAmber
+                    : AppColors.calmBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              icon: Icon(
+                canResume
+                    ? Icons.play_circle_fill_rounded
+                    : Icons.play_arrow_rounded,
+              ),
+              label: Text(
+                canResume
+                    ? 'Continue from task ${savedRound + 1}'
+                    : 'See practice plan',
+                style: AppTypography.button(fontSize: 14),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _savedParentPracticeRound(Map<String, dynamic> need) {
+    final parts = (need['activity_id']?.toString() ?? '').split('.');
+    if (parts.length != 2) return 0;
+    final skillNumber = int.tryParse(parts[0]);
+    final activityNumber = int.tryParse(parts[1]);
+    if (skillNumber == null || activityNumber == null) return 0;
+    return ProgressService().getActivityState(
+      'skill_$skillNumber',
+      'parent_practice_act_$activityNumber',
+    );
+  }
+
+  Widget _buildGoingWellCard(Map<String, dynamic> area) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: AppColors.gentleGreen.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderGreen),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: const BoxDecoration(
+              color: AppColors.mintBg,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _parentAreaIcon(area['icon_key']?.toString()),
+              color: AppColors.gentleGreenDark,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  area['title']?.toString() ?? 'Learning activity',
+                  style: AppTypography.heading(fontSize: 15),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  area['evidence_text']?.toString() ??
+                      'Completed independently.',
+                  style: AppTypography.caption(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.check_circle_rounded, color: AppColors.gentleGreen),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalmStatusCard() {
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: AppColors.gentleGreen.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderGreen),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.check_circle_rounded,
+            color: AppColors.gentleGreen,
+            size: 30,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Continue with the next normal activity. The app will keep checking learning as your child progresses.',
+              style: AppTypography.body(
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showPracticePlan(Map<String, dynamic> need) async {
+    final canOpen = (need['activity_id']?.toString() ?? '').isNotEmpty;
+    final savedRound = _savedParentPracticeRound(need);
+    final canResume = savedRound > 0;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          12,
+          20,
+          22 + MediaQuery.of(sheetContext).padding.bottom,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.cardSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                need['title']?.toString() ?? 'Practice plan',
+                style: AppTypography.heading(fontSize: 22),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                need['evidence_text']?.toString() ?? '',
+                style: AppTypography.body(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                canResume
+                    ? 'Your child stopped before finishing. Continue from task ${savedRound + 1}; completed practice tasks will not repeat.'
+                    : 'This opens a fresh version of the full activity. Every round uses a reviewed task of the same difficulty instead of repeating the original core task.',
+                style: AppTypography.caption(
+                  fontSize: 10,
+                  color: AppColors.calmBlueDark,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _buildPracticeStep(
+                number: '1',
+                title: 'Fresh tasks at the same level',
+                subtitle:
+                    'The full activity uses reviewed confirmation tasks instead of repeating the original questions.',
+                color: AppColors.warmAmber,
+              ),
+              const SizedBox(height: 10),
+              _buildPracticeStep(
+                number: '2',
+                title: 'Safe extra practice',
+                subtitle:
+                    'This session does not change the child\'s normal skill position or mastery estimate.',
+                color: AppColors.gentleGreen,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.slateBg.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  'This recommendation comes from the child\'s recent first attempts and help used. It is learning support, not a diagnosis.',
+                  style: AppTypography.caption(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: canOpen
+                      ? () {
+                          Navigator.pop(sheetContext);
+                          _navigateToPracticeActivity(need);
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: canResume
+                        ? AppColors.warmAmber
+                        : AppColors.calmBlue,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(52),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  icon: Icon(
+                    canResume
+                        ? Icons.play_circle_fill_rounded
+                        : Icons.play_arrow_rounded,
+                  ),
+                  label: Text(
+                    canResume
+                        ? 'Continue from task ${savedRound + 1}'
+                        : 'Start fresh practice',
+                    style: AppTypography.button(fontSize: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPracticeStep({
+    required String number,
+    required String title,
+    required String subtitle,
+    required Color color,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.13),
-            borderRadius: BorderRadius.circular(13),
+            color: color.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
           ),
-          child: Icon(
-            isComplete ? Icons.check_rounded : Icons.school_rounded,
-            color: accent,
+          alignment: Alignment.center,
+          child: Text(
+            number,
+            style: AppTypography.heading(fontSize: 16, color: color),
           ),
         ),
-        title: Text(
-          activityName,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: AppTypography.heading(fontSize: 14),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8),
+        const SizedBox(width: 12),
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: LinearProgressIndicator(
-                  value: roundsTotal > 0
-                      ? (roundsCompleted / roundsTotal).clamp(0.0, 1.0)
-                      : 0,
-                  minHeight: 7,
-                  backgroundColor: AppColors.borderLight,
-                  valueColor: AlwaysStoppedAnimation<Color>(accent),
-                ),
-              ),
-              const SizedBox(height: 7),
+              Text(title, style: AppTypography.heading(fontSize: 15)),
+              const SizedBox(height: 2),
               Text(
-                '$roundsCompleted/$roundsTotal completed  •  '
-                '$firstTryCorrect/$firstTryTotal first try  •  '
-                '$guided helped',
+                subtitle,
                 style: AppTypography.caption(
                   fontSize: 10,
                   color: AppColors.textSecondary,
@@ -1075,376 +2439,218 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
             ],
           ),
         ),
-        children: [_buildInsightDetailsCard(act)],
-      ),
+      ],
     );
   }
 
-  Widget _buildInsightDetailsCard(Map<String, dynamic> act) {
-    final activityName = act['activity_name'] ?? 'Activity';
-    final roundsCompleted = (act['rounds_completed'] ?? 0) as int;
-    final roundsTotal = (act['rounds_total'] ?? 5) as int;
-    final isComplete = act['is_activity_complete'] == true;
-    final completionText = act['completion_text'] ?? '';
-    final accuracyText = act['accuracy_text'] ?? '';
-    final adaptationText = act['adaptation_text'] ?? '';
-    final independenceText = act['independence_text'] ?? '';
-    final independenceBadge = act['independence_badge'] ?? '';
-    final roundJourney = (act['round_journey'] as List<dynamic>?) ?? [];
-    final ratingText = act['rating_text'] ?? '';
-    final timesPlayed = (act['times_played'] ?? 0) as int;
-    final lastPlayed = act['last_played'] ?? '';
-    final recommendations = (act['recommendations'] as List<dynamic>?) ?? [];
+  Future<void> _navigateToPracticeActivity(Map<String, dynamic> need) async {
+    final parts = (need['activity_id']?.toString() ?? '').split('.');
+    if (parts.length != 2) return;
+    final skillNumber = int.tryParse(parts[0]);
+    final activityNumber = int.tryParse(parts[1]);
+    if (skillNumber == null || activityNumber == null) return;
+    try {
+      final jsonString = await rootBundle.loadString(
+        'assets/data/curriculum/skill_$skillNumber.json',
+      );
+      final detail = SkillDetail.fromJson(
+        json.decode(jsonString),
+        'skill_$skillNumber',
+        'Skill $skillNumber',
+      );
+      ActivityNode? activity;
+      for (final candidate in detail.activities) {
+        if (candidate.id == 'act_$activityNumber') {
+          activity = candidate;
+          break;
+        }
+      }
+      if (activity == null || !mounted) return;
+      activity.skillId = 'skill_$skillNumber';
+      activity.skillTitle = detail.title;
+      final practiceActivity = activity.asParentPractice();
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => GameFactory.buildGame(
+            practiceActivity,
+            studentData: widget.studentData,
+          ),
+        ),
+      );
+      if (mounted) await _loadAllData();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open this activity: $error')),
+      );
+    }
+  }
 
-    // Card accent color based on completion
-    Color accentColor = isComplete
-        ? AppColors.gentleGreen
-        : (roundsCompleted > 0 ? AppColors.warmAmber : AppColors.softCoral);
-
-    // Format last played date
-    String formattedDate = '';
-    if (lastPlayed.isNotEmpty) {
-      try {
-        final dt = DateTime.parse(lastPlayed);
-        formattedDate = '${dt.day}/${dt.month}/${dt.year}';
-      } catch (_) {
-        formattedDate = lastPlayed;
+  Future<void> _showRecentLearningSheet(
+    List<Map<String, dynamic>> activities,
+  ) async {
+    final activitiesBySkill = <int, List<Map<String, dynamic>>>{};
+    for (final activity in activities) {
+      final activityId = activity['activity_id']?.toString() ?? '';
+      final skillNumber = int.tryParse(activityId.split('.').first);
+      if (skillNumber != null) {
+        activitiesBySkill.putIfAbsent(skillNumber, () => []).add(activity);
       }
     }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: accentColor.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: accentColor.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    final skillNumbers = activitiesBySkill.keys.toList()..sort();
+    const skillNames = {
+      1: 'Pictures',
+      2: 'Letters',
+      3: 'Words',
+      4: 'Sentences',
+    };
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.72,
+        minChildSize: 0.45,
+        maxChildSize: 0.92,
+        expand: false,
+        builder: (context, controller) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.cardSurface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ─── Header: Activity Name + Star Rating + Plays ───
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-            decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.06),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+          child: ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderLight,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        activityName,
-                        style: AppTypography.heading(
-                          fontSize: 15,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        ratingText,
-                        style: AppTypography.caption(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: accentColor,
-                        ),
-                      ),
-                    ],
-                  ),
+              const SizedBox(height: 18),
+              Text(
+                'Recent learning details',
+                style: AppTypography.heading(fontSize: 22),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Latest observed attempt for each activity.',
+                style: AppTypography.caption(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
                 ),
-                // Plays badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.calmBlue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '$timesPlayed ${timesPlayed == 1 ? 'session' : 'sessions'}',
-                    style: AppTypography.caption(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.calmBlue,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ─── 1. Completion Progress (Step Bar) ───
-                Row(
-                  children: [
-                    Icon(
-                      isComplete
-                          ? Icons.check_circle_rounded
-                          : Icons.hourglass_top_rounded,
-                      size: 18,
-                      color: accentColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        completionText,
-                        style: AppTypography.caption(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Step dots
-                Row(
-                  children: List.generate(roundsTotal, (i) {
-                    final completed = i < roundsCompleted;
-                    return Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: completed
-                              ? accentColor
-                              : AppColors.borderLight,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 16),
-
-                // ─── 2 & 3. Accuracy + Adaptation (2 info rows) ───
-                _buildInfoRow(
-                  Icons.star_rounded,
-                  accuracyText,
-                  AppColors.warmAmber,
-                ),
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  Icons.tune_rounded,
-                  adaptationText,
-                  AppColors.calmBlue,
-                ),
-                const SizedBox(height: 8),
-
-                // ─── 4. Independence Badge ───
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.calmBlue.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.calmBlue.withValues(alpha: 0.12),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.person_rounded,
-                        size: 18,
-                        color: AppColors.calmBlue,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              independenceBadge,
-                              style: AppTypography.caption(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.calmBlue,
-                              ),
-                            ),
-                            Text(
-                              independenceText,
-                              style: AppTypography.caption(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ─── 5. Round Journey Timeline ───
-                if (roundJourney.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Text(
-                    "Round-by-Round Journey",
-                    style: AppTypography.caption(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...roundJourney.map((r) {
-                    final round = r as Map<String, dynamic>;
-                    final rn = round['round_number'] ?? 0;
-                    final icon = round['result_icon'] ?? '👍';
-                    final text = round['result_text'] ?? '';
-                    final neededRem = round['needed_remediation'] == true;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        children: [
-                          // Round circle
-                          Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              color: neededRem
-                                  ? AppColors.warmAmber.withValues(alpha: 0.15)
-                                  : AppColors.gentleGreen.withValues(
-                                      alpha: 0.15,
-                                    ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                '$rn',
-                                style: AppTypography.caption(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  color: neededRem
-                                      ? AppColors.warmAmber
-                                      : AppColors.gentleGreen,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(icon, style: const TextStyle(fontSize: 16)),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              text,
-                              style: AppTypography.caption(
-                                fontSize: 12,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
-
-                // ─── 7. Recommended Practice ───
-                if (recommendations.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.auto_awesome,
-                        size: 16,
-                        color: AppColors.warmAmber,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        "Recommended Practice",
-                        style: AppTypography.caption(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.warmAmber,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ...recommendations.map((rec) {
-                    final r = rec as Map<String, dynamic>;
-                    return _buildRecommendationCard(r);
-                  }),
-                ] else if (roundJourney.isNotEmpty) ...[
-                  const SizedBox(height: 10),
+              ),
+              const SizedBox(height: 18),
+              ...skillNumbers.expand((skillNumber) {
+                final skillActivities = activitiesBySkill[skillNumber]!;
+                return <Widget>[
                   Container(
-                    width: double.infinity,
+                    margin: const EdgeInsets.only(top: 4, bottom: 10),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
-                      vertical: 8,
+                      vertical: 9,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.gentleGreen.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.calmBlue.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
                       children: [
-                        Text("🎉", style: const TextStyle(fontSize: 16)),
-                        const SizedBox(width: 8),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          alignment: Alignment.center,
+                          decoration: const BoxDecoration(
+                            color: AppColors.calmBlue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '$skillNumber',
+                            style: AppTypography.heading(
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            "Great work! No extra practice needed.",
-                            style: AppTypography.caption(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.gentleGreen,
-                            ),
+                            'Skill $skillNumber · ${skillNames[skillNumber] ?? 'Learning'}',
+                            style: AppTypography.heading(fontSize: 16),
+                          ),
+                        ),
+                        Text(
+                          '${skillActivities.length}',
+                          style: AppTypography.caption(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.calmBlueDark,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
+                  ...skillActivities.map(_buildRecentActivityCard),
+                  const SizedBox(height: 8),
+                ];
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                // ─── Footer: Last Played ───
-                if (formattedDate.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time_rounded,
-                        size: 14,
-                        color: AppColors.textHint,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Last played: $formattedDate',
-                        style: AppTypography.caption(
-                          fontSize: 11,
-                          color: AppColors.textHint,
-                        ),
-                      ),
-                    ],
+  Widget _buildRecentActivityCard(Map<String, dynamic> activity) {
+    final total = (activity['first_try_total'] as num?)?.toInt() ?? 0;
+    final correct = (activity['first_try_correct'] as num?)?.toInt() ?? 0;
+    final guided = (activity['guided_rounds'] as num?)?.toInt() ?? 0;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.cream.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: const BoxDecoration(
+              color: AppColors.slateBg,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.school_rounded,
+              color: AppColors.calmBlue,
+              size: 21,
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activity['activity_name']?.toString() ?? 'Activity',
+                  style: AppTypography.heading(fontSize: 15),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$correct of $total first try · $guided helped',
+                  style: AppTypography.caption(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
                   ),
-                ],
+                ),
               ],
             ),
           ),
@@ -1452,151 +2658,19 @@ class _ChildProgressScreenState extends State<ChildProgressScreen> {
       ),
     );
   }
+}
 
-  Widget _buildInfoRow(IconData icon, String text, Color color) {
+class _ProgressTab extends StatelessWidget {
+  const _ProgressTab({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: AppTypography.caption(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-      ],
+      mainAxisSize: MainAxisSize.min,
+      children: [Icon(icon, size: 16), const SizedBox(width: 6), Text(label)],
     );
-  }
-
-  Widget _buildRecommendationCard(Map<String, dynamic> rec) {
-    final activityName = rec['activity_name'] ?? 'Activity';
-    final description = rec['description'] ?? '';
-    final roundsCount = rec['rounds_count'] ?? 5;
-
-    return GestureDetector(
-      onTap: () => _navigateToRecommendedActivity(rec),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: AppColors.calmBlue.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.calmBlue.withValues(alpha: 0.15)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.calmBlue.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.extension_rounded,
-                size: 20,
-                color: AppColors.calmBlue,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    activityName,
-                    style: AppTypography.caption(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    description,
-                    style: AppTypography.caption(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Text(
-                    'Same difficulty · $roundsCount puzzles',
-                    style: AppTypography.caption(
-                      fontSize: 10,
-                      color: AppColors.textHint,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 22,
-              color: AppColors.calmBlue,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _navigateToRecommendedActivity(Map<String, dynamic> rec) async {
-    final activityId = rec['activity_id'] ?? '';
-    final templateType = rec['template_type'] ?? '';
-
-    if (activityId.isEmpty || templateType.isEmpty) return;
-
-    try {
-      // Load the skill_2 curriculum JSON
-      final String jsonStr = await rootBundle.loadString(
-        'assets/data/curriculum/skill_2.json',
-      );
-      final decoded = json.decode(jsonStr);
-
-      // Parse the skill detail
-      final skillDetail = SkillDetail.fromJson(decoded, 'skill_2', 'Skill 2');
-
-      // Find the matching activity by template_type
-      ActivityNode? targetActivity;
-      for (final act in skillDetail.activities) {
-        if (act.templateType == templateType) {
-          targetActivity = act;
-          break;
-        }
-      }
-
-      if (targetActivity == null) return;
-
-      // Set skill metadata
-      targetActivity.skillId = 'skill_2';
-      targetActivity.skillTitle = skillDetail.title;
-
-      if (!mounted) return;
-
-      // Navigate to the game screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => GameFactory.buildGame(
-            targetActivity!,
-            studentData: widget.studentData,
-          ),
-        ),
-      ).then((_) {
-        // Refresh insights after returning from the activity
-        _loadAllData();
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Could not open activity: $e')));
-      }
-    }
   }
 }
