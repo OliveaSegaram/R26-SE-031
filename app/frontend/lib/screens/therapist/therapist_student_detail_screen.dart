@@ -9,6 +9,7 @@ import '../../widgets/app_loading_indicator.dart';
 import '../../widgets/trend_chart.dart';
 import '../../widgets/research_evidence_panel.dart';
 import '../../models/comprehensive_assessment_questions.dart';
+import 'therapist_adaptive_evidence_view.dart';
 
 class TherapistStudentDetailScreen extends StatefulWidget {
   final Map<String, dynamic> student;
@@ -237,7 +238,10 @@ class _TherapistStudentDetailScreenState
                     DashboardSection(
                       data: _c4Adaptive,
                       onRetry: _loadAllData,
-                      child: _buildC4AdaptiveTab(),
+                      child: TherapistAdaptiveEvidenceView(
+                        student: widget.student,
+                        initialData: _c4Adaptive,
+                      ),
                     ),
                     DashboardSection(
                       data: {},
@@ -1201,6 +1205,9 @@ class _TherapistStudentDetailScreenState
   // ==========================================
   // 5. C4 — ADAPTIVE LEARNING
   // ==========================================
+  // Retained as a rollback reference while the production tab uses the
+  // focused evidence view above. No other learner-detail tab is replaced.
+  // ignore: unused_element
   Widget _buildC4AdaptiveTab() {
     final kcs = _c4Adaptive?['knowledge_components'] as List<dynamic>? ?? [];
     final history = _c4Adaptive?['history'] as List<dynamic>? ?? [];
@@ -1992,12 +1999,6 @@ class _TherapistStudentDetailScreenState
   }
 
   Widget _buildModelInfo(Map<String, dynamic> data) {
-    final available = data['available'] == true;
-    final model = data['model_version']?.toString() ?? 'unavailable';
-    final feature = data['feature_version']?.toString() ?? 'unavailable';
-    final origin = data['data_origin']?.toString() ?? 'unspecified';
-    final validation =
-        data['validation_status']?.toString() ?? 'not_clinically_validated';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),

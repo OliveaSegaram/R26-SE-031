@@ -129,11 +129,114 @@ async def get_therapist_c3_profile(student_id: str):
         skip_reason=skip_reason)
 
 @router.get("/{student_id}/c4-adaptive", response_model=TherapistC4AdaptiveDTO)
-async def get_therapist_c4_adaptive(student_id: str):
+async def get_therapist_c4_adaptive(student_id: str, window: int = 20):
     db=get_db()
+    window=max(5,min(int(window),100))
     states=await records(db,"knowledge_states",student_id,1)
     state=states[0] if states else {}
-    history=(await records(db,"adaptive_decisions",student_id))[:20]
+    all_history=[
+        row for row in await records(db,"adaptive_decisions",student_id,500)
+        if row.get("research_eligible") is not False
+    ]
+    history=all_history[:window]
+
+    def independent(row):
+        first=row.get("first_attempt_correct")
+        if first is None:
+            first=str(row.get("response_quality") or "").upper() in {
+                "CLEAN_SUCCESS","INDEPENDENT_SUCCESS","MASTERED"
+            }
+        return bool(first is True and int(row.get("scaffold_level_used",row.get("scaffold_level",0)) or 0)==0)
+
+    mastery_values=[]
+    for kc_id,raw_value in (state.get("knowledge_state") or {}).items():
+        value=number(raw_value)
+        if value is not None and 0 <= value <= 1:
+            mastery_values.append((str(kc_id),value))
+    primary_focus=min(mastery_values,key=lambda pair:pair[1]) if mastery_values else None
+    primary_id=primary_focus[0] if primary_focus else None
+    primary_name=(
+        KC_NAMES.get(primary_id,primary_id.removeprefix("KC_").replace("_"," ").title())
+        if primary_id else "Unavailable"
+    )
+
+    core_rows=[row for row in history if str(row.get("item_role") or "CORE").upper()=="CORE"]
+    confirmation_rows=[row for row in history if str(row.get("item_role") or "").upper()=="CONFIRMATION"]
+    independent_core=sum(1 for row in core_rows if independent(row))
+    supported_core=len(core_rows)-independent_core
+    independent_confirmations=sum(1 for row in confirmation_rows if independent(row))
+
+    trend_source=[
+        row for row in reversed(all_history[:100])
+        if number(row.get("mastery_after")) is not None
+        and (primary_id is None or row.get("kc_id")==primary_id)
+    ]
+    if not trend_source:
+        trend_source=[
+            row for row in reversed(all_history[:100])
+            if number(row.get("mastery_after")) is not None
+        ]
+    mastery_trend=[{
+        "timestamp": timestamp(row),
+        "value": number(row.get("mastery_after")),
+        "item_id": row.get("current_item"),
+        "activity_id": row.get("activity_id"),
+        "knowledge_component_id": row.get("kc_id"),
+    } for row in trend_source[-6:]]
+
+    target_groups={}
+    for row in all_history[:100]:
+        activity=str(row.get("activity_id") or "")
+        for raw_unit in (row.get("struggled_target_units") or []):
+            unit=str(raw_unit).strip()
+            if not unit:
+                continue
+            group=target_groups.setdefault(unit,{
+                "unit":unit,"observations":0,"activities":set(),"last_observed_at":None
+            })
+            group["observations"]+=1
+            if activity:
+                group["activities"].add(activity)
+            group["last_observed_at"]=group["last_observed_at"] or timestamp(row)
+    recurring_targets=[]
+    for group in target_groups.values():
+        if group["observations"] < 2:
+            continue
+        recurring_targets.append({
+            **group,
+            "activities":sorted(group["activities"]),
+        })
+    recurring_targets=sorted(
+        recurring_targets,key=lambda row:(row["observations"],len(row["activities"])),reverse=True
+    )[:6]
+
+    focus_rows=[row for row in all_history if primary_id and row.get("kc_id")==primary_id]
+    plan_source=(focus_rows or all_history)
+    plan_activity=str(plan_source[0].get("activity_id") or "") if plan_source else ""
+    activity_parts=plan_activity.split(".")
+    practice_available=(
+        len(activity_parts)==2
+        and all(part.isdigit() for part in activity_parts)
+        and 1 <= int(activity_parts[0]) <= 4
+        and 1 <= int(activity_parts[1]) <= 5
+    )
+    focus_evidence=(
+        f"Current {primary_name.lower()} mastery estimate is {round(primary_focus[1]*100)}%."
+        if primary_focus else "More observed tasks are needed before selecting a focus."
+    )
+    next_session_plan={
+        "focus_knowledge_component_id":primary_id,
+        "focus_name":primary_name,
+        "activity_id":plan_activity or None,
+        "minutes":5,
+        "practice_available":practice_available,
+        "evidence":focus_evidence,
+        "instruction":(
+            f"Use reviewed {primary_name.lower()} practice for 5 minutes, then check learning with a fresh equivalent item."
+            if primary_focus else "Continue normal activities while the app gathers more learning evidence."
+        ),
+    }
+
     latest_measurement_se = None
     timeline=[]
     for d in reversed(history):
@@ -147,7 +250,10 @@ async def get_therapist_c4_adaptive(student_id: str):
             mastery_after=number(d.get("mastery_after")), fatigue=number(d.get("behavioral_fatigue_indicator", d.get("fatigue_score"))),
             previous_difficulty=number(d.get("difficulty_b", d.get("previous_difficulty"))), selected_difficulty=number(d.get("selected_difficulty")),
             scaffold_level=d.get("scaffold_level",0), next_activity=d.get("next_activity",d.get("selected_activity","Unavailable")),
-            decision=d.get("decision", "Unavailable"), reason=d.get("decision_reason","Unavailable")))
+            decision=d.get("decision", "Unavailable"),
+            reason=d.get("decision_reason") or ", ".join(reason_codes) or "Unavailable",
+            reason_codes=reason_codes,item_id=d.get("current_item"),
+            knowledge_component_id=d.get("kc_id"),response_quality=d.get("response_quality")))
     policy_rows=(await records(db,"policy_decisions",student_id))[:100]
     c3_audit_rows=await records(db,"model_audit_log",student_id,20)
     c3_audit=next(
@@ -224,8 +330,31 @@ async def get_therapist_c4_adaptive(student_id: str):
         )},
         support_effectiveness=sorted(effectiveness, key=lambda row: row["action"]),
         persistent_learning_needs=persistent_learning_needs,
+        summary={
+            "window_decisions":len(history),
+            "primary_focus_id":primary_id,
+            "primary_focus_name":primary_name,
+            "primary_mastery":primary_focus[1] if primary_focus else None,
+            "core_tasks":len(core_rows),
+            "independent_core_tasks":independent_core,
+            "supported_core_tasks":supported_core,
+            "support_dependence_rate":(
+                round(supported_core/len(core_rows),4) if core_rows else None
+            ),
+            "confirmation_tasks":len(confirmation_rows),
+            "independent_confirmations":independent_confirmations,
+            "independent_transfer_rate":(
+                round(independent_confirmations/len(confirmation_rows),4)
+                if confirmation_rows else None
+            ),
+        },
+        mastery_trend=mastery_trend,
+        recurring_targets=recurring_targets,
+        next_session_plan=next_session_plan,
         data_quality={
             "decision_rows": len(history),
+            "available_decision_rows":len(all_history),
+            "window_size":window,
             "policy_rows": len(policy_rows),
             "policy_rows_with_proximal_outcomes": sum(1 for row in policy_rows if row.get("proximal_outcome_observed") is True),
             "policy_rows_with_outcomes": sum(1 for row in policy_rows if row.get("outcome_observed") is True),
