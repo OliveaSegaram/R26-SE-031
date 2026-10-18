@@ -13,6 +13,7 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -21,7 +22,7 @@ from slowapi.errors import RateLimitExceeded
 # Allow importing from shared/
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from shared.database import connect_to_mongo, close_mongo_connection
+from shared.database import connect_to_mongo, close_mongo_connection, get_db
 from config import PORT, CORS_ORIGINS
 
 # Import routers
@@ -85,6 +86,24 @@ def health():
         "service": "C5-Auth",
         "c4_policy_mode_forwarded": os.getenv("C4_POLICY_MODE", "shadow"),
     }
+
+
+@app.get("/ready")
+async def ready():
+    """Verify the Auth API can reach the shared research database."""
+    try:
+        await get_db().command("ping")
+        return {"ready": True, "service": "C5-Auth", "database": "ready"}
+    except Exception as exc:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "ready": False,
+                "service": "C5-Auth",
+                "database": "unavailable",
+                "error_type": type(exc).__name__,
+            },
+        )
 
 # --- Centralized OpenAPI Docs ---
 @app.get("/docs", include_in_schema=False)

@@ -5,7 +5,7 @@ import os
 import asyncio
 from contextlib import asynccontextmanager
 
-from database import connect_to_mongo, close_mongo_connection
+from database import connect_to_mongo, close_mongo_connection, get_db
 from routers.stt import router as stt_router
 from routers.tts import router as tts_router
 from services.stt_service import (
@@ -62,14 +62,28 @@ def health_check():
 
 
 @app.get("/ready")
-def readiness_check():
+async def readiness_check():
     from fastapi.responses import JSONResponse
 
     stt = get_stt_status()
-    ready = stt["status"] == "ready"
+    database_ready = False
+    error_type = None
+    try:
+        await get_db().command("ping")
+        database_ready = True
+    except Exception as exc:
+        error_type = type(exc).__name__
+
+    ready = stt["status"] == "ready" and database_ready
     return JSONResponse(
         status_code=200 if ready else 503,
-        content={"ready": ready, "service": "speech-monitoring-v1", "stt": stt},
+        content={
+            "ready": ready,
+            "service": "speech-monitoring-v1",
+            "stt": stt,
+            "database": "ready" if database_ready else "unavailable",
+            "error_type": error_type,
+        },
     )
 
 if __name__ == "__main__":

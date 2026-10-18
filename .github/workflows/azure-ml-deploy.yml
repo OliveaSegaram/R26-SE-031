@@ -1,11 +1,14 @@
 name: Build and Deploy ML Backend to Azure
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
   workflow_dispatch:
   push:
     branches:
       - dev
-      - 'temp/**'
     paths:
       - 'app/backend/speech-monitoring-v1/**'
       - 'app/backend/telemetry-analytics-v1/**'
@@ -15,12 +18,18 @@ on:
       - 'requirements-azure.txt'
       - 'azure_gateway.py'
       - '.dockerignore'
-      - '.github/workflows/**'
+      - '.github/workflows/azure-ml-deploy.yml'
 
 env:
   ACR_NAME: "sipsaramlacr26"
   IMAGE_NAME: "sipsara-ml-backend"
   WEBAPP_NAME: "sipsara-ml-backend-v2"
+  RESOURCE_GROUP: "SipsaraMLGroup"
+  IMAGE_TAG: ${{ github.sha }}
+
+concurrency:
+  group: azure-ml-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:
@@ -30,18 +39,49 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Check ACR credentials
+      id: check-creds
+      env:
+        ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+      run: |
+        if [ -n "$ACR_PASSWORD" ]; then
+          echo "has_creds=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_creds=false" >> $GITHUB_OUTPUT
+          echo "::notice ::ACR_PASSWORD secret is not configured in GitHub Secrets. Skipping build and push."
+        fi
+
     - name: Log in to Azure Container Registry
+      if: steps.check-creds.outputs.has_creds == 'true'
       uses: azure/docker-login@v1
       with:
         login-server: ${{ env.ACR_NAME }}.azurecr.io
-        username: ${{ secrets.ACR_USERNAME }}
+        username: ${{ env.ACR_NAME }}
         password: ${{ secrets.ACR_PASSWORD }}
 
-    - name: Build Docker Image
+    - name: Build and Push Docker image
+      if: steps.check-creds.outputs.has_creds == 'true'
       run: |
-        docker build -f Dockerfile.azure -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest .
-        docker images
+        LATEST_IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME}:latest"
+        TAGGED_IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${{ github.sha }}"
+        docker build -f Dockerfile.azure -t "$LATEST_IMAGE" -t "$TAGGED_IMAGE" .
+        docker push "$LATEST_IMAGE"
+        docker push "$TAGGED_IMAGE"
+        echo "Image successfully pushed to ACR. Webhook will auto-deploy :latest to App Service."
 
-    - name: Push Docker Image to ACR
+    - name: Verify gateway, C1, and C2 readiness
+      if: steps.check-creds.outputs.has_creds == 'true'
       run: |
-        docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+        BASE_URL="https://${WEBAPP_NAME}.azurewebsites.net"
+        for attempt in {1..20}; do
+          if curl --fail --silent --show-error "$BASE_URL/health" >/dev/null \
+            && curl --fail --silent --show-error "$BASE_URL/telemetry/docs" >/dev/null \
+            && curl --fail --silent --show-error "$BASE_URL/speech/docs" >/dev/null; then
+            echo "Azure gateway, C1, and C2 are ready."
+            exit 0
+          fi
+          echo "Waiting for Azure services (attempt $attempt/20)..."
+          sleep 15
+        done
+        echo "Azure services did not become ready within timeout."
+        exit 1
