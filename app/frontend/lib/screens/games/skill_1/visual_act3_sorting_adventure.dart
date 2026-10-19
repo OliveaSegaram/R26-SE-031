@@ -361,6 +361,9 @@ class _VisualAct3SortingAdventureState extends State<VisualAct3SortingAdventure>
                 selectedOptionIds: <String>[
                   '${itemId}_DEST${selectedIndex + 1}',
                 ],
+                selectedAnswerValues: <String>[
+                  '${_currentRound.categoryLabels[categoryKey] ?? categoryKey} ← $object',
+                ],
                 correctOptionIds: <String>['${itemId}_DEST${correctIndex + 1}'],
                 incorrectOptionIds: <String>[
                   '${itemId}_DEST${selectedIndex + 1}',
