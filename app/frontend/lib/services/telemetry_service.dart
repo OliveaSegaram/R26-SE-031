@@ -145,6 +145,7 @@ class TelemetryEvent {
   final String phase;
   final int scaffoldLevelUsed;
   final List<Map<String, dynamic>> scaffoldApplications;
+  final List<Map<String, dynamic>> attemptHistory;
 
   const TelemetryEvent({
     this.eventId,
@@ -188,6 +189,7 @@ class TelemetryEvent {
     this.phase = 'COMPLETE',
     this.scaffoldLevelUsed = 0,
     this.scaffoldApplications = const <Map<String, dynamic>>[],
+    this.attemptHistory = const <Map<String, dynamic>>[],
   });
 
   Map<String, dynamic> toJson() => {
@@ -233,6 +235,7 @@ class TelemetryEvent {
     'phase': phase,
     'scaffold_level_used': scaffoldLevelUsed,
     'scaffold_applications': scaffoldApplications,
+    'attempt_history': attemptHistory,
   };
 }
 
