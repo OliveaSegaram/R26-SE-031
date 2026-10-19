@@ -58,6 +58,22 @@ void main() {
       scaffoldApplications: const <Map<String, dynamic>>[
         <String, dynamic>{'scaffold_level': 2, 'action': 'disable_options'},
       ],
+      attemptHistory: const <Map<String, dynamic>>[
+        <String, dynamic>{
+          'attempt_number': 1,
+          'is_correct': false,
+          'selected_answers': <String>['animals/dog.png'],
+          'support_applied_before_response': false,
+          'support_actions_before_response': <String>[],
+        },
+        <String, dynamic>{
+          'attempt_number': 2,
+          'is_correct': true,
+          'selected_answers': <String>['animals/cat.png'],
+          'support_applied_before_response': true,
+          'support_actions_before_response': <String>['disableOptions'],
+        },
+      ],
     );
 
     final json = event.toJson();
@@ -71,6 +87,11 @@ void main() {
     expect(json['phase'], 'COMPLETE');
     expect(json['scaffold_level_used'], 2);
     expect(json['scaffold_applications'], hasLength(1));
+    expect(json['attempt_history'], hasLength(2));
+    expect(
+      (json['attempt_history'] as List).last['support_applied_before_response'],
+      isTrue,
+    );
     expect(json['timestamp'], '2026-10-07T00:00:00.000Z');
   });
 

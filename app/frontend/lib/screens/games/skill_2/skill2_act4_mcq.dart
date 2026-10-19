@@ -108,9 +108,10 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
         itemId: _currentItemId,
         isTarget: correctValues.contains,
       );
-      _correctIndices = List<int>.generate(_options.length, (index) => index)
-          .where((index) => correctValues.contains(_options[index]))
-          .toList();
+      _correctIndices = List<int>.generate(
+        _options.length,
+        (index) => index,
+      ).where((index) => correctValues.contains(_options[index])).toList();
       _choiceController.configure(
         List<AdaptiveOption<int>>.generate(
           _options.length,
@@ -297,6 +298,9 @@ class _Skill2Act4McqState extends State<Skill2Act4Mcq> {
             "visible_option_ids": visibleOpts,
             "incorrect_option_ids": incorrectHistory,
             "selected_option_ids": selectedOpts,
+            "selected_answer_values": _selectedIndices
+                .map((selectedIndex) => _options[selectedIndex])
+                .toList(),
             "remaining_correct_option_ids": remainingCorrectOpts,
             "correct_option_ids": _correctIndices.map(_optionId).toList(),
             // For the two-boundary final task, diagnose the next still-missing

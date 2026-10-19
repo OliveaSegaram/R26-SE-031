@@ -344,6 +344,7 @@ class _VisualAct1HiddenSearchState extends State<VisualAct1HiddenSearch>
           'original_options_count': _items.length,
           'visible_option_ids': visible.map((option) => option.id).toList(),
           'selected_option_ids': <String>[selectedId],
+          'selected_answer_values': <String>[selected.path],
           'correct_option_ids': correctIds,
           'incorrect_option_ids': <String>[selectedId, ...otherDistractors],
           'supported_actions': const <String>[

@@ -45,6 +45,7 @@ class TelemetryModel(BaseModel):
     target_ids: Optional[List[str]] = None
     struggled_target_units: Optional[List[str]] = None
     selected_answers: Optional[List[str]] = None
+    attempt_history: Optional[List[Dict[str, Any]]] = None
     touch_stream: List[Any] = Field(default_factory=list)
     item_version: int = 1
     prompt_modality: str = "visual"
@@ -248,6 +249,9 @@ async def run_background_pipeline(payload: InteractionPayload, c4_result: dict, 
         ),
         "selected_answers": (
             getattr(payload.telemetry, "selected_answers", None) or []
+        ),
+        "attempt_history": (
+            getattr(payload.telemetry, "attempt_history", None) or []
         ),
         # Keep both names because the real-time gateway and the batch
         # telemetry service historically used different field names.

@@ -3,11 +3,65 @@ from datetime import datetime, timezone
 import math
 
 KC_NAMES = {
-    "KC_VISUAL_SUPPORT": "Visual support", "KC_AKSHARA_IDENTITY": "Sinhala letter identity",
-    "KC_PHONEME_GRAPHEME": "Sound-letter matching", "KC_ORTHOGRAPHIC_MEMORY": "Letter sequence memory",
-    "KC_WORD_RECOGNITION": "Word recognition", "KC_SPELLING_SEQUENCE": "Spelling sequence",
-    "KC_SENTENCE_LANGUAGE": "Sentence language", "KC_READING_COMPREHENSION": "Reading comprehension",
+    "KC_VISUAL_SUPPORT": "Visual support",
+    "KC_VISUAL_IDENTIFICATION": "Picture identification",
+    "KC_VISUAL_MATCHING": "Picture matching",
+    "KC_VISUAL_CATEGORIZATION": "Picture sorting",
+    "KC_VISUAL_PATTERN": "Visual patterns",
+    "KC_VISUAL_MEMORY": "Visual memory",
+    "KC_AKSHARA_IDENTITY": "Sinhala letter identity",
+    "KC_LETTER_IDENTIFICATION": "Letter identification",
+    "KC_LETTER_MATCHING": "Letter matching",
+    "KC_PHONEME_GRAPHEME": "Sound-letter matching",
+    "KC_PHONEME_LETTER_MAPPING": "Sound-letter mapping",
+    "KC_LETTER_DECODING": "Letter decoding",
+    "KC_ORTHOGRAPHIC_MEMORY": "Letter sequence memory",
+    "KC_LETTER_MEMORY": "Letter memory",
+    "KC_WORD_RECOGNITION": "Word recognition",
+    "KC_WORD_FORMATION": "Word formation",
+    "KC_AUDITORY_WORD_RECOGNITION": "Listening for words",
+    "KC_WORD_COMPLETION": "Word completion",
+    "KC_SPELLING_SEQUENCE": "Spelling sequence",
+    "KC_WORD_SEQUENCING": "Word sequencing",
+    "KC_SENTENCE_LANGUAGE": "Sentence language",
+    "KC_SENTENCE_COMPREHENSION": "Sentence comprehension",
+    "KC_SENTENCE_COMPLETION": "Sentence completion",
+    "KC_AUDITORY_SENTENCE_RECOGNITION": "Listening for sentences",
+    "KC_SENTENCE_SEQUENCING": "Sentence sequencing",
+    "KC_READING_COMPREHENSION": "Reading comprehension",
     "KC_ORAL_READING_FLUENCY": "Oral reading",
+}
+
+# Canonical curriculum presentation. These labels mirror the child-facing
+# curriculum files so parents, therapists, exports, and task evidence all refer
+# to an activity by the same name.
+SKILL_NAMES = {
+    "1": "පින්තූර හඳුනාගනිමු",
+    "2": "මූලික අකුරු හඳුනාගනිමු",
+    "3": "සරල වචන සකසමු",
+    "4": "සරල වාක්‍ය සකසමු",
+}
+
+ACTIVITY_NAMES = {
+    "1.1": "සැඟවුණු පින්තූර සොයමු",
+    "1.2": "සෙවණැල්ලට පින්තූරය ගළපමු",
+    "1.3": "පින්තූර වෙන් කරමු",
+    "1.4": "රටාව සම්පූර්ණ කරමු",
+    "1.5": "පින්තූර මතකයෙන් සොයමු",
+    "2.1": "නිවැරදි අකුර සොයමු",
+    "2.2": "සමාන අකුරු සොයමු",
+    "2.3": "අකුර අසා හඳුනා ගනිමු",
+    "2.4": "අකුර සොයා තෝරමු",
+    "2.5": "අකුරු මතකයෙන් සකසමු",
+    "3.1": "පින්තූරයට වචනය තෝරමු",
+    "3.2": "අකුරුවලින් වචන හදමු",
+    "3.3": "වචන අසා හඳුනා ගනිමු",
+    "3.4": "අඩු අකුර සොයමු",
+    "3.5": "අකුරු පිළිවෙළට සකසමු",
+    "4.1": "පින්තූරයට වාක්‍යය තෝරමු",
+    "4.2": "වචන යොදා වාක්‍ය හදමු",
+    "4.3": "වාක්‍ය අසා හඳුනා ගනිමු",
+    "4.4": "වචන පිළිවෙළට සකසමු",
 }
 PATTERNS = {name: name.removesuffix(" Learning Pattern") for name in (
     "Typical Learning Pattern", "Phonological Learning Pattern",

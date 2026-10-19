@@ -300,6 +300,7 @@ class _Skill2Act2IdenticalMatchState extends State<Skill2Act2IdenticalMatch> {
             .toList(),
         "correct_option_ids": [_pairId(_selectedTopLetter!)],
         "selected_option_ids": [_pairId(letter)],
+        "selected_answer_values": <String>[letter],
         "struggled_target_units": Skill2RoundResolver.matchingStruggledUnits(
           _selectedTopLetter,
         ),

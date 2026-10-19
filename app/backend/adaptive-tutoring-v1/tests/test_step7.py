@@ -284,6 +284,13 @@ async def test_10_adaptive_decision_persistence(client):
         "response_load_relation": "core",
         "target_ids": ["S2A1R01_O1"],
         "selected_answers": ["S2A1R01_O1"],
+        "attempt_history": [{
+            "attempt_number": 1,
+            "is_correct": True,
+            "selected_answers": ["අ"],
+            "support_applied_before_response": False,
+            "support_actions_before_response": [],
+        }],
         "scaffold_applications": [],
     }
     
@@ -308,6 +315,7 @@ async def test_10_adaptive_decision_persistence(client):
     assert doc["is_anchor"] is False
     assert doc["target_ids"] == ["S2A1R01_O1"]
     assert doc["selected_answers"] == ["S2A1R01_O1"]
+    assert doc["attempt_history"][0]["selected_answers"] == ["අ"]
     assert "mastery_after" in doc
     assert doc["bkt_model_version"] == "bkt_theory_provisional_v1"
     assert doc["bkt_calibration_status"] == "provisional"
@@ -456,15 +464,31 @@ async def test_13_skill1_assisted_core_runs_remediation_then_confirmation(client
     assert assisted["next_action"]["next_phase"] == "REMEDIATION"
     assert assisted["next_action"]["next_item"] == "S1A1R03V1"
     assert assisted["next_action"]["progress_total"] == 5
+    assert assisted["bkt_evidence"]["evidence_role"] == "CORE"
+    assert assisted["bkt_evidence"]["mastery_update_applied"] is True
+    assert assisted["bkt_evidence"]["mastery_after"] < 0.65
 
     remediation = await complete("S1A1R03V1", True)
     assert remediation["next_action"]["decision"] == "CONFIRMATION"
     assert remediation["next_action"]["next_phase"] == "CONFIRMATION"
     assert remediation["next_action"]["next_item"] == "S1A1R03V2"
+    assert remediation["bkt_evidence"]["evidence_role"] == "REMEDIATION"
+    assert remediation["bkt_evidence"]["mastery_update_applied"] is False
+    assert remediation["bkt_evidence"]["mastery_after"] == pytest.approx(
+        assisted["bkt_evidence"]["mastery_after"]
+    )
+    assert remediation["irt_evidence"]["ability_update_applied"] is False
+    assert remediation["irt_evidence"]["observation_count"] == 1
 
     confirmation = await complete("S1A1R03V2", True)
     assert confirmation["next_action"]["next_phase"] == "CORE"
     assert confirmation["next_action"]["next_item"] == "S1A1R04"
+    assert confirmation["bkt_evidence"]["evidence_role"] == "CONFIRMATION"
+    assert confirmation["bkt_evidence"]["mastery_update_applied"] is True
+    assert confirmation["bkt_evidence"]["mastery_after"] > remediation[
+        "bkt_evidence"
+    ]["mastery_after"]
+    assert confirmation["irt_evidence"]["observation_count"] == 2
     assert "UNASSISTED_EQUIVALENT_CONFIRMATION_PASSED" in (
         confirmation["selection_evidence"]["policy_reason"]
     )

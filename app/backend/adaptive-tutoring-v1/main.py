@@ -50,6 +50,26 @@ def difficulty_unit_interval(difficulty_b: float) -> float:
     return round(max(0.0, min(1.0, (float(difficulty_b) + 3.0) / 6.0)), 4)
 
 
+def mastery_evidence_role(item_role: Optional[str], practice_phase: Optional[str]) -> str:
+    """Resolve how this completed item may contribute to latent mastery.
+
+    Remediation is an intervention response, not an independent mastery check.
+    A CORE item temporarily reused as a confirmation inherits the active
+    confirmation phase so that the fresh independent check remains evidence.
+    """
+    role = str(item_role or "").upper()
+    phase = str(practice_phase or "").upper()
+    if role.startswith("REMEDIATION"):
+        return "REMEDIATION"
+    if role.startswith("CONFIRMATION"):
+        return "CONFIRMATION"
+    if phase.startswith("REMEDIATION"):
+        return "REMEDIATION"
+    if phase.startswith("CONFIRMATION"):
+        return "CONFIRMATION"
+    return "CORE" if role in {"", "CORE"} else "OTHER"
+
+
 async def _link_proximal_policy_outcome(
     db: Any,
     *,
@@ -733,25 +753,44 @@ async def update_interaction(request: InteractionRequest):
     practice_phase_before = str(
         adaptive_state.get("next_phase") or item_role or "CORE"
     ).upper()
+    evidence_role = mastery_evidence_role(item_role, practice_phase_before)
+    mastery_update_applied = evidence_role in {"CORE", "CONFIRMATION"}
+    mastery_update_reason = (
+        "INDEPENDENT_CORE_RESPONSE"
+        if evidence_role == "CORE"
+        else "FRESH_CONFIRMATION_RESPONSE"
+        if evidence_role == "CONFIRMATION"
+        else "REMEDIATION_RECORDED_AS_INTERVENTION_RESPONSE"
+    )
 
     print(
         f"BKT Before: {mastery_before:.3f}, "
         f"First Independent Correct: {learning_observation_correct}, "
-        f"Final Correct: {request.is_correct}, Quality: {response_quality}"
+        f"Final Correct: {request.is_correct}, Quality: {response_quality}, "
+        f"Evidence Role: {evidence_role}, "
+        f"Mastery Update: {mastery_update_applied}"
     )
 
-    new_prob = bkt_engine.update_knowledge_state(
-        current_prob=current_prob,
-        target_kc=official_kc,
-        is_correct=learning_observation_correct
+    new_prob = (
+        bkt_engine.update_knowledge_state(
+            current_prob=current_prob,
+            target_kc=official_kc,
+            is_correct=learning_observation_correct,
+        )
+        if mastery_update_applied
+        else float(current_prob)
     )
     knowledge_state[official_kc] = new_prob
-    
-    theta_new = irt_engine.update_theta(
-        theta_old=theta,
-        is_correct=learning_observation_correct,
-        b_i=diff_b,
-        learning_rate=0.5
+
+    theta_new = (
+        irt_engine.update_theta(
+            theta_old=theta,
+            is_correct=learning_observation_correct,
+            b_i=diff_b,
+            learning_rate=0.5,
+        )
+        if mastery_update_applied
+        else float(theta)
     )
     theta_by_kc[official_kc] = theta_new
 
@@ -844,6 +883,7 @@ async def update_interaction(request: InteractionRequest):
     difficulty_history_before = list(administered_difficulties.values())
     if canonical_item not in administered_item_ids:
         administered_item_ids.append(canonical_item)
+    if mastery_update_applied and canonical_item not in administered_difficulties:
         administered_difficulties[canonical_item] = float(diff_b)
     adaptive_state["administered_item_ids"] = administered_item_ids[-100:]
     adaptive_state["administered_item_difficulties"] = {
@@ -964,6 +1004,9 @@ async def update_interaction(request: InteractionRequest):
         "official_kc": official_kc,
         "mastery_before": mastery_before,
         "mastery_after": new_prob,
+        "evidence_role": evidence_role,
+        "mastery_update_applied": mastery_update_applied,
+        "mastery_update_reason": mastery_update_reason,
         "correctness": learning_observation_correct,
         "first_attempt_correct": first_attempt_correct,
         "final_correct": request.is_correct,
@@ -977,6 +1020,9 @@ async def update_interaction(request: InteractionRequest):
         "predicted_probability": irt_engine.calculate_probability(theta, diff_b),
         "theta_after": theta_new,
         "observation_correct": learning_observation_correct,
+        "evidence_role": evidence_role,
+        "ability_update_applied": mastery_update_applied,
+        "ability_update_reason": mastery_update_reason,
         "standard_error_before": (
             round(standard_error_before, 6)
             if standard_error_before is not None else None
@@ -1234,6 +1280,25 @@ async def update_interaction(request: InteractionRequest):
         "selected_answers": (
             getattr(request.telemetry, "selected_answers", None) or []
         ),
+        "attempt_history": (
+            getattr(request.telemetry, "attempt_history", None) or []
+        ),
+        "attempt_count": int(
+            getattr(request.telemetry, "attempt_count", 0) or 0
+        ),
+        "incorrect_attempt_count": int(
+            getattr(request.telemetry, "incorrect_attempt_count", 0) or 0
+        ),
+        "correction_count": int(
+            getattr(request.telemetry, "correction_count", 0) or 0
+        ),
+        "hint_count": int(getattr(request.telemetry, "hint_count", 0) or 0),
+        "first_touch_latency_ms": int(
+            getattr(request.telemetry, "first_touch_latency_ms", 0) or 0
+        ),
+        "total_round_latency_ms": int(
+            getattr(request.telemetry, "total_round_latency_ms", 0) or 0
+        ),
         "error_profile": error_profile,
         "micro_skill_evidence": adaptive_state.get(
             "micro_skill_evidence", {}
@@ -1246,6 +1311,9 @@ async def update_interaction(request: InteractionRequest):
         "is_correct": request.is_correct,
         "first_attempt_correct": first_attempt_correct,
         "learning_observation_correct": learning_observation_correct,
+        "mastery_evidence_role": evidence_role,
+        "mastery_update_applied": mastery_update_applied,
+        "mastery_update_reason": mastery_update_reason,
         "mastery_before": mastery_before,
         "mastery_after": new_prob,
         "bkt_model_version": bkt_model_evidence["model_version"],
@@ -1254,6 +1322,7 @@ async def update_interaction(request: InteractionRequest):
         "bkt_parameters": bkt_model_evidence["parameters"],
         "theta_before": theta,
         "theta_after": theta_new,
+        "ability_update_applied": mastery_update_applied,
         "theta_scope": official_kc,
         "predicted_probability": irt_evidence["predicted_probability"],
         "measurement_standard_error": standard_error_after,

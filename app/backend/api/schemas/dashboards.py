@@ -240,6 +240,10 @@ class KnowledgeComponent(BaseModel):
     id: str
     name: str
     mastery: float
+    observations: int = 0
+    independent_observations: int = 0
+    supported_observations: int = 0
+    last_observed_at: Optional[str] = None
 
 class AdaptiveHistoryItem(BaseModel):
     timestamp: str
@@ -256,9 +260,14 @@ class AdaptiveHistoryItem(BaseModel):
     item_id: Optional[str] = None
     knowledge_component_id: Optional[str] = None
     response_quality: Optional[str] = None
+    item_role: Optional[str] = None
+    mastery_evidence_role: Optional[str] = None
+    mastery_update_applied: Optional[bool] = None
 
 class TherapistC4AdaptiveDTO(MLResponseBase):
     knowledge_components: List[KnowledgeComponent]
+    skills: List[Dict[str, Any]] = Field(default_factory=list)
+    activities: List[Dict[str, Any]] = Field(default_factory=list)
     theta: Optional[float] = None
     theta_se: Optional[float] = None
     updated_at: str

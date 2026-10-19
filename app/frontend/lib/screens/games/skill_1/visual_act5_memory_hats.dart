@@ -389,11 +389,10 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
 
   // ── Game logic ──
 
-  MemoryRound get _currentRound =>
-      _memoryRoundFromData(
-        _taskCoordinator.roundData,
-        itemId: _taskCoordinator.itemId,
-      );
+  MemoryRound get _currentRound => _memoryRoundFromData(
+    _taskCoordinator.roundData,
+    itemId: _taskCoordinator.itemId,
+  );
 
   String _cardOptionId(int index) => '${_taskCoordinator.itemId}_O${index + 1}';
 
@@ -454,6 +453,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
                   'original_options_count': _currentRound.itemCount,
                   'visible_option_ids': visibleIds,
                   'selected_option_ids': <String>[selectedId],
+                  'selected_answer_values': <String>[tappedAsset],
                   'correct_option_ids': <String>[targetId],
                   'incorrect_option_ids': incorrectIds,
                   'supported_actions': const <String>[
@@ -462,9 +462,7 @@ class _VisualAct5MemoryAdventureState extends State<VisualAct5MemoryHats>
                   ],
                   'minimum_visible_options': 2,
                   'error_type': 'visual_memory_error',
-                  'struggled_target_units': <String>[
-                    _currentRound.targetAsset,
-                  ],
+                  'struggled_target_units': <String>[_currentRound.targetAsset],
                 },
               )
               .then((result) {

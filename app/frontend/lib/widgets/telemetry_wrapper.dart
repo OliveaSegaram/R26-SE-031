@@ -74,6 +74,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   int _incorrectAttemptCount = 0;
   bool? _firstAttemptCorrect;
   final List<String> _accumulatedAnswers = [];
+  final List<Map<String, dynamic>> _attemptHistory = [];
   String? _firstErrorType;
   final List<Map<String, dynamic>> _scaffoldApplications = [];
 
@@ -212,6 +213,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       scaffoldApplications: List<Map<String, dynamic>>.unmodifiable(
         _scaffoldApplications,
       ),
+      attemptHistory: List<Map<String, dynamic>>.unmodifiable(_attemptHistory),
     );
     TelemetryService().logInteraction(event);
     debugPrint('TELEMETRY: ACTIVITY ABANDONED AT ROUND $_currentRound');
@@ -438,6 +440,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
         "response_load_relation": canonical.responseLoadRelation,
         "target_ids": canonical.targets,
         "selected_answers": selectedAnswers,
+        "attempt_history": List<Map<String, dynamic>>.from(_attemptHistory),
       },
     };
 
@@ -471,6 +474,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
   List<String> _extractSelectedAnswers(Map<String, dynamic>? telemetry) {
     if (telemetry == null) return const <String>[];
     final raw =
+        telemetry['selected_answer_values'] ??
         telemetry['selected_option_ids'] ??
         telemetry['selected_answers'] ??
         telemetry['selected_option_id'];
@@ -500,6 +504,9 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     _hintCount += countInstructionalChoiceHints(plan.commands);
     _scaffoldApplications.add(<String, dynamic>{
       ...report.toJson(),
+      'command_types': plan.commands
+          .map((command) => command.type.name)
+          .toList(),
       'scaffold_level': plan.scaffoldLevel,
       'policy_version': plan.policyVersion,
       'reason_codes': plan.reasonCodes,
@@ -558,6 +565,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     required String errorType,
     List<String> struggledTargetUnits = const <String>[],
     List<String> incorrectOptionIds = const <String>[],
+    List<String> selectedAnswerValues = const <String>[],
     int minimumVisibleOptions = 2,
   }) async {
     final result = await registerAdaptiveWrongAttempt(
@@ -566,6 +574,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
         'original_options_count': visibleOptionIds.length,
         'visible_option_ids': visibleOptionIds,
         'selected_option_ids': selectedOptionIds,
+        'selected_answer_values': selectedAnswerValues,
         'correct_option_ids': correctOptionIds,
         'incorrect_option_ids': incorrectOptionIds,
         'supported_actions': supportedActions,
@@ -612,6 +621,20 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     if (!isCorrect) {
       _incorrectAttemptCount++;
     }
+    final supportActions = <String>{};
+    for (final application in _scaffoldApplications) {
+      final commands = application['command_types'];
+      if (commands is Iterable) {
+        supportActions.addAll(commands.map((value) => value.toString()));
+      }
+    }
+    _attemptHistory.add(<String, dynamic>{
+      'attempt_number': _attemptCount,
+      'is_correct': isCorrect,
+      'selected_answers': List<String>.from(selectedAnswers),
+      'support_applied_before_response': _scaffoldApplications.isNotEmpty,
+      'support_actions_before_response': supportActions.toList(),
+    });
     _accumulatedAnswers.addAll(selectedAnswers);
     if (errorType != null && _firstErrorType == null) {
       _firstErrorType = errorType;
@@ -711,6 +734,12 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
           _accumulatedAnswers.add(target);
         }
       }
+      if (_attemptHistory.isNotEmpty &&
+          (_attemptHistory.last['selected_answers'] as List).isEmpty) {
+        _attemptHistory.last['selected_answers'] = List<String>.from(
+          canonical.targets,
+        );
+      }
     }
 
     final sessionId = TelemetryService().sessionId;
@@ -761,6 +790,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
       scaffoldApplications: List<Map<String, dynamic>>.unmodifiable(
         _scaffoldApplications,
       ),
+      attemptHistory: List<Map<String, dynamic>>.unmodifiable(_attemptHistory),
     );
 
     TelemetryService().broadcastRoundComplete(
@@ -820,6 +850,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
         "scaffold_applications": List<Map<String, dynamic>>.from(
           _scaffoldApplications,
         ),
+        "attempt_history": List<Map<String, dynamic>>.from(_attemptHistory),
       },
     };
 
@@ -906,6 +937,7 @@ class TelemetryWrapperState extends State<TelemetryWrapper> {
     _incorrectAttemptCount = 0;
     _firstAttemptCorrect = null;
     _accumulatedAnswers.clear();
+    _attemptHistory.clear();
     _firstErrorType = null;
     _correctionCount = 0;
     _hintCount = 0;

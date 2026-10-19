@@ -320,6 +320,7 @@ class _Skill2Act5PatternMemoryState extends State<Skill2Act5PatternMemory>
           extraTelemetry: {
             "selected_option_id": item,
             "selected_option_ids": [optionId],
+            "selected_answer_values": <String>[item],
             "correct_option_ids": expectedIds,
             "struggled_target_units":
                 Skill2RoundResolver.sequenceStruggledUnits(
