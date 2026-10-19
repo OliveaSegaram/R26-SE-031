@@ -324,6 +324,7 @@ class _VisualAct2ShadowMatchingState extends State<VisualAct2ShadowMatching>
                   (index) => '${itemId}_O${index + 1}',
                 ),
                 selectedOptionIds: <String>['${itemId}_O${selectedIndex + 1}'],
+                selectedAnswerValues: <String>[targetShadow],
                 correctOptionIds: <String>['${itemId}_O${correctIndex + 1}'],
                 incorrectOptionIds: <String>['${itemId}_O${selectedIndex + 1}'],
                 supportedActions: const <String>[

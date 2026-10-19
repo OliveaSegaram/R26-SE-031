@@ -279,6 +279,7 @@ class _Skill2Act3AudioState extends State<Skill2Act3Audio> {
             ],
             "correct_option_ids": <String>[_optionId(_correctIndex)],
             "selected_option_ids": <String>[_optionId(index)],
+            "selected_answer_values": <String>[_options[index]],
             "struggled_target_units": <String>[_options[_correctIndex]],
             "supported_actions": <String>[
               "REMOVE_OPTION",

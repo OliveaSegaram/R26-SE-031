@@ -157,6 +157,10 @@ mixin SequenceScaffoldAdapter<T extends StatefulWidget> on State<T> {
         'selected_option_ids': selectedPoolIndices
             .map(adaptiveTokenId)
             .toList(),
+        'selected_answer_values': selectedPoolIndices
+            .where((index) => index >= 0 && index < _sequenceTokens.length)
+            .map((index) => _sequenceTokens[index])
+            .toList(),
         'supported_actions': const <String>[
           'HIGHLIGHT_OPTION',
           'REVEAL_FIRST_TOKEN',

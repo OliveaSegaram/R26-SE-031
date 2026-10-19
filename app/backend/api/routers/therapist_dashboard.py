@@ -1,13 +1,261 @@
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, Response
 from schemas.dashboards import (TherapistOverviewDTO, TherapistC1BehavioralDTO, TherapistC2SpeechDTO,
                                 TherapistC3ProfileDTO, TherapistC4AdaptiveDTO)
 from shared.database import get_db
 from services.dashboard_access import require_dashboard_access
-from services.dashboard_data import (KC_NAMES, number, timestamp, records, mlbase, speech, pattern_profile,
-                                     mastery_status, research_evidence)
+from services.dashboard_data import (ACTIVITY_NAMES, KC_NAMES, SKILL_NAMES,
+                                     number, timestamp, records, mlbase, speech,
+                                     pattern_profile, mastery_status,
+                                     research_evidence)
 
 router = APIRouter(prefix="/api/v1/therapist/students", tags=["Therapist Dashboard"],
                    dependencies=[Depends(require_dashboard_access)])
+
+
+def _task_round(item_id):
+    match = re.search(r"R(\d+)", str(item_id or ""), re.IGNORECASE)
+    return int(match.group(1)) if match else None
+
+
+def _item_answer_values(item):
+    """Return reviewed answers in a compact form suitable for read-only replay."""
+    content = item.get("content") or {}
+    options = item.get("options") or []
+    for key in (
+        "correctOption", "correct_option", "correct_answer", "correct_word",
+        "correct_sentence", "target_word", "target_letter",
+    ):
+        if content.get(key) is not None:
+            return [str(content[key])]
+    for key in ("targets", "target_assets"):
+        value = content.get(key)
+        if isinstance(value, list) and value:
+            return [str(entry) for entry in value]
+    if content.get("target_asset") is not None:
+        return [str(content["target_asset"])]
+    target_items = [
+        str(entry.get("value"))
+        for entry in (content.get("items") or [])
+        if isinstance(entry, dict)
+        and entry.get("is_target") is True
+        and entry.get("value") is not None
+    ]
+    if target_items:
+        return target_items
+    if isinstance(content.get("letters"), list) and content["letters"]:
+        return [str(value) for value in content["letters"]]
+    content_options = content.get("options") or []
+    indices = []
+    if isinstance(content.get("correct_index"), int):
+        indices.append(content["correct_index"])
+    indices.extend(
+        index for index in (content.get("correct_indices") or [])
+        if isinstance(index, int)
+    )
+    indexed_answers = [
+        str(content_options[index]) for index in indices
+        if 0 <= index < len(content_options)
+    ]
+    if indexed_answers:
+        return indexed_answers
+    correct = [
+        str(option.get("value"))
+        for option in options
+        if option.get("role") == "target" and option.get("value") is not None
+    ]
+    return correct
+
+
+def _task_prompt(item):
+    content = item.get("content") or {}
+    direct = (
+        content.get("instruction")
+        or content.get("prompt")
+        or content.get("audio_text")
+    )
+    if direct:
+        return str(direct)
+    template = str(item.get("template_type") or "")
+    reviewed_runtime_prompts = {
+        "visual_odd_one_out": "සෙවනැල්ලට ගැළපෙන පින්තූරය තෝරන්න!",
+        "visual_sorting_adventure": "පින්තූර නිවැරදි කූඩයට දමන්න!",
+        "visual_pattern_adventure": "රටාවට ගැළපෙන පින්තූරය තෝරන්න",
+        "visual_memory_hats": "මේ පින්තූරය තිබූ තැන තෝරන්න",
+        "skill2_identical_match": "එක සමාන අකුරු යුගල තෝරන්න.",
+        "skill2_pattern_memory": "රටාව මතක තබාගෙන නැවත සකසන්න",
+    }
+    return reviewed_runtime_prompts.get(template,"Task prompt unavailable")
+
+
+def _task_preview(row, item):
+    content = dict(item.get("content") or {})
+    raw_options = item.get("options") or []
+    option_by_id = {
+        str(option.get("option_id")): str(option.get("value"))
+        for option in raw_options
+        if option.get("option_id") is not None and option.get("value") is not None
+    }
+
+    template = str(item.get("template_type") or "")
+
+    def resolve_value(value):
+        raw = str(value)
+        if raw in option_by_id:
+            return option_by_id[raw]
+        # Older memory-task events persisted only the shuffled card position.
+        # The exact image at that position cannot be recovered safely because
+        # the child UI shuffles cards. Never pretend that the static bank order
+        # is the order that the learner saw.
+        position = re.search(r"_O(\d+)$", raw, re.IGNORECASE)
+        if position and template == "visual_memory_hats":
+            return f"Card {position.group(1)} (historical position)"
+        token = re.search(r"_T(\d+)$", raw, re.IGNORECASE)
+        if token:
+            return f"Token {token.group(1)}"
+        return raw
+
+    def resolved(values):
+        return [resolve_value(value) for value in (values or [])]
+
+    selected = resolved(row.get("selected_answers") or [])
+    targets = resolved(row.get("target_ids") or [])
+    correct = _item_answer_values(item)
+    option_rows = []
+    for option in raw_options:
+        value = str(option.get("value") or "")
+        option_rows.append({
+            "id": str(option.get("option_id") or value),
+            "value": value,
+            "is_correct": value in correct or option.get("role") == "target",
+            "was_selected": value in selected,
+            "role": option.get("role"),
+        })
+
+    # Several activity families render from structured content rather than a
+    # conventional item-bank option array. Provide the therapist UI with an
+    # explicit visual pool for those templates too.
+    if not option_rows:
+        structured_values = []
+        if template == "visual_memory_hats":
+            structured_values = content.get("assets") or []
+        elif template == "visual_odd_one_out":
+            structured_values = content.get("target_assets") or []
+        elif template == "skill2_identical_match":
+            structured_values = content.get("letters") or []
+        elif isinstance(content.get("items"), list):
+            structured_values = [
+                entry.get("value") if isinstance(entry, dict) else entry
+                for entry in content["items"]
+            ]
+        elif isinstance(content.get("options"), list):
+            structured_values = content["options"]
+        for index, value in enumerate(structured_values):
+            if value is None:
+                continue
+            value = str(value)
+            option_rows.append({
+                "id": f"structured-{index + 1}",
+                "value": value,
+                "is_correct": value in correct,
+                "was_selected": value in selected,
+                "role": "target" if value in correct else "option",
+            })
+
+    category_pairs = []
+    for category, values in (content.get("categories") or {}).items():
+        label = (content.get("category_labels") or {}).get(category, category)
+        for value in values if isinstance(values, list) else []:
+            category_pairs.append({
+                "value": str(value),
+                "destination": str(label),
+                "category": str(category),
+            })
+
+    prompt = _task_prompt(item)
+    image = content.get("image_url") or content.get("image")
+
+    raw_attempt_history = row.get("attempt_history") or []
+    response_attempts = []
+    for index, attempt in enumerate(raw_attempt_history):
+        if not isinstance(attempt, dict):
+            continue
+        response_attempts.append({
+            "attempt_number": int(attempt.get("attempt_number") or index + 1),
+            "is_correct": attempt.get("is_correct") is True,
+            "selected_answers": resolved(attempt.get("selected_answers") or []),
+            "support_applied_before_response": bool(
+                attempt.get("support_applied_before_response")
+            ),
+            "support_actions_before_response": [
+                str(value)
+                for value in (attempt.get("support_actions_before_response") or [])
+            ],
+            "evidence_quality": "exact",
+        })
+
+    # Historical records pre-date attempt_history. Reconstruct only what the
+    # persisted counts prove: the first N attempts were incorrect and the final
+    # response was correct when final_correct is true. This is intentionally
+    # labelled reconstructed evidence in the UI.
+    if not response_attempts:
+        attempt_count = int(row.get("attempt_count") or 0)
+        incorrect_count = int(row.get("incorrect_attempt_count") or 0)
+        if attempt_count <= 0:
+            attempt_count = max(len(selected), 1 if row.get("is_correct") is not None else 0)
+        for index in range(attempt_count):
+            if len(selected) == attempt_count:
+                answers = [selected[index]]
+            elif attempt_count == 1:
+                answers = list(selected)
+            elif index < incorrect_count and index < len(selected):
+                answers = [selected[index]]
+            elif index == attempt_count - 1:
+                answers = list(correct) if row.get("is_correct") is True else []
+            else:
+                answers = []
+            is_correct = (
+                index >= incorrect_count
+                and row.get("is_correct") is True
+                and index == attempt_count - 1
+            )
+            response_attempts.append({
+                "attempt_number": index + 1,
+                "is_correct": is_correct,
+                "selected_answers": answers,
+                "support_applied_before_response": bool(
+                    int(row.get("scaffold_level_used", row.get("scaffold_level", 0)) or 0) > 0
+                    and index >= incorrect_count
+                ),
+                "support_actions_before_response": [],
+                "evidence_quality": "reconstructed",
+            })
+
+    return {
+        "available": bool(item),
+        "template_type": item.get("template_type"),
+        "prompt": str(prompt),
+        "image": str(image) if image else None,
+        "options": option_rows,
+        "selected_response": selected,
+        "correct_response": correct,
+        "target_response": targets,
+        "response_attempts": response_attempts,
+        "category_pairs": category_pairs,
+        "content": {
+            key: content.get(key)
+            for key in (
+                "audio_text", "target_word", "target_letter", "pattern",
+                "sequence", "missing_index", "correct_answer", "correct_word",
+                "correct_sentence", "scrambled_letters", "scrambled_words",
+                "category_labels", "category_icons", "categories", "assets",
+                "target_asset", "target_assets", "letters", "items", "options",
+                "show_seconds", "show_milliseconds", "difficulty",
+            )
+            if content.get(key) is not None
+        },
+    }
 
 @router.get("/{student_id}/overview", response_model=TherapistOverviewDTO)
 async def get_therapist_overview(student_id: str):
@@ -135,26 +383,141 @@ async def get_therapist_c4_adaptive(student_id: str, window: int = 20):
     window=max(5,min(int(window),100))
     states=await records(db,"knowledge_states",student_id,1)
     state=states[0] if states else {}
-    all_history=[
+    raw_history=[
         row for row in await records(db,"adaptive_decisions",student_id,500)
         if row.get("research_eligible") is not False
     ]
+    telemetry_history=await records(db,"telemetry_events",student_id,1000)
+    policy_history=await records(db,"policy_decisions",student_id,1000)
+
+    telemetry_by_event={
+        str(row.get("event_id")):row
+        for row in telemetry_history
+        if row.get("event_id")
+    }
+    telemetry_by_task={}
+    for row in telemetry_history:
+        key=(str(row.get("session_id") or ""),str(row.get("item_id") or ""))
+        if all(key) and key not in telemetry_by_task:
+            telemetry_by_task[key]=row
+
+    # Older adaptive-decision documents did not duplicate every task metric.
+    # The matching telemetry event is the authoritative source for attempts,
+    # timing, exact selections, and rendered scaffold commands. Join only on
+    # stable identifiers; never manufacture a value when no match exists.
+    all_history=[]
+    telemetry_fields=(
+        "attempt_count","incorrect_attempt_count","first_touch_latency_ms",
+        "total_round_latency_ms","attempt_history","selected_answers",
+        "scaffold_applications","struggled_target_units",
+    )
+    for source in raw_history:
+        row=dict(source)
+        telemetry=None
+        if row.get("event_id"):
+            telemetry=telemetry_by_event.get(str(row["event_id"]))
+        if telemetry is None:
+            telemetry=telemetry_by_task.get((
+                str(row.get("session_id") or ""),
+                str(row.get("current_item") or ""),
+            ))
+        if telemetry:
+            for field in telemetry_fields:
+                current=row.get(field)
+                observed=telemetry.get(field)
+                missing=current is None or current==[]
+                if field in {
+                    "attempt_count","incorrect_attempt_count",
+                    "first_touch_latency_ms","total_round_latency_ms",
+                }:
+                    missing=number(current) in {None,0}
+                    observed_available=number(observed) is not None
+                else:
+                    observed_available=observed not in (None,[])
+                if missing and observed_available:
+                    row[field]=observed
+        all_history.append(row)
+
+    policy_actions_by_task={}
+    policy_actions_by_event={}
+    for policy in reversed(policy_history):
+        key=(
+            str(policy.get("session_id") or ""),
+            str(policy.get("item_id") or policy.get("current_item") or ""),
+        )
+        action=(
+            policy.get("applied_action")
+            or policy.get("decision")
+            or policy.get("model_recommendation")
+        )
+        if all(key) and action:
+            actions=policy_actions_by_task.setdefault(key,[])
+            if str(action) not in actions:
+                actions.append(str(action))
+        if policy.get("event_id") and action:
+            actions=policy_actions_by_event.setdefault(str(policy["event_id"]),[])
+            if str(action) not in actions:
+                actions.append(str(action))
     history=all_history[:window]
+    item_ids={
+        str(row.get("current_item"))
+        for row in all_history
+        if row.get("current_item")
+    }
+    item_docs=(
+        await db.item_bank.find({"item_id":{"$in":list(item_ids)}})
+        .limit(len(item_ids) or 1)
+        .to_list(length=len(item_ids) or 1)
+        if item_ids else []
+    )
+    items_by_id={str(item.get("item_id")):item for item in item_docs}
+
+    def row_kc(row):
+        return str(
+            row.get("kc_id")
+            or row.get("knowledge_component_id")
+            or ""
+        ).strip()
+
+    def evidence_role(row):
+        explicit=str(row.get("mastery_evidence_role") or "").upper()
+        role=str(row.get("item_role") or "").upper()
+        phase=str(row.get("practice_phase") or "").upper()
+        for value in (explicit,role,phase):
+            if value.startswith("REMEDIATION"):
+                return "REMEDIATION"
+            if value.startswith("CONFIRMATION"):
+                return "CONFIRMATION"
+        return "CORE" if role in {"","CORE"} else "OTHER"
+
+    def mastery_evidence_eligible(row):
+        applied=row.get("mastery_update_applied")
+        if applied is not None:
+            return applied is True
+        return evidence_role(row) in {"CORE","CONFIRMATION"}
 
     def independent(row):
-        first=row.get("first_attempt_correct")
+        first=row.get("learning_observation_correct")
+        if first is None:
+            first=row.get("first_attempt_correct")
         if first is None:
             first=str(row.get("response_quality") or "").upper() in {
                 "CLEAN_SUCCESS","INDEPENDENT_SUCCESS","MASTERED"
             }
         return bool(first is True and int(row.get("scaffold_level_used",row.get("scaffold_level",0)) or 0)==0)
 
+    observed_kcs={row_kc(row) for row in history if row_kc(row)}
     mastery_values=[]
     for kc_id,raw_value in (state.get("knowledge_state") or {}).items():
         value=number(raw_value)
         if value is not None and 0 <= value <= 1:
             mastery_values.append((str(kc_id),value))
-    primary_focus=min(mastery_values,key=lambda pair:pair[1]) if mastery_values else None
+    observed_mastery=[pair for pair in mastery_values if pair[0] in observed_kcs]
+    primary_candidates=observed_mastery or mastery_values
+    primary_focus=(
+        min(primary_candidates,key=lambda pair:pair[1])
+        if primary_candidates else None
+    )
     primary_id=primary_focus[0] if primary_focus else None
     primary_name=(
         KC_NAMES.get(primary_id,primary_id.removeprefix("KC_").replace("_"," ").title())
@@ -167,23 +530,223 @@ async def get_therapist_c4_adaptive(student_id: str, window: int = 20):
     supported_core=len(core_rows)-independent_core
     independent_confirmations=sum(1 for row in confirmation_rows if independent(row))
 
+    focus_core_rows=[row for row in core_rows if row_kc(row)==primary_id]
+    focus_confirmation_rows=[
+        row for row in confirmation_rows if row_kc(row)==primary_id
+    ]
+    focus_independent_core=sum(1 for row in focus_core_rows if independent(row))
+    focus_supported_core=len(focus_core_rows)-focus_independent_core
+    focus_independent_confirmations=sum(
+        1 for row in focus_confirmation_rows if independent(row)
+    )
+
     trend_source=[
         row for row in reversed(all_history[:100])
         if number(row.get("mastery_after")) is not None
-        and (primary_id is None or row.get("kc_id")==primary_id)
+        and primary_id is not None
+        and row_kc(row)==primary_id
+        and mastery_evidence_eligible(row)
     ]
-    if not trend_source:
-        trend_source=[
-            row for row in reversed(all_history[:100])
-            if number(row.get("mastery_after")) is not None
-        ]
     mastery_trend=[{
         "timestamp": timestamp(row),
         "value": number(row.get("mastery_after")),
         "item_id": row.get("current_item"),
         "activity_id": row.get("activity_id"),
-        "knowledge_component_id": row.get("kc_id"),
+        "knowledge_component_id": row_kc(row) or None,
+        "evidence_role": evidence_role(row),
+        "first_independent_correct": (
+            row.get("learning_observation_correct")
+            if row.get("learning_observation_correct") is not None
+            else row.get("first_attempt_correct")
+        ),
+        "mastery_update_applied": mastery_evidence_eligible(row),
     } for row in trend_source[-6:]]
+
+    kc_observations={}
+    for row in all_history[:100]:
+        if not mastery_evidence_eligible(row):
+            continue
+        kc_id=row_kc(row)
+        if not kc_id:
+            continue
+        stats=kc_observations.setdefault(kc_id,{
+            "observations":0,
+            "independent_observations":0,
+            "supported_observations":0,
+            "last_observed_at":None,
+        })
+        stats["observations"]+=1
+        if independent(row):
+            stats["independent_observations"]+=1
+        else:
+            stats["supported_observations"]+=1
+        stats["last_observed_at"]=(
+            stats["last_observed_at"] or timestamp(row)
+        )
+
+    activity_groups={}
+    for row in all_history:
+        activity_id=str(row.get("activity_id") or "")
+        if activity_id in ACTIVITY_NAMES:
+            activity_groups.setdefault(activity_id,[]).append(row)
+
+    activity_summaries=[]
+    for activity_id in sorted(
+        activity_groups,
+        key=lambda value: tuple(int(part) for part in value.split(".")),
+    ):
+        rows=activity_groups[activity_id]
+        kc_id=next((row_kc(row) for row in rows if row_kc(row)),None)
+        eligible=[row for row in rows if mastery_evidence_eligible(row)]
+        core=[row for row in rows if evidence_role(row)=="CORE"]
+        remediation=[row for row in rows if evidence_role(row)=="REMEDIATION"]
+        confirmation=[row for row in rows if evidence_role(row)=="CONFIRMATION"]
+        independent_core_rows=[row for row in core if independent(row)]
+        independent_confirmation_rows=[
+            row for row in confirmation if independent(row)
+        ]
+        task_attempts=[]
+        for row in rows:
+            item_id=str(row.get("current_item") or "")
+            role=evidence_role(row)
+            first_correct=row.get("learning_observation_correct")
+            if first_correct is None:
+                first_correct=row.get("first_attempt_correct")
+            applications=row.get("scaffold_applications") or []
+            support_actions=[]
+            for application in applications:
+                if not isinstance(application,dict):
+                    continue
+                # Rendered command types are the clearest description of what
+                # the learner actually saw. Never expose opaque action IDs.
+                actions=list(application.get("command_types") or [])
+                direct=(
+                    application.get("command")
+                    or application.get("action")
+                    or application.get("type")
+                )
+                if direct:
+                    actions.append(direct)
+                for action in actions:
+                    if action and str(action) not in support_actions:
+                        support_actions.append(str(action))
+            preview=_task_preview(row,items_by_id.get(item_id,{}))
+            if not support_actions:
+                for attempt in preview["response_attempts"]:
+                    for action in attempt.get("support_actions_before_response",[]):
+                        if action and str(action) not in support_actions:
+                            support_actions.append(str(action))
+            if not support_actions and row.get("event_id"):
+                support_actions.extend(
+                    policy_actions_by_event.get(str(row["event_id"]),[])
+                )
+            if not support_actions:
+                support_actions.extend(policy_actions_by_task.get((
+                    str(row.get("session_id") or ""),item_id,
+                ),[]))
+            attempt_count=row.get("attempt_count")
+            if number(attempt_count) in {None,0} and preview["response_attempts"]:
+                attempt_count=len(preview["response_attempts"])
+            incorrect_attempt_count=row.get("incorrect_attempt_count")
+            if number(incorrect_attempt_count) is None and preview["response_attempts"]:
+                incorrect_attempt_count=sum(
+                    1 for attempt in preview["response_attempts"]
+                    if attempt.get("is_correct") is not True
+                )
+            task_attempts.append({
+                "item_id":item_id,
+                "round":_task_round(item_id),
+                "role":role,
+                "timestamp":timestamp(row),
+                "session_id":row.get("session_id"),
+                "first_response_correct":first_correct,
+                "final_correct":row.get("is_correct"),
+                "completed_independently":independent(row),
+                "response_quality":row.get("response_quality"),
+                "scaffold_level":int(
+                    row.get("scaffold_level_used",row.get("scaffold_level",0))
+                    or 0
+                ),
+                "support_actions":support_actions,
+                "attempt_count":attempt_count,
+                "incorrect_attempt_count":incorrect_attempt_count,
+                "first_touch_latency_ms":row.get("first_touch_latency_ms"),
+                "total_round_latency_ms":row.get("total_round_latency_ms"),
+                "struggled_targets":row.get("struggled_target_units") or [],
+                "mastery_before":number(row.get("mastery_before")),
+                "mastery_after":number(row.get("mastery_after")),
+                "mastery_update_applied":mastery_evidence_eligible(row),
+                "preview":preview,
+            })
+        activity_summaries.append({
+            "activity_id":activity_id,
+            "activity_name":ACTIVITY_NAMES[activity_id],
+            "skill_id":activity_id.split(".")[0],
+            "skill_name":SKILL_NAMES.get(activity_id.split(".")[0],"Learning"),
+            "knowledge_component_id":kc_id,
+            "knowledge_component_name":KC_NAMES.get(
+                kc_id,kc_id.removeprefix("KC_").replace("_"," ").title()
+                if kc_id else "Unavailable"
+            ),
+            "mastery":number((state.get("knowledge_state") or {}).get(kc_id)),
+            "observations":len(eligible),
+            "core_tasks":len(core),
+            "independent_core_tasks":len(independent_core_rows),
+            "supported_core_tasks":len(core)-len(independent_core_rows),
+            "remediation_tasks":len(remediation),
+            "confirmation_tasks":len(confirmation),
+            "independent_confirmations":len(independent_confirmation_rows),
+            "session_count":len({
+                str(row.get("session_id")) for row in rows if row.get("session_id")
+            }),
+            "last_observed_at":timestamp(rows[0]) if rows else None,
+            "trend":[{
+                "timestamp":timestamp(row),
+                "value":number(row.get("mastery_after")),
+                "role":evidence_role(row),
+                "first_response_correct":row.get(
+                    "learning_observation_correct",
+                    row.get("first_attempt_correct"),
+                ),
+                "item_id":row.get("current_item"),
+            } for row in reversed(eligible[:12])],
+            "task_attempts":task_attempts,
+        })
+
+    skill_summaries=[]
+    for skill_id,skill_name in SKILL_NAMES.items():
+        activities=[
+            activity for activity in activity_summaries
+            if activity["skill_id"]==skill_id
+        ]
+        mastery_values_for_skill=[
+            activity["mastery"] for activity in activities
+            if activity.get("mastery") is not None
+        ]
+        core_count=sum(activity["core_tasks"] for activity in activities)
+        independent_count=sum(
+            activity["independent_core_tasks"] for activity in activities
+        )
+        skill_summaries.append({
+            "skill_id":skill_id,
+            "skill_name":skill_name,
+            "activities_attempted":len(activities),
+            "activities_total":5 if skill_id!="4" else 4,
+            "average_mastery":(
+                sum(mastery_values_for_skill)/len(mastery_values_for_skill)
+                if mastery_values_for_skill else None
+            ),
+            "core_tasks":core_count,
+            "independent_core_tasks":independent_count,
+            "supported_core_tasks":core_count-independent_count,
+            "confirmation_tasks":sum(
+                activity["confirmation_tasks"] for activity in activities
+            ),
+            "independent_confirmations":sum(
+                activity["independent_confirmations"] for activity in activities
+            ),
+            "activity_ids":[activity["activity_id"] for activity in activities],
+        })
 
     target_groups={}
     for row in all_history[:100]:
@@ -211,8 +774,8 @@ async def get_therapist_c4_adaptive(student_id: str, window: int = 20):
         recurring_targets,key=lambda row:(row["observations"],len(row["activities"])),reverse=True
     )[:6]
 
-    focus_rows=[row for row in all_history if primary_id and row.get("kc_id")==primary_id]
-    plan_source=(focus_rows or all_history)
+    focus_rows=[row for row in all_history if primary_id and row_kc(row)==primary_id]
+    plan_source=focus_rows
     plan_activity=str(plan_source[0].get("activity_id") or "") if plan_source else ""
     activity_parts=plan_activity.split(".")
     practice_available=(
@@ -254,7 +817,9 @@ async def get_therapist_c4_adaptive(student_id: str, window: int = 20):
             decision=d.get("decision", "Unavailable"),
             reason=d.get("decision_reason") or ", ".join(reason_codes) or "Unavailable",
             reason_codes=reason_codes,item_id=d.get("current_item"),
-            knowledge_component_id=d.get("kc_id"),response_quality=d.get("response_quality")))
+            knowledge_component_id=d.get("kc_id"),response_quality=d.get("response_quality"),
+            item_role=d.get("item_role"),mastery_evidence_role=evidence_role(d),
+            mastery_update_applied=mastery_evidence_eligible(d)))
     policy_rows=(await records(db,"policy_decisions",student_id))[:100]
     c3_audit_rows=await records(db,"model_audit_log",student_id,20)
     c3_audit=next(
@@ -306,7 +871,14 @@ async def get_therapist_c4_adaptive(student_id: str, window: int = 20):
     # experimental rows as current therapist recommendations.
     persistent_learning_needs = []
     return TherapistC4AdaptiveDTO(**mlbase(student_id,state,"BKT + Rasch + action-outcome shadow model","c4-v3"),
-        knowledge_components=[dict(id=k,name=KC_NAMES.get(k,k),mastery=v) for k,x in (state.get("knowledge_state") or {}).items() if (v:=number(x)) is not None],
+        knowledge_components=[dict(
+            id=k,
+            name=KC_NAMES.get(k,k.removeprefix("KC_").replace("_"," ").title()),
+            mastery=v,
+            **kc_observations.get(k,{}),
+        ) for k,x in (state.get("knowledge_state") or {}).items() if (v:=number(x)) is not None],
+        skills=skill_summaries,
+        activities=activity_summaries,
         theta=number(state.get("theta_estimate")), theta_se=number(state.get("theta_se")), updated_at_state=timestamp(state), history=timeline,
         policy_status={
             "mode": policy_mode,
@@ -347,6 +919,39 @@ async def get_therapist_c4_adaptive(student_id: str, window: int = 20):
             "independent_transfer_rate":(
                 round(independent_confirmations/len(confirmation_rows),4)
                 if confirmation_rows else None
+            ),
+            "transfer_evidence_level":(
+                "established" if len(focus_confirmation_rows)>=5
+                else "early" if focus_confirmation_rows else "unavailable"
+            ),
+            "focus_core_tasks":len(focus_core_rows),
+            "focus_independent_core_tasks":focus_independent_core,
+            "focus_supported_core_tasks":focus_supported_core,
+            "focus_confirmation_tasks":len(focus_confirmation_rows),
+            "focus_independent_confirmations":focus_independent_confirmations,
+            "observed_skills":sum(
+                1 for skill in skill_summaries
+                if skill["activities_attempted"]>0
+            ),
+            "observed_activities":len(activity_summaries),
+            "all_core_tasks":sum(
+                activity["core_tasks"] for activity in activity_summaries
+            ),
+            "all_independent_core_tasks":sum(
+                activity["independent_core_tasks"]
+                for activity in activity_summaries
+            ),
+            "all_supported_core_tasks":sum(
+                activity["supported_core_tasks"]
+                for activity in activity_summaries
+            ),
+            "all_confirmation_tasks":sum(
+                activity["confirmation_tasks"]
+                for activity in activity_summaries
+            ),
+            "all_independent_confirmations":sum(
+                activity["independent_confirmations"]
+                for activity in activity_summaries
             ),
         },
         mastery_trend=mastery_trend,

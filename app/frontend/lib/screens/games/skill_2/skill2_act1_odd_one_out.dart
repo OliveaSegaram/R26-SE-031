@@ -319,6 +319,9 @@ class _Skill2Act1OddOneOutState extends State<Skill2Act1OddOneOut> {
             .map(_optionId)
             .toList(),
         "selected_option_ids": _foundIndices.map(_optionId).toList(),
+        "selected_answer_values": <String>[
+          _shuffledItems[index]['value']?.toString() ?? '',
+        ],
         // A multi-target round is diagnosed one still-missing target at a
         // time. This gives remediation a real Sinhala unit instead of an
         // opaque option ID while avoiding an unsupported guess about targets

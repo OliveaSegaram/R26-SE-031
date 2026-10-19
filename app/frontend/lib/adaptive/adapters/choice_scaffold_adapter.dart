@@ -178,6 +178,7 @@ mixin ChoiceScaffoldAdapter<T extends StatefulWidget> on State<T> {
         ],
         'correct_option_ids': <String>[adaptiveOptionId(correctIndex)],
         'selected_option_ids': <String>[adaptiveOptionId(selectedIndex)],
+        'selected_answer_values': <String>[options[selectedIndex]],
         'supported_actions': <String>{
           'REMOVE_OPTION',
           'HIGHLIGHT_OPTION',

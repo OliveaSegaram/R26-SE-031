@@ -147,6 +147,13 @@ class DashboardTests(unittest.TestCase):
         }]
         self.db.adaptive_decisions.rows=[
             {
+                '_id':'404','student_id':STUDENT,'timestamp':'2026-10-15T10:04:00Z',
+                'activity_id':'2.3','current_item':'S2A3R02V1','item_role':'REMEDIATION',
+                'kc_id':'KC_PHONEME_GRAPHEME','mastery_after':.99,
+                'first_attempt_correct':True,'scaffold_level_used':0,
+                'response_quality':'CLEAN_SUCCESS',
+            },
+            {
                 '_id':'403','student_id':STUDENT,'timestamp':'2026-10-15T10:03:00Z',
                 'activity_id':'2.3','current_item':'S2A3R02V2','item_role':'CONFIRMATION',
                 'kc_id':'KC_PHONEME_GRAPHEME','mastery_after':.46,
@@ -175,17 +182,238 @@ class DashboardTests(unittest.TestCase):
                 'research_eligible':False,'struggled_target_units':['retired'],
             },
         ]
+        self.db.item_bank.rows=[{
+            'item_id':'S2A3R02','activity_id':'2.3',
+            'template_type':'skill2_audio','item_role':'CORE',
+            'content':{
+                'prompt':'ශබ්දයට සවන් දී අකුර තෝරන්න',
+                'audio_text':'ක','options':['ක','ග'],'correctOption':'ක',
+            },
+            'options':[
+                {'option_id':'S2A3R02_O1','value':'ක','role':'target'},
+                {'option_id':'S2A3R02_O2','value':'ග','role':'distractor'},
+            ],
+        }]
         dto=self.call(therapist.get_therapist_c4_adaptive,STUDENT,10)
         self.assertEqual(dto.summary['primary_focus_id'],'KC_PHONEME_GRAPHEME')
         self.assertEqual(dto.summary['core_tasks'],2)
         self.assertEqual(dto.summary['supported_core_tasks'],1)
         self.assertEqual(dto.summary['independent_confirmations'],1)
         self.assertEqual(dto.summary['independent_transfer_rate'],1.0)
+        self.assertEqual(dto.summary['transfer_evidence_level'],'early')
         self.assertEqual([point['value'] for point in dto.mastery_trend],[.4,.43,.46])
+        self.assertEqual(
+            [point['evidence_role'] for point in dto.mastery_trend],
+            ['CORE','CORE','CONFIRMATION'],
+        )
         self.assertEqual(dto.recurring_targets[0]['unit'],'ක')
         self.assertEqual(dto.recurring_targets[0]['observations'],2)
         self.assertEqual(dto.next_session_plan['activity_id'],'2.3')
         self.assertTrue(dto.next_session_plan['practice_available'])
+        self.assertEqual(len(dto.skills),4)
+        letters=next(row for row in dto.skills if row['skill_id']=='2')
+        self.assertEqual(letters['activities_attempted'],1)
+        activity=dto.activities[0]
+        self.assertEqual(activity['activity_name'],'අකුර අසා හඳුනා ගනිමු')
+        self.assertEqual(activity['core_tasks'],2)
+        self.assertEqual(activity['remediation_tasks'],1)
+        self.assertEqual(activity['confirmation_tasks'],1)
+        core_preview=next(
+            row for row in activity['task_attempts']
+            if row['item_id']=='S2A3R02'
+        )['preview']
+        self.assertTrue(core_preview['available'])
+        self.assertEqual(core_preview['correct_response'],['ක'])
+
+    def test_task_replay_resolves_sequence_and_visual_target_answers(self):
+        self.assertEqual(
+            therapist._item_answer_values({
+                'content':{'target_word':'රට','pattern':['ර','ට']},
+                'options':[
+                    {'option_id':'O1','value':'ර','role':'sequence_token'},
+                    {'option_id':'O2','value':'ට','role':'sequence_token'},
+                ],
+            }),
+            ['රට'],
+        )
+        self.assertEqual(
+            therapist._item_answer_values({
+                'content':{'items':[
+                    {'value':'අ','is_target':True},
+                    {'value':'ආ','is_target':False},
+                ]},
+            }),
+            ['අ'],
+        )
+
+    def test_task_replay_exposes_pattern_memory_and_exact_attempt_journey(self):
+        pattern = therapist._task_preview(
+            {
+                'selected_answers':['grapes.png','banana.png'],
+                'attempt_count':2,
+                'incorrect_attempt_count':1,
+                'is_correct':True,
+                'attempt_history':[
+                    {
+                        'attempt_number':1,'is_correct':False,
+                        'selected_answers':['fruits_food/grapes.png'],
+                        'support_applied_before_response':False,
+                    },
+                    {
+                        'attempt_number':2,'is_correct':True,
+                        'selected_answers':['fruits_food/banana.png'],
+                        'support_applied_before_response':True,
+                        'support_actions_before_response':['highlightOptions'],
+                    },
+                ],
+            },
+            {
+                'template_type':'visual_pattern_adventure',
+                'content':{
+                    'sequence':['animals/turtle.png','fruits_food/apple.png',None],
+                    'missing_index':2,
+                    'correct_answer':'fruits_food/banana.png',
+                    'options':['fruits_food/banana.png','fruits_food/grapes.png'],
+                },
+                'options':[],
+            },
+        )
+        self.assertEqual(pattern['content']['missing_index'],2)
+        self.assertEqual(pattern['content']['sequence'][-1],None)
+        self.assertEqual(pattern['response_attempts'][0]['evidence_quality'],'exact')
+        self.assertTrue(pattern['response_attempts'][1]['support_applied_before_response'])
+        self.assertEqual(
+            pattern['response_attempts'][1]['selected_answers'],
+            ['fruits_food/banana.png'],
+        )
+
+        memory = therapist._task_preview(
+            {
+                'selected_answers':['S1A5R04V2_O1','everyday_objects/key.png'],
+                'attempt_count':2,'incorrect_attempt_count':1,'is_correct':True,
+                'scaffold_level_used':1,
+            },
+            {
+                'template_type':'visual_memory_hats',
+                'content':{
+                    'assets':['everyday_objects/key.png','everyday_objects/bell.png'],
+                    'target_asset':'everyday_objects/key.png',
+                    'show_milliseconds':4000,
+                },
+                'options':[],
+            },
+        )
+        self.assertEqual(len(memory['options']),2)
+        self.assertEqual(
+            memory['response_attempts'][0]['selected_answers'],
+            ['Card 1 (historical position)'],
+        )
+        self.assertEqual(memory['response_attempts'][0]['evidence_quality'],'reconstructed')
+        self.assertEqual(
+            therapist._task_prompt({
+                'template_type':'visual_pattern_adventure','content':{},
+            }),
+            'රටාවට ගැළපෙන පින්තූරය තෝරන්න',
+        )
+
+    def test_task_evidence_joins_real_telemetry_and_hides_action_ids(self):
+        self.db.knowledge_states.rows=[{
+            'student_id':STUDENT,
+            'knowledge_state':{'KC_VISUAL_PATTERN':.44},
+        }]
+        self.db.adaptive_decisions.rows=[{
+            '_id':'decision-1','student_id':STUDENT,'event_id':'event-1',
+            'session_id':'session-1','timestamp':'2026-10-19T10:00:00Z',
+            'activity_id':'1.4','current_item':'S1A4R01','item_role':'CORE',
+            'kc_id':'KC_VISUAL_PATTERN','is_correct':True,
+            'first_attempt_correct':False,'scaffold_level_used':2,
+            'mastery_before':.40,'mastery_after':.44,
+            'scaffold_applications':[
+                {'action_id':'S1A4R01-C4-MODEL-2-1'},
+            ],
+        }]
+        self.db.telemetry_events.rows=[{
+            '_id':'telemetry-1','student_id':STUDENT,'event_id':'event-1',
+            'session_id':'session-1','item_id':'S1A4R01',
+            'timestamp':'2026-10-19T10:00:00Z',
+            'attempt_count':3,'incorrect_attempt_count':2,
+            'total_round_latency_ms':7420,
+            'selected_answers':['grapes.png','apple.png','banana.png'],
+            'attempt_history':[
+                {'attempt_number':1,'is_correct':False,
+                 'selected_answers':['grapes.png'],
+                 'support_applied_before_response':False},
+                {'attempt_number':2,'is_correct':False,
+                 'selected_answers':['apple.png'],
+                 'support_applied_before_response':True,
+                 'support_actions_before_response':['removeOptions']},
+                {'attempt_number':3,'is_correct':True,
+                 'selected_answers':['banana.png'],
+                 'support_applied_before_response':True,
+                 'support_actions_before_response':['highlightOptions']},
+            ],
+            'scaffold_applications':[
+                {'action_id':'S1A4R01-C4-MODEL-2-1',
+                 'command_types':['highlightOptions']},
+            ],
+        }]
+        self.db.item_bank.rows=[{
+            'item_id':'S1A4R01','activity_id':'1.4',
+            'template_type':'visual_pattern_adventure','item_role':'CORE',
+            'content':{
+                'prompt':'රටාවට ගැළපෙන පින්තූරය තෝරන්න',
+                'sequence':['turtle.png','apple.png',None],
+                'missing_index':2,'correct_answer':'banana.png',
+                'options':['banana.png','grapes.png','apple.png'],
+            },
+            'options':[],
+        }]
+
+        dto=self.call(therapist.get_therapist_c4_adaptive,STUDENT,20)
+        task=dto.activities[0]['task_attempts'][0]
+        self.assertEqual(task['attempt_count'],3)
+        self.assertEqual(task['incorrect_attempt_count'],2)
+        self.assertEqual(task['total_round_latency_ms'],7420)
+        self.assertEqual(
+            task['support_actions'],['removeOptions','highlightOptions']
+        )
+        self.assertNotIn('C4-MODEL',str(task['support_actions']))
+        self.assertEqual(len(task['preview']['response_attempts']),3)
+
+    def test_c4_focus_and_trend_do_not_borrow_unobserved_kc_values(self):
+        self.db.knowledge_states.rows=[{
+            'student_id':STUDENT,
+            'knowledge_state':{
+                'KC_WORD_RECOGNITION':.20,
+                'KC_VISUAL_IDENTIFICATION':.61,
+            },
+        }]
+        self.db.adaptive_decisions.rows=[
+            {
+                '_id':'2','student_id':STUDENT,
+                'timestamp':'2026-10-15T10:02:00Z','activity_id':'1.1',
+                'current_item':'S1A1R02','item_role':'CORE',
+                'kc_id':'KC_VISUAL_IDENTIFICATION','mastery_after':.61,
+                'first_attempt_correct':True,'scaffold_level_used':0,
+            },
+            {
+                '_id':'1','student_id':STUDENT,
+                'timestamp':'2026-10-15T10:01:00Z','activity_id':'1.1',
+                'current_item':'S1A1R01','item_role':'CORE',
+                'kc_id':'KC_VISUAL_IDENTIFICATION','mastery_after':.55,
+                'first_attempt_correct':False,'scaffold_level_used':1,
+            },
+        ]
+        dto=self.call(therapist.get_therapist_c4_adaptive,STUDENT,20)
+        self.assertEqual(dto.summary['primary_focus_id'],'KC_VISUAL_IDENTIFICATION')
+        self.assertEqual([point['value'] for point in dto.mastery_trend],[.55,.61])
+        self.assertEqual(dto.summary['focus_core_tasks'],2)
+        visual=next(row for row in dto.knowledge_components if row.id=='KC_VISUAL_IDENTIFICATION')
+        self.assertEqual(visual.name,'Picture identification')
+        self.assertEqual(visual.observations,2)
+        self.assertEqual(visual.independent_observations,1)
+        word=next(row for row in dto.knowledge_components if row.id=='KC_WORD_RECOGNITION')
+        self.assertEqual(word.observations,0)
     def test_c4_does_not_surface_retired_transfer_experiment(self):
         self.db.knowledge_states.rows=[{
             'student_id':STUDENT,

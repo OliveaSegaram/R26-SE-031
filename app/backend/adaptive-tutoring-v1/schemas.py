@@ -28,6 +28,7 @@ class TelemetryData(BaseModel):
     target_ids: Optional[List[str]] = None
     struggled_target_units: Optional[List[str]] = None
     selected_answers: Optional[List[str]] = None
+    attempt_history: Optional[List[Dict[str, Any]]] = None
 
 class InteractionRequest(BaseModel):
     student_id: str
